@@ -6,7 +6,7 @@
 ## Context
 
 The HTTP API (`/v1`), the MCP tools and the webhook payloads are used by
-gateways, external agents, Home Assistant and user scripts. Self-hosters
+gateways, external agents, home-automation hubs and user scripts. Self-hosters
 upgrade on their own schedule, so clients and servers of different versions
 will coexist.
 
@@ -15,8 +15,8 @@ will coexist.
 1. **URL major version (`/v1`, `/v2`) + additive-only changes within a major.**
    Breaking change = new major path; the old one is kept for N minor releases
    with `Deprecation` and `Sunset` headers (RFC 9745 / RFC 8594).
-2. **Date-based header versioning** (`Allotr-Version: 2026-09-27`, the Stripe
-   model). Fine-grained, but more server complexity.
+2. **Date-based header versioning** (`Allotr-Version: 2026-09-27`, a pattern
+   used by some large payment APIs). Fine-grained, but more server complexity.
 3. **Tie the API to app SemVer** only: any breaking API change is a major app release.
 
 Sub-decisions: how long deprecated endpoints live; whether MCP tool and
@@ -34,6 +34,6 @@ CI blocks breaking changes (e.g. oasdiff).
 
 ## Consequences
 
-- External clients (scripts, Home Assistant, agents) keep working across minor upgrades.
+- External clients (scripts, home-automation hubs, agents) keep working across minor upgrades.
 - Two routers coexist during a deprecation window.
 - The generated OpenAPI spec becomes a reviewed artifact in every API PR.

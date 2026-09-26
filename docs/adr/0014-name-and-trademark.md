@@ -21,7 +21,7 @@ domain and package-name availability.
    offerings; costs money and needs a legal owner.
 
 Also: a short trademark/brand policy in the README (forks must rename if
-they change behaviour, as Firefox and others do) is common in OSS.
+they change behaviour) is a common OSS practice.
 
 ## Decision
 

@@ -8,7 +8,7 @@
 The same shapes (transaction, proposal, summary) are needed by HTTP
 validation, the published OpenAPI spec, MCP tool schemas and LLM structured
 output. Maintaining a hand-written OpenAPI YAML file alongside TypeScript
-types risks drift. External, non-TypeScript clients (agents, Home Assistant,
+types risks drift. External, non-TypeScript clients (agents, home-automation hubs,
 curl) need a standard HTTP API.
 
 ## Decision

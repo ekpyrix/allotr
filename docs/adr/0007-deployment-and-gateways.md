@@ -8,9 +8,10 @@
 The web UI must offer full manual control. Chat gateways are optional and
 should run in their own process so a platform library crash cannot take down
 the API. AI features are optional behind one toggle. Self-hosters expect a
-single-container install (Unraid, Portainer, Raspberry Pi). Hermes Agent
-runs all platform adapters in one gateway process, supervised by s6-overlay
-inside its official image.
+single-container install on NAS systems, container managers and small
+single-board computers. A common pattern for multi-platform chat agents
+(for example Hermes Agent, MIT) is one gateway process hosting all platform
+adapters, supervised inside the image.
 
 ## Decision
 

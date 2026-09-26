@@ -13,8 +13,8 @@ adding friction that discourages first-time contributors.
 
 1. **No sign-off (inbound = outbound).** Contributions are MIT by the act of
    submitting, per GitHub's terms of service. No friction; weakest paper trail.
-2. **DCO (`Signed-off-by:` on every commit).** Used by the Linux kernel,
-   GitLab and CNCF projects. A GitHub app or CI check enforces it. Light
+2. **DCO (`Signed-off-by:` on every commit).** Widely used by large
+   open-source projects and foundations. A GitHub app or CI check enforces it. Light
    friction (`git commit -s`); clear provenance; no copyright assignment.
 3. **CLA.** Contributors sign an agreement, sometimes granting relicensing
    rights. Strongest legal position; noticeable friction and distrust in

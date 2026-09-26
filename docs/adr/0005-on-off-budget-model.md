@@ -26,6 +26,6 @@ in core; ledger invariants are not configurable.
 ## Consequences
 
 - No per-entry pool tagging; entries stay one line.
-- Matches the YNAB/Actual mental model, familiar to PFM users.
+- Follows the established envelope-budgeting pattern (on-budget vs. tracking accounts), familiar to PFM users.
 - Cannot answer "how much of account X is for purpose Y"; accepted.
 - Each policy strategy needs its own property tests; shared invariants keep the matrix bounded.
