@@ -22,6 +22,11 @@ screenshots — is world-readable and cannot be reliably un-published.
 - Test fixtures, examples, golden files, eval sets, docs and screenshots use
   synthetic data. Keep the shape of real data, never the values.
 - Git identity uses the GitHub noreply address; do not change it.
+- Describe prior art and inspiration as **patterns** ("the envelope-budgeting
+  pattern", "popular self-hosted apps"), not by naming other products or
+  companies, and avoid "just like X" phrasing. Name things only when they do
+  a job: dependencies, standards and formats, integration targets, providers,
+  and licence credits for bundled assets.
 
 ## Checklist before every commit
 
@@ -29,6 +34,7 @@ screenshots — is world-readable and cannot be reliably un-published.
 - [ ] No new file matching the "never commit" list above.
 - [ ] Amounts, names and accounts in fixtures/examples are made up.
 - [ ] Commit message and PR text contain no personal or financial details.
+- [ ] Other products are described as patterns, not named as comparisons.
 
 ## If something leaks
 
