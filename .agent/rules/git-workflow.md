@@ -42,6 +42,9 @@ BREAKING CHANGE: <what breaks and how to migrate>
 - Scopes: `core` `parser` `api` `web` `discord` `telegram` `cli` `deploy` `deps` `adr`.
 - Breaking change: `!` after type/scope and a `BREAKING CHANGE:` footer.
 - Template: `.gitmessage`.
+- **Sign off every commit** with `git commit -s` (DCO,
+  [ADR 0012](../../docs/adr/0012-contribution-signoff.md)). The trailer must
+  match the commit author. Keep sign-offs in squash-merge messages.
 
 ## Pull requests
 

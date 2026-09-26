@@ -31,6 +31,7 @@ Closes #
 - [ ] ADR added in `docs/adr/` if this makes a hard-to-reverse decision
 - [ ] DB migrations are forward-only and documented (or N/A)
 - [ ] No secrets, tokens, or real financial/personal data in code, fixtures, screenshots, or this description
+- [ ] Every commit is signed off (`git commit -s`, DCO)
 - [ ] CI is green
 
 ## Screenshots / notes for reviewers

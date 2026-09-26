@@ -57,6 +57,36 @@ Use the repo's commit template:
 git config commit.template .gitmessage
 ```
 
+## Sign-off (DCO)
+
+Every commit in a pull request must be signed off under the
+[Developer Certificate of Origin](https://developercertificate.org/)
+(ADR 0012). Signing off certifies that you wrote the change or otherwise have
+the right to submit it under the project's MIT license. It does not transfer
+any rights.
+
+Add the sign-off with `-s`:
+
+```sh
+git commit -s -m "fix(core): round half to even"
+```
+
+This appends a trailer that must match the commit author:
+
+```
+Signed-off-by: Your Name <you@example.com>
+```
+
+A CI check fails PRs that contain unsigned commits. To fix them:
+
+```sh
+git commit --amend -s --no-edit              # last commit only
+git rebase --signoff dev                     # every commit on the branch
+git push --force-with-lease
+```
+
+Keep the `Signed-off-by` lines when a PR is squash-merged.
+
 ## Definition of Done
 
 A PR is ready when:
@@ -65,6 +95,7 @@ A PR is ready when:
 - docs (README, `docs/`, OpenAPI) reflect the change;
 - DB migrations are forward-only and documented;
 - CI is green;
+- every commit is signed off (DCO);
 - no secrets or real data are included anywhere.
 
 ## Reporting bugs and parse errors
