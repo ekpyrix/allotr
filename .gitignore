@@ -1,0 +1,17 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local data (may contain real expenses)
+*.db
+*.sqlite
+*.sqlite3
+logs/
+
+# Non-accepted design work: proposed ADRs, drafts, scratch, agent specs/plans
+docs/drafts/
+docs/superpowers/
+
+# Claude Code local settings
+.claude/settings.local.json

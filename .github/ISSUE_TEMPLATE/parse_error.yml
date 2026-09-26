@@ -1,0 +1,57 @@
+name: Parsing error
+description: A message was understood incorrectly (wrong amount, category, account, date...).
+labels: ["bug", "parser"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Parsing reports become test cases. Use **made-up amounts and notes**
+        that reproduce the same problem, not your real transactions.
+  - type: textarea
+    id: input
+    attributes:
+      label: Input message
+      description: The exact text sent, including line breaks.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      placeholder: "amount -35.00, category Food, account Wallet, date today"
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What the bot replied or recorded.
+    validations:
+      required: true
+  - type: dropdown
+    id: path
+    attributes:
+      label: Which parser handled it?
+      description: The receipt or confirmation prompt usually shows this.
+      options:
+        - Grammar (instant reply)
+        - LLM (asked for confirmation)
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      options:
+        - English
+        - Thai
+        - Mixed
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: LLM provider and model (if LLM)
+      placeholder: Ollama qwen2.5:7b

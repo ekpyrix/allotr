@@ -1,0 +1,82 @@
+name: Bug report
+description: Something is broken or behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **This is a public issue tracker.** Do not paste
+        real balances, transactions, account numbers, tokens or API keys —
+        replace them with made-up values.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, and what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Send `-35 food` in Discord
+        2. Open the dashboard
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Core ledger / calculations
+        - Parser (grammar)
+        - Parser (LLM)
+        - API server
+        - Web dashboard
+        - Discord bot
+        - Telegram bot
+        - CLI (import / export / backup)
+        - Deployment (Docker / compose)
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag or commit SHA.
+      placeholder: v0.1.0 or a1b2c3d
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Host OS / arch, database, LLM provider and model if relevant.
+      placeholder: |
+        Host: Debian 13, arm64
+        DB: SQLite
+        LLM: Ollama, qwen2.5:7b
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log output. Remove secrets and personal data first.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I removed secrets and real financial data from this report.
+          required: true

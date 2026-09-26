@@ -1,0 +1,12 @@
+# Add ecosystems (npm, cargo, gomod, pip, docker...) once the stack is chosen (see ADRs).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
