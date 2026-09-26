@@ -1,0 +1,46 @@
+name: DCO
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  signoff:
+    name: Check sign-off
+    # Feature PRs into dev and hotfix PRs. Promotion PRs carry squash commits
+    # created by GitHub and are not checked.
+    if: github.base_ref == 'dev' || startsWith(github.head_ref, 'hotfix/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every commit has Signed-off-by matching its author
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          fail=0
+          while read -r row; do
+            json=$(printf '%s' "$row" | base64 -d)
+            sha=$(jq -r '.sha' <<<"$json")
+            login=$(jq -r '.login' <<<"$json")
+            email=$(jq -r '.email' <<<"$json")
+            parents=$(jq -r '.parents' <<<"$json")
+            msg=$(jq -r '.msg' <<<"$json")
+            if [ "$login" = "dependabot[bot]" ] || [ "$parents" -gt 1 ]; then
+              echo "skip ${sha:0:7} ($login, $parents parents)"
+              continue
+            fi
+            if grep -i '^Signed-off-by:' <<<"$msg" | grep -qiF "<$email>"; then
+              echo "ok   ${sha:0:7}"
+            else
+              echo "::error::Commit ${sha:0:7} has no 'Signed-off-by: Name <$email>' line. See CONTRIBUTING.md#sign-off-dco."
+              fail=1
+            fi
+          done < <(gh api --paginate "repos/$REPO/pulls/$PR/commits" \
+            --jq '.[] | {sha, login: (.author.login // ""), email: .commit.author.email, parents: (.parents | length), msg: .commit.message} | @base64')
+          exit "$fail"

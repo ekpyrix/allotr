@@ -9,4 +9,5 @@
 # Types:  feat fix refactor perf docs test build ci chore revert
 # Scopes: core parser api web discord telegram cli deploy deps adr
 # Breaking: add ! after type/scope, e.g. feat(api)!: ...
+# Sign off every commit: git commit -s (DCO, see CONTRIBUTING.md)
 # Never commit secrets or real financial data.

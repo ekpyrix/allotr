@@ -45,7 +45,8 @@ docs/drafts/         proposals, specs, plans, scratch (git-ignored)
 
 - Diff contains no secrets or real data (see public-repo rule checklist).
 - Work is on a feature branch, not `dev`/`staging`/`main`.
-- Commit messages follow Conventional Commits.
+- Commit messages follow Conventional Commits and every commit is signed off
+  (`git commit -s`).
 - PR description follows `.github/PULL_REQUEST_TEMPLATE.md` and links an issue.
 - If you made a hard-to-reverse decision, it is proposed as an ADR draft in
   `docs/drafts/` for the maintainer to accept — not committed as accepted.
