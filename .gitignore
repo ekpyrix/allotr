@@ -8,6 +8,7 @@
 *.sqlite
 *.sqlite3
 logs/
+testdata/private/
 
 # Non-accepted design work: proposed ADRs, drafts, scratch, agent specs/plans
 docs/drafts/
