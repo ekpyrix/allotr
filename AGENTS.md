@@ -34,7 +34,6 @@ These always apply. Details are in `.agent/rules/`.
 
 ```
 AGENTS.md            this file — entry point for agents
-CLAUDE.md            Claude Code entry point; imports this file
 .agent/rules/        detailed rules, one topic per file
 docs/adr/            accepted Architecture Decision Records (public)
 docs/drafts/         proposals, specs, plans, scratch (git-ignored)
