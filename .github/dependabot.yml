@@ -27,6 +27,14 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # Types track the Node.js 24 LTS runtime, not the newest Node.js.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # typescript-eslint does not support TypeScript 7 yet; lift this once
+      # it does.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   # Dockerfile arrives with the image work later in M0.
   - package-ecosystem: docker
