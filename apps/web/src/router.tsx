@@ -7,6 +7,7 @@ import {
   Outlet,
   redirect,
 } from '@tanstack/react-router';
+import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
@@ -100,7 +101,10 @@ const appRoute = createRoute({
     }
     return { session };
   },
-  component: Outlet,
+  component: function Shell() {
+    const { session } = appRoute.useRouteContext();
+    return <AppShell twoFactorRequired={session.twoFactorRequired} />;
+  },
 });
 
 const todayRoute = createRoute({
