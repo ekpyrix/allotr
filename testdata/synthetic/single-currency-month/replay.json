@@ -1,0 +1,66 @@
+{
+  "joinedOn": "2026-03-01",
+  "checkpoints": [
+    {
+      "at": "2026-03-01T13:00:00Z",
+      "today": {
+        "today": "2026-03-01",
+        "cycle": { "openedOn": "2026-03-01", "payday": "2026-03-25" },
+        "cycleEnd": "2026-03-25",
+        "overdue": false,
+        "daysLeft": 24,
+        "available": { "amountMinor": 68000, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 68000, "currency": "EUR" },
+        "spentToday": { "amountMinor": 0, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 2833, "currency": "EUR" },
+        "leftToday": { "amountMinor": 2833, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 2833, "currency": "EUR" },
+        "missingRates": []
+      }
+    },
+    {
+      "at": "2026-03-10T20:00:00Z",
+      "today": {
+        "today": "2026-03-10",
+        "daysLeft": 15,
+        "available": { "amountMinor": 61500, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 63500, "currency": "EUR" },
+        "spentToday": { "amountMinor": 2000, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 4233, "currency": "EUR" },
+        "leftToday": { "amountMinor": 2233, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 4100, "currency": "EUR" }
+      }
+    },
+    {
+      "at": "2026-03-24T12:00:00Z",
+      "today": {
+        "cycle": { "openedOn": "2026-03-01", "payday": "2026-03-25" },
+        "daysLeft": 1,
+        "available": { "amountMinor": 51500, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 51500, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 51500, "currency": "EUR" }
+      }
+    },
+    {
+      "at": "2026-03-26T12:00:00Z",
+      "balances": {
+        "Wallet": { "amountMinor": 298500, "currency": "EUR" },
+        "Savings": { "amountMinor": 310000, "currency": "EUR" }
+      },
+      "today": {
+        "today": "2026-03-26",
+        "cycle": { "openedOn": "2026-03-25", "payday": "2026-04-25" },
+        "cycleEnd": "2026-04-25",
+        "overdue": false,
+        "daysLeft": 30,
+        "available": { "amountMinor": 246500, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 249500, "currency": "EUR" },
+        "spentToday": { "amountMinor": 3000, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 8316, "currency": "EUR" },
+        "leftToday": { "amountMinor": 5316, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 8216, "currency": "EUR" },
+        "missingRates": []
+      }
+    }
+  ]
+}

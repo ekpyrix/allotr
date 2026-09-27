@@ -1,0 +1,116 @@
+{
+  "format": "allotr.bundle",
+  "version": 1,
+  "settings": { "timeZone": "UTC", "defaultCurrency": "EUR", "paydayDay": 25 },
+  "accounts": [
+    {
+      "name": "Wallet",
+      "currency": "EUR",
+      "openingBalance": { "amountMinor": 120000, "currency": "EUR" },
+      "openedOn": "2026-03-01"
+    },
+    {
+      "name": "Savings",
+      "currency": "EUR",
+      "budgetGroup": "off",
+      "openingBalance": { "amountMinor": 300000, "currency": "EUR" },
+      "openedOn": "2026-03-01"
+    }
+  ],
+  "transactions": [
+    {
+      "kind": "expense",
+      "account": "Wallet",
+      "amount": { "amountMinor": 4500, "currency": "EUR" },
+      "category": "Food/Groceries",
+      "occurredOn": "2026-03-02",
+      "note": "Weekly shop"
+    },
+    {
+      "kind": "expense",
+      "ref": "rent-mar",
+      "account": "Wallet",
+      "amount": { "amountMinor": 50000, "currency": "EUR" },
+      "category": "Housing/Rent",
+      "occurredOn": "2026-03-05",
+      "note": "March rent"
+    },
+    {
+      "kind": "expense",
+      "account": "Wallet",
+      "amount": { "amountMinor": 1200, "currency": "EUR" },
+      "category": "Food/Eating out",
+      "occurredOn": "2026-03-10",
+      "note": "Lunch"
+    },
+    {
+      "kind": "expense",
+      "account": "Wallet",
+      "amount": { "amountMinor": 800, "currency": "EUR" },
+      "category": "Transport",
+      "occurredOn": "2026-03-10",
+      "note": "Bus pass top-up"
+    },
+    {
+      "kind": "transfer",
+      "from": "Wallet",
+      "to": "Savings",
+      "sent": { "amountMinor": 10000, "currency": "EUR" },
+      "occurredOn": "2026-03-12",
+      "note": "To savings"
+    },
+    {
+      "kind": "expense",
+      "ref": "phone-mar",
+      "account": "Wallet",
+      "amount": { "amountMinor": 2000, "currency": "EUR" },
+      "category": "Bills and subscriptions",
+      "occurredOn": "2026-03-19",
+      "note": "Phone"
+    },
+    {
+      "kind": "income",
+      "account": "Wallet",
+      "amount": { "amountMinor": 250000, "currency": "EUR" },
+      "category": "Paycheck",
+      "occurredOn": "2026-03-25",
+      "note": "March salary"
+    },
+    {
+      "kind": "expense",
+      "account": "Wallet",
+      "amount": { "amountMinor": 3000, "currency": "EUR" },
+      "category": "Fun",
+      "occurredOn": "2026-03-26",
+      "note": "Cinema"
+    }
+  ],
+  "bills": [
+    {
+      "name": "Rent",
+      "account": "Wallet",
+      "amount": { "amountMinor": 50000, "currency": "EUR" },
+      "dueDay": 5,
+      "payments": [
+        {
+          "dueOn": "2026-03-05",
+          "paidOn": "2026-03-05",
+          "transaction": "rent-mar"
+        }
+      ]
+    },
+    {
+      "name": "Phone",
+      "account": "Wallet",
+      "amount": { "amountMinor": 2000, "currency": "EUR" },
+      "dueDay": 20,
+      "payments": [
+        {
+          "dueOn": "2026-03-20",
+          "paidOn": "2026-03-19",
+          "transaction": "phone-mar"
+        }
+      ]
+    }
+  ]
+}
