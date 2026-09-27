@@ -3,8 +3,9 @@
 A self-hosted personal finance ledger that answers one question: **how much
 can I spend today?**
 
-> **Status: design phase.** The architecture is decided (see
-> [docs/adr/](docs/adr/)), but there is no release to install yet.
+> **Status: early development.** The architecture is decided (see
+> [docs/adr/](docs/adr/)) and the skeleton runs (sign-in with 2FA, an empty
+> Today screen), but there is no release to install yet.
 
 The name comes from *allotment*: every unit of money has a job.
 

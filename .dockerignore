@@ -1,0 +1,19 @@
+# Keep the build context small and free of local data and secrets.
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
+.git
+.github
+.env
+.env.*
+!.env.example
+deploy/.env
+data
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+testdata/private
+docs

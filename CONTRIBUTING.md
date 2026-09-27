@@ -40,7 +40,7 @@ make test                # installs dependencies on first run, then tests
 make e2e                 # browser smoke tests (Playwright, see below)
 make lint                # ESLint, Prettier, dependency direction, typecheck
 make dev                 # watch mode
-make build               # production build
+make build               # production build and container image
 make format              # apply Prettier
 ```
 
@@ -56,8 +56,12 @@ both.
 the API on port 8080. Before the first `make e2e`, install the browser with
 `pnpm --filter @allotr/web exec playwright install --with-deps chromium`.
 
-CI runs `make lint`, `make test`, `make e2e` and a gitleaks secret scan on
-every pull request, including stacked PRs that target another feature branch.
+To try the container, copy `deploy/.env.example` to `deploy/.env`, set the
+secret key, and run `docker compose -f deploy/docker-compose.yml up --build`.
+
+CI runs `make lint`, `make test`, `make e2e`, an amd64 and arm64 image build
+with a compose smoke test, and a gitleaks secret scan on every pull request,
+including stacked PRs that target another feature branch.
 
 ## Commit messages — Conventional Commits
 

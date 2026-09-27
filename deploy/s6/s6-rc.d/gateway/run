@@ -1,0 +1,15 @@
+#!/command/with-contenv sh
+# Chat platform adapters. Idles when ALLOTR_ROLE=server.
+case "${ALLOTR_ROLE:-all}" in
+  all | gateway)
+    cd /app/apps/gateway || exit 1
+    exec node src/main.ts
+    ;;
+  server)
+    exec s6-pause
+    ;;
+  *)
+    # The server service reports the error and stops the container.
+    exec s6-pause
+    ;;
+esac
