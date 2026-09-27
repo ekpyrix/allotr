@@ -194,6 +194,9 @@ Errors are problem details whose `errors[].path` is a JSON Pointer into the
 bundle: `invalid_bundle`, `unsupported_bundle_version`, `invalid_reference`
 (all collected, at most 100), or the refused item's usual code while
 applying. Limits: 10 MB, 50,000 transactions, 1,000 of each other list.
+The import holds the database's write lock while it runs, roughly a second
+per thousand transactions, so a bundle near the limit takes tens of seconds;
+allow for that in a reverse proxy's timeout.
 
 ## 6. Data
 

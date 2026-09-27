@@ -275,6 +275,11 @@ describe('refused imports write nothing', () => {
     expect(response.status).toBe(413);
   });
 
+  it('refuses a request without a bundle', async () => {
+    const response = await h.alice.post('/v1/import');
+    expect(response.status).toBe(400);
+  });
+
   it('needs a signed-in user', async () => {
     const anonymous = await fetch(new URL('/v1/import', h.server.url), {
       method: 'POST',

@@ -58,7 +58,7 @@ async function existingCategories(
 ): Promise<ExistingCategory[]> {
   const rows = await db
     .selectFrom('categories')
-    .select(['id', 'name', 'kind', 'parent_id'])
+    .select(['id', 'name', 'kind', 'parent_id', 'is_paycheck'])
     .where('user_id', '=', userId)
     .where('merged_into_id', 'is', null)
     .execute();
@@ -67,6 +67,7 @@ async function existingCategories(
     name: row.name,
     kind: row.kind as ExistingCategory['kind'],
     parentId: row.parent_id,
+    isPaycheck: row.is_paycheck === 1,
   }));
 }
 
@@ -175,7 +176,7 @@ export async function importBundle(
           userId,
           {
             name: category.name,
-            isPaycheck: category.isPaycheck,
+            isPaycheck: category.isPaycheck ?? false,
             ...placement,
           },
           now,

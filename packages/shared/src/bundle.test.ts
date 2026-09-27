@@ -70,7 +70,7 @@ describe('bundleSchema', () => {
       kind: 'asset',
       budgetGroup: 'off',
     });
-    expect(bundle.categories[0]).toMatchObject({ isPaycheck: false });
+    expect(bundle.categories[0]?.isPaycheck).toBeUndefined();
     expect(bundle.bills[0]).toMatchObject({ active: true });
   });
 

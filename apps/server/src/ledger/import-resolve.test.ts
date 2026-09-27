@@ -10,10 +10,41 @@ import {
 // A slice of the starter categories, with made-up ids. Amounts are made up.
 
 const starters: ExistingCategory[] = [
-  { id: 'c-food', name: 'Food', kind: 'expense', parentId: null },
-  { id: 'c-groc', name: 'Groceries', kind: 'expense', parentId: 'c-food' },
-  { id: 'c-fun', name: 'Fun', kind: 'expense', parentId: null },
-  { id: 'c-pay', name: 'Paycheck', kind: 'income', parentId: null },
+  {
+    id: 'c-food',
+    name: 'Food',
+    kind: 'expense',
+    parentId: null,
+    isPaycheck: false,
+  },
+  {
+    id: 'c-groc',
+    name: 'Groceries',
+    kind: 'expense',
+    parentId: 'c-food',
+    isPaycheck: false,
+  },
+  {
+    id: 'c-fun',
+    name: 'Fun',
+    kind: 'expense',
+    parentId: null,
+    isPaycheck: false,
+  },
+  {
+    id: 'c-pay',
+    name: 'Paycheck',
+    kind: 'income',
+    parentId: null,
+    isPaycheck: true,
+  },
+  {
+    id: 'c-oinc',
+    name: 'Other income',
+    kind: 'income',
+    parentId: null,
+    isPaycheck: false,
+  },
 ];
 const eur = (amountMinor: number) => ({ amountMinor, currency: 'EUR' });
 const bundle = (rest: Record<string, unknown>) =>
@@ -63,6 +94,15 @@ describe('resolveBundle', () => {
     expect(r.toCreate).toEqual([
       { index: 1, key: 'food/coffee', parentKey: 'food', kind: 'expense' },
     ]);
+  });
+
+  it('matches a paycheck category without restating the flag', () => {
+    const r = resolveBundle(
+      bundle({ categories: [{ name: 'Paycheck', kind: 'income' }] }),
+      starters,
+    );
+    expect(r.errors).toEqual([]);
+    expect(r.matched).toBe(1);
   });
 
   it('creates new parents before their children', () => {
@@ -130,6 +170,11 @@ describe('resolveBundle', () => {
       'a match whose kind differs',
       { categories: [{ name: 'Fun', kind: 'income' }] },
       '/categories/0/kind',
+    ],
+    [
+      'a match whose paycheck flag differs',
+      { categories: [{ name: 'Other income', isPaycheck: true }] },
+      '/categories/0/isPaycheck',
     ],
     [
       'an unknown account',

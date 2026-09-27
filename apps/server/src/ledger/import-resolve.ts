@@ -13,6 +13,7 @@ export type ExistingCategory = Readonly<{
   name: string;
   kind: Kind;
   parentId: string | null;
+  isPaycheck: boolean;
 }>;
 
 export type CategoryToCreate = Readonly<{
@@ -130,7 +131,16 @@ function resolveCategories(
       report([...at, 'kind'], `"${category.name}" is a ${kind} category.`);
       continue;
     }
-    if (existingIds.has(key)) {
+    const existingId = existingIds.get(key);
+    if (existingId !== undefined) {
+      const flag = byId.get(existingId)?.isPaycheck;
+      if (category.isPaycheck !== undefined && category.isPaycheck !== flag) {
+        report(
+          [...at, 'isPaycheck'],
+          `"${category.name}" already exists and is ${flag === true ? '' : 'not '}the paycheck category.`,
+        );
+        continue;
+      }
       matched += 1;
       continue;
     }

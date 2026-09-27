@@ -27,7 +27,10 @@ const importRoute = createRoute({
   description:
     'Applies the whole bundle in one database transaction: all of it or none of it. Items refer to each other by name. Each error names the failing item as a JSON Pointer in `errors[].path`.',
   request: {
-    body: { content: { 'application/json': { schema: bundleSchema } } },
+    body: {
+      content: { 'application/json': { schema: bundleSchema } },
+      required: true,
+    },
   },
   responses: {
     201: json(importResultSchema, 'What the import created.'),

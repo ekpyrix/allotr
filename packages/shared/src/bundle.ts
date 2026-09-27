@@ -36,7 +36,8 @@ const categorySchema = z.strictObject({
   parent: categoryNameSchema.optional(),
   /** Required for a new top-level category; a child takes its parent's. */
   kind: categoryKindSchema.optional(),
-  isPaycheck: z.boolean().default(false),
+  /** New categories default to false; a match keeps its own. */
+  isPaycheck: z.boolean().optional(),
 });
 
 const accountSchema = z.strictObject(createAccountBodySchema.shape);
