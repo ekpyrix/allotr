@@ -70,6 +70,8 @@ AGENTS.md            this file — entry point for agents
 docs/                PRD, architecture, domain, grammar
 docs/adr/            accepted Architecture Decision Records (public)
 docs/drafts/         proposals, specs, plans, scratch (git-ignored)
+packages/, apps/     workspace stubs (see target below)
+scripts/             repository tooling, e.g. the dependency-direction check
 .github/             issue forms, PR template, workflows, CODEOWNERS, dependabot
 .gitmessage          commit message template
 ```
@@ -93,12 +95,12 @@ app, and never give `core` I/O.
 
 ## Commands
 
-Available once M0 lands; until then there is no build.
+Run `corepack enable` once for pnpm. Apps are stubs until the rest of M0 lands.
 
 ```
 make dev      start server, web and gateway in watch mode
 make test     unit, property, golden and integration tests
-make lint     ESLint, Prettier check, typecheck
+make lint     ESLint, Prettier check, dependency direction, typecheck
 make build    production build and Docker image
 ```
 
