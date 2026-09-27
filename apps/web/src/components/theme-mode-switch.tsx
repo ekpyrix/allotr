@@ -19,7 +19,7 @@ export function ThemeModeSwitch({ className }: { className?: string }) {
         {THEME_MODES.map((option) => (
           <label
             key={option}
-            className="cursor-pointer rounded-sm px-2.5 py-1 text-muted-foreground transition-colors duration-(--duration-fast) has-checked:bg-plot has-checked:text-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring"
+            className="cursor-pointer rounded-sm px-2.5 py-1 text-muted-foreground transition-colors duration-(--duration-fast) has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
           >
             <input
               type="radio"

@@ -1,4 +1,5 @@
 import {
+  appearanceSchema,
   onboardingStatusSchema,
   sessionSchema,
   sessionUserSchema,
@@ -52,5 +53,16 @@ export const endpoints = {
     body: z.object({}),
     response: z.unknown(),
     openapi: false,
+  }),
+  appearance: endpoint({
+    method: 'GET',
+    path: '/v1/settings/appearance',
+    response: appearanceSchema,
+  }),
+  saveAppearance: endpoint({
+    method: 'PUT',
+    path: '/v1/settings/appearance',
+    body: appearanceSchema,
+    response: appearanceSchema,
   }),
 };

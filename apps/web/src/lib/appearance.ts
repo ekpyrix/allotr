@@ -1,15 +1,16 @@
-import { appearanceSchema, type ThemeMode } from '@allotr/shared';
+import type { ThemeMode } from '@allotr/shared';
 import { queryOptions } from '@tanstack/react-query';
-import { api } from './api.ts';
+import { call } from './api.ts';
+import { endpoints } from './endpoints.ts';
 
-export const appearanceQuery = queryOptions({
-  queryKey: ['settings', 'appearance'],
-  queryFn: () => api('/v1/settings/appearance', appearanceSchema),
-});
+/** Keyed by user, so one account's mode never shows for the next. */
+export function appearanceQuery(userId: string) {
+  return queryOptions({
+    queryKey: ['settings', 'appearance', userId],
+    queryFn: () => call(endpoints.appearance),
+  });
+}
 
 export function saveAppearance(mode: ThemeMode) {
-  return api('/v1/settings/appearance', appearanceSchema, {
-    method: 'PUT',
-    body: { mode },
-  });
+  return call(endpoints.saveAppearance, { body: { mode } });
 }

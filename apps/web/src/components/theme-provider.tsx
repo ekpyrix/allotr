@@ -37,11 +37,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [deviceMode, setDeviceMode] = useState(() =>
     readCachedMode(deviceStorage()),
   );
-  const [saveError, setSaveError] = useState(false);
   const { data: session } = useQuery(sessionQuery);
-  const signedIn = session !== null && session !== undefined;
-  const { data: stored } = useQuery({ ...appearanceQuery, enabled: signedIn });
-  const mode = signedIn && stored !== undefined ? stored.mode : deviceMode;
+  const userId = session?.user.id;
+  const account = appearanceQuery(userId ?? '');
+  const { data: stored } = useQuery({
+    ...account,
+    enabled: userId !== undefined,
+  });
+  const mode = userId !== undefined && stored ? stored.mode : deviceMode;
+  // The user whose last save failed, so the message goes with the account.
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const saveError = userId !== undefined && failedFor === userId;
 
   useEffect(() => {
     cacheMode(deviceStorage(), mode);
@@ -59,12 +65,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   function setMode(next: ThemeMode) {
     setDeviceMode(next);
-    setSaveError(false);
-    if (!signedIn) return;
-    queryClient.setQueryData(appearanceQuery.queryKey, { mode: next });
+    setFailedFor(null);
+    if (userId === undefined) return;
+    queryClient.setQueryData(account.queryKey, { mode: next });
     saveAppearance(next).catch(() => {
       // The choice still applies on this device.
-      setSaveError(true);
+      setFailedFor(userId);
     });
   }
 

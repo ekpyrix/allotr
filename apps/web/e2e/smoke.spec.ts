@@ -1,3 +1,4 @@
+import { contrastRatio } from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
@@ -10,6 +11,24 @@ async function chooseTheme(page: Page, name: 'Light' | 'Dark' | 'System') {
   const group = page.getByRole('group', { name: 'Theme' });
   await group.getByText(name, { exact: true }).click();
   await expect(group.getByRole('radio', { name })).toBeChecked();
+}
+
+function hex(rgb: string): string {
+  const channels = rgb.match(/\d+/g)?.slice(0, 3) ?? [];
+  return `#${channels.map((c) => Number(c).toString(16).padStart(2, '0')).join('')}`;
+}
+
+// axe does not check state indicators: the selected mode must stand out
+// from the page at 3:1 (WCAG 2.2 SC 1.4.11).
+async function expectVisibleSelection(page: Page) {
+  const selected = page
+    .getByRole('group', { name: 'Theme' })
+    .locator('label:has(input:checked)');
+  const [fill, page_] = await Promise.all([
+    selected.evaluate((el) => getComputedStyle(el).backgroundColor),
+    page.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor),
+  ]);
+  expect(contrastRatio(hex(fill), hex(page_))).toBeGreaterThanOrEqual(3);
 }
 
 async function expectScheme(page: Page, scheme: 'light' | 'dark') {
@@ -61,9 +80,11 @@ test('onboarding, sign-in with two-factor and Today', async ({
   await chooseTheme(page, 'Light');
   await expectScheme(page, 'light');
   await expectAccessible(page);
+  await expectVisibleSelection(page);
   await chooseTheme(page, 'Dark');
   await expectScheme(page, 'dark');
   await expectAccessible(page);
+  await expectVisibleSelection(page);
   await page.reload();
   await expectScheme(page, 'dark');
   await expect(page.getByRole('radio', { name: 'Dark' })).toBeChecked();
@@ -98,14 +119,11 @@ test('onboarding, sign-in with two-factor and Today', async ({
   await expect(page).toHaveURL(/\/sign-in$/);
   await expectAccessible(page);
 
-  // Forget this device's copy: after signing in, the account's copy
-  // must bring Dark back.
-  await page.evaluate(() => {
-    localStorage.removeItem('allotr.theme-mode');
-  });
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.reload();
+  // Signed out, without a reload: a choice stays on this device and does
+  // not try the account. Signing in again must bring the account's Dark.
+  await chooseTheme(page, 'Light');
   await expectScheme(page, 'light');
+  await expect(page.getByRole('status')).toHaveCount(0);
 
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Password').fill(account.password);
