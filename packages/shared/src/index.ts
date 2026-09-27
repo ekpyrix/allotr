@@ -13,4 +13,10 @@ export {
   type Currency,
   type CurrencyCode,
 } from './money/currency.ts';
-export { currencyCodeSchema } from './money/schemas.ts';
+export {
+  money,
+  moneyFromDecimal,
+  moneyToDecimal,
+  type Money,
+} from './money/money.ts';
+export { currencyCodeSchema, moneySchema } from './money/schemas.ts';
