@@ -60,6 +60,10 @@ transfer $100.00 from USD Card to EUR Wallet, received €91.50
 - Exchange rates are exact decimals, only used to **report** foreign amounts.
   Conversion rounds half to even at the target minor unit, once, at display
   time. A missing rate is flagged, never guessed.
+- A rate is a positive decimal string: how many units of the target
+  currency one unit of the source currency buys (`0.915` turns USD into
+  EUR). `packages/shared` is the only code that parses, formats or converts
+  money.
 
 ## Accounts and double-entry
 
