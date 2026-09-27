@@ -81,10 +81,11 @@ function activeSwitches(ledger: readonly Transaction[]): Transaction[] {
     );
 }
 
-function groupsOn(
+/** Every user account's budget group at the end of a day. */
+export function budgetGroupsOn(
   chart: Chart,
   ledger: readonly Transaction[],
-  date: LocalDate | undefined,
+  date?: LocalDate,
 ): Map<AccountId, BudgetGroup> {
   const groups = new Map<AccountId, BudgetGroup>();
   for (const account of chart.values()) {
@@ -107,7 +108,7 @@ export function budgetGroupOn(
   date?: LocalDate,
 ): BudgetGroup | null {
   accountIn(chart, id);
-  return groupsOn(chart, ledger, date).get(id) ?? null;
+  return budgetGroupsOn(chart, ledger, date).get(id) ?? null;
 }
 
 export type GroupBalances = Readonly<
@@ -124,7 +125,7 @@ export function budgetGroupBalances(
   ledger: readonly Transaction[],
   asOf?: LocalDate,
 ): GroupBalances {
-  const groups = groupsOn(chart, ledger, asOf);
+  const groups = budgetGroupsOn(chart, ledger, asOf);
   const balances = accountBalances(ledger, asOf);
   const totals = (group: BudgetGroup) =>
     new Map(

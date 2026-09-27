@@ -31,6 +31,7 @@ export {
   expense,
   income,
   opening,
+  restore,
   transfer,
   writeOff,
   type PostingDraft,
@@ -44,5 +45,6 @@ export {
   balanceOf,
   budgetGroupBalances,
   budgetGroupOn,
+  budgetGroupsOn,
   type GroupBalances,
 } from './ledger/balances.ts';
