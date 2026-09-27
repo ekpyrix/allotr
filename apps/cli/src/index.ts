@@ -1,2 +1,3 @@
-// Placeholder until this workspace gets real code in a later M0 issue.
-export const workspaceName = '@allotr/cli';
+// The CLI as a library, for tests and future commands.
+export { run, usage } from './run.ts';
+export type { CliIo } from './io.ts';
