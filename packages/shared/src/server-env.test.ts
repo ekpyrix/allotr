@@ -14,7 +14,20 @@ describe('serverEnvSchema', () => {
       ALLOTR_HOST: '127.0.0.1',
       ALLOTR_PORT: 8080,
       ALLOTR_LOG_LEVEL: 'info',
+      ALLOTR_TRUSTED_PROXIES: [],
     });
+  });
+
+  it('splits trusted proxies into addresses and ranges', () => {
+    const env = serverEnvSchema.parse({
+      ...valid,
+      ALLOTR_TRUSTED_PROXIES: '10.0.0.1, 172.16.0.0/12,fd00::/8',
+    });
+    expect(env.ALLOTR_TRUSTED_PROXIES).toEqual([
+      '10.0.0.1',
+      '172.16.0.0/12',
+      'fd00::/8',
+    ]);
   });
 
   it('coerces the port from a string', () => {
@@ -28,6 +41,10 @@ describe('serverEnvSchema', () => {
     ['a short secret key', { ALLOTR_SECRET_KEY: 'short' }],
     ['a port out of range', { ALLOTR_PORT: '70000' }],
     ['an unknown log level', { ALLOTR_LOG_LEVEL: 'loud' }],
+    [
+      'a trusted proxy that is not an address',
+      { ALLOTR_TRUSTED_PROXIES: 'proxy' },
+    ],
   ])('rejects %s', (_, override) => {
     expect(serverEnvSchema.safeParse({ ...valid, ...override }).success).toBe(
       false,

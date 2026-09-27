@@ -1,14 +1,10 @@
 import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 import { createKysely } from '../db/sqlite.ts';
-import { createLogger } from '../logger.ts';
-import { createApp } from './app.ts';
+import { createTestApp } from '../testing/app.ts';
 
 function appWith(sqlite: Database.Database) {
-  return createApp({
-    db: createKysely(sqlite),
-    logger: createLogger('silent'),
-  });
+  return createTestApp(createKysely(sqlite));
 }
 
 describe('createApp', () => {

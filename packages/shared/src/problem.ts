@@ -7,6 +7,8 @@ export const problemDetailsSchema = z.object({
   status: z.number().int().min(400).max(599),
   detail: z.string().optional(),
   instance: z.string().optional(),
+  // Stable machine-readable code for errors a client may handle.
+  code: z.string().optional(),
   errors: z
     .array(z.object({ path: z.string(), message: z.string() }))
     .optional(),

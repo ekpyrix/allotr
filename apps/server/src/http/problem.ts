@@ -22,9 +22,9 @@ export function problemBody(
   };
 }
 
-export function problem(
+export function problem<S extends ProblemStatus>(
   c: Context,
-  status: ProblemStatus,
+  status: S,
   extra?: Omit<ProblemDetails, 'type' | 'title' | 'status'>,
 ) {
   return c.json(problemBody(status, extra), status, {

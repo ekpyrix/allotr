@@ -1,60 +1,25 @@
-import { problemDetailsSchema } from '@allotr/shared';
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { sql, type Kysely } from 'kysely';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { APIError } from 'better-auth/api';
 import { HTTPException } from 'hono/http-exception';
 import { requestId } from 'hono/request-id';
 import manifest from '../../package.json' with { type: 'json' };
-import type { DB } from '../db/schema.ts';
-import type { Logger } from '../logger.ts';
-import { problem, problemBody, type ProblemStatus } from './problem.ts';
+import { AUTH_BASE_PATH } from '../auth/auth.ts';
+import { authHandler } from './auth-handler.ts';
+import { createClientIpResolver } from './client-ip.ts';
+import type { AppDeps, AppEnv } from './env.ts';
+import { requireSameOrigin, resolveClientIp } from './guards.ts';
+import { problem, type ProblemStatus } from './problem.ts';
+import { registerAccountRoutes } from './routes/accounts.ts';
+import { registerHealthRoutes } from './routes/health.ts';
+import { registerSessionRoutes } from './routes/session.ts';
 
-export interface AppDeps {
-  readonly db: Kysely<DB>;
-  readonly logger: Logger;
-}
+export type { AppDeps } from './env.ts';
 
 const probePaths = new Set(['/healthz', '/readyz']);
 
-const problemContent = {
-  'application/problem+json': { schema: problemDetailsSchema },
-};
-
-const healthRoute = createRoute({
-  method: 'get',
-  path: '/healthz',
-  summary: 'Liveness probe',
-  responses: {
-    200: {
-      description: 'The process is running.',
-      content: {
-        'application/json': { schema: z.object({ status: z.literal('ok') }) },
-      },
-    },
-  },
-});
-
-const readyRoute = createRoute({
-  method: 'get',
-  path: '/readyz',
-  summary: 'Readiness probe',
-  responses: {
-    200: {
-      description: 'Migrations are applied and the database answers.',
-      content: {
-        'application/json': {
-          schema: z.object({ status: z.literal('ready') }),
-        },
-      },
-    },
-    503: {
-      description: 'The database is not reachable.',
-      content: problemContent,
-    },
-  },
-});
-
-export function createApp({ db, logger }: AppDeps): OpenAPIHono {
-  const app = new OpenAPIHono({
+export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
+  const { logger } = deps;
+  const app = new OpenAPIHono<AppEnv>({
     defaultHook: (result, c) => {
       if (result.success) return;
       return problem(c, 400, {
@@ -83,30 +48,36 @@ export function createApp({ db, logger }: AppDeps): OpenAPIHono {
     else logger.info(entry, 'request');
   });
 
-  app.openapi(healthRoute, (c) => c.json({ status: 'ok' as const }, 200));
+  app.use(
+    '/v1/*',
+    resolveClientIp(createClientIpResolver(deps.config.trustedProxies)),
+  );
+  app.use('/v1/*', requireSameOrigin(deps.config.baseUrl));
 
-  app.openapi(readyRoute, async (c) => {
-    try {
-      await sql`SELECT 1`.execute(db);
-    } catch (error) {
-      logger.warn({ err: error }, 'readiness check failed');
-      return c.json(
-        problemBody(503, { detail: 'The database is not reachable.' }),
-        503,
-        { 'content-type': 'application/problem+json' },
-      );
-    }
-    return c.json({ status: 'ready' as const }, 200);
-  });
+  registerHealthRoutes(app, deps);
+  app.on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, authHandler(deps.auth));
+  registerAccountRoutes(app, deps);
+  registerSessionRoutes(app, deps);
 
   app.doc31('/openapi.json', {
     openapi: '3.1.0',
-    info: { title: 'Allotr API', version: manifest.version },
+    info: {
+      title: 'Allotr API',
+      version: manifest.version,
+      description: `Authentication (sign-in, two-factor, sessions) is served under ${AUTH_BASE_PATH}.`,
+    },
   });
 
   app.notFound((c) => problem(c, 404));
 
   app.onError((error, c) => {
+    if (error instanceof APIError) {
+      const { message, code } = error.body ?? {};
+      return problem(c, error.statusCode as ProblemStatus, {
+        ...(message === undefined ? {} : { detail: message }),
+        ...(code === undefined ? {} : { code: code.toLowerCase() }),
+      });
+    }
     if (error instanceof HTTPException && error.status < 500) {
       return problem(c, error.status as ProblemStatus);
     }
