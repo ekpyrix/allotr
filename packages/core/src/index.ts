@@ -48,3 +48,41 @@ export {
   budgetGroupsOn,
   type GroupBalances,
 } from './ledger/balances.ts';
+export {
+  billId,
+  type Bill,
+  type BillId,
+  type BillPayment,
+  type Cycle,
+  type DailyFigures,
+  type ExchangeRate,
+  type Figure,
+  type LedgerSettings,
+  type LedgerView,
+} from './projections/types.ts';
+export { cycleOn, cyclesOf } from './projections/cycles.ts';
+export {
+  availableOn,
+  dailyFigures,
+  dailyFiguresOn,
+} from './projections/daily.ts';
+export { convertOn } from './projections/rates.ts';
+export {
+  carryDeficit,
+  defaultPolicies,
+  dueDates,
+  leftoverStays,
+  reserveAtPayday,
+  type BillsStrategy,
+  type DateWindow,
+  type LeftoverStrategy,
+  type OverspendStrategy,
+  type Policies,
+  type Settlement,
+} from './projections/policies.ts';
+export {
+  cycleSnapshot,
+  type CategoryTotal,
+  type CycleSnapshot,
+  type Leftover,
+} from './projections/snapshot.ts';

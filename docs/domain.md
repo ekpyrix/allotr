@@ -85,7 +85,8 @@ User-facing accounts are assets; `receivable` and `payable` kinds hold IOUs.
 ```
 days_left        = max(1, cycle_end − today)          # today counts, payday doesn't
 available(d)     = on_budget_balance(end of d) − unpaid_reserved_bills(d)
-today_allowance  = available(yesterday) / days_left
+start_of_day     = available(today) + spent_today
+today_allowance  = start_of_day / days_left
 left_today       = today_allowance − spent_today
 live_daily       = available(now) / days_left
 ```
@@ -93,9 +94,20 @@ live_daily       = available(now) / days_left
 - "Today" is the user's local calendar day (home timezone by default).
 - `today_allowance` is derived by entry date, not stored. A back-dated entry
   logged this morning corrects today's figure.
+- The start of the day counts everything dated today except spending, so a
+  paycheck that lands today is in today's allowance.
+- `spent_today` is the on-budget side of today's entries that reach an
+  Expenses account, less any undo. Moving money to savings lowers the
+  allowance itself instead.
 - Overspending today lowers tomorrow's allowance automatically.
-- Accounts in other currencies are converted to the default currency at the
-  configured rate.
+- Daily figures round down, so they never promise more than is there; the
+  spare minor units show up in later days.
+- Accounts and bills in other currencies are converted to the default
+  currency, each currency's total once, with the latest rate dated on or
+  before the day (quoted either way round). A currency without a rate is
+  left out and flagged.
+- A bill is reserved from the day its cycle opens until the day it is
+  paid; payments name the due date they settle.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 
@@ -104,12 +116,18 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 - A transaction in a *paycheck* income category opens a new cycle and closes
   the previous one with a snapshot (opening balances, income, allocation,
   spending by category, leftover, savings net change).
-- `cycle_end` is the next occurrence of the configured payday (day of month),
-  overridable at any time. If payday passes without a paycheck, the cycle
-  extends day by day and shows "payday overdue".
+- `cycle_end` is the next occurrence of the configured payday (day of month;
+  shorter months use their last day), overridable at any time. From payday
+  on, until a paycheck arrives, the cycle extends day by day; the day after
+  payday it shows "payday overdue".
+- A paycheck up to three days before payday opens the next cycle early; one
+  earlier in the cycle adds to it. Undoing a paycheck merges its cycle back.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.
-- The first cycle opens at onboarding from opening balances.
+- The first cycle opens at onboarding from opening balances, or with an
+  older paycheck from imported history. Back-dated spending never moves it.
+- Snapshots are computed from the ledger when read, never stored, so a
+  back-dated entry amends a closed cycle's snapshot too.
 
 ## Policies
 
