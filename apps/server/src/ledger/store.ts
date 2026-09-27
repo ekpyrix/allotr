@@ -253,6 +253,10 @@ export async function userToday(
   return localDateIn(now, tz);
 }
 
+export function newTransactionId() {
+  return transactionId(randomUUID());
+}
+
 /** Metadata for a new entry: a fresh ID and the current instant. */
 export function newEntry(
   now: Date,
@@ -260,7 +264,7 @@ export function newEntry(
   note?: string | null,
 ) {
   return {
-    id: transactionId(randomUUID()),
+    id: newTransactionId(),
     occurredOn,
     createdAt: now.toISOString(),
     note: note ?? null,
