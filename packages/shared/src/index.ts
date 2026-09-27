@@ -19,4 +19,5 @@ export {
   moneyToDecimal,
   type Money,
 } from './money/money.ts';
+export { formatMoney, type FormatMoneyOptions } from './money/format.ts';
 export { currencyCodeSchema, moneySchema } from './money/schemas.ts';
