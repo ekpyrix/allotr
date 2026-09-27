@@ -13,6 +13,8 @@ export interface AppDeps {
   readonly limits: AuthLimits;
   readonly logger: Logger;
   readonly now: () => Date;
+  /** Built web app to serve; omitted in API-only tests. */
+  readonly webDir?: string;
 }
 
 export interface AppEnv {

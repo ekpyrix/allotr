@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+/*
+ * Allotr theme tokens. The name comes from "allotment": money split into
+ * plots, each with a job. Surfaces are flat tinted plots rather than
+ * shadowed cards; ochre is reserved for today's number and focus.
+ * Contrast (WCAG 2.2): ink and muted text >= 4.5:1 on background and plot;
+ * borders, focus and the large figure >= 3:1.
+ */
+:root {
+  --background: #f3f5f2;
+  --foreground: #17302a;
+  --muted: #e3eae4;
+  --muted-foreground: #55655e;
+  --plot: #e3eae4;
+  --today: #b7791f;
+  --today-text: #8a5a12;
+  --over: #9c4a3c;
+  --primary: #17302a;
+  --primary-foreground: #f3f5f2;
+  --border: #c9d3cc;
+  --input: #7c8f85;
+  --ring: #b7791f;
+  --destructive: #9c4a3c;
+  --radius: 0.25rem;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1a17;
+    --foreground: #e6eee9;
+    --muted: #1b2a25;
+    --muted-foreground: #93a39b;
+    --plot: #1b2a25;
+    --today: #d9a441;
+    --today-text: #d9a441;
+    --over: #d98270;
+    --primary: #e6eee9;
+    --primary-foreground: #0f1a17;
+    --border: #2c3d37;
+    --input: #5f756b;
+    --ring: #d9a441;
+    --destructive: #d98270;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-plot: var(--plot);
+  --color-today: var(--today);
+  --color-today-text: var(--today-text);
+  --color-over: var(--over);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --radius-sm: calc(var(--radius) - 0.125rem);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.125rem);
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-feature-settings: 'tnum' 1;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

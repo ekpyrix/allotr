@@ -73,3 +73,6 @@ the projects apart.
 ## License
 
 [MIT](LICENSE)
+
+The web app bundles the Geist and Geist Mono typefaces, licensed under the
+SIL Open Font License 1.1.
