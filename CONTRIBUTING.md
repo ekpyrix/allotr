@@ -29,6 +29,27 @@ Branches flow one way: **feature → `dev` → `staging` → `main`**.
 - **Hard-to-reverse decisions need an ADR** in `docs/adr/` — data model, ledger
   rules, API contract, storage/export formats, dependencies with lock-in.
 
+## Development setup
+
+You need Node.js 24 (see `.nvmrc`), pnpm through Corepack, GNU Make and git.
+
+```sh
+corepack enable          # provides the pnpm version pinned in package.json
+make test                # installs dependencies on first run, then tests
+make lint                # ESLint, Prettier, dependency direction, typecheck
+make dev                 # watch mode
+make build               # production build
+make format              # apply Prettier
+```
+
+If `corepack enable` cannot write to a system directory, use
+`corepack enable --install-directory ~/.local/bin pnpm`.
+
+The workspace is a pnpm monorepo run by Turborepo. Dependencies point one way:
+`apps/* → packages/parser → packages/core → packages/shared`. Apps never
+import from each other, and `packages/*` never do I/O; `make lint` checks
+both.
+
 ## Commit messages — Conventional Commits
 
 ```

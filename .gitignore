@@ -16,3 +16,10 @@ docs/superpowers/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Build and tool output
+node_modules/
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
