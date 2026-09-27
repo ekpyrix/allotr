@@ -110,6 +110,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`/v1/onboarding`, first user becomes admin), single-use invites
   (`/v1/invites`), the current session (`/v1/session`) and instance settings
   (`/v1/admin/settings`: registration mode, required 2FA) are Allotr routes.
+- The ledger is served under `/v1/accounts`, `/v1/categories` and
+  `/v1/tags`. Every query is scoped to the signed-in user, and another
+  user's rows answer 404. Domain errors from `core` and `shared` become
+  problem details whose `code` is the error code without its namespace
+  (`ledger.unbalanced` → `unbalanced`).
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`

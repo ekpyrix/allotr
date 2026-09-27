@@ -31,6 +31,7 @@ export {
   expense,
   income,
   opening,
+  restore,
   transfer,
   writeOff,
   type PostingDraft,

@@ -6,13 +6,17 @@ import { secureHeaders } from 'hono/secure-headers';
 import manifest from '../../package.json' with { type: 'json' };
 import { AUTH_BASE_PATH } from '../auth/auth.ts';
 import { authHandler } from './auth-handler.ts';
+import { domainProblem, isDomainError } from './domain-errors.ts';
 import { createClientIpResolver } from './client-ip.ts';
 import type { AppDeps, AppEnv } from './env.ts';
 import { requireSameOrigin, resolveClientIp } from './guards.ts';
 import { problem, type ProblemStatus } from './problem.ts';
-import { registerAccountRoutes } from './routes/accounts.ts';
+import { registerLedgerAccountRoutes } from './routes/accounts.ts';
+import { registerCategoryRoutes } from './routes/categories.ts';
+import { registerOnboardingRoutes } from './routes/onboarding.ts';
 import { registerHealthRoutes } from './routes/health.ts';
 import { registerSessionRoutes } from './routes/session.ts';
+import { registerTagRoutes } from './routes/tags.ts';
 import { registerWebApp } from './web.ts';
 
 export type { AppDeps } from './env.ts';
@@ -78,8 +82,11 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
 
   registerHealthRoutes(app, deps);
   app.on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, authHandler(deps.auth));
-  registerAccountRoutes(app, deps);
+  registerOnboardingRoutes(app, deps);
   registerSessionRoutes(app, deps);
+  registerLedgerAccountRoutes(app, deps);
+  registerCategoryRoutes(app, deps);
+  registerTagRoutes(app, deps);
 
   app.doc31('/openapi.json', {
     openapi: '3.1.0',
@@ -106,6 +113,15 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
         ...(message === undefined ? {} : { detail: message }),
         ...(code === undefined ? {} : { code: code.toLowerCase() }),
       });
+    }
+    if (isDomainError(error)) {
+      if (error.code === 'ledger.missing_system_account') {
+        logger.error(
+          { err: error, requestId: c.get('requestId') },
+          'ledger error',
+        );
+      }
+      return domainProblem(c, error);
     }
     if (error instanceof HTTPException && error.status < 500) {
       return problem(c, error.status as ProblemStatus);

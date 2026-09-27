@@ -7,6 +7,7 @@ import {
   expense,
   income,
   opening,
+  restore,
   transfer,
   writeOff,
 } from './build.ts';
@@ -376,5 +377,45 @@ describe('budgetSwitch', () => {
         }),
       ),
     ).toBe('ledger.not_a_user_account');
+  });
+});
+
+describe('restore', () => {
+  const draft = {
+    meta: meta(),
+    kind: 'expense' as const,
+    categoryId: food,
+    postings: [
+      { accountId: accountId('old-USD'), amount: money(-100, 'USD') },
+      {
+        accountId: accountId('expenses-USD'),
+        amount: money(100, 'USD'),
+        categoryId: food,
+      },
+    ],
+  };
+
+  it('rebuilds a stored entry on an account archived since', () => {
+    expect(errorCode(() => commit(chart, draft))).toBe(
+      'ledger.account_archived',
+    );
+    const restored = restore(chart, draft);
+    expect(Object.isFrozen(restored)).toBe(true);
+    expect(restored.postings).toHaveLength(2);
+  });
+
+  it('still checks that the postings balance', () => {
+    const [first, second] = draft.postings;
+    expect(
+      errorCode(() =>
+        restore(chart, {
+          ...draft,
+          postings: [
+            first,
+            second && { ...second, amount: money(99, 'USD') },
+          ].filter((p) => p !== undefined),
+        }),
+      ),
+    ).toBe('ledger.unbalanced');
   });
 });

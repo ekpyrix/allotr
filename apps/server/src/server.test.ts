@@ -49,7 +49,7 @@ describe('server on a temporary database', () => {
     expect(await response.json()).toEqual({ status: 'ready' });
   });
 
-  it('serves an OpenAPI 3.1 document listing the health routes', async () => {
+  it('serves an OpenAPI 3.1 document listing the routes', async () => {
     const response = await get('/openapi.json');
     expect(response.status).toBe(200);
     const document = (await response.json()) as {
@@ -58,7 +58,17 @@ describe('server on a temporary database', () => {
     };
     expect(document.openapi).toBe('3.1.0');
     expect(Object.keys(document.paths)).toEqual(
-      expect.arrayContaining(['/healthz', '/readyz']),
+      expect.arrayContaining([
+        '/healthz',
+        '/readyz',
+        '/v1/accounts',
+        '/v1/accounts/{id}',
+        '/v1/accounts/{id}/archive',
+        '/v1/categories',
+        '/v1/categories/{id}',
+        '/v1/tags',
+        '/v1/tags/{id}',
+      ]),
     );
   });
 

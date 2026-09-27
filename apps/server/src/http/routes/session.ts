@@ -17,7 +17,7 @@ import {
 const sessionRoute = createRoute({
   method: 'get',
   path: '/v1/session',
-  tags: ['Accounts'],
+  tags: ['Users'],
   summary: 'The signed-in user',
   description:
     'Also answers for users who still have to enrol in required two-factor authentication, so the client can send them to enrolment.',

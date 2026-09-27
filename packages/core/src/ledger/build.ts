@@ -41,6 +41,22 @@ export type TransactionDraft = Readonly<{
  * transaction. Every way of creating a transaction ends here.
  */
 export function commit(chart: Chart, draft: TransactionDraft): Transaction {
+  return checked(chart, draft, { allowArchived: false });
+}
+
+/**
+ * Rebuilds a stored transaction with the same checks, except that its
+ * accounts may have been archived since it was committed.
+ */
+export function restore(chart: Chart, draft: TransactionDraft): Transaction {
+  return checked(chart, draft, { allowArchived: true });
+}
+
+function checked(
+  chart: Chart,
+  draft: TransactionDraft,
+  options: { allowArchived: boolean },
+): Transaction {
   if (
     (draft.kind === 'reversal') !== (draft.reversesId != null) ||
     (draft.kind === 'budget_switch') !== (draft.budgetSwitch != null)
@@ -71,7 +87,7 @@ export function commit(chart: Chart, draft: TransactionDraft): Transaction {
   const postings = draft.postings.map((draftPosting): Posting => {
     const { accountId, amount } = draftPosting;
     const account = accountIn(chart, accountId);
-    if (account.archived) {
+    if (account.archived && !options.allowArchived) {
       throw new LedgerError(
         'ledger.account_archived',
         `Account ${accountId} is archived.`,
