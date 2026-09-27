@@ -12,7 +12,7 @@
     "build": "turbo run build",
     "test": "turbo run test && vitest run --dir scripts",
     "typecheck": "turbo run typecheck && tsc -p scripts",
-    "lint": "eslint . && prettier --check . && node scripts/check-workspace-deps.ts && pnpm run typecheck",
+    "lint": "eslint . && prettier --check . && node scripts/check-workspace-deps.ts && pnpm --filter @allotr/server db:verify && pnpm run typecheck",
     "format": "prettier --write ."
   },
   "devDependencies": {

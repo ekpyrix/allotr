@@ -123,7 +123,7 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 
 | Source | Holds |
 |---|---|
-| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, ports, trusted proxies, `ALLOTR_ROLE` |
+| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, trusted proxies, `ALLOTR_ROLE` (documented in `.env.example`) |
 | Admin UI (stored in the database) | Everything else: gateways, AI, exchange rates, OIDC, registration, notifications |
 | Per-user settings | Policies, defaults, locale, timezone, currency, themes |
 

@@ -35,6 +35,7 @@ You need Node.js 24 (see `.nvmrc`), pnpm through Corepack, GNU Make and git.
 
 ```sh
 corepack enable          # provides the pnpm version pinned in package.json
+cp .env.example .env     # local configuration; never commit .env
 make test                # installs dependencies on first run, then tests
 make lint                # ESLint, Prettier, dependency direction, typecheck
 make dev                 # watch mode
