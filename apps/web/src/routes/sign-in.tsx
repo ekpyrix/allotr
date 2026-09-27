@@ -56,10 +56,12 @@ export function SignInPage({ next }: { next: ShellPath }) {
     });
   }
 
+  // Keyed forms remount per step, so the password step's inputs and submit
+  // button are not reused (and transitioned) as the code step's elements.
   if (step === 'code') {
     return (
       <AuthLayout title={t('signIn.codeTitle')} intro={t('signIn.codeIntro')}>
-        <form className="grid gap-5" onSubmit={submitCode}>
+        <form key="code" className="grid gap-5" onSubmit={submitCode}>
           <Field
             label={t('signIn.code')}
             name="code"
@@ -92,7 +94,7 @@ export function SignInPage({ next }: { next: ShellPath }) {
 
   return (
     <AuthLayout title={t('signIn.title')}>
-      <form className="grid gap-5" onSubmit={submitPassword}>
+      <form key="password" className="grid gap-5" onSubmit={submitPassword}>
         <Field
           label={t('signIn.email')}
           name="email"
