@@ -198,6 +198,12 @@ The import holds the database's write lock while it runs, roughly a second
 per thousand transactions, so a bundle near the limit takes tens of seconds;
 allow for that in a reverse proxy's timeout.
 
+The CLI posts a bundle for you:
+`allotr import <file.json> --server <url> [--email <address>]` checks the
+file first, then asks for the password and, when two-factor is on, the
+authenticator code, and signs out when done. It only prompts in an
+interactive terminal.
+
 ## 6. Data
 
 - One SQLite file per instance; every user-owned row carries `user_id`.
@@ -259,6 +265,6 @@ allotr/
 | Property | Random transaction sequences never break invariants | fast-check |
 | Golden | Grammar input → expected JSON | Vitest file snapshots |
 | Integration | API + SQLite + migrations | Vitest |
-| End-to-end replay | Synthetic month imported → expected balances | CLI + fixtures |
+| End-to-end replay | Synthetic ledgers imported, then timed undo, edit and back-dated steps → expected balances and today's figures | Vitest + `testdata/synthetic/` |
 | UI | Key views at phone, tablet, desktop and kiosk sizes; accessibility checks | Playwright |
 | LLM eval | Field-level accuracy per model (nightly) | Custom harness |
