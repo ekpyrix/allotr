@@ -5,17 +5,29 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/main.ts",
+    "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
+    "start": "node src/main.ts",
     "typecheck": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:codegen": "node scripts/codegen.ts",
+    "db:verify": "node scripts/codegen.ts --verify"
   },
   "dependencies": {
     "@allotr/core": "workspace:*",
     "@allotr/parser": "workspace:*",
-    "@allotr/shared": "workspace:*"
+    "@allotr/shared": "workspace:*",
+    "@hono/node-server": "2.1.1",
+    "@hono/zod-openapi": "1.6.3",
+    "better-sqlite3": "12.11.1",
+    "hono": "4.13.9",
+    "kysely": "0.29.6",
+    "pino": "10.3.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
     "@types/node": "catalog:",
+    "kysely-codegen": "0.20.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

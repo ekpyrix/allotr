@@ -23,3 +23,6 @@ dist/
 coverage/
 .turbo/
 *.tsbuildinfo
+
+# Local development database (see .env.example)
+data/
