@@ -4,14 +4,11 @@ import { stderr, stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import { CliExit, type CliIo } from './io.ts';
 import { run } from './run.ts';
+import { applyKeys } from './secret-keys.ts';
 
 // The real terminal, files and network behind `run`. Secrets are read in
 // raw mode so they are never echoed, and never from a pipe (issue #41:
 // prompts only; scripting waits for API tokens).
-
-const CTRL_C = '\u0003';
-const CTRL_D = '\u0004';
-const BACKSPACE = ['\u007f', '\b'];
 
 async function prompt(
   question: string,
@@ -56,19 +53,14 @@ function readHidden(question: string): Promise<string> {
       stdout.write('\n');
     };
     function onData(chunk: string): void {
-      for (const char of chunk) {
-        if (char === '\r' || char === '\n') {
-          finish();
-          resolve(value);
-          return;
-        }
-        if (char === CTRL_C || (char === CTRL_D && value === '')) {
-          finish();
-          reject(new CliExit('Cancelled.', 1));
-          return;
-        }
-        if (BACKSPACE.includes(char)) value = value.slice(0, -1);
-        else value += char;
+      const typed = applyKeys(value, chunk);
+      value = typed.value;
+      if (typed.outcome === 'enter') {
+        finish();
+        resolve(value);
+      } else if (typed.outcome === 'cancel') {
+        finish();
+        reject(new CliExit('Cancelled.', 1));
       }
     }
     stdin.on('data', onData);
