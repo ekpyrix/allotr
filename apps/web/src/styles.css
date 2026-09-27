@@ -2,12 +2,18 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
 
+/* The user's choice, not the device setting, decides dark mode. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /*
  * Allotr theme tokens. The name comes from "allotment": money split into
  * plots, each with a job. Surfaces are flat tinted plots rather than
  * shadowed cards; ochre is reserved for today's number and focus.
- * Contrast (WCAG 2.2): ink and muted text >= 4.5:1 on background and plot;
- * borders, focus and the large figure >= 3:1.
+ *
+ * data-theme on <html> is always light or dark, resolved from the user's
+ * mode by public/theme-init.js before first paint and by ThemeProvider
+ * after. The values repeat lightTheme and darkTheme in @allotr/shared,
+ * whose validateTheme checks WCAG 2.2 AA; styles.test.ts fails on drift.
  */
 :root {
   --background: #f3f5f2;
@@ -18,34 +24,38 @@
   --today: #b7791f;
   --today-text: #8a5a12;
   --over: #9c4a3c;
+  --positive: #2f6b4f;
+  --negative: #9c4a3c;
   --primary: #17302a;
   --primary-foreground: #f3f5f2;
   --border: #c9d3cc;
   --input: #7c8f85;
-  --ring: #b7791f;
+  --ring: #a86f1c;
   --destructive: #9c4a3c;
   --radius: 0.25rem;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f1a17;
-    --foreground: #e6eee9;
-    --muted: #1b2a25;
-    --muted-foreground: #93a39b;
-    --plot: #1b2a25;
-    --today: #d9a441;
-    --today-text: #d9a441;
-    --over: #d98270;
-    --primary: #e6eee9;
-    --primary-foreground: #0f1a17;
-    --border: #2c3d37;
-    --input: #5f756b;
-    --ring: #d9a441;
-    --destructive: #d98270;
-    color-scheme: dark;
-  }
+:root[data-theme='dark'] {
+  --background: #0f1a17;
+  --foreground: #e6eee9;
+  --muted: #1b2a25;
+  --muted-foreground: #93a39b;
+  --plot: #1b2a25;
+  --today: #d9a441;
+  --today-text: #d9a441;
+  --over: #d98270;
+  --positive: #7fc4a0;
+  --negative: #d98270;
+  --primary: #e6eee9;
+  --primary-foreground: #0f1a17;
+  --border: #2c3d37;
+  --input: #5f756b;
+  --ring: #d9a441;
+  --destructive: #d98270;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -57,6 +67,8 @@
   --color-today: var(--today);
   --color-today-text: var(--today-text);
   --color-over: var(--over);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-border: var(--border);
@@ -82,7 +94,12 @@
   }
 }
 
+/* Transitions use var(--duration-*), so they stop here too. */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
   *,
   *::before,
   *::after {
