@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CurrencyCode } from './currency.ts';
 import type { Money } from './money.ts';
-import { currencyCodeSchema, moneySchema } from './schemas.ts';
+import type { Rate } from './rate.ts';
+import { currencyCodeSchema, moneySchema, rateSchema } from './schemas.ts';
 
 describe('currencyCodeSchema', () => {
   it('outputs a branded code', () => {
@@ -28,5 +29,16 @@ describe('moneySchema', () => {
     { amountMinor: 1250 },
   ])('rejects %j', (value) => {
     expect(moneySchema.safeParse(value).success).toBe(false);
+  });
+});
+
+describe('rateSchema', () => {
+  it('outputs a branded rate', () => {
+    const rate: Rate = rateSchema.parse('0.915');
+    expect(rate).toBe('0.915');
+  });
+
+  it.each(['0', '-1', '1e3', 0.915])('rejects %j', (value) => {
+    expect(rateSchema.safeParse(value).success).toBe(false);
   });
 });
