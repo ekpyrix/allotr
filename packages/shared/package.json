@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "fast-check": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

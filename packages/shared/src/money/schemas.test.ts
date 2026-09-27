@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CurrencyCode } from './currency.ts';
-import { currencyCodeSchema } from './schemas.ts';
+import type { Money } from './money.ts';
+import { currencyCodeSchema, moneySchema } from './schemas.ts';
 
 describe('currencyCodeSchema', () => {
   it('outputs a branded code', () => {
@@ -10,5 +11,22 @@ describe('currencyCodeSchema', () => {
 
   it.each(['usd', 'XAU', 'US', 42])('rejects %j', (value) => {
     expect(currencyCodeSchema.safeParse(value).success).toBe(false);
+  });
+});
+
+describe('moneySchema', () => {
+  it('outputs branded money', () => {
+    const m: Money = moneySchema.parse({ amountMinor: 1500, currency: 'KWD' });
+    expect(m).toEqual({ amountMinor: 1500, currency: 'KWD' });
+  });
+
+  it.each([
+    { amountMinor: 12.5, currency: 'USD' },
+    { amountMinor: 2 ** 53, currency: 'USD' },
+    { amountMinor: '1250', currency: 'USD' },
+    { amountMinor: 1250, currency: 'XAU' },
+    { amountMinor: 1250 },
+  ])('rejects %j', (value) => {
+    expect(moneySchema.safeParse(value).success).toBe(false);
   });
 });
