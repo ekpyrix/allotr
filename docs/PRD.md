@@ -107,7 +107,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-L3 | Each account has one ISO 4217 currency, fixed at creation. | M | M1 |
 | FR-L4 | Correcting or undoing an entry posts a reversal (plus a new entry for edits); nothing is deleted. | M | M1 |
 | FR-L5 | Split one transaction across several categories. | M | M2 |
-| FR-L6 | Track money owed to or by a person (IOUs) without affecting the daily number. | S | M2 |
+| FR-L6 | Track money owed to or by a person (IOUs) without affecting the daily number. | S | M7 |
 | FR-L7 | Categories: editable starter set with two levels; free-form tags. | M | M1 |
 | FR-L8 | Archive an account only at zero balance, offering a transfer or write-off. | M | M1 |
 | FR-L9 | Reconcile any account against the bank's balance, with a one-tap adjustment for the difference. | M | M2 |
@@ -135,7 +135,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-I1 | One command grammar ([grammar.md](grammar.md)) used in the web app, chat gateways and MCP. | M | M3 |
 | FR-I2 | Multi-line messages log a batch; lines without a date inherit the previous line's date. | M | M3 |
 | FR-I3 | User-editable aliases for accounts and categories. | M | M3 |
-| FR-I4 | Web quick entry parses the grammar live into editable fields. | M | M2 |
+| FR-I4 | Web quick entry: a structured form (M2), then the grammar parsed live into its editable fields (M3). | M | M2 |
 | FR-I5 | Optional chat gateways (Discord, Telegram) with the same command set; slash commands where the platform requires them. | M | M3 |
 | FR-I6 | Chat identities are linked to users with a one-time code. | M | M3 |
 | FR-I7 | Replying to a bot receipt edits or undoes that entry. | S | M3 |
@@ -159,7 +159,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-W1 | Today view: hero number, pace bar, "needs attention" items, today's entries. | M | M2 |
 | FR-W2 | Views for ledger, accounts, cycle, savings and goals, history and settings. | M | M2 |
 | FR-W3 | Responsive layouts for phone, foldable, tablet and desktop; installable PWA. | M | M2 |
-| FR-W4 | Entries made offline are queued and synced later. | S | M2 |
+| FR-W4 | Entries made offline are queued and synced later. | S | M7 |
 | FR-W5 | Light, dark and community themes; custom themes by import or editor, validated for contrast. | S | M2 |
 | FR-W6 | Read-only kiosk view and a small embeddable card, accessed with a summary-only token. | S | M6 |
 | FR-W7 | Onboarding reaches a first daily number in about three minutes. | M | M2 |
@@ -218,12 +218,12 @@ Milestones refer to [§9](#9-release-plan).
 |---|---|---|
 | **M0 Skeleton** | Monorepo, CI, image, server with SQLite, auth with 2FA, OpenAPI stub | `make dev` runs; login with 2FA works; CI green |
 | **M1 Core ledger** | Accounts, categories, transactions, currencies, cycles, daily usable, invariants, CLI import, synthetic replay | Replay matches expected balances (including multi-currency); property tests green |
-| **M2 Web app** | Today, ledger, accounts, settings, quick entry, splits, IOUs, reconcile, PWA, export, accessibility | Full manual use without chat; accessibility checks green |
+| **M2 Web app** | Today, ledger, accounts, settings, quick entry form, splits, reconcile, PWA, themes, export, account deletion, accessibility | Full manual use without chat; accessibility checks green |
 | **M3 Grammar and gateway** | Parser, gateway process, Discord, identity linking, receipts, undo, reply-to-edit | A full week logged through chat |
 | **M4 Paycheck flow** | Allocation, bills, recurring, policies, goals, FX providers | One full cycle closed by the system |
 | **M5 AI** | Provider adapter, fallback parsing, assistant, MCP, sessions, evals | Eval targets met on the chosen model |
 | **M6 Insights and notifications** | Savings rate, pace, digests, kiosk, embed, push, webhooks | Weekly digest delivered |
-| **M7 v1.0** | Telegram, OIDC hardening, backups and restore test, importers, docs site, demo | v1.0.0 tagged |
+| **M7 v1.0** | Telegram, OIDC hardening, backups and restore test, importers, docs site, demo, IOUs, offline entry queue | v1.0.0 tagged |
 
 ## 10. Risks
 
