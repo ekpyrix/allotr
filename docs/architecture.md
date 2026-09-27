@@ -127,6 +127,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
   `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
   …/payments/{dueOn}` undoes the mark.
+- `POST /v1/import` fills an empty ledger from a JSON bundle (see
+  [§5.1](#51-import-bundle)): validated as a whole, then applied in one
+  database transaction through the same writes as the API. A ledger that
+  already has accounts, entries, bills or rates is refused
+  (`ledger_not_empty`).
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`
@@ -136,6 +141,59 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - Versioning: additive changes only within `/v1`; breaking changes get a new
   major that runs alongside the old one for at least two minor releases
   ([ADR 0013](adr/0013-api-versioning.md)).
+
+### 5.1 Import bundle
+
+The native import format, version 1 (`bundleSchema` in `packages/shared`).
+Items refer to each other by name: account names, category paths (`"Fun"`,
+`"Food/Coffee"`) and tag names, all compared without case. A category that
+matches an existing one by name and parent is reused; the rest are created.
+Transactions need `occurredOn`; an account without `openedOn` opens on the
+earliest entry day. A transaction `ref` lets a bill payment link to it.
+Unknown fields are refused. Other apps' exports are converted to this
+bundle rather than imported directly.
+
+```json
+{
+  "format": "allotr.bundle",
+  "version": 1,
+  "settings": { "timeZone": "UTC", "defaultCurrency": "EUR", "paydayDay": 25 },
+  "categories": [{ "name": "Coffee", "parent": "Food" }],
+  "accounts": [
+    {
+      "name": "Wallet",
+      "currency": "EUR",
+      "openingBalance": { "amountMinor": 12000, "currency": "EUR" }
+    }
+  ],
+  "rates": [{ "base": "USD", "quote": "EUR", "rate": "0.92", "asOf": "2026-03-01" }],
+  "transactions": [
+    {
+      "kind": "expense",
+      "ref": "coffee-1",
+      "account": "Wallet",
+      "amount": { "amountMinor": 350, "currency": "EUR" },
+      "category": "Food/Coffee",
+      "occurredOn": "2026-03-02",
+      "tags": ["morning"]
+    }
+  ],
+  "bills": [
+    {
+      "name": "Phone",
+      "account": "Wallet",
+      "amount": { "amountMinor": 2500, "currency": "EUR" },
+      "dueDay": 22,
+      "payments": [{ "dueOn": "2026-03-22", "paidOn": "2026-03-21" }]
+    }
+  ]
+}
+```
+
+Errors are problem details whose `errors[].path` is a JSON Pointer into the
+bundle: `invalid_bundle`, `unsupported_bundle_version`, `invalid_reference`
+(all collected, at most 100), or the refused item's usual code while
+applying. Limits: 10 MB, 50,000 transactions, 1,000 of each other list.
 
 ## 6. Data
 
