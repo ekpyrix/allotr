@@ -161,19 +161,37 @@ are shared by all strategies.
 
 Logical model; the SQL schema lives in `migrations/`.
 
+- System accounts balance the other side of an entry: one per user, role
+  and currency (`Expenses`, `Income`, `Equity:Opening`,
+  `Equity:Conversion`). They have no budget group and are not shown as
+  accounts. The balancing posting carries the category.
+- A budget switch is a system transaction with no postings: it moves
+  `switch_account_id` into `switch_budget_group` from `occurred_on`.
+- A reversal carries the date of the transaction it reverses, so figures
+  for past days are corrected as well.
+- A merged category keeps its row with `merged_into_id` set, so committed
+  transactions never change.
+- New users get the starter categories as ordinary rows: Food (Groceries,
+  Eating out), Transport, Housing (Rent, Utilities), Bills and
+  subscriptions, Health, Shopping, Fun, Other; Paycheck (the paycheck
+  category) and Other income.
+
 ```
-users(id, display_name, locale, tz, default_currency, created_at)
+users(id, name, locale, tz, default_currency, created_at)
 api_tokens(id, user_id, name, scopes[], hash, last_used_at)
 identities(id, user_id, platform, platform_user_id)
-accounts(id, user_id, name, kind[asset|liability|receivable|payable],
-         budget_group[on|off], currency, counterparty_id, archived)
+accounts(id, user_id, name, kind[asset|liability|receivable|payable|
+         expense|income|equity], system_role[expenses|income|opening|
+         conversion], budget_group[on|off], currency, counterparty_id, archived)
 categories(id, user_id, name, kind[expense|income|transfer], parent_id,
-           default_account_id, is_paycheck)
-tags(id, user_id, name) · transaction_tags(transaction_id, tag_id)
+           default_account_id, is_paycheck, merged_into_id)
+tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)
 aliases(id, user_id, alias, target_type, target_id)
-transactions(id, user_id, occurred_on, created_at, source, category_id, note,
-             reverses_id, message_id, cycle_id, fx_rate_implied)
-postings(id, transaction_id, account_id, amount_minor, currency)
+transactions(id, user_id, kind, occurred_on, created_at, source, category_id,
+             note, reverses_id, idempotency_key, message_id, cycle_id,
+             fx_rate_implied, switch_account_id, switch_budget_group)
+postings(id, user_id, transaction_id, account_id, amount_minor, currency,
+         category_id, position)
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)
 allocations(id, cycle_id, kind, amount_minor, currency)
 bills(id, user_id, name, amount_minor, currency, account_id, cadence, due_day, active)
@@ -190,5 +208,5 @@ chat_turns(id, session_id, role, content, created_at)
 assistant_notes(id, user_id, text, created_at, updated_at)
 webhooks(id, user_id, url, secret_hash, events[], active)
 push_subscriptions(id, user_id, kind, endpoint, keys)
-settings(user_id, key, value)
+user_settings(user_id, key, value)
 ```

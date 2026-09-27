@@ -27,7 +27,7 @@ export const sessionNames = {
 };
 
 export const accountNames = {
-  modelName: 'accounts',
+  modelName: 'auth_accounts',
   fields: fields([
     'accountId',
     'providerId',

@@ -10,6 +10,19 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 
 export interface Accounts {
+  archived: Generated<number>;
+  budget_group: string | null;
+  created_at: string;
+  currency: string;
+  id: string;
+  kind: string;
+  name: string;
+  system_role: string | null;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface AuthAccounts {
   access_token: string | null;
   access_token_expires_at: string | null;
   account_id: string;
@@ -22,6 +35,44 @@ export interface Accounts {
   refresh_token_expires_at: string | null;
   scope: string | null;
   updated_at: string;
+  user_id: string;
+}
+
+export interface Bills {
+  account_id: string;
+  active: Generated<number>;
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  due_day: number;
+  id: string;
+  name: string;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface Categories {
+  created_at: string;
+  default_account_id: string | null;
+  id: string;
+  is_paycheck: Generated<number>;
+  kind: string;
+  merged_into_id: string | null;
+  name: string;
+  parent_id: string | null;
+  position: Generated<number>;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface FxRates {
+  as_of: string;
+  base: string;
+  created_at: string;
+  id: string;
+  quote: string;
+  rate: string;
+  source: string;
   user_id: string;
 }
 
@@ -39,6 +90,17 @@ export interface Invites {
   token_hash: string;
   used_at: string | null;
   used_by: string | null;
+}
+
+export interface Postings {
+  account_id: string;
+  amount_minor: number;
+  category_id: string | null;
+  currency: string;
+  id: string;
+  position: number;
+  transaction_id: string;
+  user_id: string;
 }
 
 export interface SchemaMigrations {
@@ -65,6 +127,44 @@ export interface SignInFailures {
   window_started_at: string;
 }
 
+export interface StarterCategories {
+  is_paycheck: number;
+  kind: string;
+  name: string;
+  parent_name: string | null;
+  position: number;
+}
+
+export interface Tags {
+  created_at: string;
+  id: string;
+  name: string;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface Transactions {
+  category_id: string | null;
+  created_at: string;
+  fx_rate_implied: string | null;
+  id: string;
+  idempotency_key: string | null;
+  kind: string;
+  note: string | null;
+  occurred_on: string;
+  reverses_id: string | null;
+  source: string;
+  switch_account_id: string | null;
+  switch_budget_group: string | null;
+  user_id: string;
+}
+
+export interface TransactionTags {
+  tag_id: string;
+  transaction_id: string;
+  user_id: string;
+}
+
 export interface TwoFactors {
   backup_codes: string;
   failed_verification_count: Generated<number>;
@@ -77,14 +177,24 @@ export interface TwoFactors {
 
 export interface Users {
   created_at: string;
+  default_currency: Generated<string>;
   email: string;
   email_verified: Generated<number>;
   id: string;
   image: string | null;
+  locale: Generated<string>;
   name: string;
   role: Generated<string>;
   two_factor_enabled: Generated<number>;
+  tz: Generated<string>;
   updated_at: string;
+}
+
+export interface UserSettings {
+  key: string;
+  updated_at: string;
+  user_id: string;
+  value: string;
 }
 
 export interface Verifications {
@@ -98,12 +208,22 @@ export interface Verifications {
 
 export interface DB {
   accounts: Accounts;
+  auth_accounts: AuthAccounts;
+  bills: Bills;
+  categories: Categories;
+  fx_rates: FxRates;
   instance_settings: InstanceSettings;
   invites: Invites;
+  postings: Postings;
   schema_migrations: SchemaMigrations;
   sessions: Sessions;
   sign_in_failures: SignInFailures;
+  starter_categories: StarterCategories;
+  tags: Tags;
+  transaction_tags: TransactionTags;
+  transactions: Transactions;
   two_factors: TwoFactors;
+  user_settings: UserSettings;
   users: Users;
   verifications: Verifications;
 }
