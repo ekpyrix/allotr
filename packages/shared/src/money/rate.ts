@@ -62,3 +62,36 @@ export function convert(m: Money, rate: Rate, target: string): Money {
   }
   return money(Number(result), to);
 }
+
+const IMPLIED_RATE_DIGITS = 12n;
+
+/**
+ * The rate a cross-currency transfer used: units of `received.currency` per
+ * unit of `sent.currency`, to 12 significant digits, half to even. It is
+ * stored on the transaction for information only (ADR 0010).
+ */
+export function impliedRate(sent: Money, received: Money): Rate {
+  if (sent.amountMinor === 0 || received.amountMinor === 0) {
+    throw new MoneyError(
+      'rate.invalid',
+      'An implied rate needs two non-zero amounts.',
+    );
+  }
+  const numerator =
+    BigInt(Math.abs(received.amountMinor)) *
+    10n ** BigInt(minorUnit(sent.currency));
+  const denominator =
+    BigInt(Math.abs(sent.amountMinor)) *
+    10n ** BigInt(minorUnit(received.currency));
+
+  // Enough decimal places for 12 significant digits.
+  const smallest = denominator * 10n ** (IMPLIED_RATE_DIGITS - 1n);
+  let places = 0n;
+  while (numerator * 10n ** places < smallest) places += 1n;
+  const scaled = divideHalfEven(numerator * 10n ** places, denominator);
+
+  const digits = scaled.toString().padStart(Number(places) + 1, '0');
+  const integer = digits.slice(0, digits.length - Number(places));
+  const fraction = digits.slice(integer.length).replace(/0+$/, '');
+  return parseRate(fraction === '' ? integer : `${integer}.${fraction}`);
+}

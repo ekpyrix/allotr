@@ -3,6 +3,14 @@ export const workspaceName = '@allotr/shared';
 export * from './auth.ts';
 export { problemDetailsSchema, type ProblemDetails } from './problem.ts';
 export { serverEnvSchema, type ServerEnv } from './server-env.ts';
+export {
+  DateError,
+  isLocalDate,
+  localDate,
+  localDateSchema,
+  type DateErrorCode,
+  type LocalDate,
+} from './dates.ts';
 export { MoneyError, type MoneyErrorCode } from './money/errors.ts';
 export {
   currencies,
@@ -21,7 +29,13 @@ export {
 } from './money/money.ts';
 export { formatMoney, type FormatMoneyOptions } from './money/format.ts';
 export { parseMoney } from './money/parse.ts';
-export { convert, isRate, parseRate, type Rate } from './money/rate.ts';
+export {
+  convert,
+  impliedRate,
+  isRate,
+  parseRate,
+  type Rate,
+} from './money/rate.ts';
 export {
   currencyCodeSchema,
   moneySchema,
