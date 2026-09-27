@@ -68,6 +68,10 @@ describe('server on a temporary database', () => {
         '/v1/categories/{id}',
         '/v1/tags',
         '/v1/tags/{id}',
+        '/v1/transactions',
+        '/v1/transactions/{id}',
+        '/v1/transactions/{id}/reverse',
+        '/v1/transactions/{id}/edit',
       ]),
     );
   });

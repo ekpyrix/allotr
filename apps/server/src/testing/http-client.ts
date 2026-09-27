@@ -11,9 +11,14 @@ export interface TestClient {
     path: string,
     body?: unknown,
     originOverride?: string,
+    headers?: Readonly<Record<string, string>>,
   ): Promise<TestResponse>;
   get(path: string): Promise<TestResponse>;
-  post(path: string, body?: unknown): Promise<TestResponse>;
+  post(
+    path: string,
+    body?: unknown,
+    headers?: Readonly<Record<string, string>>,
+  ): Promise<TestResponse>;
   patch(path: string, body?: unknown): Promise<TestResponse>;
   delete(path: string): Promise<TestResponse>;
 }
@@ -30,9 +35,11 @@ export function createClient(
     path: string,
     body?: unknown,
     originOverride?: string,
+    requestHeaders: Readonly<Record<string, string>> = {},
   ): Promise<TestResponse> {
     const headers = new Headers({
       ...extraHeaders,
+      ...requestHeaders,
       origin: originOverride ?? origin,
     });
     if (body !== undefined) headers.set('content-type', 'application/json');
@@ -66,7 +73,8 @@ export function createClient(
   return {
     request,
     get: (path) => request('GET', path),
-    post: (path, body) => request('POST', path, body ?? {}),
+    post: (path, body, headers) =>
+      request('POST', path, body ?? {}, undefined, headers),
     patch: (path, body) => request('PATCH', path, body ?? {}),
     delete: (path) => request('DELETE', path),
   };
