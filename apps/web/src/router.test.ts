@@ -1,0 +1,18 @@
+import { QueryClient } from '@tanstack/react-query';
+import { describe, expect, it } from 'vitest';
+import { publicPaths, shellPaths } from './lib/redirect.ts';
+import { createAppRouter } from './router.tsx';
+
+// Every signed-in route must be in shellPaths, which the shell E2E test
+// visits with axe (NFR-8). Add new views to nav-items.ts or extraShellPaths.
+describe('route tree', () => {
+  it('lists every signed-in route for the accessibility checks', () => {
+    const router = createAppRouter(new QueryClient());
+    const routed = Object.keys(router.routesByPath).filter(
+      (path) =>
+        path.startsWith('/') &&
+        !(publicPaths as readonly string[]).includes(path),
+    );
+    expect(new Set(routed)).toEqual(new Set(shellPaths));
+  });
+});

@@ -5,10 +5,11 @@ import { AuthLayout } from '@/components/auth-layout';
 import { Field, FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/problem';
+import type { ShellPath } from '@/lib/redirect';
 import { textField } from '@/lib/form';
 import { signIn, verifyTotp } from '@/lib/session';
 
-export function SignInPage() {
+export function SignInPage({ next }: { next: ShellPath }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<'password' | 'code'>('password');
@@ -17,7 +18,7 @@ export function SignInPage() {
 
   async function finish() {
     await queryClient.invalidateQueries();
-    await navigate({ to: '/today' });
+    await navigate({ to: next });
   }
 
   async function run(action: () => Promise<void>) {
