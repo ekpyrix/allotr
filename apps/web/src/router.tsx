@@ -68,12 +68,13 @@ const onboardingRoute = createRoute({
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
+  // Always return the key: the router merges raw search params underneath,
+  // so leaving it out would let an unchecked `redirect` through.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { redirect?: ShellPath } => {
-    const target = safeRedirect(search.redirect);
-    return target === undefined ? {} : { redirect: target };
-  },
+  ): { redirect?: ShellPath | undefined } => ({
+    redirect: safeRedirect(search.redirect),
+  }),
   beforeLoad: only('/sign-in'),
   component: function SignIn() {
     const { redirect: target } = signInRoute.useSearch();

@@ -16,3 +16,23 @@ describe('route tree', () => {
     expect(new Set(routed)).toEqual(new Set(shellPaths));
   });
 });
+
+describe('sign-in redirect', () => {
+  // The router merges raw search params under each route's validated ones,
+  // so this checks what the sign-in route really receives.
+  function signInSearch(redirect: string) {
+    const router = createAppRouter(new QueryClient());
+    const match = router
+      .matchRoutes('/sign-in', { redirect })
+      .find((m) => m.routeId === '/sign-in');
+    return match?.routeId === '/sign-in' ? match.search : undefined;
+  }
+
+  it('keeps a known route', () => {
+    expect(signInSearch('/accounts')).toEqual({ redirect: '/accounts' });
+  });
+
+  it('drops a crafted target instead of passing it through', () => {
+    expect(signInSearch('//evil.example')?.redirect).toBeUndefined();
+  });
+});
