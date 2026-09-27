@@ -1,0 +1,63 @@
+// English UI text (NFR-9). Other locales will mirror these keys. Plural
+// messages are { one, other } objects chosen by `count`.
+export const en = {
+  app: { name: 'Allotr' },
+  nav: {
+    label: 'Main',
+    skip: 'Skip to content',
+    today: 'Today',
+    ledger: 'Ledger',
+    accounts: 'Accounts',
+    settings: 'Settings',
+  },
+  shell: {
+    twoFactorRequired:
+      'This instance requires two-factor authentication for your account. Setting it up from the web app arrives in a later release; ask your administrator in the meantime.',
+  },
+  today: {
+    title: 'Left today',
+    noFigure: 'No figure yet',
+    greeting:
+      'Hello {name}. Add your accounts and your next payday, and this is where you will see what you can spend today without touching savings or bill money.',
+    moneyLabel: 'Your money',
+    spendable: 'Spendable',
+    spendableHint: 'On-budget accounts count toward your daily number.',
+    bills: 'Bills set aside',
+    billsHint: 'Reserved before the daily number is worked out.',
+  },
+  ledger: {
+    title: 'Ledger',
+    placeholder: 'Your entries will be listed here.',
+  },
+  accounts: {
+    title: 'Accounts',
+    placeholder: 'Your accounts and their balances will be shown here.',
+  },
+  settings: {
+    title: 'Settings',
+    placeholder: 'Ledger, security and appearance settings will be here.',
+    signOut: 'Sign out',
+  },
+  errors: {
+    network:
+      'Allotr could not reach the server. Check your connection and try again.',
+    validationSummary: {
+      one: '{count} field needs attention.',
+      other: '{count} fields need attention.',
+    },
+    fieldProblem: '{field}: {message}',
+    notFound: 'This item no longer exists. Refresh and try again.',
+    conflict: 'This changed in the meantime. Refresh and try again.',
+    tooMany: 'Too many attempts. Wait a minute and try again.',
+    unexpected: 'The server answered {status} {title}.',
+    codes: {
+      unauthenticated: 'You are signed out. Sign in again to continue.',
+      two_factor_enrollment_required:
+        'Set up two-factor authentication before you continue.',
+      onboarding_complete: 'Allotr is already set up. Sign in instead.',
+      registration_closed: 'This instance is not accepting new accounts.',
+      origin_mismatch:
+        'This request came from another site and was refused. Open Allotr from its own address.',
+    },
+  },
+} as const;
