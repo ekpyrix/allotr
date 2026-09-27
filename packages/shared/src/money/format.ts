@@ -25,8 +25,11 @@ function formatterFor(
   let formatter = formatters.get(key);
   if (formatter === undefined) {
     const digits = minorUnit(m.currency);
+    // Only declared options: a wider object must not change the cached
+    // formatter (for example to compact notation).
     formatter = new Intl.NumberFormat(locale, {
-      ...options,
+      currencyDisplay: options.currencyDisplay ?? 'symbol',
+      signDisplay: options.signDisplay ?? 'auto',
       style: 'currency',
       currency: m.currency,
       minimumFractionDigits: digits,

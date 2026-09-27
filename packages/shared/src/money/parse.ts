@@ -21,6 +21,8 @@ const DISPLAYS = ['symbol', 'narrowSymbol', 'code', 'name'] as const;
 const SAMPLES = ['0', '1', '2', '3', '5', '11', '21', '101', '1.5', '-1'];
 const ASCII_DIGITS = '1234567890';
 const APOSTROPHES = new Set(["'", '’']);
+// Space, no-break space and narrow no-break space; never tabs or newlines.
+const SPACES = new Set([' ', '\u00a0', '\u202f']);
 
 const symbolCache = new Map<string, LocaleSymbols>();
 
@@ -102,7 +104,7 @@ function symbolsFor(locale: string, currency: CurrencyCode): LocaleSymbols {
 
 function isGroup(char: string, group: string): boolean {
   if (char === group) return true;
-  if (/\s/u.test(group)) return /\s/u.test(char);
+  if (SPACES.has(group)) return SPACES.has(char);
   return APOSTROPHES.has(group) && APOSTROPHES.has(char);
 }
 
@@ -130,24 +132,44 @@ export function parseMoney(
       `"${text}" is not an amount in ${code}.`,
     );
 
-  // Drop direction marks, then the currency's own symbol, code or name.
-  let rest = stripFormatChars(text);
-  for (const token of symbols.currencyTokens) {
-    rest = rest.split(token).join(' ');
+  // Drop direction marks. Then peel at most one sign and at most one
+  // currency symbol, code or name off either end, in whichever order the
+  // text has them ("-$12", "$-12", "CHF-1'234", "12 €").
+  let rest = stripFormatChars(text).trim();
+  let sign: boolean | undefined;
+  let hasToken = false;
+  for (let changed = true; changed;) {
+    changed = false;
+    if (sign === undefined) {
+      const first = Array.from(rest).at(0);
+      const last = Array.from(rest).at(-1);
+      if (first !== undefined && symbols.signs.has(first)) {
+        sign = symbols.signs.get(first) === true;
+        rest = rest.slice(first.length).trim();
+        changed = true;
+      } else if (last !== undefined && symbols.signs.has(last)) {
+        sign = symbols.signs.get(last) === true;
+        rest = rest.slice(0, -last.length).trim();
+        changed = true;
+      }
+    }
+    if (!hasToken) {
+      const token = symbols.currencyTokens.find(
+        (t) => rest.startsWith(t) || rest.endsWith(t),
+      );
+      if (token !== undefined) {
+        rest = (
+          rest.startsWith(token)
+            ? rest.slice(token.length)
+            : rest.slice(0, -token.length)
+        ).trim();
+        hasToken = true;
+        changed = true;
+      }
+    }
   }
-
-  // One optional sign, before or after the number.
-  let chars = Array.from(rest.trim());
-  let negative = false;
-  const first = chars.at(0);
-  const last = chars.at(-1);
-  if (first !== undefined && symbols.signs.has(first)) {
-    negative = symbols.signs.get(first) === true;
-    chars = Array.from(chars.slice(1).join('').trim());
-  } else if (last !== undefined && symbols.signs.has(last)) {
-    negative = symbols.signs.get(last) === true;
-    chars = Array.from(chars.slice(0, -1).join('').trim());
-  }
+  const negative = sign === true;
+  const chars = Array.from(rest);
 
   let normalized = '';
   for (const char of chars) {

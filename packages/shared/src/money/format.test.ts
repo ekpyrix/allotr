@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { formatMoney } from './format.ts';
+import { formatMoney, type FormatMoneyOptions } from './format.ts';
 import { money } from './money.ts';
 
 it.each([
@@ -26,4 +26,15 @@ it('passes display options through', () => {
     '12.50 US dollars',
   );
   expect(formatMoney(m, 'en-US', { signDisplay: 'always' })).toBe('+$12.50');
+});
+
+it('ignores options it does not declare', () => {
+  // A wider object type-checks; it must not leak into the cached formatter.
+  const wide = { currencyDisplay: 'code', notation: 'compact' } as const;
+  const options: FormatMoneyOptions = wide;
+  const m = money(123456789, 'CAD');
+  expect(formatMoney(m, 'en-GB', options)).toBe('CAD\u00a01,234,567.89');
+  expect(formatMoney(m, 'en-GB', { currencyDisplay: 'code' })).toBe(
+    'CAD\u00a01,234,567.89',
+  );
 });

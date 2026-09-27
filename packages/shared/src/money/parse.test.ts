@@ -91,6 +91,34 @@ describe('parseMoney', () => {
   });
 
   it.each([
+    ['1€234', 'EUR', 'fr-FR'],
+    ['12\n345', 'EUR', 'fr-FR'],
+    ['12\t345', 'EUR', 'fr-FR'],
+    ['USD12USD', 'USD', 'en-US'],
+    ['$12$', 'USD', 'en-US'],
+  ])(
+    'rejects %j: one currency token, only at either end',
+    (text, currency, locale) => {
+      expect(errorCode(() => parseMoney(text, currency, locale))).toBe(
+        'money.invalid_format',
+      );
+    },
+  );
+
+  it.each([
+    ['$-12', 'USD', 'en-US', -1200],
+    ["CHF-1'234.50", 'CHF', 'de-CH', -123450],
+    ['-ریال ۱۲', 'IRR', 'fa-IR', -1200],
+  ])(
+    'reads a sign on either side of the currency in %j',
+    (text, currency, locale, amountMinor) => {
+      expect(parseMoney(text, currency, locale)).toEqual(
+        money(amountMinor, currency),
+      );
+    },
+  );
+
+  it.each([
     ['1,5', 'USD', 'en-US'],
     ['1,23,4', 'USD', 'en-US'],
     ['12.50', 'EUR', 'de-DE'],
