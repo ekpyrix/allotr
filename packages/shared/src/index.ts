@@ -4,9 +4,13 @@ export * from './auth.ts';
 export { problemDetailsSchema, type ProblemDetails } from './problem.ts';
 export { serverEnvSchema, type ServerEnv } from './server-env.ts';
 export {
+  addDays,
   DateError,
+  daysBetween,
   isLocalDate,
   localDate,
+  localDateIn,
+  nextDayOfMonth,
   localDateSchema,
   type DateErrorCode,
   type LocalDate,
@@ -31,6 +35,7 @@ export { formatMoney, type FormatMoneyOptions } from './money/format.ts';
 export { parseMoney } from './money/parse.ts';
 export {
   convert,
+  convertInverse,
   impliedRate,
   isRate,
   parseRate,
