@@ -1,0 +1,56 @@
+{
+  "joinedOn": "2026-05-01",
+  "checkpoints": [
+    {
+      "at": "2026-05-05T12:00:00Z",
+      "today": {
+        "today": "2026-05-05",
+        "cycle": { "openedOn": "2026-05-01", "payday": "2026-05-28" },
+        "daysLeft": 23,
+        "available": { "amountMinor": 189200, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 189200, "currency": "EUR" },
+        "spentToday": { "amountMinor": 0, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 8226, "currency": "EUR" },
+        "leftToday": { "amountMinor": 8226, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 8226, "currency": "EUR" },
+        "missingRates": ["JPY"]
+      }
+    },
+    {
+      "at": "2026-05-12T18:00:00Z",
+      "today": {
+        "today": "2026-05-12",
+        "daysLeft": 16,
+        "available": { "amountMinor": 160950, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 163450, "currency": "EUR" },
+        "spentToday": { "amountMinor": 2500, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 10215, "currency": "EUR" },
+        "leftToday": { "amountMinor": 7715, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 10059, "currency": "EUR" },
+        "missingRates": []
+      }
+    },
+    {
+      "at": "2026-05-28T20:00:00Z",
+      "balances": {
+        "Current": { "amountMinor": 302500, "currency": "EUR" },
+        "Travel": { "amountMinor": 38000, "currency": "USD" },
+        "Yen cash": { "amountMinor": 6800, "currency": "JPY" },
+        "Reserve": { "amountMinor": 600000, "currency": "KWD" }
+      },
+      "today": {
+        "today": "2026-05-28",
+        "cycle": { "openedOn": "2026-05-28", "payday": "2026-06-28" },
+        "cycleEnd": "2026-06-28",
+        "daysLeft": 31,
+        "available": { "amountMinor": 340950, "currency": "EUR" },
+        "startOfDay": { "amountMinor": 340950, "currency": "EUR" },
+        "spentToday": { "amountMinor": 0, "currency": "EUR" },
+        "todayAllowance": { "amountMinor": 10998, "currency": "EUR" },
+        "leftToday": { "amountMinor": 10998, "currency": "EUR" },
+        "liveDaily": { "amountMinor": 10998, "currency": "EUR" },
+        "missingRates": []
+      }
+    }
+  ]
+}

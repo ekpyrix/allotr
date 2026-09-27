@@ -1,0 +1,84 @@
+{
+  "format": "allotr.bundle",
+  "version": 1,
+  "settings": { "timeZone": "UTC", "defaultCurrency": "EUR", "paydayDay": 28 },
+  "accounts": [
+    {
+      "name": "Current",
+      "currency": "EUR",
+      "openingBalance": { "amountMinor": 200000, "currency": "EUR" },
+      "openedOn": "2026-05-01"
+    },
+    { "name": "Travel", "currency": "USD", "openedOn": "2026-05-01" },
+    {
+      "name": "Yen cash",
+      "currency": "JPY",
+      "openingBalance": { "amountMinor": 10000, "currency": "JPY" },
+      "openedOn": "2026-05-01"
+    },
+    {
+      "name": "Reserve",
+      "currency": "KWD",
+      "budgetGroup": "off",
+      "openingBalance": { "amountMinor": 500000, "currency": "KWD" },
+      "openedOn": "2026-05-01"
+    }
+  ],
+  "rates": [
+    { "base": "USD", "quote": "EUR", "rate": "0.9", "asOf": "2026-05-01" },
+    { "base": "EUR", "quote": "JPY", "rate": "160", "asOf": "2026-05-10" },
+    { "base": "KWD", "quote": "EUR", "rate": "3", "asOf": "2026-05-01" }
+  ],
+  "transactions": [
+    {
+      "kind": "transfer",
+      "from": "Current",
+      "to": "Travel",
+      "sent": { "amountMinor": 45000, "currency": "EUR" },
+      "received": { "amountMinor": 50000, "currency": "USD" },
+      "occurredOn": "2026-05-02",
+      "note": "Card top-up"
+    },
+    {
+      "kind": "expense",
+      "account": "Travel",
+      "amount": { "amountMinor": 12000, "currency": "USD" },
+      "category": "Fun",
+      "occurredOn": "2026-05-03",
+      "note": "Museum"
+    },
+    {
+      "kind": "expense",
+      "account": "Yen cash",
+      "amount": { "amountMinor": 3200, "currency": "JPY" },
+      "category": "Food/Eating out",
+      "occurredOn": "2026-05-04",
+      "note": "Ramen"
+    },
+    {
+      "kind": "transfer",
+      "from": "Current",
+      "to": "Reserve",
+      "sent": { "amountMinor": 30000, "currency": "EUR" },
+      "received": { "amountMinor": 100000, "currency": "KWD" },
+      "occurredOn": "2026-05-12",
+      "note": "To reserve"
+    },
+    {
+      "kind": "expense",
+      "account": "Current",
+      "amount": { "amountMinor": 2500, "currency": "EUR" },
+      "category": "Food/Groceries",
+      "occurredOn": "2026-05-12",
+      "note": "Market"
+    },
+    {
+      "kind": "income",
+      "account": "Current",
+      "amount": { "amountMinor": 180000, "currency": "EUR" },
+      "category": "Paycheck",
+      "occurredOn": "2026-05-28",
+      "note": "May salary"
+    }
+  ]
+}
