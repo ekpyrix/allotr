@@ -1,0 +1,131 @@
+{
+  "joinedOn": "2026-06-01",
+  "steps": [
+    {
+      "at": "2026-06-29T02:00:00Z",
+      "post": {
+        "kind": "expense",
+        "account": "Main",
+        "amount": { "amountMinor": 12000, "currency": "JPY" },
+        "category": "Shopping",
+        "occurredOn": "2026-06-15",
+        "note": "Forgotten receipt"
+      }
+    },
+    {
+      "at": "2026-06-29T02:10:00Z",
+      "reverse": { "occurredOn": "2026-06-10", "note": "Cinema" }
+    },
+    {
+      "at": "2026-06-29T03:00:00Z",
+      "edit": {
+        "target": { "occurredOn": "2026-06-28", "note": "Supermarket" },
+        "replacement": {
+          "kind": "expense",
+          "account": "Main",
+          "amount": { "amountMinor": 4500, "currency": "JPY" },
+          "category": "Food/Eating out",
+          "occurredOn": "2026-06-28",
+          "note": "Lunch out"
+        }
+      }
+    },
+    {
+      "at": "2026-06-29T04:00:00Z",
+      "post": {
+        "kind": "expense",
+        "account": "Main",
+        "amount": { "amountMinor": 3000, "currency": "JPY" },
+        "category": "Food/Eating out",
+        "occurredOn": "2026-06-29",
+        "note": "Coffee and cake"
+      }
+    }
+  ],
+  "checkpoints": [
+    {
+      "at": "2026-06-25T16:00:00Z",
+      "today": {
+        "today": "2026-06-26",
+        "cycle": { "openedOn": "2026-06-25", "payday": "2026-07-25" },
+        "daysLeft": 29,
+        "available": { "amountMinor": 613000, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 21137, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 21137, "currency": "JPY" }
+      }
+    },
+    {
+      "at": "2026-06-29T01:00:00Z",
+      "balances": {
+        "Main": { "amountMinor": 607000, "currency": "JPY" },
+        "Savings": { "amountMinor": 1000000, "currency": "JPY" }
+      },
+      "today": {
+        "today": "2026-06-29",
+        "daysLeft": 26,
+        "available": { "amountMinor": 607000, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 23346, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 23346, "currency": "JPY" }
+      }
+    },
+    {
+      "at": "2026-06-29T02:05:00Z",
+      "balances": {
+        "Main": { "amountMinor": 595000, "currency": "JPY" },
+        "Savings": { "amountMinor": 1000000, "currency": "JPY" }
+      },
+      "today": {
+        "available": { "amountMinor": 595000, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 22884, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 22884, "currency": "JPY" }
+      }
+    },
+    {
+      "at": "2026-06-29T02:20:00Z",
+      "balances": {
+        "Main": { "amountMinor": 597000, "currency": "JPY" },
+        "Savings": { "amountMinor": 1000000, "currency": "JPY" }
+      },
+      "today": {
+        "cycle": { "openedOn": "2026-06-25", "payday": "2026-07-25" },
+        "available": { "amountMinor": 597000, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 22961, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 22961, "currency": "JPY" }
+      }
+    },
+    {
+      "at": "2026-06-29T03:10:00Z",
+      "balances": {
+        "Main": { "amountMinor": 598500, "currency": "JPY" },
+        "Savings": { "amountMinor": 1000000, "currency": "JPY" }
+      },
+      "today": {
+        "available": { "amountMinor": 598500, "currency": "JPY" },
+        "spentToday": { "amountMinor": 0, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 23019, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 23019, "currency": "JPY" }
+      }
+    },
+    {
+      "at": "2026-06-29T05:00:00Z",
+      "balances": {
+        "Main": { "amountMinor": 595500, "currency": "JPY" },
+        "Savings": { "amountMinor": 1000000, "currency": "JPY" }
+      },
+      "today": {
+        "today": "2026-06-29",
+        "cycle": { "openedOn": "2026-06-25", "payday": "2026-07-25" },
+        "cycleEnd": "2026-07-25",
+        "overdue": false,
+        "daysLeft": 26,
+        "available": { "amountMinor": 595500, "currency": "JPY" },
+        "startOfDay": { "amountMinor": 598500, "currency": "JPY" },
+        "spentToday": { "amountMinor": 3000, "currency": "JPY" },
+        "todayAllowance": { "amountMinor": 23019, "currency": "JPY" },
+        "leftToday": { "amountMinor": 20019, "currency": "JPY" },
+        "liveDaily": { "amountMinor": 22903, "currency": "JPY" },
+        "missingRates": []
+      }
+    }
+  ]
+}

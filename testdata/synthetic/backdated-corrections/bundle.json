@@ -1,0 +1,82 @@
+{
+  "format": "allotr.bundle",
+  "version": 1,
+  "settings": {
+    "timeZone": "Asia/Tokyo",
+    "defaultCurrency": "JPY",
+    "paydayDay": 25
+  },
+  "accounts": [
+    {
+      "name": "Main",
+      "currency": "JPY",
+      "openingBalance": { "amountMinor": 300000, "currency": "JPY" },
+      "openedOn": "2026-06-01"
+    },
+    {
+      "name": "Savings",
+      "currency": "JPY",
+      "budgetGroup": "off",
+      "openingBalance": { "amountMinor": 1000000, "currency": "JPY" },
+      "openedOn": "2026-06-01"
+    }
+  ],
+  "transactions": [
+    {
+      "kind": "expense",
+      "account": "Main",
+      "amount": { "amountMinor": 5000, "currency": "JPY" },
+      "category": "Food/Groceries",
+      "occurredOn": "2026-06-03",
+      "note": "Supermarket"
+    },
+    {
+      "kind": "expense",
+      "account": "Main",
+      "amount": { "amountMinor": 2000, "currency": "JPY" },
+      "category": "Fun",
+      "occurredOn": "2026-06-10",
+      "note": "Cinema"
+    },
+    {
+      "kind": "income",
+      "account": "Main",
+      "amount": { "amountMinor": 400000, "currency": "JPY" },
+      "category": "Paycheck",
+      "occurredOn": "2026-06-25",
+      "note": "June salary"
+    },
+    {
+      "kind": "expense",
+      "ref": "rent-jun",
+      "account": "Main",
+      "amount": { "amountMinor": 80000, "currency": "JPY" },
+      "category": "Housing/Rent",
+      "occurredOn": "2026-06-27",
+      "note": "June rent"
+    },
+    {
+      "kind": "expense",
+      "account": "Main",
+      "amount": { "amountMinor": 6000, "currency": "JPY" },
+      "category": "Food/Groceries",
+      "occurredOn": "2026-06-28",
+      "note": "Supermarket"
+    }
+  ],
+  "bills": [
+    {
+      "name": "Rent",
+      "account": "Main",
+      "amount": { "amountMinor": 80000, "currency": "JPY" },
+      "dueDay": 27,
+      "payments": [
+        {
+          "dueOn": "2026-06-27",
+          "paidOn": "2026-06-27",
+          "transaction": "rent-jun"
+        }
+      ]
+    }
+  ]
+}
