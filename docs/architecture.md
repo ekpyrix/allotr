@@ -118,6 +118,15 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   user's rows answer 404. Domain errors from `core` and `shared` become
   problem details whose `code` is the error code without its namespace
   (`ledger.unbalanced` → `unbalanced`).
+- `GET /v1/today` returns the daily figures (left today, today's allowance,
+  live daily, days left, cycle end, the overdue flag and currencies left out
+  for lack of a rate), computed from the ledger on every request.
+  `/v1/settings/ledger` holds the locale, time zone, default currency, payday
+  day (the 1st until set) and payday override; switching the default currency
+  changes figures, never entries. `/v1/rates` takes manual exchange rates, one
+  per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
+  `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
+  …/payments/{dueOn}` undoes the mark.
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`

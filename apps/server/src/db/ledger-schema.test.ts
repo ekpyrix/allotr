@@ -7,7 +7,8 @@ import { repoMigrations } from '../testing/database.ts';
 import { migrate } from './migrate.ts';
 import { openSqlite } from './sqlite.ts';
 
-// Integration tests for migrations/0003_ledger.sql against real SQLite.
+// Integration tests for migrations/0003_ledger.sql and
+// 0004_bill_payments.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -38,7 +39,11 @@ function migrateFrom(migrationsDir: string): readonly string[] {
 function migrationsUpTo(last: string): string {
   const target = join(dir, `migrations-${last}`);
   mkdirSync(target);
-  for (const name of ['0001_instance_settings.sql', '0002_auth.sql']) {
+  for (const name of [
+    '0001_instance_settings.sql',
+    '0002_auth.sql',
+    '0003_ledger.sql',
+  ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
   }
@@ -323,6 +328,75 @@ describe('migration 0003_ledger', () => {
         ).toBe(0);
       }
       expect(count('SELECT count(*) FROM accounts')).toBe(1);
+    });
+  });
+});
+
+describe('migration 0004_bill_payments', () => {
+  function insertBill(id: string, userId: string, accountId: string): void {
+    sqlite
+      .prepare(
+        `INSERT INTO bills
+           (id, user_id, name, amount_minor, currency, account_id, due_day, created_at, updated_at)
+         VALUES (?, ?, 'Rent', 90000, 'USD', ?, 5, ?, ?)`,
+      )
+      .run(id, userId, accountId, at, at);
+  }
+
+  const insertPayment = (
+    id: string,
+    userId: string,
+    billId: string,
+    dueOn = '2026-02-05',
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO bill_payments (id, user_id, bill_id, due_on, paid_on, created_at)
+         VALUES (?, ?, ?, ?, '2026-02-04', ?)`,
+      )
+      .run(id, userId, billId, dueOn, at);
+
+  it('applies to a database at 0003 and keeps its bills', () => {
+    migrateFrom(migrationsUpTo('0003'));
+    insertUser('u1');
+    insertAccount('card', 'u1', 'USD');
+    insertBill('b1', 'u1', 'card');
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0004_bill_payments']);
+
+    insertPayment('p1', 'u1', 'b1');
+    expect(count('SELECT count(*) FROM bill_payments')).toBe(1);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertUser('u2');
+      insertAccount('card', 'u1', 'USD');
+      insertBill('b1', 'u1', 'card');
+    });
+
+    it("settles each due date once, for the bill's own user", () => {
+      insertPayment('p1', 'u1', 'b1');
+      expect(() => insertPayment('p2', 'u1', 'b1')).toThrow(/UNIQUE/);
+      expect(() => insertPayment('p3', 'u2', 'b1', '2026-03-05')).toThrow(
+        /FOREIGN KEY/,
+      );
+      expect(() => insertPayment('p4', 'u1', 'b1', '2026-02-30')).toThrow(
+        /CHECK/,
+      );
+    });
+
+    it('goes with its bill and its user', () => {
+      insertPayment('p1', 'u1', 'b1');
+      sqlite.exec("DELETE FROM bills WHERE id = 'b1'");
+      expect(count('SELECT count(*) FROM bill_payments')).toBe(0);
+
+      insertBill('b2', 'u1', 'card');
+      insertPayment('p2', 'u1', 'b2');
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM bill_payments')).toBe(0);
     });
   });
 });

@@ -38,6 +38,16 @@ export interface AuthAccounts {
   user_id: string;
 }
 
+export interface BillPayments {
+  bill_id: string;
+  created_at: string;
+  due_on: string;
+  id: string;
+  paid_on: string;
+  transaction_id: string | null;
+  user_id: string;
+}
+
 export interface Bills {
   account_id: string;
   active: Generated<number>;
@@ -209,6 +219,7 @@ export interface Verifications {
 export interface DB {
   accounts: Accounts;
   auth_accounts: AuthAccounts;
+  bill_payments: BillPayments;
   bills: Bills;
   categories: Categories;
   fx_rates: FxRates;
