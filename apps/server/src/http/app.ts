@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { APIError } from 'better-auth/api';
 import { HTTPException } from 'hono/http-exception';
 import { requestId } from 'hono/request-id';
+import { secureHeaders } from 'hono/secure-headers';
 import manifest from '../../package.json' with { type: 'json' };
 import { AUTH_BASE_PATH } from '../auth/auth.ts';
 import { authHandler } from './auth-handler.ts';
@@ -12,6 +13,7 @@ import { problem, type ProblemStatus } from './problem.ts';
 import { registerAccountRoutes } from './routes/accounts.ts';
 import { registerHealthRoutes } from './routes/health.ts';
 import { registerSessionRoutes } from './routes/session.ts';
+import { registerWebApp } from './web.ts';
 
 export type { AppDeps } from './env.ts';
 
@@ -33,6 +35,26 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   });
 
   app.use(requestId());
+  // Strict CSP (SECURITY.md): the web build has no inline scripts or styles.
+  app.use(
+    secureHeaders({
+      contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        manifestSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+      referrerPolicy: 'no-referrer',
+      xFrameOptions: 'DENY',
+    }),
+  );
   app.use(async (c, next) => {
     const started = performance.now();
     await next();
@@ -67,6 +89,13 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
       description: `Authentication (sign-in, two-factor, sessions) is served under ${AUTH_BASE_PATH}.`,
     },
   });
+
+  if (deps.webDir !== undefined && !registerWebApp(app, deps.webDir)) {
+    logger.warn(
+      { webDir: deps.webDir },
+      'web app not built; serving the API only',
+    );
+  }
 
   app.notFound((c) => problem(c, 404));
 

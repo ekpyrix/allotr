@@ -37,6 +37,7 @@ You need Node.js 24 (see `.nvmrc`), pnpm through Corepack, GNU Make and git.
 corepack enable          # provides the pnpm version pinned in package.json
 cp .env.example .env     # local configuration; never commit .env
 make test                # installs dependencies on first run, then tests
+make e2e                 # browser smoke tests (Playwright, see below)
 make lint                # ESLint, Prettier, dependency direction, typecheck
 make dev                 # watch mode
 make build               # production build
@@ -51,8 +52,12 @@ The workspace is a pnpm monorepo run by Turborepo. Dependencies point one way:
 import from each other, and `packages/*` never do I/O; `make lint` checks
 both.
 
-CI runs `make lint`, `make test` and a gitleaks secret scan on every pull
-request, including stacked PRs that target another feature branch.
+`make dev` serves the web app at http://localhost:5173 and forwards `/v1` to
+the API on port 8080. Before the first `make e2e`, install the browser with
+`pnpm --filter @allotr/web exec playwright install --with-deps chromium`.
+
+CI runs `make lint`, `make test`, `make e2e` and a gitleaks secret scan on
+every pull request, including stacked PRs that target another feature branch.
 
 ## Commit messages — Conventional Commits
 

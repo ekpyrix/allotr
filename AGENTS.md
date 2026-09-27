@@ -100,6 +100,7 @@ Run `corepack enable` once for pnpm. Apps are stubs until the rest of M0 lands.
 ```
 make dev      start server, web and gateway in watch mode
 make test     unit, property, golden and integration tests
+make e2e      Playwright smoke tests at phone and desktop sizes
 make lint     ESLint, Prettier check, dependency direction, typecheck
 make build    production build and Docker image
 ```

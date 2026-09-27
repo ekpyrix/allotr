@@ -2,6 +2,7 @@
 import { builtinModules } from 'node:module';
 import eslint from '@eslint/js';
 import prettier from 'eslint-config-prettier/flat';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 const nodeBuiltins = builtinModules.flatMap((name) =>
@@ -10,7 +11,14 @@ const nodeBuiltins = builtinModules.flatMap((name) =>
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/', '**/coverage/', '**/.turbo/', 'docs/drafts/'],
+    ignores: [
+      '**/dist/',
+      '**/coverage/',
+      '**/.turbo/',
+      '**/test-results/',
+      '**/playwright-report/',
+      'docs/drafts/',
+    ],
   },
   eslint.configs.recommended,
   tseslint.configs.strictTypeChecked,
@@ -20,6 +28,25 @@ export default tseslint.config(
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+  },
+  {
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat['recommended-latest']],
+    rules: {
+      // The router's documented pattern is `throw redirect(...)`.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            {
+              from: 'package',
+              package: '@tanstack/router-core',
+              name: 'Redirect',
+            },
+          ],
+        },
+      ],
     },
   },
   {

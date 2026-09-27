@@ -1,0 +1,18 @@
+{
+  "name": "Allotr",
+  "short_name": "Allotr",
+  "description": "How much you can spend today, from spendable money only.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f2",
+  "theme_color": "#17302a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

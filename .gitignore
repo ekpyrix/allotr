@@ -23,6 +23,8 @@ dist/
 coverage/
 .turbo/
 *.tsbuildinfo
+test-results/
+playwright-report/
 
 # Local development database (see .env.example)
 data/

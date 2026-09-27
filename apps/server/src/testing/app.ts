@@ -17,10 +17,21 @@ export const testConfig: Config = {
 };
 
 // The app wired to a database, without a listening socket.
-export function createTestApp(db: Kysely<DB>) {
+export function createTestApp(
+  db: Kysely<DB>,
+  options: { webDir?: string } = {},
+) {
   const logger = createLogger('silent');
   const now = () => new Date();
   const limits = defaultAuthLimits;
   const auth = createAuth({ db, config: testConfig, limits, logger, now });
-  return createApp({ db, auth, config: testConfig, limits, logger, now });
+  return createApp({
+    db,
+    auth,
+    config: testConfig,
+    limits,
+    logger,
+    now,
+    ...(options.webDir === undefined ? {} : { webDir: options.webDir }),
+  });
 }

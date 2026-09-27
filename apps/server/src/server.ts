@@ -10,6 +10,7 @@ import { createApp } from './http/app.ts';
 import type { Logger } from './logger.ts';
 
 const repoMigrations = join(import.meta.dirname, '../../../migrations');
+const repoWebDir = join(import.meta.dirname, '../../web/dist');
 
 export interface StartOptions {
   readonly config: Config;
@@ -17,6 +18,7 @@ export interface StartOptions {
   readonly migrationsDir?: string;
   readonly now?: () => Date;
   readonly authLimits?: AuthLimits;
+  readonly webDir?: string;
 }
 
 export interface RunningServer {
@@ -57,7 +59,15 @@ export async function startServer(
 
   const db = createKysely(sqlite);
   const auth = createAuth({ db, config, limits, logger, now });
-  const app = createApp({ db, auth, config, limits, logger, now });
+  const app = createApp({
+    db,
+    auth,
+    config,
+    limits,
+    logger,
+    now,
+    webDir: options.webDir ?? repoWebDir,
+  });
   const { server, address } = await listen(app.fetch, config.host, config.port);
 
   const host =
