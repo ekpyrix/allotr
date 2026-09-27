@@ -69,5 +69,30 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Money is parsed and formatted only in packages/shared (issue #33,
+    // .agent/rules/ledger.md "Money").
+    files: [
+      'apps/**/*.{ts,tsx}',
+      'packages/core/**/*.ts',
+      'packages/parser/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "NewExpression[callee.object.name='Intl'][callee.property.name='NumberFormat']",
+          message:
+            'Format and parse money with the @allotr/shared money utilities.',
+        },
+        {
+          selector: "CallExpression[callee.property.name='toFixed']",
+          message:
+            'Format and parse money with the @allotr/shared money utilities.',
+        },
+      ],
+    },
+  },
   prettier,
 );
