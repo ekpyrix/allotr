@@ -3,10 +3,42 @@
  * Please do not edit it manually.
  */
 
+import type { ColumnType } from "kysely";
+
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
+
+export interface Accounts {
+  access_token: string | null;
+  access_token_expires_at: string | null;
+  account_id: string;
+  created_at: string;
+  id: string;
+  id_token: string | null;
+  password: string | null;
+  provider_id: string;
+  refresh_token: string | null;
+  refresh_token_expires_at: string | null;
+  scope: string | null;
+  updated_at: string;
+  user_id: string;
+}
+
 export interface InstanceSettings {
   key: string;
   updated_at: string;
   value: string;
+}
+
+export interface Invites {
+  created_at: string;
+  created_by: string;
+  expires_at: string;
+  id: string;
+  token_hash: string;
+  used_at: string | null;
+  used_by: string | null;
 }
 
 export interface SchemaMigrations {
@@ -15,7 +47,63 @@ export interface SchemaMigrations {
   version: string;
 }
 
+export interface Sessions {
+  created_at: string;
+  expires_at: string;
+  id: string;
+  ip_address: string | null;
+  token: string;
+  updated_at: string;
+  user_agent: string | null;
+  user_id: string;
+}
+
+export interface SignInFailures {
+  email: string;
+  failed_count: number;
+  locked_until: string | null;
+  window_started_at: string;
+}
+
+export interface TwoFactors {
+  backup_codes: string;
+  failed_verification_count: Generated<number>;
+  id: string;
+  locked_until: string | null;
+  secret: string;
+  user_id: string;
+  verified: number | null;
+}
+
+export interface Users {
+  created_at: string;
+  email: string;
+  email_verified: Generated<number>;
+  id: string;
+  image: string | null;
+  name: string;
+  role: Generated<string>;
+  two_factor_enabled: Generated<number>;
+  updated_at: string;
+}
+
+export interface Verifications {
+  created_at: string;
+  expires_at: string;
+  id: string;
+  identifier: string;
+  updated_at: string;
+  value: string;
+}
+
 export interface DB {
+  accounts: Accounts;
   instance_settings: InstanceSettings;
+  invites: Invites;
   schema_migrations: SchemaMigrations;
+  sessions: Sessions;
+  sign_in_failures: SignInFailures;
+  two_factors: TwoFactors;
+  users: Users;
+  verifications: Verifications;
 }

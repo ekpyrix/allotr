@@ -7,6 +7,7 @@ export interface Config {
   readonly host: string;
   readonly port: number;
   readonly logLevel: ServerEnv['ALLOTR_LOG_LEVEL'];
+  readonly trustedProxies: readonly string[];
 }
 
 export class ConfigError extends Error {
@@ -34,5 +35,6 @@ export function loadConfig(
     host: parsed.ALLOTR_HOST,
     port: parsed.ALLOTR_PORT,
     logLevel: parsed.ALLOTR_LOG_LEVEL,
+    trustedProxies: parsed.ALLOTR_TRUSTED_PROXIES,
   };
 }

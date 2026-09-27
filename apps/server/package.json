@@ -18,6 +18,7 @@
     "@allotr/shared": "workspace:*",
     "@hono/node-server": "2.1.1",
     "@hono/zod-openapi": "1.6.3",
+    "better-auth": "1.7.6",
     "better-sqlite3": "12.11.1",
     "hono": "4.13.9",
     "kysely": "0.29.6",

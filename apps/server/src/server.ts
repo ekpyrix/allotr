@@ -3,6 +3,8 @@ import { dirname, join } from 'node:path';
 import { serve, type ServerType } from '@hono/node-server';
 import type { Config } from './config.ts';
 import { migrate } from './db/migrate.ts';
+import { createAuth } from './auth/auth.ts';
+import { defaultAuthLimits, type AuthLimits } from './auth/limits.ts';
 import { createKysely, openSqlite } from './db/sqlite.ts';
 import { createApp } from './http/app.ts';
 import type { Logger } from './logger.ts';
@@ -14,6 +16,7 @@ export interface StartOptions {
   readonly logger: Logger;
   readonly migrationsDir?: string;
   readonly now?: () => Date;
+  readonly authLimits?: AuthLimits;
 }
 
 export interface RunningServer {
@@ -26,6 +29,8 @@ export async function startServer(
   options: StartOptions,
 ): Promise<RunningServer> {
   const { config, logger } = options;
+  const now = options.now ?? (() => new Date());
+  const limits = options.authLimits ?? defaultAuthLimits;
 
   const sqlite = openSqlite(config.databasePath);
   try {
@@ -34,7 +39,7 @@ export async function startServer(
       databasePath: config.databasePath,
       migrationsDir: options.migrationsDir ?? repoMigrations,
       backupDir: join(dirname(config.databasePath), 'backups'),
-      now: options.now ?? (() => new Date()),
+      now,
     });
     if (result.backupPath !== null) {
       logger.info(
@@ -51,7 +56,8 @@ export async function startServer(
   }
 
   const db = createKysely(sqlite);
-  const app = createApp({ db, logger });
+  const auth = createAuth({ db, config, limits, logger, now });
+  const app = createApp({ db, auth, config, limits, logger, now });
   const { server, address } = await listen(app.fetch, config.host, config.port);
 
   const host =

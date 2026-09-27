@@ -101,7 +101,17 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 ## 5. API
 
 - REST under `/v1`, JSON, OpenAPI 3.1 generated at `/openapi.json`.
-- Errors use RFC 9457 problem details.
+- Errors use RFC 9457 problem details, with a stable `code` member where a
+  client may act on the error.
+- Authentication ([ADR 0006](adr/0006-auth.md)) is Better Auth under
+  `/v1/auth` (sign-in, TOTP 2FA, session list and revoke). Onboarding
+  (`/v1/onboarding`, first user becomes admin), single-use invites
+  (`/v1/invites`), the current session (`/v1/session`) and instance settings
+  (`/v1/admin/settings`: registration mode, required 2FA) are Allotr routes.
+- Cookie-authenticated writes must carry the instance's `Origin`. Password
+  sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
+  2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`
+  decides when `X-Forwarded-For` is believed.
 - Live updates via Server-Sent Events at `/v1/events`.
 - MCP at `/mcp` (Streamable HTTP, bearer token).
 - Versioning: additive changes only within `/v1`; breaking changes get a new

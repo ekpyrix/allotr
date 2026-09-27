@@ -1,0 +1,53 @@
+import { z } from 'zod';
+
+// Request and response shapes for onboarding, invites and the session.
+
+export const MIN_PASSWORD_LENGTH = 12;
+export const MAX_PASSWORD_LENGTH = 128;
+
+export const registrationModeSchema = z.enum(['invite_only', 'open', 'closed']);
+export type RegistrationMode = z.infer<typeof registrationModeSchema>;
+
+export const instanceSettingsSchema = z.object({
+  registrationMode: registrationModeSchema,
+  requireTwoFactor: z.boolean(),
+});
+export type InstanceSettings = z.infer<typeof instanceSettingsSchema>;
+
+export const instanceSettingsPatchSchema = instanceSettingsSchema.partial();
+
+export const signUpBodySchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  email: z.email().max(254),
+  password: z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH),
+});
+export type SignUpBody = z.infer<typeof signUpBodySchema>;
+
+export const roleSchema = z.enum(['admin', 'user']);
+
+export const sessionUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  role: roleSchema,
+  twoFactorEnabled: z.boolean(),
+});
+export type SessionUser = z.infer<typeof sessionUserSchema>;
+
+export const sessionSchema = z.object({
+  user: sessionUserSchema,
+  twoFactorRequired: z.boolean(),
+});
+
+export const onboardingStatusSchema = z.object({ required: z.boolean() });
+
+export const createInviteBodySchema = z.object({
+  expiresInDays: z.number().int().min(1).max(30).optional(),
+});
+
+export const inviteSchema = z.object({
+  url: z.url(),
+  expiresAt: z.iso.datetime(),
+});
+
+export const inviteStatusSchema = z.object({ expiresAt: z.iso.datetime() });
