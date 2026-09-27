@@ -13,7 +13,8 @@
     "test": "turbo run test && vitest run --dir scripts",
     "typecheck": "turbo run typecheck && tsc -p scripts && tsc -p deploy",
     "lint": "eslint . && prettier --check . && node scripts/check-workspace-deps.ts && pnpm --filter @allotr/server db:verify && pnpm run typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "iso4217:refresh": "node scripts/refresh-iso4217.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
