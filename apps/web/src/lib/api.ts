@@ -1,8 +1,10 @@
 import { problemDetailsSchema, type ProblemDetails } from '@allotr/shared';
 import type { ZodType } from 'zod';
+import { fillTemplate, type Placeholders } from './template.ts';
 
 // All server calls go through here: same-origin, cookies included, JSON in
-// and out, and RFC 9457 problems turned into ApiError.
+// and out, RFC 9457 problems turned into ApiError and responses checked
+// against the shared schema.
 
 export class ApiError extends Error {
   override readonly name = 'ApiError';
@@ -18,44 +20,75 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(
-  path: string,
-  schema: ZodType<T>,
-  init: { method?: string; body?: unknown } = {},
-): Promise<T> {
-  const response = await fetch(path, {
-    method: init.method ?? 'GET',
-    credentials: 'same-origin',
-    headers:
-      init.body === undefined ? {} : { 'content-type': 'application/json' },
-    body: init.body === undefined ? null : JSON.stringify(init.body),
-  });
+/** The request never got an answer (offline, DNS, server down). */
+export class NetworkError extends Error {
+  override readonly name = 'NetworkError';
+
+  constructor(cause: unknown) {
+    super('The server could not be reached', { cause });
+  }
+}
+
+export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface Endpoint<Res, Body, Path extends string> {
+  readonly method: Method;
+  readonly path: Path;
+  readonly response: ZodType<Res>;
+  /** Only the body's type matters here; the server validates it. */
+  readonly body?: ZodType<Body>;
+  /** False for Better Auth routes, which the OpenAPI document leaves out. */
+  readonly openapi: boolean;
+}
+
+export function endpoint<const Path extends string, Res, Body = undefined>(
+  def: Omit<Endpoint<Res, Body, Path>, 'openapi'> & { openapi?: boolean },
+): Endpoint<Res, Body, Path> {
+  return { ...def, openapi: def.openapi ?? true };
+}
+
+type QueryValue = string | number | boolean | undefined;
+type ParamsInput<P extends string> = [Placeholders<P>] extends [never]
+  ? object
+  : { params: Readonly<Record<Placeholders<P>, string>> };
+type BodyInput<B> = [B] extends [undefined] ? object : { body: B };
+export type CallInput<Body, Path extends string> = ParamsInput<Path> &
+  BodyInput<Body> & { query?: Readonly<Record<string, QueryValue>> };
+type CallArgs<I> = object extends I ? [input?: I] : [input: I];
+
+export async function call<Res, Body, Path extends string>(
+  target: Endpoint<Res, Body, Path>,
+  ...[input]: CallArgs<CallInput<Body, Path>>
+): Promise<Res> {
+  const { params, body, query } = (input ?? {}) as {
+    params?: Readonly<Record<string, string>>;
+    body?: unknown;
+    query?: Readonly<Record<string, QueryValue>>;
+  };
+  let url = fillTemplate(target.path, params ?? {}, encodeURIComponent);
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query ?? {}))
+    if (value !== undefined) search.append(key, String(value));
+  if (search.size > 0) url += `?${search.toString()}`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: target.method,
+      credentials: 'same-origin',
+      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      body: body === undefined ? null : JSON.stringify(body),
+    });
+  } catch (cause) {
+    throw new NetworkError(cause);
+  }
   const payload: unknown = await response.json().catch(() => undefined);
   if (!response.ok) throw new ApiError(toProblem(response.status, payload));
-  return schema.parse(payload);
+  return target.response.parse(payload);
 }
 
 function toProblem(status: number, payload: unknown): ProblemDetails {
   const parsed = problemDetailsSchema.safeParse(payload);
   if (parsed.success) return parsed.data;
   return { type: 'about:blank', title: 'Request failed', status };
-}
-
-/** A sentence to show the user for a failed request. */
-export function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    const [first] = error.problem.errors ?? [];
-    if (first !== undefined)
-      return `${fieldLabel(first.path)}: ${first.message}`;
-    if (error.problem.detail !== undefined) return error.problem.detail;
-    if (error.status === 429)
-      return 'Too many attempts. Wait a minute and try again.';
-    return `The server answered ${String(error.status)} ${error.problem.title}.`;
-  }
-  return 'Allotr could not reach the server. Check your connection and try again.';
-}
-
-function fieldLabel(path: string): string {
-  const name = path.split('.').pop() ?? path;
-  return name.charAt(0).toUpperCase() + name.slice(1);
 }

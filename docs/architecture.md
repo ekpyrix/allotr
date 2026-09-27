@@ -102,7 +102,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 
 ## 5. API
 
-- REST under `/v1`, JSON, OpenAPI 3.1 generated at `/openapi.json`.
+- REST under `/v1`, JSON, OpenAPI 3.1 generated at `/openapi.json` and
+  committed as `docs/openapi.json` (`make lint` fails when it is stale).
 - Errors use RFC 9457 problem details, with a stable `code` member where a
   client may act on the error.
 - Authentication ([ADR 0006](adr/0006-auth.md)) is Better Auth under
@@ -266,5 +267,5 @@ allotr/
 | Golden | Grammar input → expected JSON | Vitest file snapshots |
 | Integration | API + SQLite + migrations | Vitest |
 | End-to-end replay | Synthetic ledgers imported, then timed undo, edit and back-dated steps → expected balances and today's figures | Vitest + `testdata/synthetic/` |
-| UI | Key views at phone, tablet, desktop and kiosk sizes; accessibility checks | Playwright |
+| UI | Every signed-in route at phone and desktop sizes with axe (WCAG 2.2 AA); keyboard navigation of the shell; tablet and kiosk sizes later | Playwright |
 | LLM eval | Field-level accuracy per model (nightly) | Custom harness |

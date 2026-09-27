@@ -10,7 +10,9 @@
     "typecheck": "tsc",
     "test": "vitest run",
     "db:codegen": "node scripts/codegen.ts",
-    "db:verify": "node scripts/codegen.ts --verify"
+    "db:verify": "node scripts/codegen.ts --verify",
+    "openapi:write": "node scripts/openapi.ts",
+    "openapi:verify": "node scripts/openapi.ts --verify"
   },
   "dependencies": {
     "@allotr/core": "workspace:*",

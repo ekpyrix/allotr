@@ -1,12 +1,19 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createQueryClient } from './lib/query-client.ts';
+import { sessionQuery } from './lib/session.ts';
 import { createAppRouter } from './router.tsx';
 import './styles.css';
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: false } },
+// A 401 anywhere means the session ended: forget it and let the route
+// guard send the user to sign-in.
+const queryClient = createQueryClient({
+  onUnauthorized: () => {
+    queryClient.setQueryData(sessionQuery.queryKey, null);
+    void router.invalidate();
+  },
 });
 const router = createAppRouter(queryClient);
 

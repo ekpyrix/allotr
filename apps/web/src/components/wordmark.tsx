@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { t } from '@/messages/t';
 
 export function Wordmark({ className }: { className?: string }) {
   return (
@@ -29,7 +30,9 @@ export function Wordmark({ className }: { className?: string }) {
           className="fill-foreground"
         />
       </svg>
-      <span className="text-lg font-semibold tracking-tight">Allotr</span>
+      <span className="text-lg font-semibold tracking-tight">
+        {t('app.name')}
+      </span>
     </div>
   );
 }

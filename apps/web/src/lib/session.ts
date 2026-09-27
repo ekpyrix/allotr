@@ -1,16 +1,13 @@
-import {
-  onboardingStatusSchema,
-  sessionSchema,
-  sessionUserSchema,
-  type SignUpBody,
-} from '@allotr/shared';
+import type { SignUpBody } from '@allotr/shared';
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { api, ApiError } from './api.ts';
+import { ApiError, call } from './api.ts';
+import { endpoints } from './endpoints.ts';
 
 export const onboardingQuery = queryOptions({
   queryKey: ['onboarding'],
-  queryFn: () => api('/v1/onboarding', onboardingStatusSchema),
+  queryFn: () => call(endpoints.onboardingStatus),
+  // Once the first account exists, onboarding never comes back.
+  staleTime: (query) => (query.state.data?.required === false ? Infinity : 0),
 });
 
 /** The session, or null when signed out. */
@@ -18,7 +15,7 @@ export const sessionQuery = queryOptions({
   queryKey: ['session'],
   queryFn: async () => {
     try {
-      return await api('/v1/session', sessionSchema);
+      return await call(endpoints.session);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return null;
       throw error;
@@ -26,36 +23,23 @@ export const sessionQuery = queryOptions({
   },
 });
 
-const createdUserSchema = z.object({ user: sessionUserSchema });
-
 export function createFirstAccount(body: SignUpBody) {
-  return api('/v1/onboarding', createdUserSchema, { method: 'POST', body });
+  return call(endpoints.createFirstAccount, { body });
 }
-
-const signInSchema = z.union([
-  z.object({ twoFactorRedirect: z.literal(true) }),
-  z.object({ user: z.object({ id: z.string() }) }),
-]);
 
 /** Returns 'two-factor' when a TOTP code is needed next. */
 export async function signIn(email: string, password: string) {
-  const result = await api('/v1/auth/sign-in/email', signInSchema, {
-    method: 'POST',
-    body: { email, password },
-  });
+  const result = await call(endpoints.signIn, { body: { email, password } });
   return 'twoFactorRedirect' in result
     ? ('two-factor' as const)
     : ('signed-in' as const);
 }
 
 export async function verifyTotp(code: string) {
-  await api('/v1/auth/two-factor/verify-totp', z.unknown(), {
-    method: 'POST',
-    body: { code },
-  });
+  await call(endpoints.verifyTotp, { body: { code } });
 }
 
 export async function signOut(queryClient: QueryClient) {
-  await api('/v1/auth/sign-out', z.unknown(), { method: 'POST', body: {} });
+  await call(endpoints.signOut, { body: {} });
   queryClient.clear();
 }
