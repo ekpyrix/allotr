@@ -11,9 +11,12 @@ permissions:
 jobs:
   signoff:
     name: Check sign-off
-    # Feature PRs into dev and hotfix PRs. Promotion PRs carry squash commits
-    # created by GitHub and are not checked.
-    if: github.base_ref == 'dev' || startsWith(github.head_ref, 'hotfix/')
+    # Feature PRs (into dev, or into another feature branch when stacked)
+    # and hotfix PRs. Promotion PRs into staging and main carry squash
+    # commits created by GitHub and are not checked.
+    if: >-
+      (github.base_ref != 'staging' && github.base_ref != 'main')
+      || startsWith(github.head_ref, 'hotfix/')
     runs-on: ubuntu-latest
     steps:
       - name: Every commit has Signed-off-by matching its author

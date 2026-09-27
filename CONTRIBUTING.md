@@ -50,6 +50,9 @@ The workspace is a pnpm monorepo run by Turborepo. Dependencies point one way:
 import from each other, and `packages/*` never do I/O; `make lint` checks
 both.
 
+CI runs `make lint`, `make test` and a gitleaks secret scan on every pull
+request, including stacked PRs that target another feature branch.
+
 ## Commit messages — Conventional Commits
 
 ```
