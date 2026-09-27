@@ -1,0 +1,24 @@
+# Single-container install. Copy .env.example to .env next to this file,
+# set ALLOTR_BASE_URL and ALLOTR_SECRET_KEY, then: docker compose up -d
+name: allotr
+
+services:
+  allotr:
+    image: ${ALLOTR_IMAGE:-allotr:local}
+    build:
+      context: ..
+    env_file: .env
+    ports:
+      # Loopback only by default; put a reverse proxy or VPN in front.
+      - '${ALLOTR_PUBLISH:-127.0.0.1:8080}:8080'
+    volumes:
+      - allotr-data:/data
+    restart: unless-stopped
+    stop_grace_period: 15s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  allotr-data:

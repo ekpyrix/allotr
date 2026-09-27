@@ -1,0 +1,15 @@
+#!/command/with-contenv sh
+# API, web app and scheduler. Idles when ALLOTR_ROLE=gateway.
+case "${ALLOTR_ROLE:-all}" in
+  all | server)
+    cd /app/apps/server || exit 1
+    exec node src/main.ts
+    ;;
+  gateway)
+    exec s6-pause
+    ;;
+  *)
+    echo "ALLOTR_ROLE must be all, server or gateway (got '${ALLOTR_ROLE}')" >&2
+    exec /run/s6/basedir/bin/halt
+    ;;
+esac

@@ -30,7 +30,9 @@ rules are in [domain.md](domain.md); the reasons for each choice are in the
   platform and talks to the server only through the public API.
 - **AI is a module inside the server**, disabled by default. A local model,
   if used, runs in its own container.
-- `ALLOTR_ROLE=server|gateway` runs a single role for split deployments.
+- `ALLOTR_ROLE=server|gateway` runs a single role for split deployments;
+  the default `all` runs both. The image runs as uid 1000 and keeps its
+  database and backups in the `/data` volume (`deploy/docker-compose.yml`).
 
 ## 2. Components
 
@@ -133,7 +135,7 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 
 | Source | Holds |
 |---|---|
-| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, trusted proxies, `ALLOTR_ROLE` (documented in `.env.example`) |
+| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, `ALLOTR_TRUSTED_PROXIES`, `ALLOTR_ROLE` (documented in `.env.example` and `deploy/.env.example`) |
 | Admin UI (stored in the database) | Everything else: gateways, AI, exchange rates, OIDC, registration, notifications |
 | Per-user settings | Policies, defaults, locale, timezone, currency, themes |
 
