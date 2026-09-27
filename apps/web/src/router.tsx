@@ -9,6 +9,8 @@ import {
 } from '@tanstack/react-router';
 import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
+import { LoadError } from '@/components/load-error';
+import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
 import { AccountsPage } from './routes/accounts.tsx';
@@ -26,14 +28,15 @@ interface RouterContext {
 // Where a visitor belongs: onboarding until the first account exists, then
 // sign-in, then Today.
 async function destination(queryClient: QueryClient) {
-  const { required } = await queryClient.query(onboardingQuery);
+  const { required } = await queryOrCached(queryClient, onboardingQuery);
   if (required) return '/onboarding' as const;
-  const session = await queryClient.query(sessionQuery);
+  const session = await queryOrCached(queryClient, sessionQuery);
   return session === null ? ('/sign-in' as const) : ('/today' as const);
 }
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
+  errorComponent: LoadError,
   notFoundComponent: () => (
     <AuthLayout title={t('notFound.title')} intro={t('notFound.intro')}>
       <Link to="/" className="font-medium underline underline-offset-4">
@@ -88,9 +91,10 @@ const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_app',
   beforeLoad: async ({ context, location }) => {
-    const { required } = await context.queryClient.query(onboardingQuery);
+    const { queryClient } = context;
+    const { required } = await queryOrCached(queryClient, onboardingQuery);
     if (required) throw redirect({ to: '/onboarding' });
-    const session = await context.queryClient.query(sessionQuery);
+    const session = await queryOrCached(queryClient, sessionQuery);
     if (session === null) {
       const target = safeRedirect(location.pathname);
       throw redirect({

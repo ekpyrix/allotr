@@ -6,6 +6,8 @@ import { endpoints } from './endpoints.ts';
 export const onboardingQuery = queryOptions({
   queryKey: ['onboarding'],
   queryFn: () => call(endpoints.onboardingStatus),
+  // Once the first account exists, onboarding never comes back.
+  staleTime: (query) => (query.state.data?.required === false ? Infinity : 0),
 });
 
 /** The session, or null when signed out. */

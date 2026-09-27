@@ -69,6 +69,8 @@ export const en = {
     signOut: 'Sign out',
   },
   errors: {
+    pageTitle: 'This page could not load',
+    retry: 'Try again',
     network:
       'Allotr could not reach the server. Check your connection and try again.',
     validationSummary: {

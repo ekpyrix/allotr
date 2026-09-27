@@ -70,6 +70,27 @@ test('every route is reachable from the nav and accessible', async ({
   }
 });
 
+test('a failed session check offers a retry instead of a dead end', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  await page.route('**/v1/session', (route) => route.abort());
+  await page.goto('/ledger');
+  // Reads retry twice with backoff before the error shows.
+  await expect(
+    page.getByRole('heading', { name: t('errors.pageTitle') }),
+  ).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(t('errors.network'))).toBeVisible();
+  await expectAccessible(page);
+
+  await page.unroute('**/v1/session');
+  await page.getByRole('button', { name: t('errors.retry') }).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: t('ledger.title') }),
+  ).toBeVisible();
+});
+
 test('signed-in routes outside the nav are accessible', async ({
   page,
   baseURL,

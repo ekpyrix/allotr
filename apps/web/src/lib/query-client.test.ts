@@ -1,6 +1,11 @@
+import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, NetworkError } from './api.ts';
-import { createQueryClient, shouldRetry } from './query-client.ts';
+import {
+  createQueryClient,
+  queryOrCached,
+  shouldRetry,
+} from './query-client.ts';
 
 const problem = (status: number) =>
   new ApiError({ type: 'about:blank', title: 'T', status });
@@ -50,5 +55,48 @@ describe('createQueryClient', () => {
       .catch(() => undefined);
     expect(mutationFn).toHaveBeenCalledTimes(1);
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+});
+
+describe('queryOrCached', () => {
+  const options = {
+    queryKey: ['thing'],
+    queryFn: () => Promise.reject(new NetworkError(null)),
+    staleTime: 0,
+    retry: false,
+  } as const;
+
+  it('keeps the cached value when a refetch cannot reach the server', async () => {
+    const client = new QueryClient();
+    client.setQueryData(['thing'], 'cached', { updatedAt: 0 });
+    await expect(queryOrCached(client, options)).resolves.toBe('cached');
+  });
+
+  it('keeps the cached value when the server fails', async () => {
+    const client = new QueryClient();
+    client.setQueryData(['thing'], 'cached', { updatedAt: 0 });
+    await expect(
+      queryOrCached(client, {
+        ...options,
+        queryFn: () => Promise.reject(problem(503)),
+      }),
+    ).resolves.toBe('cached');
+  });
+
+  it('rethrows a 401 even with a cached value', async () => {
+    const client = new QueryClient();
+    client.setQueryData(['thing'], 'cached', { updatedAt: 0 });
+    await expect(
+      queryOrCached(client, {
+        ...options,
+        queryFn: () => Promise.reject(problem(401)),
+      }),
+    ).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it('rethrows when nothing is cached', async () => {
+    await expect(
+      queryOrCached(new QueryClient(), options),
+    ).rejects.toBeInstanceOf(NetworkError);
   });
 });
