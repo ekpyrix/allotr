@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/problem';
 import { textField } from '@/lib/form';
 import { createFirstAccount } from '@/lib/session';
+import { t } from '@/messages/t';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -35,37 +36,34 @@ export function OnboardingPage() {
   }
 
   return (
-    <AuthLayout
-      title="Set up Allotr"
-      intro="This first account runs the instance. You can invite others once you are in."
-    >
+    <AuthLayout title={t('onboarding.title')} intro={t('onboarding.intro')}>
       <form className="grid gap-5" onSubmit={(event) => void submit(event)}>
         <Field
-          label="Name"
+          label={t('onboarding.name')}
           name="name"
           autoComplete="name"
           required
           maxLength={100}
         />
         <Field
-          label="Email"
+          label={t('onboarding.email')}
           name="email"
           type="email"
           autoComplete="email"
           required
         />
         <Field
-          label="Password"
+          label={t('onboarding.password')}
           name="password"
           type="password"
           autoComplete="new-password"
           required
           minLength={MIN_PASSWORD_LENGTH}
-          hint={`At least ${String(MIN_PASSWORD_LENGTH)} characters.`}
+          hint={t('onboarding.passwordHint', { min: MIN_PASSWORD_LENGTH })}
         />
         <FormError message={error} />
         <Button type="submit" size="lg" className="h-11" disabled={pending}>
-          {pending ? 'Creating account…' : 'Create account'}
+          {pending ? t('onboarding.submitting') : t('onboarding.submit')}
         </Button>
       </form>
     </AuthLayout>

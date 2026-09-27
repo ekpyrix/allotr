@@ -8,6 +8,7 @@ import { errorMessage } from '@/lib/problem';
 import type { ShellPath } from '@/lib/redirect';
 import { textField } from '@/lib/form';
 import { signIn, verifyTotp } from '@/lib/session';
+import { t } from '@/messages/t';
 
 export function SignInPage({ next }: { next: ShellPath }) {
   const navigate = useNavigate();
@@ -57,13 +58,10 @@ export function SignInPage({ next }: { next: ShellPath }) {
 
   if (step === 'code') {
     return (
-      <AuthLayout
-        title="Enter your code"
-        intro="Open your authenticator app and enter the 6-digit code for Allotr."
-      >
+      <AuthLayout title={t('signIn.codeTitle')} intro={t('signIn.codeIntro')}>
         <form className="grid gap-5" onSubmit={submitCode}>
           <Field
-            label="Code"
+            label={t('signIn.code')}
             name="code"
             inputMode="numeric"
             autoComplete="one-time-code"
@@ -74,7 +72,7 @@ export function SignInPage({ next }: { next: ShellPath }) {
           />
           <FormError message={error} />
           <Button type="submit" size="lg" className="h-11" disabled={pending}>
-            {pending ? 'Checking…' : 'Verify'}
+            {pending ? t('signIn.verifying') : t('signIn.verify')}
           </Button>
           <Button
             type="button"
@@ -85,7 +83,7 @@ export function SignInPage({ next }: { next: ShellPath }) {
               setError(null);
             }}
           >
-            Use a different account
+            {t('signIn.otherAccount')}
           </Button>
         </form>
       </AuthLayout>
@@ -93,17 +91,17 @@ export function SignInPage({ next }: { next: ShellPath }) {
   }
 
   return (
-    <AuthLayout title="Sign in">
+    <AuthLayout title={t('signIn.title')}>
       <form className="grid gap-5" onSubmit={submitPassword}>
         <Field
-          label="Email"
+          label={t('signIn.email')}
           name="email"
           type="email"
           autoComplete="username"
           required
         />
         <Field
-          label="Password"
+          label={t('signIn.password')}
           name="password"
           type="password"
           autoComplete="current-password"
@@ -111,7 +109,7 @@ export function SignInPage({ next }: { next: ShellPath }) {
         />
         <FormError message={error} />
         <Button type="submit" size="lg" className="h-11" disabled={pending}>
-          {pending ? 'Signing in…' : 'Sign in'}
+          {pending ? t('signIn.submitting') : t('signIn.submit')}
         </Button>
       </form>
     </AuthLayout>

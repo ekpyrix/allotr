@@ -17,6 +17,7 @@ import { OnboardingPage } from './routes/onboarding.tsx';
 import { SettingsPage } from './routes/settings.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
+import { t } from '@/messages/t';
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -34,12 +35,9 @@ async function destination(queryClient: QueryClient) {
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
   notFoundComponent: () => (
-    <AuthLayout
-      title="Page not found"
-      intro="This address does not match a page in Allotr."
-    >
+    <AuthLayout title={t('notFound.title')} intro={t('notFound.intro')}>
       <Link to="/" className="font-medium underline underline-offset-4">
-        Go to Allotr
+        {t('notFound.home')}
       </Link>
     </AuthLayout>
   ),

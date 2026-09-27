@@ -2,6 +2,36 @@
 // messages are { one, other } objects chosen by `count`.
 export const en = {
   app: { name: 'Allotr' },
+  signIn: {
+    title: 'Sign in',
+    email: 'Email',
+    password: 'Password',
+    submit: 'Sign in',
+    submitting: 'Signing in…',
+    codeTitle: 'Enter your code',
+    codeIntro:
+      'Open your authenticator app and enter the 6-digit code for Allotr.',
+    code: 'Code',
+    verify: 'Verify',
+    verifying: 'Checking…',
+    otherAccount: 'Use a different account',
+  },
+  onboarding: {
+    title: 'Set up Allotr',
+    intro:
+      'This first account runs the instance. You can invite others once you are in.',
+    name: 'Name',
+    email: 'Email',
+    password: 'Password',
+    passwordHint: 'At least {min} characters.',
+    submit: 'Create account',
+    submitting: 'Creating account…',
+  },
+  notFound: {
+    title: 'Page not found',
+    intro: 'This address does not match a page in Allotr.',
+    home: 'Go to Allotr',
+  },
   nav: {
     label: 'Main',
     skip: 'Skip to content',
