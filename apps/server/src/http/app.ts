@@ -12,6 +12,7 @@ import type { AppDeps, AppEnv } from './env.ts';
 import { requireSameOrigin, resolveClientIp } from './guards.ts';
 import { problem, type ProblemStatus } from './problem.ts';
 import { registerLedgerAccountRoutes } from './routes/accounts.ts';
+import { registerAppearanceRoutes } from './routes/appearance.ts';
 import { registerBillRoutes } from './routes/bills.ts';
 import { registerCategoryRoutes } from './routes/categories.ts';
 import { registerOnboardingRoutes } from './routes/onboarding.ts';
@@ -94,6 +95,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerTagRoutes(app, deps);
   registerTransactionRoutes(app, deps);
   registerTodayRoutes(app, deps);
+  registerAppearanceRoutes(app, deps);
   registerRateRoutes(app, deps);
   registerBillRoutes(app, deps);
   registerImportRoutes(app, deps);
