@@ -72,6 +72,14 @@ describe('server on a temporary database', () => {
         '/v1/transactions/{id}',
         '/v1/transactions/{id}/reverse',
         '/v1/transactions/{id}/edit',
+        '/v1/today',
+        '/v1/settings/ledger',
+        '/v1/rates',
+        '/v1/rates/{id}',
+        '/v1/bills',
+        '/v1/bills/{id}',
+        '/v1/bills/{id}/payments',
+        '/v1/bills/{id}/payments/{dueOn}',
       ]),
     );
   });

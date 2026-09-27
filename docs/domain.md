@@ -107,7 +107,9 @@ live_daily       = available(now) / days_left
   before the day (quoted either way round). A currency without a rate is
   left out and flagged.
 - A bill is reserved from the day its cycle opens until the day it is
-  paid; payments name the due date they settle.
+  paid; payments name the due date they settle. A payment mark is not a
+  ledger entry: it may link the entry that paid it, and undoing the mark
+  reserves the bill again.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 
@@ -124,8 +126,8 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   earlier in the cycle adds to it. Undoing a paycheck merges its cycle back.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.
-- The first cycle opens at onboarding from opening balances, or with an
-  older paycheck from imported history. Back-dated spending never moves it.
+- The first cycle opens on the day the user joined, from opening balances,
+  or with an older paycheck from imported history. Back-dated spending never moves it.
 - Snapshots are computed from the ledger when read, never stored, so a
   back-dated entry amends a closed cycle's snapshot too.
 
@@ -139,7 +141,7 @@ Per-user settings. The default is listed first.
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
 | Overspend at payday | Carry the deficit into the next cycle | Cover from savings · ask |
 | Savings withdrawal | Visible, no debt | Tracked debt with repayment prompt · confirm first |
-| Payday rule | Fixed day of month, overridable | Latest day of a window · last working day · manual |
+| Payday rule | Fixed day of month (the 1st until set), overridable | Latest day of a window · last working day · manual |
 | Cycle mode | Paycheck | Fixed period |
 | Second paycheck in a cycle | Ask (guess: new cycle within 3 days of payday) | Always new cycle · always add |
 | Paycheck split | Fixed allowance, rest to savings | Fixed savings · percentage |
@@ -213,6 +215,7 @@ postings(id, user_id, transaction_id, account_id, amount_minor, currency,
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)
 allocations(id, cycle_id, kind, amount_minor, currency)
 bills(id, user_id, name, amount_minor, currency, account_id, cadence, due_day, active)
+bill_payments(id, user_id, bill_id, due_on, paid_on, transaction_id)
 recurring(id, user_id, template, schedule, mode, next_due)
 goals(id, user_id, name, target_minor, earmarked_minor, currency)
 counterparties(id, user_id, name)

@@ -229,3 +229,161 @@ export const transactionListSchema = z.object({
   /** Pass as `cursor` for the next, older page; null on the last one. */
   nextCursor: z.string().nullable(),
 });
+
+// Ledger settings, today's figures, exchange rates and bills (FR-C2,
+// FR-C4, FR-C5, FR-X2). Bills are only what the reserve needs until M4.
+
+export const ledgerSettingsSchema = z.object({
+  /** BCP 47 locale for formatting, such as `en-US`. */
+  locale: z.string(),
+  /** IANA time zone that decides the user's calendar day. */
+  timeZone: z.string(),
+  /** Figures are reported in it; the ledger is never rewritten. */
+  defaultCurrency: currencyCodeSchema,
+  /** Day of the month that payday falls on; shorter months use their last day. */
+  paydayDay: z.int().min(1).max(31),
+  /** The next payday, when it differs from the predicted one. */
+  paydayOverride: localDateSchema.nullable(),
+});
+export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
+
+export const updateLedgerSettingsBodySchema = z
+  .object({
+    locale: z.string().trim().min(2).max(35).optional(),
+    timeZone: z.string().trim().min(1).max(64).optional(),
+    defaultCurrency: currencyCodeSchema.optional(),
+    paydayDay: z.int().min(1).max(31).optional(),
+    /** null clears the override. */
+    paydayOverride: localDateSchema.nullable().optional(),
+  })
+  .refine((body) => Object.values(body).some((v) => v !== undefined), {
+    error: 'Change at least one field',
+  });
+
+export const cycleSchema = z.object({
+  openedOn: localDateSchema,
+  /** The paycheck that opened it; null for the first cycle. */
+  openedBy: idSchema.nullable(),
+  /** The payday it runs to: the override or the predicted day. */
+  payday: localDateSchema,
+});
+
+export const todaySchema = z.object({
+  /** The user's calendar day. */
+  today: localDateSchema,
+  cycle: cycleSchema,
+  /** The payday, or tomorrow while payday is overdue. */
+  cycleEnd: localDateSchema,
+  /** Payday has passed without a paycheck. */
+  overdue: z.boolean(),
+  daysLeft: z.int().min(1),
+  /** On-budget money minus unpaid reserved bills, now. */
+  available: moneySchema,
+  /** Available before today's spending. */
+  startOfDay: moneySchema,
+  spentToday: moneySchema,
+  /** The start of the day split over the days left, rounded down. */
+  todayAllowance: moneySchema,
+  leftToday: moneySchema,
+  /** Available now split over the days left, rounded down. */
+  liveDaily: moneySchema,
+  /** Currencies without a rate to the default one, left out of the figures. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type TodayView = z.infer<typeof todaySchema>;
+
+export const exchangeRateSchema = z.object({
+  id: idSchema,
+  base: currencyCodeSchema,
+  quote: currencyCodeSchema,
+  /** Units of `quote` one unit of `base` buys. */
+  rate: rateSchema,
+  /** Used for figures on and after this day, until a later rate. */
+  asOf: localDateSchema,
+  source: z.enum(['manual']),
+  createdAt: z.iso.datetime(),
+});
+export type ExchangeRateView = z.infer<typeof exchangeRateSchema>;
+
+export const exchangeRateListSchema = z.object({
+  rates: z.array(exchangeRateSchema),
+});
+
+export const listRatesQuerySchema = z.object({
+  /** Rates between these currencies, quoted either way round. */
+  currency: currencyCodeSchema.optional(),
+});
+
+export const createRateBodySchema = z
+  .object({
+    base: currencyCodeSchema,
+    quote: currencyCodeSchema,
+    rate: rateSchema,
+    /** Today when omitted. */
+    asOf: localDateSchema.optional(),
+  })
+  .refine((body) => body.base !== body.quote, {
+    error: 'The two currencies must differ',
+    path: ['quote'],
+  });
+
+export const billPaymentSchema = z.object({
+  /** The due date this payment settles. */
+  dueOn: localDateSchema,
+  paidOn: localDateSchema,
+  /** The entry that paid it, if one is linked. */
+  transactionId: idSchema.nullable(),
+});
+
+export const billSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  /** In the currency of the account it is paid from. */
+  amount: moneySchema,
+  accountId: idSchema,
+  /** Day of the month; shorter months use their last day. */
+  dueDay: z.int().min(1).max(31),
+  /** Inactive bills are not reserved. */
+  active: z.boolean(),
+  payments: z.array(billPaymentSchema),
+  createdAt: z.iso.datetime(),
+});
+export type BillView = z.infer<typeof billSchema>;
+
+export const billListSchema = z.object({ bills: z.array(billSchema) });
+
+export const createBillBodySchema = z.object({
+  name: nameSchema,
+  amount: moneySchema.refine((m) => m.amountMinor > 0, {
+    error: 'A bill amount is greater than zero',
+  }),
+  accountId: idSchema,
+  dueDay: z.int().min(1).max(31),
+});
+
+export const updateBillBodySchema = z
+  .object({
+    name: nameSchema.optional(),
+    amount: moneySchema
+      .refine((m) => m.amountMinor > 0, {
+        error: 'A bill amount is greater than zero',
+      })
+      .optional(),
+    dueDay: z.int().min(1).max(31).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((body) => Object.values(body).some((v) => v !== undefined), {
+    error: 'Change at least one field',
+  });
+
+export const createBillPaymentBodySchema = z.object({
+  dueOn: localDateSchema,
+  /** Today when omitted. */
+  paidOn: localDateSchema.optional(),
+  transactionId: idSchema.optional(),
+});
+
+export const billPaymentParamSchema = z.object({
+  id: idSchema,
+  dueOn: localDateSchema,
+});
