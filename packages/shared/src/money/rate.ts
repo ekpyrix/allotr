@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { currencyCode, minorUnit } from './currency.ts';
+import { currencyCode, minorUnit, type CurrencyCode } from './currency.ts';
 import { MoneyError } from './errors.ts';
 import { money, type Money } from './money.ts';
 
@@ -47,13 +47,43 @@ const MAX_MINOR = BigInt(Number.MAX_SAFE_INTEGER);
  */
 export function convert(m: Money, rate: Rate, target: string): Money {
   const to = currencyCode(target);
+  const { digits, scale } = rateParts(rate);
+  return inRange(
+    divideHalfEven(
+      BigInt(m.amountMinor) * digits * 10n ** BigInt(minorUnit(to)),
+      scale * 10n ** BigInt(minorUnit(m.currency)),
+    ),
+    to,
+  );
+}
+
+/**
+ * Converts with a rate quoted the other way round: `rate` is how many units
+ * of `m.currency` one unit of `target` buys, so a stored EUR → USD rate can
+ * turn USD into EUR. Divides exactly and rounds half to even once.
+ */
+export function convertInverse(m: Money, rate: Rate, target: string): Money {
+  const to = currencyCode(target);
+  const { digits, scale } = rateParts(rate);
+  return inRange(
+    divideHalfEven(
+      BigInt(m.amountMinor) * scale * 10n ** BigInt(minorUnit(to)),
+      digits * 10n ** BigInt(minorUnit(m.currency)),
+    ),
+    to,
+  );
+}
+
+// A rate as an integer over a power of ten: 0.915 is 915 / 1000.
+function rateParts(rate: Rate): { digits: bigint; scale: bigint } {
   const [integer = '', fraction = ''] = rate.split('.');
-  const numerator =
-    BigInt(m.amountMinor) *
-    BigInt(integer + fraction) *
-    10n ** BigInt(minorUnit(to));
-  const denominator = 10n ** BigInt(fraction.length + minorUnit(m.currency));
-  const result = divideHalfEven(numerator, denominator);
+  return {
+    digits: BigInt(integer + fraction),
+    scale: 10n ** BigInt(fraction.length),
+  };
+}
+
+function inRange(result: bigint, to: CurrencyCode): Money {
   if (result > MAX_MINOR || result < -MAX_MINOR) {
     throw new MoneyError(
       'money.out_of_range',
