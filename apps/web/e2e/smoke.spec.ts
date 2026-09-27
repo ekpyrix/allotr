@@ -1,19 +1,7 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { expectAccessible } from './a11y.ts';
+import { account } from './account.ts';
 import { totpFromUri } from './totp.ts';
-
-const account = {
-  name: 'Sam Example',
-  email: 'sam@example.test',
-  password: 'correct horse battery staple',
-};
-
-async function expectAccessible(page: Page) {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(results.violations).toEqual([]);
-}
 
 test('onboarding, sign-in with two-factor and Today', async ({
   page,
@@ -55,6 +43,8 @@ test('onboarding, sign-in with two-factor and Today', async ({
   });
   expect(verify.ok()).toBe(true);
 
+  await page.getByRole('link', { name: 'Settings' }).click();
+  await expect(page).toHaveURL(/\/settings$/);
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
   await expectAccessible(page);

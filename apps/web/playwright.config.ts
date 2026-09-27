@@ -1,12 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Each project gets its own server and database, because onboarding can
-// only happen once per instance. Run `vite build` first (`pnpm e2e` does).
-const projects = [
-  { name: 'phone', port: 4173, use: { ...devices['Pixel 7'] } },
+// Each spec file gets its own server and database per size, because
+// onboarding can only happen once per instance. Add new spec files to
+// `specs`. Run `vite build` first (`pnpm e2e` does).
+const sizes = [
+  { name: 'phone', use: { ...devices['Pixel 7'] } },
   {
     name: 'desktop',
-    port: 4174,
     use: {
       ...devices['Desktop Chrome'],
       viewport: { width: 1280, height: 800 },
@@ -14,6 +14,16 @@ const projects = [
     },
   },
 ];
+const specs = ['smoke', 'shell'];
+
+const projects = sizes.flatMap((size, i) =>
+  specs.map((spec, j) => ({
+    name: `${size.name} ${spec}`,
+    port: 4173 + i * specs.length + j,
+    testMatch: `${spec}.spec.ts`,
+    use: size.use,
+  })),
+);
 
 export default defineConfig({
   testDir: 'e2e',
@@ -21,8 +31,9 @@ export default defineConfig({
   retries: 0,
   reporter: process.env.CI === undefined ? 'list' : [['list'], ['github']],
   use: { trace: 'retain-on-failure' },
-  projects: projects.map(({ name, port, use }) => ({
+  projects: projects.map(({ name, port, testMatch, use }) => ({
     name,
+    testMatch,
     use: { ...use, baseURL: `http://127.0.0.1:${String(port)}` },
   })),
   webServer: projects.map(({ port }) => ({

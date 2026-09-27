@@ -267,5 +267,5 @@ allotr/
 | Golden | Grammar input → expected JSON | Vitest file snapshots |
 | Integration | API + SQLite + migrations | Vitest |
 | End-to-end replay | Synthetic ledgers imported, then timed undo, edit and back-dated steps → expected balances and today's figures | Vitest + `testdata/synthetic/` |
-| UI | Key views at phone, tablet, desktop and kiosk sizes; accessibility checks | Playwright |
+| UI | Every signed-in route at phone and desktop sizes with axe (WCAG 2.2 AA); keyboard navigation of the shell; tablet and kiosk sizes later | Playwright |
 | LLM eval | Field-level accuracy per model (nightly) | Custom harness |
