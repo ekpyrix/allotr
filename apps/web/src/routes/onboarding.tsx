@@ -5,7 +5,7 @@ import { useState, type SubmitEvent } from 'react';
 import { AuthLayout } from '@/components/auth-layout';
 import { Field, FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
-import { errorMessage } from '@/lib/api';
+import { errorMessage } from '@/lib/problem';
 import { textField } from '@/lib/form';
 import { createFirstAccount } from '@/lib/session';
 
