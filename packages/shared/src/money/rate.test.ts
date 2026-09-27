@@ -2,7 +2,13 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { currencyCode, minorUnit } from './currency.ts';
 import { money } from './money.ts';
-import { convert, impliedRate, parseRate, type Rate } from './rate.ts';
+import {
+  convert,
+  convertInverse,
+  impliedRate,
+  parseRate,
+  type Rate,
+} from './rate.ts';
 import { currencyArb, errorCode } from './testing.ts';
 
 describe('parseRate', () => {
@@ -105,6 +111,56 @@ describe('convert', () => {
           money(amount, 'EUR'),
         );
       }),
+    );
+  });
+});
+
+describe('convertInverse', () => {
+  it('divides by a rate quoted the other way round', () => {
+    // 1 EUR buys 1.25 USD, so $100.00 is €80.00.
+    expect(
+      convertInverse(money(10000, 'USD'), parseRate('1.25'), 'EUR'),
+    ).toEqual(money(8000, 'EUR'));
+  });
+
+  it('rounds half to even once, at the target minor unit', () => {
+    // 1 USD buys 8 JPY here: ¥4 → $0.50, ¥12 → $1.50, ¥1 → $0.125 → $0.12.
+    const rate = parseRate('8');
+    expect(convertInverse(money(4, 'JPY'), rate, 'USD')).toEqual(
+      money(50, 'USD'),
+    );
+    expect(convertInverse(money(1, 'JPY'), rate, 'USD')).toEqual(
+      money(12, 'USD'),
+    );
+    expect(convertInverse(money(3, 'JPY'), rate, 'USD')).toEqual(
+      money(38, 'USD'),
+    );
+    expect(convertInverse(money(-1, 'JPY'), rate, 'USD')).toEqual(
+      money(-12, 'USD'),
+    );
+  });
+
+  it('handles 3-digit currencies', () => {
+    // 1 USD buys 0.305 KWD: KWD 3.050 → $10.00.
+    expect(
+      convertInverse(money(3050, 'KWD'), parseRate('0.305'), 'USD'),
+    ).toEqual(money(1000, 'USD'));
+  });
+
+  it('agrees with convert when the rate is a power of ten', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: -1e12, max: 1e12 }),
+        fc.constantFrom('0.01', '0.1', '1', '10', '100'),
+        (amount, text) => {
+          const rate = parseRate(text);
+          const inverse = parseRate(String(1 / Number(text)));
+          const m = money(amount, 'USD');
+          expect(convertInverse(m, rate, 'EUR')).toEqual(
+            convert(m, inverse, 'EUR'),
+          );
+        },
+      ),
     );
   });
 });
