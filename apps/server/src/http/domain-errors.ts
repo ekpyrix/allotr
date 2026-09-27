@@ -25,16 +25,26 @@ const ledgerStatus: Record<LedgerErrorCode, ProblemStatus> = {
   'ledger.reversal_of_reversal': 409,
 };
 
+export type PathError = Readonly<{ path: string; message: string }>;
+
 /** A refusal from a server rule, such as a name already in use. */
 export class RequestProblem extends Error {
   override readonly name = 'RequestProblem';
   readonly status: ProblemStatus;
   readonly code: string;
+  /** Where in the request it went wrong, as JSON Pointers. */
+  readonly errors: readonly PathError[] | undefined;
 
-  constructor(status: ProblemStatus, code: string, detail: string) {
+  constructor(
+    status: ProblemStatus,
+    code: string,
+    detail: string,
+    errors?: readonly PathError[],
+  ) {
     super(detail);
     this.status = status;
     this.code = code;
+    this.errors = errors;
   }
 }
 
@@ -49,17 +59,36 @@ export function isDomainError(error: unknown): error is DomainError {
   );
 }
 
-export function domainProblem(c: Context, error: DomainError) {
+/** Status, stable code and message for a domain error. */
+export function describeDomainError(error: DomainError): {
+  status: ProblemStatus;
+  code: string;
+  detail: string;
+} {
   if (error instanceof RequestProblem) {
-    return problem(c, error.status, {
-      detail: error.message,
-      code: error.code,
-    });
+    return { status: error.status, code: error.code, detail: error.message };
   }
   const status = error instanceof LedgerError ? ledgerStatus[error.code] : 400;
-  return problem(c, status, {
+  return {
+    status,
+    code: error.code.replace(/^ledger\./, '').replace('.', '_'),
     detail:
       status === 500 ? 'The ledger could not record this.' : error.message,
-    code: error.code.replace(/^ledger\./, '').replace('.', '_'),
+  };
+}
+
+/** The same refusal, pointing at the request item it came from. */
+export function atPath(error: DomainError, path: string): RequestProblem {
+  const { status, code, detail } = describeDomainError(error);
+  return new RequestProblem(status, code, detail, [{ path, message: detail }]);
+}
+
+export function domainProblem(c: Context, error: DomainError) {
+  const { status, code, detail } = describeDomainError(error);
+  const errors = error instanceof RequestProblem ? error.errors : undefined;
+  return problem(c, status, {
+    detail,
+    code,
+    ...(errors === undefined ? {} : { errors: [...errors] }),
   });
 }

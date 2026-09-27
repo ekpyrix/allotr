@@ -93,8 +93,9 @@ export type RateInput = Readonly<{
   asOf?: LocalDate | undefined;
 }>;
 
-export async function putRate(
-  db: Kysely<DB>,
+/** Adds or replaces a rate inside the caller's database transaction. */
+export async function upsertRate(
+  db: Db,
   userId: string,
   input: RateInput,
   now: Date,
@@ -106,40 +107,47 @@ export async function putRate(
       'A rate converts between two different currencies.',
     );
   }
-  return db.transaction().execute(async (trx) => {
-    const asOf = input.asOf ?? (await userToday(trx, userId, now));
-    const existing = await trx
-      .selectFrom('fx_rates')
-      .select('id')
+  const asOf = input.asOf ?? (await userToday(db, userId, now));
+  const existing = await db
+    .selectFrom('fx_rates')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('base', '=', input.base)
+    .where('quote', '=', input.quote)
+    .where('as_of', '=', asOf)
+    .executeTakeFirst();
+  const row = {
+    id: existing?.id ?? randomUUID(),
+    base: input.base,
+    quote: input.quote,
+    rate: input.rate,
+    as_of: asOf,
+    source: 'manual',
+    created_at: now.toISOString(),
+  };
+  if (existing === undefined) {
+    await db
+      .insertInto('fx_rates')
+      .values({ ...row, user_id: userId })
+      .execute();
+  } else {
+    await db
+      .updateTable('fx_rates')
+      .set({ rate: row.rate, created_at: row.created_at })
       .where('user_id', '=', userId)
-      .where('base', '=', input.base)
-      .where('quote', '=', input.quote)
-      .where('as_of', '=', asOf)
-      .executeTakeFirst();
-    const row = {
-      id: existing?.id ?? randomUUID(),
-      base: input.base,
-      quote: input.quote,
-      rate: input.rate,
-      as_of: asOf,
-      source: 'manual',
-      created_at: now.toISOString(),
-    };
-    if (existing === undefined) {
-      await trx
-        .insertInto('fx_rates')
-        .values({ ...row, user_id: userId })
-        .execute();
-    } else {
-      await trx
-        .updateTable('fx_rates')
-        .set({ rate: row.rate, created_at: row.created_at })
-        .where('user_id', '=', userId)
-        .where('id', '=', existing.id)
-        .execute();
-    }
-    return { rate: toView(row), replaced: existing !== undefined };
-  });
+      .where('id', '=', existing.id)
+      .execute();
+  }
+  return { rate: toView(row), replaced: existing !== undefined };
+}
+
+export function putRate(
+  db: Kysely<DB>,
+  userId: string,
+  input: RateInput,
+  now: Date,
+): Promise<{ rate: ExchangeRateView; replaced: boolean }> {
+  return db.transaction().execute((trx) => upsertRate(trx, userId, input, now));
 }
 
 export async function deleteRate(

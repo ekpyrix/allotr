@@ -192,57 +192,67 @@ export type CreateCategory = Readonly<{
   position?: number | undefined;
 }>;
 
+/** Inserts a category inside the caller's database transaction. */
+export async function insertCategory(
+  db: Db,
+  userId: string,
+  input: CreateCategory,
+  now: Date,
+): Promise<string> {
+  const id = randomUUID();
+  let kind = input.kind;
+  if (input.parentId !== undefined) {
+    kind = (await checkParent(db, userId, input.parentId, kind)).kind as Kind;
+  }
+  if (kind === undefined) {
+    throw new RequestProblem(
+      400,
+      'kind_required',
+      'Say whether a top-level category is for expenses, income or transfers.',
+    );
+  }
+  checkPaycheck(input.isPaycheck, kind);
+  const last = await db
+    .selectFrom('categories')
+    .select(sql<number>`coalesce(max(position), 0)`.as('position'))
+    .where('user_id', '=', userId)
+    .where((eb) =>
+      input.parentId === undefined
+        ? eb('parent_id', 'is', null)
+        : eb('parent_id', '=', input.parentId),
+    )
+    .executeTakeFirstOrThrow();
+  const at = now.toISOString();
+  await uniquely(
+    () =>
+      db
+        .insertInto('categories')
+        .values({
+          id,
+          user_id: userId,
+          name: input.name,
+          kind,
+          parent_id: input.parentId ?? null,
+          is_paycheck: input.isPaycheck ? 1 : 0,
+          position: input.position ?? last.position + 1,
+          created_at: at,
+          updated_at: at,
+        })
+        .execute(),
+    nameTaken,
+  );
+  return id;
+}
+
 export async function createCategory(
   db: Kysely<DB>,
   userId: string,
   input: CreateCategory,
   now: Date,
 ): Promise<CategoryView> {
-  const id = randomUUID();
-  await db.transaction().execute(async (trx) => {
-    let kind = input.kind;
-    if (input.parentId !== undefined) {
-      kind = (await checkParent(trx, userId, input.parentId, kind))
-        .kind as Kind;
-    }
-    if (kind === undefined) {
-      throw new RequestProblem(
-        400,
-        'kind_required',
-        'Say whether a top-level category is for expenses, income or transfers.',
-      );
-    }
-    checkPaycheck(input.isPaycheck, kind);
-    const last = await trx
-      .selectFrom('categories')
-      .select(sql<number>`coalesce(max(position), 0)`.as('position'))
-      .where('user_id', '=', userId)
-      .where((eb) =>
-        input.parentId === undefined
-          ? eb('parent_id', 'is', null)
-          : eb('parent_id', '=', input.parentId),
-      )
-      .executeTakeFirstOrThrow();
-    const at = now.toISOString();
-    await uniquely(
-      () =>
-        trx
-          .insertInto('categories')
-          .values({
-            id,
-            user_id: userId,
-            name: input.name,
-            kind,
-            parent_id: input.parentId ?? null,
-            is_paycheck: input.isPaycheck ? 1 : 0,
-            position: input.position ?? last.position + 1,
-            created_at: at,
-            updated_at: at,
-          })
-          .execute(),
-      nameTaken,
-    );
-  });
+  const id = await db
+    .transaction()
+    .execute((trx) => insertCategory(trx, userId, input, now));
   return getCategory(db, userId, id);
 }
 

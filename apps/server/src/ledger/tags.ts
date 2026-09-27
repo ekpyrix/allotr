@@ -27,7 +27,7 @@ export function listTags(db: Db, userId: string): Promise<TagView[]> {
 }
 
 export async function createTag(
-  db: Kysely<DB>,
+  db: Db,
   userId: string,
   name: string,
   now: Date,
