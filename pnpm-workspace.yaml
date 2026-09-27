@@ -2,8 +2,16 @@ packages:
   - packages/*
   - apps/*
 
+# better-sqlite3 13 ships prebuilt binaries in the package; building it
+# from source needs a toolchain the runtime image does not have.
 allowBuilds:
-  better-sqlite3: true
+  better-sqlite3: false
+
+# kysely-codegen's peer range stops below better-sqlite3 13, but codegen
+# works with it (checked with `db:verify`).
+peerDependencyRules:
+  allowedVersions:
+    kysely-codegen>better-sqlite3: '13'
 
 catalog:
   zod: 4.6.5
