@@ -28,6 +28,7 @@ import {
   newTransactionId,
   userToday,
   type Db,
+  type TransactionSource,
 } from './store.ts';
 
 // Recording, listing, undoing and editing entries (FR-L1, FR-L4, FR-X3).
@@ -432,11 +433,9 @@ async function store(
   transaction: Transaction,
   tagIds: readonly string[],
   idempotencyKey: string | null,
+  source: TransactionSource,
 ): Promise<void> {
-  await appendTransaction(db, userId, transaction, {
-    source: 'api',
-    idempotencyKey,
-  });
+  await appendTransaction(db, userId, transaction, { source, idempotencyKey });
   if (tagIds.length === 0) return;
   await db
     .insertInto('transaction_tags')
@@ -448,6 +447,19 @@ async function store(
       })),
     )
     .execute();
+}
+
+/** Builds and stores an entry inside the caller's database transaction. */
+export async function recordTransaction(
+  db: Db,
+  userId: string,
+  body: CreateTransactionBody,
+  source: TransactionSource,
+  now: Date,
+): Promise<string> {
+  const { transaction, tagIds } = await build(db, userId, body, now);
+  await store(db, userId, transaction, tagIds, null, source);
+  return transaction.id;
 }
 
 async function byIdempotencyKey(
@@ -484,7 +496,7 @@ export async function createTransaction(
         if (earlier !== undefined) return null;
       }
       const { transaction, tagIds } = await build(trx, userId, body, now);
-      await store(trx, userId, transaction, tagIds, key);
+      await store(trx, userId, transaction, tagIds, key, 'api');
       return transaction.id;
     });
     if (id !== null) {
@@ -519,7 +531,7 @@ export async function reverseTransaction(
       createdAt: now.toISOString(),
       note: note ?? null,
     });
-    await store(trx, userId, reversal, [], null);
+    await store(trx, userId, reversal, [], null, 'api');
     return reversal.id;
   });
   return getTransaction(db, userId, reversalId);
@@ -545,8 +557,8 @@ export async function editTransaction(
         { id: newTransactionId(), createdAt: now.toISOString() },
         built.transaction,
       );
-      await store(trx, userId, reversal, [], null);
-      await store(trx, userId, replacement, built.tagIds, null);
+      await store(trx, userId, reversal, [], null, 'api');
+      await store(trx, userId, replacement, built.tagIds, null, 'api');
       return [reversal.id, replacement.id] as const;
     });
   const [reversal, replacement] = await viewsByIds(db, userId, [

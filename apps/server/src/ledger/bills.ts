@@ -177,31 +177,43 @@ export type CreateBill = Readonly<{
   dueDay: number;
 }>;
 
+/** Inserts a bill inside the caller's database transaction. */
+export async function insertBill(
+  db: Db,
+  userId: string,
+  input: CreateBill & { active?: boolean | undefined },
+  now: Date,
+): Promise<string> {
+  const id = randomUUID();
+  await checkAccount(db, userId, input.accountId, input.amount);
+  const at = now.toISOString();
+  await db
+    .insertInto('bills')
+    .values({
+      id,
+      user_id: userId,
+      name: input.name,
+      amount_minor: input.amount.amountMinor,
+      currency: input.amount.currency,
+      account_id: input.accountId,
+      due_day: input.dueDay,
+      active: input.active === false ? 0 : 1,
+      created_at: at,
+      updated_at: at,
+    })
+    .execute();
+  return id;
+}
+
 export async function createBill(
   db: Kysely<DB>,
   userId: string,
   input: CreateBill,
   now: Date,
 ): Promise<BillView> {
-  const id = randomUUID();
-  await db.transaction().execute(async (trx) => {
-    await checkAccount(trx, userId, input.accountId, input.amount);
-    const at = now.toISOString();
-    await trx
-      .insertInto('bills')
-      .values({
-        id,
-        user_id: userId,
-        name: input.name,
-        amount_minor: input.amount.amountMinor,
-        currency: input.amount.currency,
-        account_id: input.accountId,
-        due_day: input.dueDay,
-        created_at: at,
-        updated_at: at,
-      })
-      .execute();
-  });
+  const id = await db
+    .transaction()
+    .execute((trx) => insertBill(trx, userId, input, now));
   return getBill(db, userId, id);
 }
 
@@ -271,6 +283,66 @@ export type PayBill = Readonly<{
   transactionId?: string | undefined;
 }>;
 
+/** Marks a due date paid inside the caller's database transaction. */
+export async function insertBillPayment(
+  db: Db,
+  userId: string,
+  id: string,
+  input: PayBill,
+  now: Date,
+): Promise<void> {
+  const bill = await db
+    .selectFrom('bills')
+    .select('due_day')
+    .where('user_id', '=', userId)
+    .where('id', '=', id)
+    .executeTakeFirst();
+  if (bill === undefined) throw notFound();
+  if (nextDayOfMonth(addDays(input.dueOn, -1), bill.due_day) !== input.dueOn) {
+    throw new RequestProblem(
+      400,
+      'not_a_due_date',
+      `The bill is not due on ${input.dueOn}; it is due on day ${String(bill.due_day)} of each month.`,
+    );
+  }
+  if (input.transactionId !== undefined) {
+    const entry = await db
+      .selectFrom('transactions')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('id', '=', input.transactionId)
+      .executeTakeFirst();
+    if (entry === undefined) {
+      throw new RequestProblem(
+        404,
+        'transaction_not_found',
+        'There is no such entry.',
+      );
+    }
+  }
+  try {
+    await db
+      .insertInto('bill_payments')
+      .values({
+        id: randomUUID(),
+        user_id: userId,
+        bill_id: id,
+        due_on: input.dueOn,
+        paid_on: input.paidOn ?? (await userToday(db, userId, now)),
+        transaction_id: input.transactionId ?? null,
+        created_at: now.toISOString(),
+      })
+      .execute();
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    throw new RequestProblem(
+      409,
+      'bill_already_paid',
+      `The bill due on ${input.dueOn} is already marked paid.`,
+    );
+  }
+}
+
 /** Marks one due date paid, which releases its reserve from `paidOn`. */
 export async function payBill(
   db: Kysely<DB>,
@@ -279,60 +351,9 @@ export async function payBill(
   input: PayBill,
   now: Date,
 ): Promise<BillView> {
-  await db.transaction().execute(async (trx) => {
-    const bill = await trx
-      .selectFrom('bills')
-      .select('due_day')
-      .where('user_id', '=', userId)
-      .where('id', '=', id)
-      .executeTakeFirst();
-    if (bill === undefined) throw notFound();
-    if (
-      nextDayOfMonth(addDays(input.dueOn, -1), bill.due_day) !== input.dueOn
-    ) {
-      throw new RequestProblem(
-        400,
-        'not_a_due_date',
-        `The bill is not due on ${input.dueOn}; it is due on day ${String(bill.due_day)} of each month.`,
-      );
-    }
-    if (input.transactionId !== undefined) {
-      const entry = await trx
-        .selectFrom('transactions')
-        .select('id')
-        .where('user_id', '=', userId)
-        .where('id', '=', input.transactionId)
-        .executeTakeFirst();
-      if (entry === undefined) {
-        throw new RequestProblem(
-          404,
-          'transaction_not_found',
-          'There is no such entry.',
-        );
-      }
-    }
-    try {
-      await trx
-        .insertInto('bill_payments')
-        .values({
-          id: randomUUID(),
-          user_id: userId,
-          bill_id: id,
-          due_on: input.dueOn,
-          paid_on: input.paidOn ?? (await userToday(trx, userId, now)),
-          transaction_id: input.transactionId ?? null,
-          created_at: now.toISOString(),
-        })
-        .execute();
-    } catch (error) {
-      if (!isUniqueViolation(error)) throw error;
-      throw new RequestProblem(
-        409,
-        'bill_already_paid',
-        `The bill due on ${input.dueOn} is already marked paid.`,
-      );
-    }
-  });
+  await db
+    .transaction()
+    .execute((trx) => insertBillPayment(trx, userId, id, input, now));
   return getBill(db, userId, id);
 }
 

@@ -98,12 +98,13 @@ function canonicalTimeZone(timeZone: string): string {
   }
 }
 
-export async function updateLedgerSettings(
-  db: Kysely<DB>,
+/** Writes a settings change inside the caller's database transaction. */
+export async function applyLedgerSettings(
+  db: Db,
   userId: string,
   patch: LedgerSettingsPatch,
   now: Date,
-): Promise<LedgerSettingsView> {
+): Promise<void> {
   const user = {
     ...(patch.locale === undefined
       ? {}
@@ -129,23 +130,32 @@ export async function updateLedgerSettings(
           },
         ]),
   ];
-  await db.transaction().execute(async (trx) => {
-    if (Object.keys(user).length > 0) {
-      await trx
-        .updateTable('users')
-        .set({ ...user, updated_at: at })
-        .where('id', '=', userId)
-        .execute();
-    }
-    for (const { key, value } of settings) {
-      await trx
-        .insertInto('user_settings')
-        .values({ user_id: userId, key, value, updated_at: at })
-        .onConflict((oc) =>
-          oc.columns(['user_id', 'key']).doUpdateSet({ value, updated_at: at }),
-        )
-        .execute();
-    }
-  });
+  if (Object.keys(user).length > 0) {
+    await db
+      .updateTable('users')
+      .set({ ...user, updated_at: at })
+      .where('id', '=', userId)
+      .execute();
+  }
+  for (const { key, value } of settings) {
+    await db
+      .insertInto('user_settings')
+      .values({ user_id: userId, key, value, updated_at: at })
+      .onConflict((oc) =>
+        oc.columns(['user_id', 'key']).doUpdateSet({ value, updated_at: at }),
+      )
+      .execute();
+  }
+}
+
+export async function updateLedgerSettings(
+  db: Kysely<DB>,
+  userId: string,
+  patch: LedgerSettingsPatch,
+  now: Date,
+): Promise<LedgerSettingsView> {
+  await db
+    .transaction()
+    .execute((trx) => applyLedgerSettings(trx, userId, patch, now));
   return readLedgerSettings(db, userId);
 }

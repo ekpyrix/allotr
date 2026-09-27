@@ -33,6 +33,7 @@ import {
   newEntry,
   userToday,
   type Db,
+  type TransactionSource,
 } from './store.ts';
 
 // Ledger accounts (FR-L2, FR-L3, FR-L8). Every query is scoped to the user;
@@ -134,12 +135,17 @@ export type CreateAccount = Readonly<{
   openedOn?: LocalDate | undefined;
 }>;
 
-export async function createAccount(
-  db: Kysely<DB>,
+/**
+ * Inserts an account and its opening entry inside the caller's database
+ * transaction.
+ */
+export async function insertAccount(
+  db: Db,
   userId: string,
   input: CreateAccount,
   now: Date,
-): Promise<AccountView> {
+  source: TransactionSource,
+): Promise<string> {
   const { openingBalance } = input;
   if (
     openingBalance !== undefined &&
@@ -152,42 +158,53 @@ export async function createAccount(
     );
   }
   const id = randomUUID();
-  await db.transaction().execute(async (trx) => {
-    const at = now.toISOString();
-    await uniquely(
-      () =>
-        trx
-          .insertInto('accounts')
-          .values({
-            id,
-            user_id: userId,
-            name: input.name,
-            kind: input.kind,
-            system_role: null,
-            budget_group: input.budgetGroup,
-            currency: input.currency,
-            created_at: at,
-            updated_at: at,
-          })
-          .execute(),
-      nameTaken,
-    );
-    if (openingBalance === undefined || openingBalance.amountMinor === 0)
-      return;
-    const chart = await ensureSystemAccounts(
-      trx,
-      userId,
-      await loadChart(trx, userId),
-      [input.currency],
-      now,
-    );
-    const on = input.openedOn ?? (await userToday(trx, userId, now));
-    const entry = opening(chart, newEntry(now, on), {
-      accountId: accountId(id),
-      amount: openingBalance,
-    });
-    await appendTransaction(trx, userId, entry, { source: 'api' });
+  const at = now.toISOString();
+  await uniquely(
+    () =>
+      db
+        .insertInto('accounts')
+        .values({
+          id,
+          user_id: userId,
+          name: input.name,
+          kind: input.kind,
+          system_role: null,
+          budget_group: input.budgetGroup,
+          currency: input.currency,
+          created_at: at,
+          updated_at: at,
+        })
+        .execute(),
+    nameTaken,
+  );
+  if (openingBalance === undefined || openingBalance.amountMinor === 0) {
+    return id;
+  }
+  const chart = await ensureSystemAccounts(
+    db,
+    userId,
+    await loadChart(db, userId),
+    [input.currency],
+    now,
+  );
+  const on = input.openedOn ?? (await userToday(db, userId, now));
+  const entry = opening(chart, newEntry(now, on), {
+    accountId: accountId(id),
+    amount: openingBalance,
   });
+  await appendTransaction(db, userId, entry, { source });
+  return id;
+}
+
+export async function createAccount(
+  db: Kysely<DB>,
+  userId: string,
+  input: CreateAccount,
+  now: Date,
+): Promise<AccountView> {
+  const id = await db
+    .transaction()
+    .execute((trx) => insertAccount(trx, userId, input, now, 'api'));
   return getAccount(db, userId, id, now);
 }
 
