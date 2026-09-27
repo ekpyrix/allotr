@@ -46,24 +46,22 @@ export function createSession(server: string, fetchFn: typeof fetch): Session {
           [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
         );
       }
-      let response: Response;
+      // The connection can also drop while the answer is being read.
       try {
-        response = await fetchFn(`${base}${path}`, {
+        const response = await fetchFn(`${base}${path}`, {
           method: 'POST',
           headers,
           body: JSON.stringify(body),
         });
+        remember(response);
+        const text = await response.text();
+        return { status: response.status, body: parseJson(text) };
       } catch (error) {
         throw new UnreachableError(
           error instanceof Error ? error.message : String(error),
           { cause: error },
         );
       }
-      remember(response);
-      return {
-        status: response.status,
-        body: parseJson(await response.text()),
-      };
     },
   };
 }

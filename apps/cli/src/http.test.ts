@@ -67,6 +67,21 @@ describe('createSession', () => {
     expect(problemOf(response)).toBeNull();
   });
 
+  it('wraps a connection dropped while the answer is read', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.error(new TypeError('terminated'));
+      },
+    });
+    const fake = fakeFetch({
+      'POST /v1/import': () => new Response(body, { status: 201 }),
+    });
+    const session = createSession('https://allotr.example.test', fake.fetch);
+    await expect(session.post('/v1/import', {})).rejects.toBeInstanceOf(
+      UnreachableError,
+    );
+  });
+
   it('wraps a network failure', async () => {
     const failing = (() =>
       Promise.reject(new TypeError('fetch failed'))) as typeof fetch;
