@@ -102,7 +102,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 
 ## 5. API
 
-- REST under `/v1`, JSON, OpenAPI 3.1 generated at `/openapi.json`.
+- REST under `/v1`, JSON, OpenAPI 3.1 generated at `/openapi.json` and
+  committed as `docs/openapi.json` (`make lint` fails when it is stale).
 - Errors use RFC 9457 problem details, with a stable `code` member where a
   client may act on the error.
 - Authentication ([ADR 0006](adr/0006-auth.md)) is Better Auth under
