@@ -362,6 +362,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 6.1.1
         version: 6.1.1(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)(yaml@2.9.1))
+      fast-check:
+        specifier: 'catalog:'
+        version: 4.10.2
       tailwindcss:
         specifier: 4.3.3
         version: 4.3.3

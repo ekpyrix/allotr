@@ -68,6 +68,20 @@ export const en = {
     placeholder: 'Ledger, security and appearance settings will be here.',
     signOut: 'Sign out',
   },
+  quickEntry: {
+    errors: {
+      amountRequired: 'Enter an amount.',
+      amountInvalid: 'Enter an amount, for example 12.50.',
+      amountDecimals: 'This currency has fewer decimal places.',
+      amountPositive:
+        'Enter the amount without a sign; the type sets the direction.',
+      accountRequired: 'Choose an account.',
+      toAccountRequired: 'Choose the account the money goes to.',
+      sameAccount: 'Choose two different accounts.',
+      categoryRequired: 'Choose a category.',
+      dateInvalid: 'Enter a date.',
+    },
+  },
   errors: {
     pageTitle: 'This page could not load',
     retry: 'Try again',
