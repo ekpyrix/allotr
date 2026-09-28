@@ -67,9 +67,16 @@ describe('toBody', () => {
       accounts,
       locale: 'de-DE',
     });
-    expect(
-      result.ok && result.body.kind === 'expense' && result.body.amount,
-    ).toEqual({ amountMinor: 123456, currency: 'EUR' });
+    expect(result).toEqual({
+      ok: true,
+      body: {
+        kind: 'expense',
+        accountId: 'eur',
+        amount: { amountMinor: 123456, currency: 'EUR' },
+        categoryId: 'food',
+        occurredOn: '2026-03-14',
+      },
+    });
   });
 
   it.each([
@@ -101,16 +108,30 @@ describe('toBody', () => {
       draft({ kind: 'income', note: '  lunch  ', tagIds: ['t1'] }),
       ctx,
     );
-    expect(result.ok && result.body).toMatchObject({
-      kind: 'income',
-      note: 'lunch',
-      tagIds: ['t1'],
+    expect(result).toEqual({
+      ok: true,
+      body: {
+        kind: 'income',
+        accountId: 'usd',
+        amount: { amountMinor: 1250, currency: 'USD' },
+        categoryId: 'food',
+        occurredOn: '2026-03-14',
+        note: 'lunch',
+        tagIds: ['t1'],
+      },
     });
   });
 
   it('leaves the date to the server when it is empty', () => {
-    const result = toBody(draft({ occurredOn: '' }), ctx);
-    expect(result.ok && 'occurredOn' in result.body).toBe(false);
+    expect(toBody(draft({ occurredOn: '' }), ctx)).toEqual({
+      ok: true,
+      body: {
+        kind: 'expense',
+        accountId: 'usd',
+        amount: { amountMinor: 1250, currency: 'USD' },
+        categoryId: 'food',
+      },
+    });
   });
 
   it('rejects a malformed date', () => {
@@ -124,13 +145,16 @@ describe('toBody', () => {
     const transfer = (patch: Partial<QuickEntryDraft>) =>
       draft({ kind: 'transfer', categoryId: '', ...patch });
 
-    it('sends the amount in the source currency, no category needed', () => {
+    it('rejects a transfer to the same account', () => {
       expect(
         toBody(transfer({ toAccountId: 'usd', accountId: 'usd' }), ctx),
       ).toEqual({
         ok: false,
         errors: { toAccountId: 'quickEntry.errors.sameAccount' },
       });
+    });
+
+    it('sends the amount in the source currency, no category needed', () => {
       const usdPair = [...accounts, account('usd2', 'USD', 'off')];
       expect(
         toBody(transfer({ toAccountId: 'usd2' }), {
@@ -154,13 +178,18 @@ describe('toBody', () => {
         ok: false,
         errors: { received: 'quickEntry.errors.amountRequired' },
       });
-      const result = toBody(
-        transfer({ toAccountId: 'jpy', received: '1,850' }),
-        ctx,
-      );
-      expect(result.ok && result.body).toMatchObject({
-        sent: { amountMinor: 1250, currency: 'USD' },
-        received: { amountMinor: 1850, currency: 'JPY' },
+      expect(
+        toBody(transfer({ toAccountId: 'jpy', received: '1,850' }), ctx),
+      ).toEqual({
+        ok: true,
+        body: {
+          kind: 'transfer',
+          fromAccountId: 'usd',
+          toAccountId: 'jpy',
+          sent: { amountMinor: 1250, currency: 'USD' },
+          received: { amountMinor: 1850, currency: 'JPY' },
+          occurredOn: '2026-03-14',
+        },
       });
     });
 
@@ -170,7 +199,16 @@ describe('toBody', () => {
         ...ctx,
         accounts: usdPair,
       });
-      expect(result.ok && 'received' in result.body).toBe(false);
+      expect(result).toEqual({
+        ok: true,
+        body: {
+          kind: 'transfer',
+          fromAccountId: 'usd',
+          toAccountId: 'usd2',
+          sent: { amountMinor: 1250, currency: 'USD' },
+          occurredOn: '2026-03-14',
+        },
+      });
     });
 
     it('requires a target account', () => {
@@ -191,11 +229,10 @@ describe('toBody', () => {
           if (currency === undefined) throw new Error('unknown account');
           const typed = formatMoney(money(minor, currency), 'en-US');
           const result = toBody(draft({ accountId, amount: typed }), ctx);
-          expect(
-            result.ok && result.body.kind === 'expense'
-              ? result.body.amount.amountMinor
-              : undefined,
-          ).toBe(minor);
+          expect(result).toMatchObject({
+            ok: true,
+            body: { amount: { amountMinor: minor, currency } },
+          });
         },
       ),
     );

@@ -174,6 +174,7 @@ export function keyForBody(
   body: CreateTransactionBody,
   makeKey: () => string,
 ): DraftKey {
+  // Relies on toBody building bodies in a stable key order.
   const fingerprint = JSON.stringify(body);
   return previous?.fingerprint === fingerprint
     ? previous
