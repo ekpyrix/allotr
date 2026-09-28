@@ -33,7 +33,9 @@ export interface QuickEntryDraft {
 }
 
 export type DraftField = keyof QuickEntryDraft;
-export type DraftErrors = Partial<Record<DraftField, MessageKey>>;
+/** Draft messages take no placeholders, so `t(key)` accepts any of them. */
+export type DraftErrorKey = Extract<MessageKey, `quickEntry.errors.${string}`>;
+export type DraftErrors = Partial<Record<DraftField, DraftErrorKey>>;
 
 /** Fields in form order, for moving focus to the first invalid one. */
 export const FIELD_ORDER: readonly DraftField[] = [
@@ -60,7 +62,7 @@ function parseAmount(
   text: string,
   currency: string,
   locale: string,
-): Money | MessageKey {
+): Money | DraftErrorKey {
   if (text.trim() === '') return 'quickEntry.errors.amountRequired';
   let amount: Money;
   try {

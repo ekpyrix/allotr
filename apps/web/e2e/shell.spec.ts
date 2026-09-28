@@ -116,20 +116,33 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: t('nav.skip') })).toBeFocused();
 
+  // The Add button is in the rail first from md, and in the bottom bar after
+  // the second item below it.
   const nav = page.getByRole('navigation', { name: t('nav.label') });
-  for (const item of navItems) {
+  const links = navItems.map((item) => ({
+    stop: nav.getByRole('link', { name: t(item.label) }),
+    to: item.to,
+  }));
+  const add = {
+    stop: nav.getByRole('button', { name: t('quickEntry.add'), exact: true }),
+    to: 'add',
+  };
+  const wide = (page.viewportSize()?.width ?? 0) >= 768;
+  const stops = wide
+    ? [add, ...links]
+    : [...links.slice(0, 2), add, ...links.slice(2)];
+  for (const { stop: control, to } of stops) {
     await page.keyboard.press('Tab');
-    const link = nav.getByRole('link', { name: t(item.label) });
-    await expect(link).toBeFocused();
+    await expect(control).toBeFocused();
     // Our own ring: a solid outline of at least 2px (or a ring shadow),
     // not the browser's default `auto` outline.
-    const ringVisible = await link.evaluate((element) => {
+    const ringVisible = await control.evaluate((element) => {
       const style = getComputedStyle(element);
       const outline =
         style.outlineStyle === 'solid' && parseFloat(style.outlineWidth) >= 2;
       return outline || style.boxShadow !== 'none';
     });
-    expect(ringVisible, `${item.to} focus ring`).toBe(true);
+    expect(ringVisible, `${to} focus ring`).toBe(true);
   }
 
   await page.keyboard.press('Enter');
