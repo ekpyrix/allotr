@@ -8,7 +8,11 @@ import {
   type DraftDefaults,
 } from './options.ts';
 
-function account(id: string, budgetGroup: 'on' | 'off'): AccountView {
+function account(
+  id: string,
+  budgetGroup: 'on' | 'off',
+  archived = false,
+): AccountView {
   return {
     id,
     name: id,
@@ -16,7 +20,7 @@ function account(id: string, budgetGroup: 'on' | 'off'): AccountView {
     currency: 'USD',
     budgetGroup,
     balance: money(0, 'USD'),
-    archived: false,
+    archived,
     createdAt: '2026-01-01T00:00:00.000Z',
   } as AccountView;
 }
@@ -112,6 +116,45 @@ describe('newDraft', () => {
   });
 });
 
+describe('archived accounts', () => {
+  const withArchived = (patch: Partial<DraftDefaults> = {}) =>
+    defaults({
+      accounts: [
+        account('Closed', 'on', true),
+        account('Everyday', 'on'),
+        account('Savings', 'off'),
+      ],
+      ...patch,
+    });
+
+  it('skips an archived on-budget account when starting a draft', () => {
+    expect(newDraft(withArchived()).accountId).toBe('Everyday');
+  });
+
+  it('falls back when the remembered account is archived', () => {
+    const lastUsed = { expense: { accountId: 'Closed' } };
+    expect(newDraft(withArchived({ lastUsed })).accountId).toBe('Everyday');
+  });
+
+  it('never offers an archived account as a transfer source or target', () => {
+    const lastUsed = {
+      transfer: { accountId: 'Closed', toAccountId: 'Closed' },
+    };
+    expect(
+      switchKind(
+        newDraft(withArchived()),
+        'transfer',
+        withArchived({ lastUsed }),
+      ),
+    ).toMatchObject({ accountId: 'Everyday', toAccountId: 'Savings' });
+  });
+
+  it('uses the first open account when every on-budget one is archived', () => {
+    const accounts = [account('Closed', 'on', true), account('Savings', 'off')];
+    expect(newDraft(defaults({ accounts })).accountId).toBe('Savings');
+  });
+});
+
 describe('switchKind', () => {
   it('keeps what was typed and picks a different target for a transfer', () => {
     const typed = {
@@ -129,6 +172,29 @@ describe('switchKind', () => {
       toAccountId: 'Savings',
       categoryId: '',
     });
+  });
+
+  it('leaves the target empty when only one account is open', () => {
+    const accounts = [
+      account('Everyday', 'on'),
+      account('Closed', 'off', true),
+    ];
+    expect(
+      switchKind(
+        newDraft(defaults({ accounts })),
+        'transfer',
+        defaults({ accounts }),
+      ),
+    ).toMatchObject({ accountId: 'Everyday', toAccountId: '' });
+  });
+
+  it('clears the received amount when the kind changes', () => {
+    const typed = {
+      ...newDraft(defaults()),
+      kind: 'transfer' as const,
+      received: '12',
+    };
+    expect(switchKind(typed, 'expense', defaults()).received).toBe('');
   });
 
   it('never picks the source as the remembered target', () => {

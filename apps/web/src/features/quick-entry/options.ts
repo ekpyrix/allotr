@@ -45,11 +45,10 @@ function choicesFor(
   kind: EntryKind,
   defaults: DraftDefaults,
 ): Pick<QuickEntryDraft, 'accountId' | 'toAccountId' | 'categoryId'> {
-  const ids = defaults.accounts.map((a) => a.id);
+  const open = defaults.accounts.filter((a) => !a.archived);
+  const ids = open.map((a) => a.id);
   const remembered = defaults.lastUsed[kind];
-  const firstOnBudget =
-    defaults.accounts.find((a) => a.budgetGroup === 'on') ??
-    defaults.accounts[0];
+  const firstOnBudget = open.find((a) => a.budgetGroup === 'on') ?? open[0];
   const accountId =
     known(remembered?.accountId, ids) ?? firstOnBudget?.id ?? '';
   const others = ids.filter((id) => id !== accountId);
