@@ -45,6 +45,9 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
   const opener = useRef<HTMLElement | null>(null);
   const [saved, setSaved] = useState('');
+  // Shown once the dialog is gone: while it is open everything behind it is
+  // aria-hidden, so text set then would not be announced.
+  const pendingSaved = useRef('');
   const [shortcutsEnabled, setEnabled] = useState(() =>
     readShortcutsEnabled(storage()),
   );
@@ -56,6 +59,7 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    pendingSaved.current = '';
     setSaved('');
     setOpen(true);
   }, []);
@@ -116,9 +120,13 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
       <QuickEntryDialog
         open={isOpen}
         onOpenChange={setOpen}
-        onSaved={setSaved}
+        onSaved={(message) => {
+          pendingSaved.current = message;
+        }}
         onCloseAutoFocus={() => {
           opener.current?.focus();
+          setSaved(pendingSaved.current);
+          pendingSaved.current = '';
         }}
       />
       {/* Always in the DOM so screen readers hear the change. */}

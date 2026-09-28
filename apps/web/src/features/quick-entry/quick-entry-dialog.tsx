@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,9 +19,11 @@ import { QuickEntryForm } from './quick-entry-form.tsx';
 function QuickEntryLoader({
   onSaved,
   onClose,
+  onSavingChange,
 }: {
   onSaved: (message: string) => void;
   onClose: () => void;
+  onSavingChange: (saving: boolean) => void;
 }) {
   const accounts = useQuery(accountsQuery);
   const categories = useQuery(categoriesQuery);
@@ -30,14 +32,18 @@ function QuickEntryLoader({
   const today = useQuery(todayQuery);
   const all = [accounts, categories, tags, settings, today];
 
-  const failed = all.find((query) => query.isError);
+  // A failed background refetch keeps the form (and what was typed) as long
+  // as there is data to show.
+  const failing = (query: (typeof all)[number]) =>
+    query.isError && query.data === undefined;
+  const failed = all.find(failing);
   if (failed !== undefined)
     return (
       <div className="mt-6 grid gap-4">
         <FormError message={errorMessage(failed.error)} />
         <Button
           onClick={() => {
-            for (const query of all) if (query.isError) void query.refetch();
+            for (const query of all) if (failing(query)) void query.refetch();
           }}
         >
           {t('errors.retry')}
@@ -79,12 +85,15 @@ function QuickEntryLoader({
       locale={settings.data.locale}
       today={today.data.today}
       onSaved={onSaved}
+      onSavingChange={onSavingChange}
     />
   );
 }
 
-// Centred on wider screens, a bottom sheet on phones. Radix traps focus,
-// closes on Escape and returns focus to whatever opened it.
+// Centred on wider screens, a bottom sheet on phones. Radix traps focus and
+// closes on Escape; the provider gives focus back to whatever opened it. A
+// pending save cannot be dismissed, so its result is never lost and a retry
+// cannot duplicate the entry.
 export function QuickEntryDialog({
   open,
   onOpenChange,
@@ -97,8 +106,15 @@ export function QuickEntryDialog({
   onCloseAutoFocus: () => void;
 }) {
   const content = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && saving) return;
+        onOpenChange(next);
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-30 bg-black/50" />
         <Dialog.Content
@@ -139,6 +155,7 @@ export function QuickEntryDialog({
             onClose={() => {
               onOpenChange(false);
             }}
+            onSavingChange={setSaving}
           />
         </Dialog.Content>
       </Dialog.Portal>

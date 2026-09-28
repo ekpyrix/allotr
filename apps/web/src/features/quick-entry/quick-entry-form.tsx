@@ -5,6 +5,7 @@ import {
   type CreateTransactionBody,
 } from '@allotr/shared';
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -67,6 +68,7 @@ export function QuickEntryForm({
   locale,
   today,
   onSaved,
+  onSavingChange,
 }: {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
@@ -74,6 +76,7 @@ export function QuickEntryForm({
   locale: string;
   today: string;
   onSaved: (message: string) => void;
+  onSavingChange: (saving: boolean) => void;
 }) {
   const [defaults] = useState<DraftDefaults>(() => ({
     accounts,
@@ -84,6 +87,13 @@ export function QuickEntryForm({
   const [draft, setDraft] = useState(() => newDraft(defaults));
   const [errors, setErrors] = useState<DraftErrors>({});
   const save = useSaveEntry();
+  const saving = save.isPending;
+  useEffect(() => {
+    onSavingChange(saving);
+    return () => {
+      onSavingChange(false);
+    };
+  }, [saving, onSavingChange]);
   const key = useRef<DraftKey | null>(null);
   const inFlight = useRef(false);
   const kindName = useId();

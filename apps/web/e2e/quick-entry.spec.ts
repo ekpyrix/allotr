@@ -145,8 +145,12 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
   await page.keyboard.type('Sav');
   await expect(selected(page, 'To')).toHaveText('Savings');
   const tag = page.getByRole('checkbox', { name: 'Work' });
-  while (!(await tag.evaluate((el) => el === document.activeElement)))
+  // Category, the date's segments and the note sit in between.
+  for (let presses = 0; presses < 15; presses += 1) {
+    if (await tag.evaluate((el) => el === document.activeElement)) break;
     await page.keyboard.press('Tab');
+  }
+  await expect(tag).toBeFocused();
   await page.keyboard.press('Space');
   await expect(tag).toBeChecked();
   await page.keyboard.press('Enter');
@@ -187,6 +191,26 @@ test('a double click on Save records one entry', async ({ page }) => {
   );
   expect(matching).toHaveLength(1);
   expect(new Set(posts).size).toBe(1);
+});
+
+test('a save in flight cannot be dismissed and still announces', async ({
+  page,
+}) => {
+  await page.route('**/v1/transactions', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return route.continue();
+  });
+  await page.goto('/ledger');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByLabel('Amount in USD').fill('8.88');
+  await page.getByLabel('Category').selectOption({ label: 'Transport' });
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(dialog(page)).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('Expense of $8.88 saved.');
+  await expect(dialog(page)).toBeHidden();
 });
 
 test('Escape closes, focus returns, and the shortcut can be switched off', async ({
