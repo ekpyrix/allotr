@@ -1,9 +1,16 @@
 import {
+  accountListSchema,
   appearanceSchema,
+  categoryListSchema,
+  createTransactionBodySchema,
+  ledgerSettingsSchema,
   onboardingStatusSchema,
   sessionSchema,
   sessionUserSchema,
   signUpBodySchema,
+  tagListSchema,
+  todaySchema,
+  transactionSchema,
 } from '@allotr/shared';
 import { z } from 'zod';
 import { endpoint } from './api.ts';
@@ -64,5 +71,36 @@ export const endpoints = {
     path: '/v1/settings/appearance',
     body: appearanceSchema,
     response: appearanceSchema,
+  }),
+  accounts: endpoint({
+    method: 'GET',
+    path: '/v1/accounts',
+    response: accountListSchema,
+  }),
+  categories: endpoint({
+    method: 'GET',
+    path: '/v1/categories',
+    response: categoryListSchema,
+  }),
+  tags: endpoint({
+    method: 'GET',
+    path: '/v1/tags',
+    response: tagListSchema,
+  }),
+  ledgerSettings: endpoint({
+    method: 'GET',
+    path: '/v1/settings/ledger',
+    response: ledgerSettingsSchema,
+  }),
+  today: endpoint({
+    method: 'GET',
+    path: '/v1/today',
+    response: todaySchema,
+  }),
+  createTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions',
+    body: createTransactionBodySchema,
+    response: transactionSchema,
   }),
 };

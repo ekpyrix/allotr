@@ -67,6 +67,23 @@ describe('call', () => {
     );
   });
 
+  it('sends extra headers next to the JSON content type', async () => {
+    const fetchMock = respond(201, { id: 't1' });
+    await call(create, {
+      body: { name: 'Food' },
+      headers: { 'idempotency-key': 'k1' },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/v1/tags',
+      expect.objectContaining({
+        headers: {
+          'content-type': 'application/json',
+          'idempotency-key': 'k1',
+        },
+      }),
+    );
+  });
+
   it('validates the response', async () => {
     respond(200, { id: 42 });
     await expect(call(tag, { params: { id: 'x' } })).rejects.toThrow();

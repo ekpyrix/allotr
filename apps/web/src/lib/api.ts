@@ -53,17 +53,21 @@ type ParamsInput<P extends string> = [Placeholders<P>] extends [never]
   : { params: Readonly<Record<Placeholders<P>, string>> };
 type BodyInput<B> = [B] extends [undefined] ? object : { body: B };
 export type CallInput<Body, Path extends string> = ParamsInput<Path> &
-  BodyInput<Body> & { query?: Readonly<Record<string, QueryValue>> };
+  BodyInput<Body> & {
+    query?: Readonly<Record<string, QueryValue>>;
+    headers?: Readonly<Record<string, string>>;
+  };
 type CallArgs<I> = object extends I ? [input?: I] : [input: I];
 
 export async function call<Res, Body, Path extends string>(
   target: Endpoint<Res, Body, Path>,
   ...[input]: CallArgs<CallInput<Body, Path>>
 ): Promise<Res> {
-  const { params, body, query } = (input ?? {}) as {
+  const { params, body, query, headers } = (input ?? {}) as {
     params?: Readonly<Record<string, string>>;
     body?: unknown;
     query?: Readonly<Record<string, QueryValue>>;
+    headers?: Readonly<Record<string, string>>;
   };
   let url = fillTemplate(target.path, params ?? {}, encodeURIComponent);
   const search = new URLSearchParams();
@@ -76,7 +80,10 @@ export async function call<Res, Body, Path extends string>(
     response = await fetch(url, {
       method: target.method,
       credentials: 'same-origin',
-      headers: body === undefined ? {} : { 'content-type': 'application/json' },
+      headers: {
+        ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        ...headers,
+      },
       body: body === undefined ? null : JSON.stringify(body),
     });
   } catch (cause) {
