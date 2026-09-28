@@ -124,7 +124,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   for lack of a rate), computed from the ledger on every request.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
-  changes figures, never entries. `/v1/rates` takes manual exchange rates, one
+  changes figures, never entries. `/v1/settings/appearance` holds the theme
+  mode (`light`, `dark` or `system`, the default). `/v1/rates` takes manual exchange rates, one
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
   `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
   …/payments/{dueOn}` undoes the mark.

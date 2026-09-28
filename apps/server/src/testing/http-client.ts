@@ -20,6 +20,7 @@ export interface TestClient {
     headers?: Readonly<Record<string, string>>,
   ): Promise<TestResponse>;
   patch(path: string, body?: unknown): Promise<TestResponse>;
+  put(path: string, body?: unknown): Promise<TestResponse>;
   delete(path: string): Promise<TestResponse>;
 }
 
@@ -76,6 +77,7 @@ export function createClient(
     post: (path, body, headers) =>
       request('POST', path, body ?? {}, undefined, headers),
     patch: (path, body) => request('PATCH', path, body ?? {}),
+    put: (path, body) => request('PUT', path, body ?? {}),
     delete: (path) => request('DELETE', path),
   };
 }

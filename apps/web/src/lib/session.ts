@@ -41,5 +41,11 @@ export async function verifyTotp(code: string) {
 
 export async function signOut(queryClient: QueryClient) {
   await call(endpoints.signOut, { body: {} });
-  queryClient.clear();
+  // Tell mounted observers (ThemeProvider lives above the router) that the
+  // session is gone, and keep that query so they see the next sign-in.
+  // clear() would drop it without telling them.
+  queryClient.setQueryData(sessionQuery.queryKey, null);
+  queryClient.removeQueries({
+    predicate: (query) => query.queryKey[0] !== sessionQuery.queryKey[0],
+  });
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ThemeModeSwitch } from './theme-mode-switch.tsx';
 import { Wordmark } from './wordmark.tsx';
 
 // One narrow, left-aligned column: the form is the whole page.
@@ -19,6 +20,7 @@ export function AuthLayout({
         <p className="mt-3 text-muted-foreground">{intro}</p>
       )}
       <div className="mt-8">{children}</div>
+      <ThemeModeSwitch className="mt-12" />
     </main>
   );
 }

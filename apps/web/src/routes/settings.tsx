@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Page } from '@/components/page';
+import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { Button } from '@/components/ui/button';
 import { signOut } from '@/lib/session';
 import { t } from '@/messages/t';
@@ -11,6 +12,7 @@ export function SettingsPage() {
   const queryClient = useQueryClient();
   return (
     <Page title={t('settings.title')} intro={t('settings.placeholder')}>
+      <ThemeModeSwitch className="mt-8" />
       <Button
         variant="outline"
         className="mt-8"
