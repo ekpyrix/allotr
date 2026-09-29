@@ -1,6 +1,5 @@
 import { setupSchema, type SetupState } from '@allotr/shared';
-import type { Kysely } from 'kysely';
-import type { DB } from './db/schema.ts';
+import type { Db } from './ledger/store.ts';
 
 // Where a user is in setup after first sign-in (FR-W7), kept as one JSON
 // value in user_settings. It cannot be worked out from the ledger: the
@@ -13,10 +12,7 @@ const setupKey = 'setup';
  * (an older user or an imported ledger) counts as finished, so setup only
  * ever catches new users.
  */
-export async function readSetup(
-  db: Kysely<DB>,
-  userId: string,
-): Promise<SetupState> {
+export async function readSetup(db: Db, userId: string): Promise<SetupState> {
   const row = await db
     .selectFrom('user_settings')
     .select('value')
@@ -40,7 +36,7 @@ export async function readSetup(
 }
 
 export async function saveSetup(
-  db: Kysely<DB>,
+  db: Db,
   userId: string,
   setup: SetupState,
   now: Date,
@@ -55,4 +51,17 @@ export async function saveSetup(
     )
     .execute();
   return setup;
+}
+
+/**
+ * Ends setup, keeping which steps were handled: an imported ledger brings
+ * its own accounts and settings.
+ */
+export async function finishSetup(
+  db: Db,
+  userId: string,
+  now: Date,
+): Promise<void> {
+  const { handled } = await readSetup(db, userId);
+  await saveSetup(db, userId, { finished: true, handled }, now);
 }

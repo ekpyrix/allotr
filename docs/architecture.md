@@ -162,8 +162,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   holds a new user's progress through setup (currency and region, payday,
   spending accounts, savings, bills): the steps saved or skipped and whether
   it is finished. With nothing saved, a user who has any account counts as
-  finished, so older and imported ledgers never see it. The web app sends a
-  user to `/setup` from Today until it is finished. `/v1/rates` takes manual exchange rates, one
+  finished, so older ledgers never see it; opening setup saves its start,
+  and an import finishes it. The web app sends a user to `/setup` from
+  Today until it is finished. `/v1/rates` takes manual exchange rates, one
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
   `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
   …/payments/{dueOn}` undoes the mark.

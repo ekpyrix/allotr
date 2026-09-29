@@ -298,6 +298,10 @@ describe('refused imports write nothing', () => {
   });
 
   it('imports a bundle with only settings', async () => {
+    await h.bob.put('/v1/settings/setup', {
+      finished: false,
+      handled: ['region'],
+    });
     const response = await h.bob.post('/v1/import', {
       format: 'allotr.bundle',
       version: 1,
@@ -315,6 +319,11 @@ describe('refused imports write nothing', () => {
       billPayments: 0,
     });
     expect(body(await h.bob.get('/v1/settings/ledger')).paydayDay).toBe(12);
+    // Setup would only ask again for what the bundle set.
+    expect(body(await h.bob.get('/v1/settings/setup'))).toEqual({
+      finished: true,
+      handled: ['region'],
+    });
   });
 
   it('opens an account without a date on the earliest entry day', async () => {

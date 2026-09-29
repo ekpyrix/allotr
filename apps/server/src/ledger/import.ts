@@ -7,6 +7,7 @@ import type {
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
+import { finishSetup } from '../setup.ts';
 import {
   atPath,
   isDomainError,
@@ -286,6 +287,8 @@ export async function importBundle(
     // The first cycle opens with the imported history, not on the day of
     // the import.
     await recordLedgerStart(trx, userId, now);
+    // Setup would only ask for what the bundle already set.
+    await finishSetup(trx, userId, now);
 
     return {
       accounts: bundle.accounts.length,

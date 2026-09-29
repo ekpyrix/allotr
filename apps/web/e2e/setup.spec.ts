@@ -73,6 +73,16 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
   await expect(page).toHaveURL(/\/setup$/);
   await expect(stepHeading(page, 1, 'Currency and region')).toBeVisible();
   await expectAccessible(page);
+
+  // An account added elsewhere before any step does not end setup.
+  const wallet = await page.request.post('/v1/accounts', {
+    data: { name: 'Wallet', currency: 'USD' },
+    headers: origin,
+  });
+  expect(wallet.ok()).toBe(true);
+  await page.goto('/today');
+  await expect(page).toHaveURL(/\/setup$/);
+  await expect(stepHeading(page, 1, 'Currency and region')).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(stepHeading(page, 2, 'Payday')).toBeFocused();

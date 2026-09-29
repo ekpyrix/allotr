@@ -20,7 +20,7 @@ import {
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
-import { setupQuery } from '@/lib/setup';
+import { saveSetup, setupQuery } from '@/lib/setup';
 import { AccountsPage } from './routes/accounts.tsx';
 import { CyclePage } from './routes/cycle.tsx';
 import { HistoryPage } from './routes/history.tsx';
@@ -212,8 +212,13 @@ const setupRoute = createRoute({
   path: '/setup',
   beforeLoad: async ({ context }) => {
     if (context.session.twoFactorRequired) throw redirect({ to: '/today' });
-    const { finished } = await queryOrCached(context.queryClient, setupQuery);
-    if (finished) throw redirect({ to: '/today' });
+    const { queryClient } = context;
+    const setup = await queryOrCached(queryClient, setupQuery);
+    if (setup.finished) throw redirect({ to: '/today' });
+    // Until something is saved, an account added from another view would
+    // read as setup done, so save the start.
+    if (setup.handled.length === 0)
+      queryClient.setQueryData(setupQuery.queryKey, await saveSetup(setup));
   },
   component: SetupPage,
 });
