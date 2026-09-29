@@ -7,14 +7,21 @@ export const hexColorSchema = z
   .string()
   .regex(/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i, 'Use #rgb or #rrggbb');
 
-function channels(hex: string): [number, number, number] {
-  const digits = hexColorSchema.parse(hex).slice(1);
-  const full = digits.length === 3 ? digits.replace(/./g, '$&$&') : digits;
+/** #rrggbb in lower case, as the resolver writes every colour. */
+export function normalizeHex(hex: string): string {
+  const digits = hexColorSchema.parse(hex).slice(1).toLowerCase();
+  return `#${digits.length === 3 ? digits.replace(/./g, '$&$&') : digits}`;
+}
+
+/** sRGB channels from 0 to 1. */
+export function channels(hex: string): [number, number, number] {
+  const full = normalizeHex(hex).slice(1);
   const channel = (at: number) => parseInt(full.slice(at, at + 2), 16) / 255;
   return [channel(0), channel(2), channel(4)];
 }
 
-function linear(channel: number): number {
+/** sRGB transfer function, gamma-encoded to linear light. */
+export function linear(channel: number): number {
   return channel <= 0.04045
     ? channel / 12.92
     : ((channel + 0.055) / 1.055) ** 2.4;
@@ -45,4 +52,9 @@ export function composite(top: string, alpha: number, bottom: string): string {
       .padStart(2, '0');
   });
   return `#${blended.join('')}`;
+}
+
+/** Two decimals, floored so a failing pair never reads as its minimum. */
+export function formatContrastRatio(value: number): string {
+  return (Math.floor(value * 100) / 100).toFixed(2);
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { darkTheme, lightTheme } from './builtin.ts';
+import { formatContrastRatio } from './color.ts';
 import harbour from './community/harbour.json' with { type: 'json' };
 import highContrastDark from './community/high-contrast-dark.json' with { type: 'json' };
 import highContrastLight from './community/high-contrast-light.json' with { type: 'json' };
@@ -14,7 +15,12 @@ import {
 } from './tokens.ts';
 import { validateTheme, type ContrastFailure } from './validate.ts';
 
-export { THEME_SCHEMES, themeSchemeSchema, type ThemeScheme };
+export {
+  formatContrastRatio,
+  THEME_SCHEMES,
+  themeSchemeSchema,
+  type ThemeScheme,
+};
 
 // Named themes (FR-W5). Each is for one scheme, and a user picks one theme
 // for light and one for dark. Shipped themes have slug ids; custom themes
@@ -112,11 +118,6 @@ export function slotTheme(
   const fallback = findTheme(DEFAULT_THEME_ID[scheme], []);
   if (fallback === undefined) throw new Error(`No ${scheme} default theme`);
   return fallback;
-}
-
-/** Two decimals, floored so a failing pair never reads as its minimum. */
-export function formatContrastRatio(value: number): string {
-  return (Math.floor(value * 100) / 100).toFixed(2);
 }
 
 /** "plot", or "input 50% over background" for a tinted surface. */
