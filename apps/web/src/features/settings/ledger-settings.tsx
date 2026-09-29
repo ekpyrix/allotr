@@ -1,6 +1,4 @@
 import {
-  formatMoney,
-  money,
   type LedgerSettingsView,
   type TodayView,
   type UpdateLedgerSettingsBody,
@@ -19,6 +17,7 @@ import {
   updateLedgerSettings,
 } from '@/lib/settings';
 import { t } from '@/messages/t';
+import { localeSample, timeZoneOptions } from './region.ts';
 import { Section } from './section.tsx';
 
 const dueDays = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -33,29 +32,15 @@ function useSaveLedgerSettings() {
   });
 }
 
-/** A formatted sample amount, or null when the locale is not usable. */
-function sample(locale: string, currency: string): string | null {
-  try {
-    return formatMoney(money(12_345_678, currency), locale);
-  } catch {
-    return null;
-  }
-}
-
-function timeZones(current: string): readonly string[] {
-  const zones = Intl.supportedValuesOf('timeZone');
-  return zones.includes(current) ? zones : [current, ...zones];
-}
-
 function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
   const [locale, setLocale] = useState(settings.locale);
   const [timeZone, setTimeZone] = useState(settings.timeZone);
   const [currency, setCurrency] = useState<string>(settings.defaultCurrency);
   const [saved, setSaved] = useState(false);
   const save = useSaveLedgerSettings();
-  const zones = useMemo(() => timeZones(settings.timeZone), [settings]);
+  const zones = useMemo(() => timeZoneOptions(settings.timeZone), [settings]);
   const currencies = useCurrencyOptions(settings.locale);
-  const example = sample(locale.trim(), currency);
+  const example = localeSample(locale.trim(), currency);
   const problem = save.isError ? describeProblem(save.error) : null;
 
   const changed = (): void => {

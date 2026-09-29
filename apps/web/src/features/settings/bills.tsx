@@ -104,7 +104,7 @@ function DueDaySelect({
   );
 }
 
-function BillForm({
+export function BillForm({
   bill,
   accounts,
   locale,
@@ -116,7 +116,8 @@ function BillForm({
   accounts: readonly AccountView[];
   locale: string;
   onDone: (name: string) => void;
-  onCancel: () => void;
+  /** Leave it out where there is nothing to cancel back to. */
+  onCancel?: (() => void) | undefined;
   onBusyChange: (busy: boolean) => void;
 }) {
   const open = accounts.filter((a) => !a.archived);
@@ -282,15 +283,17 @@ function BillForm({
               ? t('settings.bills.addSubmit')
               : t('settings.save')}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11"
-          disabled={save.isPending}
-          onClick={onCancel}
-        >
-          {t('settings.cancel')}
-        </Button>
+        {onCancel === undefined ? null : (
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            disabled={save.isPending}
+            onClick={onCancel}
+          >
+            {t('settings.cancel')}
+          </Button>
+        )}
       </div>
     </form>
   );

@@ -13,6 +13,7 @@ export const extraShellPaths = [
   '/cycle',
   '/history',
   '/savings',
+  '/setup',
 ] as const satisfies readonly `/${string}`[];
 
 /** Every signed-in route; the shell E2E test visits each with axe. */
