@@ -43,7 +43,7 @@ function MenuItem({
   variant,
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.Item> & {
-  variant?: 'danger';
+  variant?: 'danger' | undefined;
 }) {
   return (
     <MenuPrimitive.Item
@@ -77,7 +77,7 @@ function ContextMenuItem({
   variant,
   ...props
 }: React.ComponentProps<typeof ContextPrimitive.Item> & {
-  variant?: 'danger';
+  variant?: 'danger' | undefined;
 }) {
   return (
     <ContextPrimitive.Item

@@ -74,9 +74,13 @@ test('a snackbar announces its message and offers its action', async ({
   await expect(page.locator('[data-slot="snackbar-status"]')).toHaveText(
     /Saved\. .* left today/,
   );
-  await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible();
+  const undo = page.getByRole('button', { name: 'Undo' });
+  await expect(undo).toBeVisible();
+  // Focus pauses its countdown, so it outlasts the axe run.
+  await undo.focus();
   await expectAccessible(page);
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(undo).toBeVisible();
+  await undo.click();
   await expect(page.getByRole('button', { name: 'Undo' })).toBeHidden();
 });
 
@@ -90,4 +94,56 @@ test('keyboard focus shows a solid 2 px ring', async ({ page }) => {
   });
   expect(ring.style).toBe('solid');
   expect(ring.width).toBeGreaterThanOrEqual(2);
+});
+
+test('a sheet opens, resizes from its handle and returns focus', async ({
+  page,
+}) => {
+  const opener = page.getByRole('button', { name: 'Open sheet' }).first();
+  await opener.click();
+  const sheet = page.getByRole('dialog', { name: 'Lunch' });
+  await expect(sheet).toBeVisible();
+  await expectAccessible(page);
+  const resize = sheet.getByRole('button', { name: 'Resize' });
+  // A centred dialog on wide screens has no handle.
+  if ((await resize.count()) > 0) await resize.click();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  await expect(opener).toBeFocused();
+});
+
+test('swipe actions are all in the row menu', async ({ page }) => {
+  await page
+    .getByRole('button', { name: 'More actions for Lunch' })
+    .first()
+    .click();
+  const menu = page.getByRole('menu');
+  for (const name of ['Edit', 'Reverse', 'Duplicate'])
+    await expect(menu.getByRole('menuitem', { name })).toBeVisible();
+  await expectAccessible(page);
+  await menu.getByRole('menuitem', { name: 'Duplicate' }).click();
+  await expect(page.locator('[data-slot="snackbar-status"]')).toHaveText(
+    'Duplicated Lunch',
+  );
+});
+
+test('the rolling number reads as plain text', async ({ page }) => {
+  const roller = page.getByTestId('roller').first();
+  await expect(roller).toContainText('$38.40');
+  await page.getByRole('button', { name: 'Change amount' }).first().click();
+  await expect(roller.locator('.sr-only')).toHaveText('$1,234.56');
+});
+
+test('reduced motion shows the final value with no roll', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  const strip = page
+    .getByTestId('roller')
+    .first()
+    .locator('[aria-hidden="true"] span span')
+    .first();
+  const duration = await strip.evaluate(
+    (el) => getComputedStyle(el).transitionDuration,
+  );
+  expect(parseFloat(duration)).toBeLessThan(0.001);
 });

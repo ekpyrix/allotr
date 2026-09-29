@@ -1,3 +1,4 @@
+import { spring } from 'motion';
 import { describe, expect, it } from 'vitest';
 import {
   linearEasing,
@@ -62,5 +63,19 @@ describe('bouncy', () => {
     // A damping ratio of 0.85 overshoots by well under 1 %.
     expect(peak).toBeGreaterThan(1);
     expect(peak).toBeLessThan(1.02);
+  });
+});
+
+describe('CSS and Motion agree', () => {
+  it.each(SPRING_TOKENS)("%s follows Motion's own spring", (token) => {
+    const { visualDuration, bounce } = SPRINGS[token];
+    const motion = spring({ keyframes: [0, 1], visualDuration, bounce });
+    for (let ms = 0; ms <= 1500; ms += 50) {
+      const theirs = motion.next(ms).value;
+      expect(
+        Math.abs(theirs - springPosition(SPRINGS[token], ms / 1000)),
+        `${String(ms)} ms`,
+      ).toBeLessThan(0.02);
+    }
   });
 });

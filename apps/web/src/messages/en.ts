@@ -103,6 +103,8 @@ export const en = {
     dismiss: 'Dismiss',
     close: 'Close',
     moreActions: 'More actions',
+    moreActionsFor: 'More actions for {label}',
+    resize: 'Resize',
     loading: 'Loading',
     progress: '{value}% done',
   },
