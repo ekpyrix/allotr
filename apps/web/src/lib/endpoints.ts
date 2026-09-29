@@ -16,6 +16,7 @@ import {
   createBillBodySchema,
   createBillPaymentBodySchema,
   createTransactionBodySchema,
+  deleteUserBodySchema,
   editedTransactionSchema,
   instanceSettingsPatchSchema,
   instanceSettingsSchema,
@@ -146,6 +147,12 @@ export const endpoints = {
     body: z.object({}),
     response: z.unknown(),
     openapi: false,
+  }),
+  deleteUser: endpoint({
+    method: 'POST',
+    path: '/v1/user/delete',
+    body: deleteUserBodySchema,
+    response: z.unknown(),
   }),
   instanceSettings: endpoint({
     method: 'GET',

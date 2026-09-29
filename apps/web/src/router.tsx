@@ -93,13 +93,15 @@ const signInRoute = createRoute({
   // so leaving it out would let an unchecked `redirect` through.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { redirect?: ShellPath | undefined } => ({
+  ): { redirect?: ShellPath | undefined; deleted?: true | undefined } => ({
     redirect: safeRedirect(search.redirect),
+    // Set after account deletion, to confirm it on arrival.
+    deleted: search.deleted === true ? true : undefined,
   }),
   beforeLoad: only('/sign-in'),
   component: function SignIn() {
-    const { redirect: target } = signInRoute.useSearch();
-    return <SignInPage next={target ?? '/today'} />;
+    const { redirect: target, deleted } = signInRoute.useSearch();
+    return <SignInPage next={target ?? '/today'} deleted={deleted === true} />;
   },
 });
 

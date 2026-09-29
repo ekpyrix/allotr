@@ -9,6 +9,7 @@ import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { Button } from '@/components/ui/button';
 import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
+import { DeleteAccountSection } from '@/features/settings/delete-account';
 import { hashTarget } from '@/features/settings/hash-target';
 import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
@@ -147,6 +148,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
       {enabled && session.user.role === 'admin' ? (
         <InstanceSection locale={locale} timeZone={timeZone} />
       ) : null}
+      <DeleteAccountSection session={session} />
     </Page>
   );
 }

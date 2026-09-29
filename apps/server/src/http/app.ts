@@ -5,6 +5,7 @@ import { requestId } from 'hono/request-id';
 import { secureHeaders } from 'hono/secure-headers';
 import manifest from '../../package.json' with { type: 'json' };
 import { AUTH_BASE_PATH } from '../auth/auth.ts';
+import { createMutex } from '../mutex.ts';
 import { authHandler } from './auth-handler.ts';
 import { domainProblem, isDomainError } from './domain-errors.ts';
 import { createClientIpResolver } from './client-ip.ts';
@@ -26,6 +27,7 @@ import { registerSetupRoutes } from './routes/setup.ts';
 import { registerTagRoutes } from './routes/tags.ts';
 import { registerTodayRoutes } from './routes/today.ts';
 import { registerTransactionRoutes } from './routes/transactions.ts';
+import { registerUserRoutes } from './routes/user.ts';
 import { registerWebApp } from './web.ts';
 
 export type { AppDeps } from './env.ts';
@@ -91,8 +93,11 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
 
   registerHealthRoutes(app, deps);
   app.on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, authHandler(deps.auth));
-  registerOnboardingRoutes(app, deps);
+  // Creating and deleting users run one at a time.
+  const serialiseUsers = createMutex();
+  registerOnboardingRoutes(app, deps, serialiseUsers);
   registerSessionRoutes(app, deps);
+  registerUserRoutes(app, deps, serialiseUsers);
   registerLedgerAccountRoutes(app, deps);
   registerCategoryRoutes(app, deps);
   registerTagRoutes(app, deps);

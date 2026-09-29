@@ -55,3 +55,13 @@ export const inviteSchema = z.object({
 });
 
 export const inviteStatusSchema = z.object({ expiresAt: z.iso.datetime() });
+
+/**
+ * Confirms deleting the signed-in user. `code` is a TOTP code or a backup
+ * code, and is needed only when the user has 2FA on.
+ */
+export const deleteUserBodySchema = z.object({
+  password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
+  code: z.string().trim().min(1).max(64).optional(),
+});
+export type DeleteUserBody = z.infer<typeof deleteUserBodySchema>;

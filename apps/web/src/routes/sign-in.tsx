@@ -10,7 +10,14 @@ import { textField } from '@/lib/form';
 import { signIn, verifyTotp } from '@/lib/session';
 import { t } from '@/messages/t';
 
-export function SignInPage({ next }: { next: ShellPath }) {
+export function SignInPage({
+  next,
+  deleted = false,
+}: {
+  next: ShellPath;
+  /** Arrived here after deleting their account. */
+  deleted?: boolean;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [step, setStep] = useState<'password' | 'code'>('password');
@@ -93,7 +100,10 @@ export function SignInPage({ next }: { next: ShellPath }) {
   }
 
   return (
-    <AuthLayout title={t('signIn.title')}>
+    <AuthLayout
+      title={t('signIn.title')}
+      {...(deleted ? { intro: t('signIn.deleted') } : {})}
+    >
       <form key="password" className="grid gap-5" onSubmit={submitPassword}>
         <Field
           label={t('signIn.email')}
