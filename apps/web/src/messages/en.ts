@@ -866,6 +866,7 @@ export const en = {
     },
     fixColours: 'Fix the colour values to check contrast.',
     pair: '{foreground} on {background}: {ratio}:1, needs {required}:1',
+    tinted: '{tint} {percent}% over {background}',
     allPairs: 'All colour pairs',
     passes: 'passes',
     fails: 'fails',

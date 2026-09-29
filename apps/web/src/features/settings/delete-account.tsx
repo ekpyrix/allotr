@@ -15,10 +15,11 @@ import { Section } from './section.tsx';
 // Deleting the account (FR-U3): a hard delete, confirmed with the password
 // and, with 2FA on, a TOTP or backup code. The dialog offers a backup
 // first. Outline buttons with destructive text: the filled destructive
-// variant fails contrast in the dark theme.
+// variant fails contrast in the dark theme. They keep the outline fills,
+// which the contrast validator checks destructive text against.
 
 const destructive =
-  'h-11 border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive';
+  'h-11 border-destructive text-destructive hover:text-destructive';
 
 function DeleteForm({
   session,

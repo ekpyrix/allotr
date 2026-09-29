@@ -38,5 +38,5 @@ export const darkTheme: ThemeTokens = {
   border: '#2c3d37',
   input: '#5f756b',
   ring: '#d9a441',
-  destructive: '#d98270',
+  destructive: '#e3a497',
 };

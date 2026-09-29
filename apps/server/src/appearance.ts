@@ -136,7 +136,7 @@ function notFound(): RequestProblem {
 
 // Contrast first: a failing theme is refused whatever else is wrong.
 function check(body: ThemeBody, others: readonly CustomTheme[]): void {
-  const problems = contrastProblems(body.tokens);
+  const problems = contrastProblems(body.tokens, body.scheme);
   if (problems.length > 0)
     throw new RequestProblem(
       422,

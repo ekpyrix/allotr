@@ -13,25 +13,30 @@ import {
   toThemeFile,
   type NamedTheme,
 } from './themes.ts';
-import { THEME_PAIRS, THEME_TOKENS } from './tokens.ts';
-import { validateTheme } from './validate.ts';
+import { THEME_TOKENS } from './tokens.ts';
+import { themePairs, validateTheme } from './validate.ts';
 
 describe('shipped themes', () => {
   it.each(SHIPPED_THEMES.map((theme) => [theme.id, theme] as const))(
     '%s passes AA',
     (_id, theme) => {
-      expect(validateTheme(theme.tokens)).toEqual([]);
+      expect(validateTheme(theme.tokens, theme.scheme)).toEqual([]);
       expect(parseThemeFile(toThemeFile(theme))).toMatchObject({ ok: true });
     },
   );
 
+  // Tinted button fills are held to AA only: 7:1 on a mid-grey fill would
+  // leave destructive text nearly white.
   it.each(['high-contrast-light', 'high-contrast-dark'])(
-    '%s meets 7:1 on every text pair',
+    '%s meets 7:1 on every text pair on an opaque surface',
     (id) => {
       const theme = findTheme(id, []);
       expect(theme).toBeDefined();
       if (theme === undefined) return;
-      for (const pair of THEME_PAIRS.filter((p) => p.kind === 'text')) {
+      const pairs = themePairs(theme.scheme).filter(
+        (p) => p.kind === 'text' && p.tint === undefined,
+      );
+      for (const pair of pairs) {
         expect(
           contrastRatio(
             theme.tokens[pair.foreground],
@@ -62,6 +67,26 @@ describe('parseThemeFile', () => {
     expect(parseThemeFile(valid)).toEqual({ ok: true, theme: valid });
   });
 
+  it('checks a dark file against the destructive button fills', () => {
+    const parsed = parseThemeFile(
+      toThemeFile({
+        name: 'Ember',
+        scheme: 'dark',
+        tokens: { ...darkTheme, destructive: '#d98270' },
+      }),
+    );
+    expect(parsed).toEqual({
+      ok: false,
+      problems: [
+        {
+          path: '/tokens/destructive',
+          message:
+            'destructive on input 50% over background: 3.40:1, needs 4.5:1',
+        },
+      ],
+    });
+  });
+
   it('rejects a theme with a failing pair and lists the pair', () => {
     const parsed = parseThemeFile({
       ...valid,
@@ -83,7 +108,7 @@ describe('parseThemeFile', () => {
       fc.property(fc.constantFrom(...THEME_TOKENS), hexArb, (token, colour) => {
         const tokens = { ...lightTheme, [token]: colour };
         const parsed = parseThemeFile({ ...valid, tokens });
-        const failures = validateTheme(tokens);
+        const failures = validateTheme(tokens, 'light');
         if (failures.length === 0) expect(parsed.ok).toBe(true);
         else
           expect(parsed).toEqual({
@@ -127,6 +152,20 @@ describe('parseThemeFile', () => {
 });
 
 describe('describeContrastFailure', () => {
+  it('names a tinted surface', () => {
+    expect(
+      describeContrastFailure({
+        foreground: 'destructive',
+        background: 'background',
+        tint: { token: 'input', alpha: 0.5 },
+        scheme: 'dark',
+        kind: 'text',
+        ratio: 3.406,
+        required: 4.5,
+      }),
+    ).toBe('destructive on input 50% over background: 3.40:1, needs 4.5:1');
+  });
+
   it('never rounds a failing ratio up to the minimum', () => {
     expect(
       describeContrastFailure({

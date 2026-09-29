@@ -32,6 +32,12 @@ export const themeTokensSchema = z.strictObject(
   ) as Record<ThemeToken, typeof hexColorSchema>,
 );
 
+// Each theme is for one scheme. The web app styles a few controls per
+// scheme (see THEME_PAIRS), so some pairs apply to one scheme only.
+export const THEME_SCHEMES = ['light', 'dark'] as const;
+export const themeSchemeSchema = z.enum(THEME_SCHEMES);
+export type ThemeScheme = z.infer<typeof themeSchemeSchema>;
+
 export type ContrastKind = 'text' | 'large-text' | 'non-text';
 
 /** WCAG 2.2 AA: SC 1.4.3 for text, SC 1.4.11 for UI components. */
@@ -41,9 +47,16 @@ export const CONTRAST_MINIMUM: Readonly<Record<ContrastKind, number>> = {
   'non-text': 3,
 };
 
+/** A token laid over the background at an opacity from 0 to 1. */
+export type ThemeTint = Readonly<{ token: ThemeToken; alpha: number }>;
+
 export type ThemePair = Readonly<{
   foreground: ThemeToken;
   background: ThemeToken;
+  /** A translucent fill over `background`, as the web app paints it. */
+  tint?: ThemeTint;
+  /** Checked only for themes of this scheme; both when absent. */
+  scheme?: ThemeScheme;
   kind: ContrastKind;
 }>;
 
@@ -67,6 +80,17 @@ export const THEME_PAIRS: readonly ThemePair[] = [
   ),
   { foreground: 'primary-foreground', background: 'primary', kind: 'text' },
   { foreground: 'destructive', background: 'background', kind: 'text' },
+  // Destructive buttons are outline buttons with destructive text. In the
+  // dark scheme the outline variant fills them with `input` at 30%, and at
+  // 50% on hover (`dark:bg-input/30`, `dark:hover:bg-input/50` in
+  // apps/web/src/components/ui/button.tsx; a web test checks they match).
+  ...[0.3, 0.5].map((alpha): ThemePair => ({
+    foreground: 'destructive',
+    background: 'background',
+    tint: { token: 'input', alpha },
+    scheme: 'dark',
+    kind: 'text',
+  })),
   // The hero figure on Today is large text.
   { foreground: 'today', background: 'background', kind: 'large-text' },
   // A selected segment (theme mode, entry kind) is filled with primary.

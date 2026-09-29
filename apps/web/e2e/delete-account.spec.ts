@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { SHIPPED_THEMES } from '@allotr/shared';
 import {
   expect,
   test,
@@ -32,6 +33,11 @@ const bundle: unknown = JSON.parse(
 );
 
 let totpURI = '';
+
+function rgb(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  return `rgb(${String(r)}, ${String(g)}, ${String(b)})`;
+}
 
 function context(
   playwright: { request: { newContext: APIRequest['newContext'] } },
@@ -110,6 +116,49 @@ test('the only admin is refused while others use the instance', async ({
   await expect(
     page.getByRole('button', { name: 'Delete account…' }),
   ).toBeFocused();
+});
+
+// The outline fill darkens on hover in the dark scheme; axe reads the
+// hovered fill, so each shipped dark theme is checked in that state.
+test('destructive buttons keep contrast on hover in every dark theme', async ({
+  page,
+  baseURL,
+}) => {
+  // Two axe runs on the settings page per theme.
+  test.setTimeout(120_000);
+  const origin = { origin: baseURL ?? '' };
+  const signIn = await page.request.post('/v1/auth/sign-in/email', {
+    data: { email: account.email, password: account.password },
+    headers: origin,
+  });
+  expect(signIn.ok()).toBe(true);
+
+  for (const theme of SHIPPED_THEMES.filter((t) => t.scheme === 'dark')) {
+    const saved = await page.request.put('/v1/settings/appearance', {
+      data: { mode: 'dark', dark: theme.id },
+      headers: origin,
+    });
+    expect(saved.ok(), theme.id).toBe(true);
+    // A fresh load: the same URL again would only move to the hash.
+    await page.goto('about:blank');
+    await page.goto('/settings#delete-account');
+    await expect(page.locator('body')).toHaveCSS(
+      'background-color',
+      rgb(theme.tokens.background),
+    );
+    const open = page.getByRole('button', { name: 'Delete account…' });
+    await open.hover();
+    await expectAccessible(page);
+
+    await open.click();
+    const dialog = page.getByRole('dialog', { name: 'Delete your account?' });
+    await dialog
+      .getByRole('button', { name: 'Delete my account and data' })
+      .hover();
+    await expectAccessible(page);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toBeHidden();
+  }
 });
 
 test('a user deletes their account and lands on sign-in', async ({ page }) => {
