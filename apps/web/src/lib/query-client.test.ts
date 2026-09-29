@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, NetworkError } from './api.ts';
 import {
@@ -55,6 +55,23 @@ describe('createQueryClient', () => {
       .catch(() => undefined);
     expect(mutationFn).toHaveBeenCalledTimes(1);
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it('fails a write made offline instead of holding it for later', async () => {
+    const client = createQueryClient({ onUnauthorized: vi.fn() });
+    onlineManager.setOnline(false);
+    try {
+      const mutationFn = vi.fn(() => Promise.reject(new NetworkError(null)));
+      await expect(
+        client
+          .getMutationCache()
+          .build(client, { mutationFn })
+          .execute(undefined),
+      ).rejects.toBeInstanceOf(NetworkError);
+      expect(mutationFn).toHaveBeenCalledTimes(1);
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 });
 

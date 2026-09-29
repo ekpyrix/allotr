@@ -15,6 +15,10 @@ test.beforeAll(async ({ playwright }, testInfo) => {
     extraHTTPHeaders: { origin: baseURL },
   });
   expect((await api.post('/v1/onboarding', { data: account })).ok()).toBe(true);
+  const created = await api.post('/v1/accounts', {
+    data: { name: 'Everyday', currency: 'USD' },
+  });
+  expect(created.ok()).toBe(true);
   await api.dispose();
 });
 
@@ -120,6 +124,9 @@ test('losing the connection hides the view until it returns', async ({
   await expect(
     main.getByRole('heading', { name: t('offline.title') }),
   ).toBeVisible();
+  await expect(main.locator('[aria-live="polite"]')).toHaveText(
+    t('offline.title'),
+  );
   await expect(page.getByLabel(t('today.noFigure'))).toHaveCount(0);
   await expect(
     page.getByRole('navigation', { name: t('nav.label') }),
@@ -130,4 +137,42 @@ test('losing the connection hides the view until it returns', async ({
   await expect(
     main.getByRole('heading', { name: t('today.title') }),
   ).toBeVisible();
+});
+
+test('quick entry needs a connection', async ({ page, context }) => {
+  await openControlled(page);
+  await context.setOffline(true);
+  await page.keyboard.press('n');
+  const dialog = page.getByRole('dialog', { name: t('quickEntry.title') });
+  await expect(dialog.getByRole('status')).toHaveText(t('quickEntry.offline'));
+  await expectAccessible(page);
+
+  await context.setOffline(false);
+  await expect(dialog.getByLabel('Amount in USD')).toBeVisible();
+});
+
+test('a save made offline fails at once and is never sent later', async ({
+  page,
+  context,
+}) => {
+  await openControlled(page);
+  await page.keyboard.press('n');
+  const dialog = page.getByRole('dialog', { name: t('quickEntry.title') });
+  await dialog.getByLabel('Amount in USD').fill('9.99');
+  await dialog.getByLabel('Category').selectOption({ index: 1 });
+  await context.setOffline(true);
+  await dialog.getByLabel('Category').press('Enter');
+  await expect(dialog.getByRole('alert')).toHaveText(t('errors.network'));
+
+  await context.setOffline(false);
+  await expect(
+    page.getByRole('main').getByRole('heading', { name: t('today.title') }),
+  ).toBeVisible();
+  // A paused write would go out as soon as the connection is back.
+  await page.waitForTimeout(1000);
+  const response = await page.request.get('/v1/transactions');
+  const { transactions } = (await response.json()) as {
+    transactions: unknown[];
+  };
+  expect(transactions).toEqual([]);
 });

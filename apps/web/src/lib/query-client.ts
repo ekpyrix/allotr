@@ -60,7 +60,9 @@ export function createQueryClient({
     mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: { staleTime: 30_000, retry: shouldRetry },
-      mutations: { retry: false },
+      // Writes never wait for the connection: a paused save would post
+      // later on its own, and the offline entry queue is FR-W4 (M7).
+      mutations: { retry: false, networkMode: 'always' },
     },
   });
 }

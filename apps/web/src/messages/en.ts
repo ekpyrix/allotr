@@ -93,6 +93,8 @@ export const en = {
     save: 'Save',
     saving: 'Saving…',
     loading: 'Loading your accounts…',
+    offline:
+      'You are offline. Entries need a connection; the form opens when you are back online.',
     noAccounts: 'Add an account before you log entries.',
     goToAccounts: 'Go to Accounts',
     saved: {

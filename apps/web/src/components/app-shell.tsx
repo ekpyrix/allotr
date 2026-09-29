@@ -50,6 +50,10 @@ export function AppShell({
               {t('shell.twoFactorRequired')}
             </p>
           ) : null}
+          {/* Stays mounted so losing the connection is announced. */}
+          <p aria-live="polite" className="sr-only">
+            {online ? '' : t('offline.title')}
+          </p>
           {online ? <Outlet /> : <OfflineNotice />}
         </main>
       </div>
