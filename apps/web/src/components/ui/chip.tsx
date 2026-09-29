@@ -8,7 +8,7 @@ import { t } from '@/messages/t';
 // assist chip runs one action.
 
 const base =
-  'pressable relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-label outline-none before:absolute before:inset-x-0 before:-inset-y-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
+  'pressable relative inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-label before:absolute before:inset-x-0 before:-inset-y-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
 const off = 'border border-outline text-text hover:bg-card-raised';
 const on =
   'border border-transparent bg-primary-container text-on-primary-container';
@@ -82,7 +82,7 @@ function InputChip({
         type="button"
         aria-label={t('ui.removeChip', { label })}
         onClick={onRemove}
-        className="relative flex size-8 items-center justify-center rounded-full outline-none before:absolute before:-inset-2 hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-ring"
+        className="relative flex size-8 items-center justify-center rounded-full before:absolute before:-inset-2 hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-ring"
       >
         <X aria-hidden="true" className="size-4" />
       </button>

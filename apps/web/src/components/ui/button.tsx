@@ -11,7 +11,7 @@ const ring =
   'hover:outline-2 hover:outline-offset-2 hover:outline-outline-variant';
 
 const buttonVariants = cva(
-  "pressable inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[0.9375rem] leading-5 font-medium whitespace-nowrap outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:outline-2 aria-invalid:outline-negative [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "pressable inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[0.9375rem] leading-5 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:outline-2 aria-invalid:outline-negative [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {

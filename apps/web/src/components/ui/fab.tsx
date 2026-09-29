@@ -16,7 +16,7 @@ function Fab({ icon, label, className, ...props }: FabProps) {
       type="button"
       data-slot="fab"
       className={cn(
-        'pressable inline-flex h-14 shrink-0 items-center justify-center gap-3 rounded-xl bg-primary text-on-primary outline-none hover:outline-2 hover:outline-offset-2 hover:outline-outline-variant focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50 [&_svg]:size-6 [&_svg]:stroke-[1.75]',
+        'pressable inline-flex h-14 shrink-0 items-center justify-center gap-3 rounded-xl bg-primary text-on-primary hover:outline-2 hover:outline-offset-2 hover:outline-outline-variant focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50 [&_svg]:size-6 [&_svg]:stroke-[1.75]',
         label === undefined ? 'w-14' : 'px-4 pr-5 text-[0.9375rem] font-medium',
         className,
       )}

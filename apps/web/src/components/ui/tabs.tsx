@@ -45,7 +45,7 @@ function Tabs<V extends string>({
           <TabsPrimitive.Trigger
             key={tab.value}
             value={tab.value}
-            className="flex h-12 min-w-0 items-center justify-center px-3 text-label text-text-muted outline-none transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[state=active]:text-text"
+            className="flex h-12 min-w-0 items-center justify-center px-3 text-label text-text-muted transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring data-[state=active]:text-text"
           >
             {tab.label}
           </TabsPrimitive.Trigger>
@@ -73,7 +73,7 @@ function TabsPanel({
   return (
     <TabsPrimitive.Content
       className={cn(
-        'pt-4 outline-none focus-visible:outline-2 focus-visible:outline-ring',
+        'pt-4 focus-visible:outline-2 focus-visible:outline-ring',
         className,
       )}
       {...props}

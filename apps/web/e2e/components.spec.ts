@@ -79,3 +79,15 @@ test('a snackbar announces its message and offers its action', async ({
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect(page.getByRole('button', { name: 'Undo' })).toBeHidden();
 });
+
+test('keyboard focus shows a solid 2 px ring', async ({ page }) => {
+  await page.keyboard.press('Tab');
+  const focused = page.locator(':focus-visible');
+  await expect(focused).toHaveCount(1);
+  const ring = await focused.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: parseFloat(style.outlineWidth) };
+  });
+  expect(ring.style).toBe('solid');
+  expect(ring.width).toBeGreaterThanOrEqual(2);
+});

@@ -29,7 +29,7 @@ function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/40 data-[state=closed]:scrim-out data-[state=open]:scrim-in dark:bg-black/60" />
       <DialogPrimitive.Content
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-outline-variant bg-card-raised p-6 text-text outline-none data-[state=closed]:overlay-out data-[state=open]:overlay-in',
+          'fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-outline-variant bg-card-raised p-6 text-text data-[state=closed]:overlay-out data-[state=open]:overlay-in',
           className,
         )}
         {...(description === undefined

@@ -10,9 +10,9 @@ import { cn } from '@/lib/utils';
 // item steps down to card, where text is fitted too.
 
 const content =
-  'z-50 min-w-48 overflow-hidden rounded-lg border border-outline-variant bg-card-raised p-1 text-text outline-none data-[state=closed]:overlay-out data-[state=open]:overlay-in';
+  'z-50 min-w-48 overflow-hidden rounded-lg border border-outline-variant bg-card-raised p-1 text-text data-[state=closed]:overlay-out data-[state=open]:overlay-in';
 const item =
-  'flex min-h-12 cursor-pointer items-center gap-3 rounded-sm px-3 text-body-lg outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-card data-[variant=danger]:text-negative [&_svg]:size-5 [&_svg]:stroke-[1.75]';
+  'flex min-h-12 cursor-pointer items-center gap-3 rounded-sm px-3 text-body-lg select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-card data-[variant=danger]:text-negative [&_svg]:size-5 [&_svg]:stroke-[1.75]';
 
 // Not modal: a modal menu hides the rest of the page from assistive
 // technology while it stays focusable (axe aria-hidden-focus), and a menu

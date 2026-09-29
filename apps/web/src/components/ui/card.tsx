@@ -14,7 +14,7 @@ const cardVariants = cva(
       variant: {
         default: 'p-(--card-pad) medium:p-5',
         interactive:
-          'pressable p-(--card-pad) outline-none hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-card-raised medium:p-5',
+          'pressable p-(--card-pad) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-card-raised medium:p-5',
         hero: 'rounded-2xl p-6 medium:rounded-2xl medium:p-8',
       },
     },

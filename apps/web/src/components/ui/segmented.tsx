@@ -52,7 +52,7 @@ function Segmented<V extends string>({
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
-          className="relative z-10 flex h-10 min-w-0 items-center justify-center rounded-full px-3 text-label text-text outline-none transition-colors duration-(--dur-fade) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[state=on]:text-on-primary"
+          className="relative z-10 flex h-10 min-w-0 items-center justify-center rounded-full px-3 text-label text-text transition-colors duration-(--dur-fade) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[state=on]:text-on-primary"
         >
           {option.label}
         </ToggleGroup.Item>

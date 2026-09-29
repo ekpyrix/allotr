@@ -100,7 +100,7 @@ function SnackbarHost({
                 shown.action?.onAction();
                 onDone();
               }}
-              className="h-10 shrink-0 rounded-full px-3 text-[0.9375rem] font-semibold text-on-inverse underline underline-offset-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
+              className="h-10 shrink-0 rounded-full px-3 text-[0.9375rem] font-semibold text-on-inverse underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-inverse"
             >
               {shown.action.label}
             </button>
@@ -109,7 +109,7 @@ function SnackbarHost({
             type="button"
             aria-label={t('ui.dismiss')}
             onClick={onDone}
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-inverse outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-inverse"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-on-inverse focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-on-inverse"
           >
             <X aria-hidden="true" className="size-5" />
           </button>

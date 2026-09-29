@@ -106,7 +106,7 @@ function ListRowButton({
 }) {
   const interactive = cn(
     rowClass,
-    'outline-none transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring active:bg-card-raised',
+    ' transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring active:bg-card-raised',
   );
   const children = <RowBody {...content} chevron />;
   return (
