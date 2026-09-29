@@ -422,6 +422,164 @@ describe('undo and edit', () => {
   });
 });
 
+describe('split entries', () => {
+  let eatingOut: string;
+
+  beforeAll(async () => {
+    eatingOut = await categoryId(h.alice, 'Eating out');
+  });
+
+  const usd = (amountMinor: number) => ({ amountMinor, currency: 'USD' });
+  function split(
+    amountMinor: number,
+    lines: [string, number][],
+    extra: Record<string, unknown> = {},
+  ) {
+    return {
+      kind: 'expense',
+      accountId: card,
+      amount: usd(amountMinor),
+      lines: lines.map(([id, minor]) => ({
+        categoryId: id,
+        amount: usd(minor),
+      })),
+      occurredOn: '2026-03-12',
+      ...extra,
+    };
+  }
+
+  it('records one posting per line and no category on the entry', async () => {
+    const before = await balance(h.alice, card);
+    const response = await h.alice.post(
+      '/v1/transactions',
+      split(8000, [
+        [groceries, 6000],
+        [eatingOut, 2000],
+      ]),
+    );
+    expect(response.status).toBe(201);
+    const entry = response.body as Entry;
+    expect(entry.categoryId).toBeNull();
+    expect(
+      entry.postings.map((p) => [
+        p.systemRole,
+        p.amount.amountMinor,
+        p.categoryId,
+      ]),
+    ).toEqual([
+      [null, -8000, null],
+      ['expenses', 6000, groceries],
+      ['expenses', 2000, eatingOut],
+    ]);
+    expect(await balance(h.alice, card)).toBe(before - 8000);
+  });
+
+  it('refuses a split that does not add up, repeats a category or has a wrong one, writing nothing', async () => {
+    const before = await rowCounts();
+    const short = await h.alice.post(
+      '/v1/transactions',
+      split(8000, [
+        [groceries, 6000],
+        [eatingOut, 1999],
+      ]),
+    );
+    expect(short.status).toBe(400);
+    expect(code(short)).toBe('split_mismatch');
+    const twice = await h.alice.post(
+      '/v1/transactions',
+      split(8000, [
+        [groceries, 6000],
+        [groceries, 2000],
+      ]),
+    );
+    expect(code(twice)).toBe('invalid_split');
+    const wrongKind = await h.alice.post(
+      '/v1/transactions',
+      split(8000, [
+        [groceries, 6000],
+        [paycheck, 2000],
+      ]),
+    );
+    expect(code(wrongKind)).toBe('invalid_category');
+    expect(
+      (wrongKind.body as { errors?: { path: string }[] }).errors?.[0]?.path,
+    ).toBe('/lines/1/categoryId');
+    const both = await h.alice.post(
+      '/v1/transactions',
+      split(
+        8000,
+        [
+          [groceries, 6000],
+          [eatingOut, 2000],
+        ],
+        {
+          categoryId: groceries,
+        },
+      ),
+    );
+    expect(both.status).toBe(400);
+    expect(await rowCounts()).toEqual(before);
+  });
+
+  it('undoes and edits a split line by line', async () => {
+    const original = (
+      await h.alice.post(
+        '/v1/transactions',
+        split(5000, [
+          [groceries, 3000],
+          [eatingOut, 2000],
+        ]),
+      )
+    ).body as Entry;
+    const edited = await h.alice.post(
+      `/v1/transactions/${original.id}/edit`,
+      split(5000, [
+        [groceries, 3500],
+        [eatingOut, 1500],
+      ]),
+    );
+    expect(edited.status).toBe(201);
+    const { reversal, replacement } = edited.body as {
+      reversal: Entry;
+      replacement: Entry;
+    };
+    expect(
+      reversal.postings.map((p) => [p.amount.amountMinor, p.categoryId]),
+    ).toEqual([
+      [5000, null],
+      [-3000, groceries],
+      [-2000, eatingOut],
+    ]);
+    expect(
+      replacement.postings.map((p) => [p.amount.amountMinor, p.categoryId]),
+    ).toEqual([
+      [-5000, null],
+      [3500, groceries],
+      [1500, eatingOut],
+    ]);
+  });
+
+  it('splits a foreign purchase in the price currency', async () => {
+    const eur = (amountMinor: number) => ({ amountMinor, currency: 'EUR' });
+    const response = await h.alice.post('/v1/transactions', {
+      kind: 'expense',
+      accountId: card,
+      amount: usd(4920),
+      foreignAmount: eur(4500),
+      lines: [
+        { categoryId: groceries, amount: eur(3000) },
+        { categoryId: eatingOut, amount: eur(1500) },
+      ],
+    });
+    expect(response.status).toBe(201);
+    expect(
+      (response.body as Entry).postings
+        .filter((p) => p.systemRole === 'expenses')
+        .map((p) => p.amount),
+    ).toEqual([eur(3000), eur(1500)]);
+  });
+});
+
 describe('listing', () => {
   let lister: TestClient;
   let a: string;
@@ -480,6 +638,65 @@ describe('listing', () => {
     expect(entries.map((e) => e.occurredOn)).toEqual([
       '2026-04-02',
       '2026-04-01',
+    ]);
+  });
+
+  it('matches every line of a split, and its undo', async () => {
+    const split = (
+      (
+        await lister.post('/v1/transactions', {
+          kind: 'expense',
+          accountId: a,
+          amount: { amountMinor: 900, currency: 'USD' },
+          lines: [
+            { categoryId: food, amount: { amountMinor: 600, currency: 'USD' } },
+            {
+              categoryId: transport,
+              amount: { amountMinor: 300, currency: 'USD' },
+            },
+          ],
+          occurredOn: '2026-03-20',
+        })
+      ).body as Entry
+    ).id;
+    const undo = (
+      (await lister.post(`/v1/transactions/${split}/reverse`, {})).body as Entry
+    ).id;
+    const range = 'from=2026-03-01&to=2026-04-30';
+    for (const category of [food, transport]) {
+      const ids = (await list(`categoryId=${category}&${range}`)).map(
+        (e) => e.id,
+      );
+      expect(ids).toEqual(expect.arrayContaining([split, undo]));
+    }
+    expect(
+      (await list(`categoryId=${transport}&${range}`)).map((e) => e.occurredOn),
+    ).toEqual(['2026-04-03', '2026-03-20', '2026-03-20']);
+  });
+
+  it('filters by a transfer category on the entry', async () => {
+    const moving = (
+      (
+        await lister.post('/v1/categories', {
+          name: 'Moving money',
+          kind: 'transfer',
+        })
+      ).body as { id: string }
+    ).id;
+    const move = (
+      (
+        await lister.post('/v1/transactions', {
+          kind: 'transfer',
+          fromAccountId: a,
+          toAccountId: b,
+          sent: { amountMinor: 25, currency: 'USD' },
+          categoryId: moving,
+          occurredOn: '2026-03-21',
+        })
+      ).body as Entry
+    ).id;
+    expect((await list(`categoryId=${moving}`)).map((e) => e.id)).toEqual([
+      move,
     ]);
   });
 

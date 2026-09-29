@@ -6056,6 +6056,41 @@
                         "minLength": 1,
                         "maxLength": 64
                       },
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "categoryId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "categoryId",
+                            "amount"
+                          ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 20
+                      },
                       "foreignAmount": {
                         "type": "object",
                         "properties": {
@@ -6094,8 +6129,7 @@
                     "required": [
                       "kind",
                       "accountId",
-                      "amount",
-                      "categoryId"
+                      "amount"
                     ]
                   },
                   {
@@ -6133,6 +6167,41 @@
                         "minLength": 1,
                         "maxLength": 64
                       },
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "categoryId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "categoryId",
+                            "amount"
+                          ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 20
+                      },
                       "foreignAmount": {
                         "type": "object",
                         "properties": {
@@ -6171,8 +6240,7 @@
                     "required": [
                       "kind",
                       "accountId",
-                      "amount",
-                      "categoryId"
+                      "amount"
                     ]
                   },
                   {
@@ -7845,6 +7913,41 @@
                         "minLength": 1,
                         "maxLength": 64
                       },
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "categoryId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "categoryId",
+                            "amount"
+                          ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 20
+                      },
                       "foreignAmount": {
                         "type": "object",
                         "properties": {
@@ -7883,8 +7986,7 @@
                     "required": [
                       "kind",
                       "accountId",
-                      "amount",
-                      "categoryId"
+                      "amount"
                     ]
                   },
                   {
@@ -7922,6 +8024,41 @@
                         "minLength": 1,
                         "maxLength": 64
                       },
+                      "lines": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "categoryId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "categoryId",
+                            "amount"
+                          ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 20
+                      },
                       "foreignAmount": {
                         "type": "object",
                         "properties": {
@@ -7960,8 +8097,7 @@
                     "required": [
                       "kind",
                       "accountId",
-                      "amount",
-                      "categoryId"
+                      "amount"
                     ]
                   },
                   {
@@ -13107,6 +13243,42 @@
                               "minLength": 1,
                               "maxLength": 201
                             },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "category": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 201
+                                  },
+                                  "amount": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amountMinor": {
+                                        "type": "integer"
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "amountMinor",
+                                      "currency"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "category",
+                                  "amount"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 2,
+                              "maxItems": 20
+                            },
                             "foreignAmount": {
                               "type": "object",
                               "properties": {
@@ -13151,7 +13323,6 @@
                             "kind",
                             "account",
                             "amount",
-                            "category",
                             "occurredOn"
                           ],
                           "additionalProperties": false
@@ -13191,6 +13362,42 @@
                               "minLength": 1,
                               "maxLength": 201
                             },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "category": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 201
+                                  },
+                                  "amount": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amountMinor": {
+                                        "type": "integer"
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "amountMinor",
+                                      "currency"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "category",
+                                  "amount"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "minItems": 2,
+                              "maxItems": 20
+                            },
                             "foreignAmount": {
                               "type": "object",
                               "properties": {
@@ -13235,7 +13442,6 @@
                             "kind",
                             "account",
                             "amount",
-                            "category",
                             "occurredOn"
                           ],
                           "additionalProperties": false

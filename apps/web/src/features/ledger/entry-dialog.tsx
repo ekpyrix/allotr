@@ -13,6 +13,7 @@ import { FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { QuickEntryForm } from '@/features/quick-entry/quick-entry-form';
 import { ApiError } from '@/lib/api';
+import { entryCategoryIds } from '@/lib/entry-categories';
 import {
   allAccountsQuery,
   allCategoriesQuery,
@@ -98,14 +99,23 @@ function EntryDetail({
   }, [confirming]);
 
   const accountOf = new Map(accounts.map((a) => [a.id, a]));
-  const category =
-    entry.categoryId === null
-      ? null
-      : (categories.find((c) => c.id === entry.categoryId) ?? null);
-  const parent =
-    category?.parentId == null
-      ? null
-      : categories.find((c) => c.id === category.parentId);
+  const categoryPath = (id: string) => {
+    const category = categories.find((c) => c.id === id);
+    if (category === undefined) return null;
+    const parent =
+      category.parentId === null
+        ? undefined
+        : categories.find((c) => c.id === category.parentId);
+    return parent === undefined
+      ? category.name
+      : `${parent.name} / ${category.name}`;
+  };
+  const categoryIds = entryCategoryIds(entry);
+  const split = entry.categoryId === null && categoryIds.length > 1;
+  const categoryText = categoryIds
+    .map(categoryPath)
+    .filter((path) => path !== null)
+    .join(', ');
   const [row] = ledgerRows([entry], accounts, categories);
   const tagNames = entry.tagIds
     .map((id) => tags.find((tag) => tag.id === id)?.name)
@@ -127,14 +137,12 @@ function EntryDetail({
 
   const facts: [string, string][] = [
     [t('ledger.entry.date'), formatLongDay(entry.occurredOn, locale)],
-    ...(category === null
+    ...(categoryText === ''
       ? []
       : [
           [
-            t('ledger.entry.category'),
-            parent == null
-              ? category.name
-              : `${parent.name} / ${category.name}`,
+            split ? t('ledger.entry.split') : t('ledger.entry.category'),
+            categoryText,
           ] as [string, string],
         ]),
     ...(row === undefined || row.accounts.length === 0
@@ -201,6 +209,9 @@ function EntryDetail({
                     : t(`ledger.entry.roles.${p.systemRole}`, {
                         currency: p.amount.currency,
                       })}
+                  {split && p.categoryId !== null
+                    ? ` · ${categoryPath(p.categoryId) ?? ''}`
+                    : null}
                 </td>
                 <td className="py-1.5 text-right font-mono tabular-nums">
                   {formatMoney(p.amount, locale, { signDisplay: 'exceptZero' })}
@@ -387,7 +398,14 @@ function EntryLoader({
           edit={{
             id: view.id,
             draft: draftFromEntry(
-              { ...view, categoryId: current(view.categoryId) },
+              {
+                ...view,
+                categoryId: current(view.categoryId),
+                postings: view.postings.map((p) => ({
+                  ...p,
+                  categoryId: current(p.categoryId),
+                })),
+              },
               locale,
             ),
           }}

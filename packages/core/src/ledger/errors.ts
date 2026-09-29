@@ -9,6 +9,8 @@ export type LedgerErrorCode =
   | 'ledger.posting_count'
   | 'ledger.zero_amount'
   | 'ledger.invalid_amount'
+  | 'ledger.invalid_split'
+  | 'ledger.split_mismatch'
   | 'ledger.same_account'
   | 'ledger.not_a_user_account'
   | 'ledger.missing_system_account'

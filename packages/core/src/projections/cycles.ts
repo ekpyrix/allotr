@@ -30,8 +30,11 @@ function paychecks(view: LedgerView, today: LocalDate): Transaction[] {
     .filter(
       (t) =>
         t.kind === 'income' &&
-        t.categoryId !== null &&
-        view.paycheckCategories.has(t.categoryId) &&
+        // A split income opens a cycle when any of its lines is a paycheck.
+        t.postings.some(
+          (p) =>
+            p.categoryId !== null && view.paycheckCategories.has(p.categoryId),
+        ) &&
         !reversed.has(t.id) &&
         t.occurredOn <= today,
     )

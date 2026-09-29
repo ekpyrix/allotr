@@ -74,6 +74,22 @@ describe('bundleSchema', () => {
     expect(bundle.bills[0]).toMatchObject({ active: true });
   });
 
+  it('accepts a split entry with lines instead of a category', () => {
+    const split = {
+      kind: 'expense',
+      account: 'Wallet',
+      amount: eur(350),
+      occurredOn: '2026-03-02',
+      lines: [
+        { category: 'Food/Coffee', amount: eur(200) },
+        { category: 'Fun', amount: eur(150) },
+      ],
+    };
+    expect(
+      bundleSchema.parse({ ...full, transactions: [split] }).transactions[0],
+    ).toMatchObject({ lines: split.lines });
+  });
+
   it('accepts a bundle with only the header', () => {
     expect(
       bundleSchema.parse({ format: 'allotr.bundle', version: 1 }),
@@ -143,6 +159,38 @@ describe('bundleSchema', () => {
         ],
       },
       ['transactions', 0, 'tags'],
+    ],
+    [
+      'an entry with both a category and lines',
+      {
+        ...full,
+        transactions: [
+          {
+            ...spend,
+            lines: [
+              { category: 'Fun', amount: eur(100) },
+              { category: 'Food', amount: eur(250) },
+            ],
+          },
+        ],
+      },
+      ['transactions', 0, 'category'],
+    ],
+    [
+      'a split with one line',
+      {
+        ...full,
+        transactions: [
+          {
+            kind: 'expense',
+            account: 'Wallet',
+            amount: eur(350),
+            occurredOn: '2026-03-02',
+            lines: [{ category: 'Fun', amount: eur(350) }],
+          },
+        ],
+      },
+      ['transactions', 0, 'lines'],
     ],
   ])('rejects %s', (_, input, path) => {
     const result = bundleSchema.safeParse(input);

@@ -70,6 +70,7 @@ export type Transaction = Readonly<{
   occurredOn: LocalDate;
   /** ISO 8601 UTC instant; orders entries made on the same date. */
   createdAt: string;
+  /** Null for a split: each balancing posting then carries its own. */
   categoryId: CategoryId | null;
   note: string | null;
   postings: readonly Posting[];

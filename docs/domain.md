@@ -191,7 +191,11 @@ Logical model; the SQL schema lives in `migrations/`.
 - System accounts balance the other side of an entry: one per user, role
   and currency (`Expenses`, `Income`, `Equity:Opening`,
   `Equity:Conversion`). They have no budget group and are not shown as
-  accounts. The balancing posting carries the category.
+  accounts. The balancing posting carries the category. A split (FR-L5)
+  has one balancing posting per line, each with its category, in the
+  currency of the category side; the lines add up to that side exactly,
+  and the transaction itself has no category. A split income with a
+  paycheck line opens a cycle.
 - A budget switch is a system transaction with no postings: it moves
   `switch_account_id` into `switch_budget_group` from `occurred_on`.
 - A reversal carries the date of the transaction it reverses, so figures

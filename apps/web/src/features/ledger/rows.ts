@@ -6,6 +6,7 @@ import {
   type Money,
   type TransactionView,
 } from '@allotr/shared';
+import { categoryTitle } from '@/lib/entry-categories';
 
 // The ledger as rows. Unlike Today, undos are rows of their own: the
 // ledger shows what was recorded, and an edit is an undo plus a new entry.
@@ -67,10 +68,7 @@ export function ledgerRows(
     const ordered = [out, into].filter((p) => p !== undefined);
     const original =
       entry.reversesId === null ? undefined : byId.get(entry.reversesId);
-    const category =
-      entry.categoryId === null
-        ? undefined
-        : categoryName.get(entry.categoryId);
+    const category = categoryTitle(entry, categoryName);
     const single = ordered[0]?.amount;
     return {
       id: entry.id,

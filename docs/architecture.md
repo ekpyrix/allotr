@@ -132,9 +132,15 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on
   `POST /v1/transactions` makes a repeat return the entry it first created
-  (200) instead of recording another, as offline queues need.
+  (200) instead of recording another, as offline queues need. An expense
+  or income takes either `categoryId` or a split, `lines: [{categoryId,
+  amount}]` (2–20 distinct categories adding up to the amount, or to
+  `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split
+  entry's own `categoryId` is null and each balancing posting carries its
+  line's category.
   `GET /v1/transactions` pages newest first and filters by date range,
-  account, category (with its subcategories), tag and note text; an undo
+  account, category (with its subcategories, matching any line of a
+  split), tag and note text; an undo
   matches whatever the entry it undoes matches. Every query is scoped to the signed-in user, and another
   user's rows answer 404. Domain errors from `core` and `shared` become
   problem details whose `code` is the error code without its namespace
@@ -174,6 +180,8 @@ Items refer to each other by name: account names, category paths (`"Fun"`,
 matches an existing one by name and parent is reused; the rest are created.
 Transactions need `occurredOn`; an account without `openedOn` opens on the
 earliest entry day. A transaction `ref` lets a bill payment link to it.
+An expense or income gives `category` or, for a split, `lines: [{category,
+amount}]`.
 Unknown fields are refused. Other apps' exports are converted to this
 bundle rather than imported directly.
 

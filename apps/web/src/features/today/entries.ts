@@ -5,6 +5,7 @@ import {
   type Money,
   type TransactionView,
 } from '@allotr/shared';
+import { categoryTitle } from '@/lib/entry-categories';
 
 // Today's entries as rows: what was logged today, with undo. Undos carry
 // the original's date, so they are in the same list; they show as the
@@ -45,10 +46,7 @@ export function entryRows(
     const out = own.find((p) => p.amount.amountMinor < 0);
     const into = own.find((p) => p.amount.amountMinor > 0);
     const ordered = [out, into].filter((p) => p !== undefined);
-    const category =
-      entry.categoryId === null
-        ? undefined
-        : categoryName.get(entry.categoryId);
+    const category = categoryTitle(entry, categoryName);
     return {
       id: entry.id,
       kind: entry.kind,

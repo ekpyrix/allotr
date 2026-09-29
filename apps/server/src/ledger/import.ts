@@ -120,7 +120,14 @@ function toBody(
     kind: entry.kind,
     accountId: account(entry.account),
     amount: entry.amount,
-    categoryId: category(entry.category),
+    ...(entry.lines === undefined
+      ? { categoryId: category(entry.category ?? '') }
+      : {
+          lines: entry.lines.map((line) => ({
+            categoryId: category(line.category),
+            amount: line.amount,
+          })),
+        }),
     ...(entry.foreignAmount === undefined
       ? {}
       : { foreignAmount: entry.foreignAmount }),

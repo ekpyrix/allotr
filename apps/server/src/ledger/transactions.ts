@@ -17,7 +17,7 @@ import type {
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
-import { RequestProblem } from '../http/domain-errors.ts';
+import { atPath, RequestProblem } from '../http/domain-errors.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
 import {
   appendTransaction,
@@ -298,9 +298,23 @@ export async function listTransactions(
       ]),
     );
   }
+  // A split's lines are on its postings; a transfer's category only on
+  // the entry itself.
   if (filter.categoryId !== undefined) {
     const family = await categoryFamily(db, userId, filter.categoryId);
-    query = query.where('category_id', 'in', family);
+    query = query.where((eb) =>
+      eb.or([
+        eb('category_id', 'in', family),
+        eb.exists(
+          eb
+            .selectFrom('postings')
+            .select('postings.id')
+            .whereRef('postings.transaction_id', '=', 'transactions.id')
+            .where('postings.user_id', '=', userId)
+            .where('postings.category_id', 'in', family),
+        ),
+      ]),
+    );
   }
   // Undos are stored without tags or a note, so they match through the
   // entry they undo; account and category are copied onto them already.
@@ -473,16 +487,36 @@ async function build(
     return { transaction, chart, tagIds };
   }
   const make = body.kind === 'expense' ? expense : income;
-  const category = await resolveCategory(
-    db,
-    userId,
-    body.categoryId,
-    body.kind,
-  );
+  const kind = body.kind;
+  const side =
+    body.lines === undefined
+      ? {
+          categoryId: categoryId(
+            await resolveCategory(db, userId, body.categoryId ?? '', kind),
+          ),
+        }
+      : {
+          lines: await Promise.all(
+            body.lines.map(async (line, index) => {
+              try {
+                const id = await resolveCategory(
+                  db,
+                  userId,
+                  line.categoryId,
+                  kind,
+                );
+                return { categoryId: categoryId(id), amount: line.amount };
+              } catch (error) {
+                if (!(error instanceof RequestProblem)) throw error;
+                throw atPath(error, `/lines/${String(index)}/categoryId`);
+              }
+            }),
+          ),
+        };
   const transaction = make(chart, entry, {
     accountId: accountId(body.accountId),
     amount: body.amount,
-    categoryId: categoryId(category),
+    ...side,
     ...(body.foreignAmount === undefined
       ? {}
       : { foreignAmount: body.foreignAmount }),

@@ -12,18 +12,28 @@ import {
   type SubmitEvent,
   type KeyboardEvent,
 } from 'react';
+import { Split } from 'lucide-react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { describeProblem } from '@/lib/problem';
 import { t } from '@/messages/t';
 import {
+  addLine,
   amountExample,
   draftErrorText,
+  endSplit,
   ENTRY_KINDS,
-  FIELD_ORDER,
+  fieldOrder,
+  isSplit,
   keyForBody,
+  lineField,
+  removeLine,
+  splitCurrency,
+  splitRemainder,
+  startSplit,
   toBody,
+  updateLine,
   type DraftErrors,
   type DraftField,
   type DraftKey,
@@ -37,6 +47,7 @@ import {
   withToday,
   type DraftDefaults,
 } from './options.ts';
+import { SplitEditor } from './split-editor.tsx';
 import { useSaveEntry } from './use-save-entry.ts';
 
 function storage(): Storage | undefined {
@@ -127,7 +138,9 @@ export function QuickEntryForm({
     const element =
       failure.first === undefined
         ? null
-        : form.current?.elements.namedItem(failure.first);
+        : failure.first === 'lines'
+          ? form.current?.querySelector('[data-split-status]')
+          : form.current?.elements.namedItem(failure.first);
     if (element instanceof HTMLElement) element.focus();
     const frame = requestAnimationFrame(() => {
       setSummary(t('errors.validationSummary', { count: failure.count }));
@@ -150,6 +163,19 @@ export function QuickEntryForm({
     editing();
     setDraft((current) => ({ ...current, ...patch }));
   };
+  const change = (next: (current: QuickEntryDraft) => QuickEntryDraft) => {
+    editing();
+    setDraft(next);
+  };
+  // The split controls add and remove the button that was pressed, so
+  // focus moves to where the user goes on typing once the change renders.
+  const focusNext = useRef<DraftField | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    const element = form.current?.elements.namedItem(focusNext.current);
+    focusNext.current = null;
+    if (element instanceof HTMLElement) element.focus();
+  });
   const source = accounts.find((a) => a.id === draft.accountId);
   const target = accounts.find((a) => a.id === draft.toAccountId);
   const transfer = draft.kind === 'transfer';
@@ -159,7 +185,9 @@ export function QuickEntryForm({
     target !== undefined &&
     source.currency !== target.currency;
   const options = categoryOptions(categories, draft.kind);
-  const error = (field: keyof DraftErrors, currency: string | undefined) => {
+  const split = !transfer && isSplit(draft);
+  const linesCurrency = splitCurrency(draft, accounts);
+  const error = (field: DraftField, currency: string | undefined) => {
     const message = errors[field];
     return message === undefined
       ? undefined
@@ -178,7 +206,9 @@ export function QuickEntryForm({
       setSummary('');
       setFailure({
         count: Object.keys(result.errors).length,
-        first: FIELD_ORDER.find((field) => result.errors[field] !== undefined),
+        first: fieldOrder(draft).find(
+          (field) => result.errors[field] !== undefined,
+        ),
       });
       return;
     }
@@ -354,37 +384,91 @@ export function QuickEntryForm({
         </FieldControl>
       ) : null}
 
-      <FieldControl
-        label={
-          transfer ? t('quickEntry.categoryOptional') : t('quickEntry.category')
-        }
-        error={error('categoryId', undefined)}
-      >
-        {(props) => (
-          <select
-            {...props}
-            name="categoryId"
-            className={selectClass}
-            value={draft.categoryId}
-            onChange={(e) => {
-              update({ categoryId: e.currentTarget.value });
-            }}
+      {split ? (
+        <SplitEditor
+          lines={draft.lines}
+          options={options}
+          currency={linesCurrency}
+          remainder={splitRemainder(draft, { accounts, locale })}
+          locale={locale}
+          error={(field) => error(field, linesCurrency)}
+          mismatch={error('lines', linesCurrency)}
+          onLine={(index, patch) => {
+            change((current) => updateLine(current, index, patch));
+          }}
+          onAdd={() => {
+            focusNext.current = lineField(draft.lines.length, 'categoryId');
+            change(addLine);
+          }}
+          onRemove={(index) => {
+            focusNext.current = lineField(
+              Math.min(index, draft.lines.length - 2),
+              'categoryId',
+            );
+            change((current) => removeLine(current, index));
+          }}
+          onEnd={() => {
+            focusNext.current = 'categoryId';
+            change(endSplit);
+            clearErrors();
+          }}
+        />
+      ) : (
+        <div className="grid gap-2">
+          <FieldControl
+            label={
+              transfer
+                ? t('quickEntry.categoryOptional')
+                : t('quickEntry.category')
+            }
+            error={error('categoryId', undefined)}
           >
-            {transfer ? (
-              <option value="">{t('quickEntry.noCategory')}</option>
-            ) : (
-              <option value="" disabled>
-                {t('quickEntry.chooseCategory')}
-              </option>
+            {(props) => (
+              <select
+                {...props}
+                name="categoryId"
+                className={selectClass}
+                value={draft.categoryId}
+                onChange={(e) => {
+                  update({ categoryId: e.currentTarget.value });
+                }}
+              >
+                {transfer ? (
+                  <option value="">{t('quickEntry.noCategory')}</option>
+                ) : (
+                  <option value="" disabled>
+                    {t('quickEntry.chooseCategory')}
+                  </option>
+                )}
+                {options.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             )}
-            {options.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        )}
-      </FieldControl>
+          </FieldControl>
+          {transfer ? null : (
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-self-start"
+              onClick={() => {
+                // The chosen category is already the first line's.
+                focusNext.current = lineField(
+                  0,
+                  draft.categoryId === '' ? 'categoryId' : 'amount',
+                );
+                change(startSplit);
+                clearErrors();
+              }}
+            >
+              <Split aria-hidden />
+              {t('quickEntry.split.start')}
+            </Button>
+          )}
+        </div>
+      )}
 
       <FieldControl
         label={t('quickEntry.date')}

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ENTRY_KINDS, type QuickEntryDraft } from './draft.ts';
+import { ENTRY_KINDS, isSplit, type QuickEntryDraft } from './draft.ts';
 
 // The last account and category per kind, on this device only, so the next
 // entry needs fewer keystrokes (#58, "under 5 s on a phone").
@@ -32,9 +32,11 @@ export function rememberChoice(
   draft: QuickEntryDraft,
 ): void {
   try {
+    const previous = readLastUsed(storage)[draft.kind];
     const choice = {
       accountId: draft.accountId,
-      categoryId: draft.categoryId,
+      // A split names no one category; keep the one remembered before.
+      categoryId: isSplit(draft) ? previous?.categoryId : draft.categoryId,
       ...(draft.kind === 'transfer' ? { toAccountId: draft.toAccountId } : {}),
     };
     storage?.setItem(

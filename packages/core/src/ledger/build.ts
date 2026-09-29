@@ -194,16 +194,64 @@ function foreignSide(own: Money, foreign: Money | undefined): Money | null {
   return null;
 }
 
-export type SpendInput = Readonly<{
-  accountId: AccountId;
-  /** In the account's currency. */
-  amount: Money;
+/** One category's share of a split expense or income (FR-L5). */
+export type SplitLine = Readonly<{
   categoryId: CategoryId;
-  /** The price in another currency when it differs from the account's. */
-  foreignAmount?: Money;
+  /** In the currency of the category side: the foreign price if any. */
+  amount: Money;
 }>;
 
-/** Money leaves a user account for a category (FR-L1, FR-X3). */
+export type SpendInput = Readonly<
+  {
+    accountId: AccountId;
+    /** In the account's currency. */
+    amount: Money;
+    /** The price in another currency when it differs from the account's. */
+    foreignAmount?: Money;
+  } & (
+    | { categoryId: CategoryId; lines?: never }
+    | { categoryId?: never; lines: readonly SplitLine[] }
+  )
+>;
+
+// The category side of an expense or income: one line, or a split whose
+// lines are in `total`'s currency, name distinct categories and add up to
+// it exactly.
+function categoryLines(input: SpendInput, total: Money): readonly SplitLine[] {
+  if (input.lines === undefined) {
+    return [{ categoryId: input.categoryId, amount: total }];
+  }
+  const { lines } = input;
+  if (
+    lines.length < 2 ||
+    new Set(lines.map((line) => line.categoryId)).size !== lines.length
+  ) {
+    throw new LedgerError(
+      'ledger.invalid_split',
+      'A split needs at least two lines, each with its own category.',
+    );
+  }
+  let sum = 0n;
+  for (const line of lines) {
+    positive(line.amount, 'split amount');
+    if (line.amount.currency !== total.currency) {
+      throw new LedgerError(
+        'ledger.split_mismatch',
+        `Split lines must be in ${total.currency}.`,
+      );
+    }
+    sum += BigInt(line.amount.amountMinor);
+  }
+  if (sum !== BigInt(total.amountMinor)) {
+    throw new LedgerError(
+      'ledger.split_mismatch',
+      'The split lines do not add up to the total.',
+    );
+  }
+  return lines;
+}
+
+/** Money leaves a user account for one or more categories (FR-L1, FR-L5, FR-X3). */
 export function expense(
   chart: Chart,
   meta: EntryMeta,
@@ -213,25 +261,27 @@ export function expense(
   const amount = positive(input.amount, 'amount');
   const foreign = foreignSide(amount, input.foreignAmount);
   const spent = foreign ?? amount;
+  const lines = categoryLines(input, spent);
+  const expenses = systemAccount(chart, 'expenses', spent.currency).id;
 
   return commit(chart, {
     meta,
     kind: 'expense',
-    categoryId: input.categoryId,
+    categoryId: input.categoryId ?? null,
     impliedRate: foreign === null ? null : impliedRate(amount, spent),
     postings: [
       { accountId: input.accountId, amount: negate(amount) },
       ...(foreign === null ? [] : conversion(chart, amount, spent)),
-      {
-        accountId: systemAccount(chart, 'expenses', spent.currency).id,
-        amount: spent,
-        categoryId: input.categoryId,
-      },
+      ...lines.map((line) => ({
+        accountId: expenses,
+        amount: line.amount,
+        categoryId: line.categoryId,
+      })),
     ],
   });
 }
 
-/** Money arrives in a user account from a category. */
+/** Money arrives in a user account from one or more categories. */
 export function income(
   chart: Chart,
   meta: EntryMeta,
@@ -241,18 +291,20 @@ export function income(
   const amount = positive(input.amount, 'amount');
   const foreign = foreignSide(amount, input.foreignAmount);
   const earned = foreign ?? amount;
+  const lines = categoryLines(input, earned);
+  const incomeAccount = systemAccount(chart, 'income', earned.currency).id;
 
   return commit(chart, {
     meta,
     kind: 'income',
-    categoryId: input.categoryId,
+    categoryId: input.categoryId ?? null,
     impliedRate: foreign === null ? null : impliedRate(earned, amount),
     postings: [
-      {
-        accountId: systemAccount(chart, 'income', earned.currency).id,
-        amount: negate(earned),
-        categoryId: input.categoryId,
-      },
+      ...lines.map((line) => ({
+        accountId: incomeAccount,
+        amount: negate(line.amount),
+        categoryId: line.categoryId,
+      })),
       ...(foreign === null ? [] : conversion(chart, earned, amount)),
       { accountId: input.accountId, amount },
     ],

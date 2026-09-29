@@ -14,12 +14,14 @@ import {
   opening,
   transfer,
   writeOff,
+  type SplitLine,
 } from './build.ts';
 import { accountIn } from './chart.ts';
 import { LedgerError } from './errors.ts';
 import { reverse } from './reverse.ts';
 import { food, salary, testChart, testCurrencies } from './testing.ts';
 import {
+  categoryId,
   transactionId,
   type Account,
   type AccountId,
@@ -46,6 +48,8 @@ type Op =
       account: Account;
       amount: number;
       foreign: Money | null;
+      /** One category, or a split into this many lines. */
+      parts: number;
     }
   | {
       t: 'transfer';
@@ -72,6 +76,7 @@ const opArb: fc.Arbitrary<Op> = fc.oneof(
     account: accountArb,
     amount: amountArb,
     foreign: foreignArb,
+    parts: fc.integer({ min: 1, max: 4 }),
   }),
   fc.record({
     t: fc.constant('transfer' as const),
@@ -94,6 +99,18 @@ const opArb: fc.Arbitrary<Op> = fc.oneof(
   fc.record({ t: fc.constant('reverse' as const), pick: fc.nat() }),
 );
 
+// `total` in `parts` lines, the remainder on the last, each its own category.
+function splitEvenly(total: Money, parts: number): SplitLine[] {
+  const share = Math.floor(total.amountMinor / parts);
+  return Array.from({ length: parts }, (_, i) => ({
+    categoryId: categoryId(`split-${String(i)}`),
+    amount: money(
+      i === parts - 1 ? total.amountMinor - share * (parts - 1) : share,
+      total.currency,
+    ),
+  }));
+}
+
 // Refusals that random input is expected to hit; anything else fails.
 const expectedRefusals = new Set([
   'ledger.already_reversed',
@@ -111,15 +128,21 @@ function build(
   try {
     switch (op.t) {
       case 'expense':
-      case 'income':
+      case 'income': {
+        const foreign =
+          op.foreign === null || op.foreign.currency === op.account.currency
+            ? null
+            : op.foreign;
+        const total = foreign ?? money(op.amount, op.account.currency);
         return (op.t === 'expense' ? expense : income)(chart, meta, {
           accountId: op.account.id,
           amount: money(op.amount, op.account.currency),
-          categoryId: op.t === 'expense' ? food : salary,
-          ...(op.foreign === null || op.foreign.currency === op.account.currency
-            ? {}
-            : { foreignAmount: op.foreign }),
+          ...(foreign === null ? {} : { foreignAmount: foreign }),
+          ...(op.parts > 1 && total.amountMinor >= op.parts
+            ? { lines: splitEvenly(total, op.parts) }
+            : { categoryId: op.t === 'expense' ? food : salary }),
         });
+      }
       case 'transfer':
         return transfer(chart, meta, {
           fromId: op.from.id,
@@ -312,6 +335,89 @@ describe('ledger invariants', () => {
           ).toEqual(groupsNonZero(budgetGroupBalances(chart, ledger, asOf)));
         }
       }),
+    );
+  });
+});
+
+describe('split entries', () => {
+  const card = userAccounts.find(
+    (a) => a.currency === 'USD' && a.budgetGroup === 'on',
+  );
+  if (card === undefined) throw new Error('no test account');
+  const meta: EntryMeta = {
+    id: transactionId('split'),
+    occurredOn: localDate('2026-03-01'),
+    createdAt: '2026-03-01T00:00:00.000Z',
+  };
+  const linesArb = fc.array(fc.integer({ min: 1, max: 1e7 }), {
+    minLength: 2,
+    maxLength: 8,
+  });
+
+  it('balance per currency, and their lines add up to the total', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(expense, income),
+        linesArb,
+        foreignArb,
+        (make, amounts, foreign) => {
+          const priced =
+            foreign === null || foreign.currency === card.currency
+              ? null
+              : foreign;
+          const total = amounts.reduce((a, b) => a + b, 0);
+          const currency = priced?.currency ?? card.currency;
+          const t = make(chart, meta, {
+            accountId: card.id,
+            // Charged in the account's currency, priced in another.
+            amount: money(priced?.amountMinor ?? total, card.currency),
+            ...(priced === null
+              ? {}
+              : { foreignAmount: money(total, priced.currency) }),
+            lines: amounts.map((amount, i) => ({
+              categoryId: categoryId(`c${String(i)}`),
+              amount: money(amount, currency),
+            })),
+          });
+          const sums = new Map<string, number>();
+          for (const p of t.postings) {
+            sums.set(
+              p.amount.currency,
+              (sums.get(p.amount.currency) ?? 0) + p.amount.amountMinor,
+            );
+          }
+          expect([...sums.values()].every((sum) => sum === 0)).toBe(true);
+          const categorised = t.postings.filter((p) => p.categoryId !== null);
+          expect(
+            categorised.map((p) => Math.abs(p.amount.amountMinor)),
+          ).toEqual(amounts);
+          expect(t.categoryId).toBeNull();
+        },
+      ),
+    );
+  });
+
+  it('are refused when the lines miss the total', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(expense, income),
+        linesArb,
+        fc.integer({ min: -1e6, max: 1e6 }).filter((n) => n !== 0),
+        (make, amounts, off) => {
+          const total = amounts.reduce((a, b) => a + b, 0) + off;
+          fc.pre(total > 0);
+          expect(() =>
+            make(chart, meta, {
+              accountId: card.id,
+              amount: money(total, card.currency),
+              lines: amounts.map((amount, i) => ({
+                categoryId: categoryId(`c${String(i)}`),
+                amount: money(amount, card.currency),
+              })),
+            }),
+          ).toThrow(expect.objectContaining({ code: 'ledger.split_mismatch' }));
+        },
+      ),
     );
   });
 });

@@ -84,22 +84,25 @@ function entryFor(body: CreateTransactionBody): TransactionView {
       : body.kind === 'expense'
         ? [system('conversion', body.amount), system('conversion', neg(other))]
         : [system('conversion', other), system('conversion', neg(body.amount))];
+  const lines = body.lines ?? [
+    { categoryId: body.categoryId ?? '', amount: other },
+  ];
   const postings =
     body.kind === 'expense'
       ? [
           own(body.accountId, neg(body.amount)),
           ...conversion,
-          system('expenses', other, body.categoryId),
+          ...lines.map((l) => system('expenses', l.amount, l.categoryId)),
         ]
       : [
-          system('income', neg(other), body.categoryId),
+          ...lines.map((l) => system('income', neg(l.amount), l.categoryId)),
           ...conversion,
           own(body.accountId, body.amount),
         ];
   return {
     ...base,
     kind: body.kind,
-    categoryId: body.categoryId,
+    categoryId: body.categoryId ?? null,
     postings,
   } as TransactionView;
 }
@@ -126,9 +129,10 @@ const spend = fc
     fc.constantFrom('expense' as const, 'income' as const),
     currency,
     fc.option(currency, { nil: undefined }),
+    fc.integer({ min: 1, max: 3 }),
     entryFields,
   )
-  .chain(([kind, own, foreign, fields]) =>
+  .chain(([kind, own, foreign, parts, fields]) =>
     fc
       .record({
         amount: amount(own),
@@ -138,10 +142,13 @@ const spend = fc
             : amount(foreign),
       })
       .map(({ amount: value, foreignAmount }): CreateTransactionBody => {
+        const total = foreignAmount ?? value;
         const common = {
           accountId: own.toLowerCase(),
           amount: value,
-          categoryId: 'food',
+          ...(parts > 1 && total.amountMinor >= parts
+            ? { lines: splitEvenly(total, parts) }
+            : { categoryId: 'food' }),
           ...(foreignAmount === undefined ? {} : { foreignAmount }),
           ...fields,
         };
@@ -150,6 +157,18 @@ const spend = fc
           : { kind: 'income', ...common };
       }),
   );
+
+// `total` in `parts` lines, the remainder on the last.
+function splitEvenly(total: Money, parts: number) {
+  const share = Math.floor(total.amountMinor / parts);
+  return ['food', 'fun', 'rent'].slice(0, parts).map((categoryId, i) => ({
+    categoryId,
+    amount: money(
+      i === parts - 1 ? total.amountMinor - share * (parts - 1) : share,
+      total.currency,
+    ),
+  }));
+}
 
 const accountArb = fc.constantFrom(...accounts);
 const transferBody = fc
@@ -201,6 +220,26 @@ describe('draftFromEntry', () => {
       amount: '13.50',
       foreign: '12.40',
       foreignCurrency: 'EUR',
+    });
+  });
+
+  it('turns a split into lines', () => {
+    const entry = entryFor({
+      kind: 'expense',
+      accountId: 'usd',
+      amount: money(8_000, 'USD'),
+      lines: [
+        { categoryId: 'food', amount: money(6_000, 'USD') },
+        { categoryId: 'fun', amount: money(2_000, 'USD') },
+      ],
+    });
+    if (!isEditable(entry)) throw new Error('not editable');
+    expect(draftFromEntry(entry, 'en-US')).toMatchObject({
+      categoryId: '',
+      lines: [
+        { categoryId: 'food', amount: '60.00' },
+        { categoryId: 'fun', amount: '20.00' },
+      ],
     });
   });
 
