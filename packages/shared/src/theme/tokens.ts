@@ -69,6 +69,8 @@ export const THEME_PAIRS: readonly ThemePair[] = [
   { foreground: 'destructive', background: 'background', kind: 'text' },
   // The hero figure on Today is large text.
   { foreground: 'today', background: 'background', kind: 'large-text' },
+  // A selected segment (theme mode, entry kind) is filled with primary.
+  { foreground: 'primary', background: 'background', kind: 'non-text' },
   { foreground: 'input', background: 'background', kind: 'non-text' },
   { foreground: 'ring', background: 'background', kind: 'non-text' },
   { foreground: 'ring', background: 'plot', kind: 'non-text' },

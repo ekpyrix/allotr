@@ -132,6 +132,20 @@ A PR is ready when:
 - every commit is signed off (DCO);
 - no secrets or real data are included anywhere.
 
+## Adding a community theme
+
+A community theme is one JSON file in `packages/shared/src/theme/community/`,
+in the same format the web app imports and downloads
+(`{ "format": "allotr-theme", "version": 1, "name", "scheme", "tokens" }`).
+Design it in the theme editor (Settings › Appearance › Create theme), use
+Download, then:
+
+- name the file after the theme id (`my-theme.json`) and register it in
+  `SHIPPED_THEMES` in `themes.ts`;
+- give it an original name, not the name of another project's theme;
+- run `pnpm --filter @allotr/shared test`: every shipped theme must pass
+  the contrast validator.
+
 ## Reporting bugs and parse errors
 
 Use the issue templates. For parsing problems, include the exact input text

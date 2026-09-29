@@ -30,6 +30,7 @@ import { OnboardingPage } from './routes/onboarding.tsx';
 import { SavingsPage } from './routes/savings.tsx';
 import { SettingsPage } from './routes/settings.tsx';
 import { SetupPage } from './routes/setup.tsx';
+import { EditThemePage, NewThemePage } from './routes/theme-editor.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
 import { t } from '@/messages/t';
@@ -234,6 +235,28 @@ const settingsRoute = createRoute({
   },
 });
 
+const newThemeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/new',
+  validateSearch: (search: Record<string, unknown>): { from?: string } =>
+    typeof search.from === 'string' ? { from: search.from } : {},
+  component: function NewTheme() {
+    const { session } = newThemeRoute.useRouteContext();
+    const { from } = newThemeRoute.useSearch();
+    return <NewThemePage session={session} from={from} />;
+  },
+});
+
+const editThemeRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/$id',
+  component: function EditTheme() {
+    const { session } = editThemeRoute.useRouteContext();
+    const { id } = editThemeRoute.useParams();
+    return <EditThemePage session={session} id={id} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   onboardingRoute,
@@ -248,6 +271,8 @@ const routeTree = rootRoute.addChildren([
     savingsRoute,
     setupRoute,
     settingsRoute,
+    newThemeRoute,
+    editThemeRoute,
   ]),
 ]);
 

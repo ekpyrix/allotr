@@ -1,6 +1,6 @@
 import { THEME_MODES, type ThemeMode } from '@allotr/shared';
 import { cn } from '@/lib/utils';
-import { useThemeMode } from './theme-provider.tsx';
+import { useTheme } from './theme-provider.tsx';
 
 const labels: Readonly<Record<ThemeMode, string>> = {
   light: 'Light',
@@ -11,7 +11,7 @@ const labels: Readonly<Record<ThemeMode, string>> = {
 // Native radios: arrow keys move between modes and screen readers announce
 // the group as "Theme".
 export function ThemeModeSwitch({ className }: { className?: string }) {
-  const { mode, setMode, saveError } = useThemeMode();
+  const { mode, setMode, saveError } = useTheme();
   return (
     <fieldset className={cn('text-sm', className)}>
       <legend className="sr-only">Theme</legend>

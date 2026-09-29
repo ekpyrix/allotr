@@ -1,0 +1,24 @@
+{
+  "format": "allotr-theme",
+  "version": 1,
+  "name": "High contrast dark",
+  "scheme": "dark",
+  "tokens": {
+    "background": "#000000",
+    "foreground": "#ffffff",
+    "muted": "#1c1c1c",
+    "muted-foreground": "#d0d0d0",
+    "plot": "#141414",
+    "today": "#ffc94d",
+    "today-text": "#ffc94d",
+    "over": "#ff9b8a",
+    "positive": "#7ee2a8",
+    "negative": "#ff9b8a",
+    "primary": "#ffffff",
+    "primary-foreground": "#000000",
+    "border": "#5c5c5c",
+    "input": "#a6a6a6",
+    "ring": "#ffc94d",
+    "destructive": "#ff9b8a"
+  }
+}

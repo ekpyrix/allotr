@@ -1,0 +1,24 @@
+{
+  "format": "allotr-theme",
+  "version": 1,
+  "name": "Paper",
+  "scheme": "light",
+  "tokens": {
+    "background": "#f7f1e3",
+    "foreground": "#2b2118",
+    "muted": "#ebe2cd",
+    "muted-foreground": "#5e5040",
+    "plot": "#efe7d4",
+    "today": "#a0561c",
+    "today-text": "#8a4712",
+    "over": "#9a3324",
+    "positive": "#3d6630",
+    "negative": "#9a3324",
+    "primary": "#3a2c1f",
+    "primary-foreground": "#f7f1e3",
+    "border": "#d6c9ad",
+    "input": "#857560",
+    "ring": "#8a4712",
+    "destructive": "#9a3324"
+  }
+}
