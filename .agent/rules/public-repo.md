@@ -28,6 +28,15 @@ screenshots — is world-readable and cannot be reliably un-published.
   a job: dependencies, standards and formats, integration targets, providers,
   and licence credits for bundled assets.
 
+## Shipped palette names
+
+[ADR 0017](../../docs/adr/0017-third-party-palettes.md) makes a scoped
+exception: bundled theme palettes keep their original names (e.g. Catppuccin
+Mocha). Those names may appear as theme names, in `credit` fields, in
+`THIRD_PARTY_NOTICES.md` and in the theme picker. Never use them as
+comparisons or endorsements ("like X", "better than Y"), and never add a
+family whose licence does not allow redistribution and modification.
+
 ## Checklist before every commit
 
 - [ ] `git diff --cached` reviewed for keys, tokens and personal data.
