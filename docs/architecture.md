@@ -158,7 +158,13 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
-  mode (`light`, `dark` or `system`, the default). `/v1/rates` takes manual exchange rates, one
+  mode (`light`, `dark` or `system`, the default). `/v1/settings/setup`
+  holds a new user's progress through setup (currency and region, payday,
+  spending accounts, savings, bills): the steps saved or skipped and whether
+  it is finished. With nothing saved, a user who has any account counts as
+  finished, so older ledgers never see it; opening setup saves its start,
+  and an import finishes it. The web app sends a user to `/setup` from
+  Today until it is finished. `/v1/rates` takes manual exchange rates, one
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
   `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
   …/payments/{dueOn}` undoes the mark.

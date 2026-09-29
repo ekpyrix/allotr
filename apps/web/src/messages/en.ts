@@ -27,6 +27,48 @@ export const en = {
     submit: 'Create account',
     submitting: 'Creating account…',
   },
+  setup: {
+    title: 'Set up your budget',
+    intro:
+      'A few answers get you to your first daily number. You can change any of them later.',
+    loading: 'Loading setup…',
+    step: 'Step {n} of {total}: {title}',
+    continue: 'Continue',
+    skip: 'Skip this step',
+    finish: 'Finish',
+    saving: 'Saving…',
+    skipRest: 'Skip the rest of setup',
+    skipRestHint: 'You can set everything later in Settings and Accounts.',
+    importHint:
+      'Moving a ledger over? Skip setup and import it: import needs an empty ledger.',
+    added: 'Added',
+    announceAdded: '{name} added.',
+    region: {
+      title: 'Currency and region',
+      intro:
+        'Figures are shown in your currency. The time zone decides when your day starts.',
+    },
+    payday: {
+      title: 'Payday',
+      intro: 'Your budget runs from one payday to the next.',
+    },
+    spending: {
+      title: 'Spending accounts',
+      intro:
+        'Accounts you spend from day to day, such as a current account, cash or a credit card. Your daily number comes only from these.',
+    },
+    savings: {
+      title: 'Savings',
+      intro: 'Money you set aside. It is never counted in what you can spend.',
+    },
+    bills: {
+      title: 'Bills',
+      intro:
+        'Regular bills due before payday are set aside from your daily number until you mark them paid. Optional.',
+      noAccounts:
+        'You added no accounts, so there is nothing to pay a bill from yet.',
+    },
+  },
   invite: {
     title: 'Join Allotr',
     intro: 'You were invited to this instance. Create your account.',

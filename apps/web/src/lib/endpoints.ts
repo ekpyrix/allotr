@@ -30,6 +30,7 @@ import {
   reverseTransactionBodySchema,
   sessionSchema,
   sessionUserSchema,
+  setupSchema,
   signUpBodySchema,
   tagBodySchema,
   tagListSchema,
@@ -184,6 +185,17 @@ export const endpoints = {
     path: '/v1/settings/appearance',
     body: appearanceSchema,
     response: appearanceSchema,
+  }),
+  setup: endpoint({
+    method: 'GET',
+    path: '/v1/settings/setup',
+    response: setupSchema,
+  }),
+  saveSetup: endpoint({
+    method: 'PUT',
+    path: '/v1/settings/setup',
+    body: setupSchema,
+    response: setupSchema,
   }),
   accounts: endpoint({
     method: 'GET',

@@ -38,18 +38,24 @@ export function CreateAccountForm({
   defaultCurrency,
   today,
   locale,
+  group,
+  autoFocus = true,
   onCreated,
   onBusyChange,
 }: {
   defaultCurrency: string;
   today: string;
   locale: string;
+  /** Fixes the budget group and hides its choice. */
+  group?: AccountView['budgetGroup'];
+  autoFocus?: boolean;
   onCreated: (account: AccountView) => void;
   onBusyChange: (busy: boolean) => void;
 }) {
-  const [draft, setDraft] = useState<AccountDraft>(() =>
-    newAccountDraft(defaultCurrency, today),
-  );
+  const [draft, setDraft] = useState<AccountDraft>(() => ({
+    ...newAccountDraft(defaultCurrency, today),
+    ...(group === undefined ? {} : { budgetGroup: group }),
+  }));
   const [errors, setErrors] = useState<AccountDraftErrors>({});
   const [nameTaken, setNameTaken] = useState(false);
   const [failure, setFailure] = useState<{
@@ -151,7 +157,7 @@ export function CreateAccountForm({
             name="name"
             maxLength={100}
             autoComplete="off"
-            autoFocus
+            autoFocus={autoFocus}
             className="h-11 text-base"
             value={draft.name}
             onChange={(e) => {
@@ -185,38 +191,40 @@ export function CreateAccountForm({
         )}
       </FieldControl>
 
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium">
-          {t('accounts.create.group')}
-        </legend>
-        <div className="grid gap-2">
-          {(['on', 'off'] as const).map((group) => (
-            <label
-              key={group}
-              className="flex cursor-pointer gap-3 rounded-md border border-input p-3 has-checked:border-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
-            >
-              <input
-                type="radio"
-                name={groupName}
-                value={group}
-                checked={draft.budgetGroup === group}
-                onChange={() => {
-                  update({ budgetGroup: group });
-                }}
-                className="mt-1 accent-primary"
-              />
-              <span className="grid gap-0.5">
-                <span className="font-medium">
-                  {t(`accounts.groups.${group}`)}
+      {group === undefined ? (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium">
+            {t('accounts.create.group')}
+          </legend>
+          <div className="grid gap-2">
+            {(['on', 'off'] as const).map((group) => (
+              <label
+                key={group}
+                className="flex cursor-pointer gap-3 rounded-md border border-input p-3 has-checked:border-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
+              >
+                <input
+                  type="radio"
+                  name={groupName}
+                  value={group}
+                  checked={draft.budgetGroup === group}
+                  onChange={() => {
+                    update({ budgetGroup: group });
+                  }}
+                  className="mt-1 accent-primary"
+                />
+                <span className="grid gap-0.5">
+                  <span className="font-medium">
+                    {t(`accounts.groups.${group}`)}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {t(`accounts.groups.${group}Hint`)}
+                  </span>
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  {t(`accounts.groups.${group}Hint`)}
-                </span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       <FieldControl
         label={t('accounts.create.balance', { currency: draft.currency })}

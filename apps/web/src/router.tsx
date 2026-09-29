@@ -20,6 +20,7 @@ import {
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
+import { saveSetup, setupQuery } from '@/lib/setup';
 import { AccountsPage } from './routes/accounts.tsx';
 import { CyclePage } from './routes/cycle.tsx';
 import { HistoryPage } from './routes/history.tsx';
@@ -28,6 +29,7 @@ import { LedgerPage } from './routes/ledger.tsx';
 import { OnboardingPage } from './routes/onboarding.tsx';
 import { SavingsPage } from './routes/savings.tsx';
 import { SettingsPage } from './routes/settings.tsx';
+import { SetupPage } from './routes/setup.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
 import { t } from '@/messages/t';
@@ -141,9 +143,17 @@ const appRoute = createRoute({
   },
 });
 
+// Sign-in, invites and the first account all land on Today, so this is
+// where setup catches a new user. Other routes stay reachable during it.
+// Required 2FA comes first: until then the server refuses the check.
 const todayRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/today',
+  beforeLoad: async ({ context }) => {
+    if (context.session.twoFactorRequired) return;
+    const { finished } = await queryOrCached(context.queryClient, setupQuery);
+    if (!finished) throw redirect({ to: '/setup' });
+  },
   component: function Today() {
     const { session } = todayRoute.useRouteContext();
     return <TodayPage user={session.user} />;
@@ -197,6 +207,22 @@ const savingsRoute = createRoute({
   component: SavingsPage,
 });
 
+const setupRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/setup',
+  beforeLoad: async ({ context }) => {
+    if (context.session.twoFactorRequired) throw redirect({ to: '/today' });
+    const { queryClient } = context;
+    const setup = await queryOrCached(queryClient, setupQuery);
+    if (setup.finished) throw redirect({ to: '/today' });
+    // Until something is saved, an account added from another view would
+    // read as setup done, so save the start.
+    if (setup.handled.length === 0)
+      queryClient.setQueryData(setupQuery.queryKey, await saveSetup(setup));
+  },
+  component: SetupPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
@@ -218,6 +244,7 @@ const routeTree = rootRoute.addChildren([
     cycleRoute,
     historyRoute,
     savingsRoute,
+    setupRoute,
     settingsRoute,
   ]),
 ]);

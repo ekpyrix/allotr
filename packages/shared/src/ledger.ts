@@ -327,6 +327,32 @@ export const updateLedgerSettingsBodySchema = z
     error: 'Change at least one field',
   });
 
+// Setup after first sign-in (FR-W7): the steps to a first daily number, in
+// order. A step is handled once it was saved or skipped.
+
+export const setupSteps = [
+  'region',
+  'payday',
+  'spending',
+  'savings',
+  'bills',
+] as const;
+export const setupStepSchema = z.enum(setupSteps);
+export type SetupStep = z.infer<typeof setupStepSchema>;
+
+export const setupSchema = z.object({
+  /** Setup is over: completed or the rest skipped. */
+  finished: z.boolean(),
+  /** Steps saved or skipped; resume opens the first step not listed. */
+  handled: z
+    .array(setupStepSchema)
+    .max(setupSteps.length)
+    .refine((steps) => new Set(steps).size === steps.length, {
+      error: 'List each step once',
+    }),
+});
+export type SetupState = z.infer<typeof setupSchema>;
+
 export const cycleSchema = z.object({
   openedOn: localDateSchema,
   /** The paycheck that opened it; null for the first cycle. */

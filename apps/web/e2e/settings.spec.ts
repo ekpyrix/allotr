@@ -5,7 +5,7 @@ import type {
 } from '@allotr/shared';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
-import { account } from './account.ts';
+import { account, setupSkipped } from './account.ts';
 import { totpFromUri } from './totp.ts';
 
 // The settings view (FR-W2). One instance per size; the tests build on each
@@ -20,6 +20,9 @@ test.beforeAll(async ({ playwright }, testInfo) => {
     extraHTTPHeaders: { origin: baseURL },
   });
   expect((await api.post('/v1/onboarding', { data: account })).ok()).toBe(true);
+  expect(
+    (await api.put('/v1/settings/setup', { data: setupSkipped })).ok(),
+  ).toBe(true);
   await api.dispose();
 });
 
@@ -399,6 +402,9 @@ test('an invite link from the instance section signs up a new user', async ({
   await guest.getByLabel('Email').fill(invited.email);
   await guest.getByLabel('Password').fill(invited.password);
   await guest.getByRole('button', { name: 'Create account' }).click();
+  // A new user starts with setup (setup.spec covers it).
+  await expect(guest).toHaveURL(/\/setup$/);
+  await guest.getByRole('button', { name: 'Skip the rest of setup' }).click();
   await expect(guest).toHaveURL(/\/today$/);
 
   await guest.goto('/settings');

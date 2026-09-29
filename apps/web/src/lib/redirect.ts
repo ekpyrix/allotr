@@ -13,6 +13,9 @@ export const extraShellPaths = [
   '/cycle',
   '/history',
   '/savings',
+  // Redirects to Today once finished, as in the shell spec; setup.spec runs
+  // axe on every step.
+  '/setup',
 ] as const satisfies readonly `/${string}`[];
 
 /** Every signed-in route; the shell E2E test visits each with axe. */

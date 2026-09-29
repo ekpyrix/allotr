@@ -21,6 +21,7 @@ import { registerHealthRoutes } from './routes/health.ts';
 import { registerImportRoutes } from './routes/import.ts';
 import { registerRateRoutes } from './routes/rates.ts';
 import { registerSessionRoutes } from './routes/session.ts';
+import { registerSetupRoutes } from './routes/setup.ts';
 import { registerTagRoutes } from './routes/tags.ts';
 import { registerTodayRoutes } from './routes/today.ts';
 import { registerTransactionRoutes } from './routes/transactions.ts';
@@ -98,6 +99,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerTodayRoutes(app, deps);
   registerCycleRoutes(app, deps);
   registerAppearanceRoutes(app, deps);
+  registerSetupRoutes(app, deps);
   registerRateRoutes(app, deps);
   registerBillRoutes(app, deps);
   registerImportRoutes(app, deps);

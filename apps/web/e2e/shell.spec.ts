@@ -3,7 +3,7 @@ import { shellPaths } from '../src/lib/redirect.ts';
 import { t } from '../src/messages/t.ts';
 import { navItems } from '../src/nav-items.ts';
 import { expectAccessible } from './a11y.ts';
-import { account } from './account.ts';
+import { account, setupSkipped } from './account.ts';
 
 // Tests share one instance: the first creates the account, later ones sign
 // in through the API.
@@ -27,6 +27,11 @@ test('a deep link while signed out returns there after sign-in', async ({
     headers: origin,
   });
   expect(onboard.ok()).toBe(true);
+  const skip = await page.request.put('/v1/settings/setup', {
+    data: setupSkipped,
+    headers: origin,
+  });
+  expect(skip.ok()).toBe(true);
   const signOut = await page.request.post('/v1/auth/sign-out', {
     data: {},
     headers: origin,
