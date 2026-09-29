@@ -110,6 +110,31 @@ test('the locale shows a sample and is saved in canonical form', async ({
   await ledger.getByRole('button', { name: 'Save' }).first().click();
   await expect(ledger.getByText('Saved.')).toBeVisible();
   await expectAccessible(page);
+
+  // A ledger query that fails takes only the ledger sections down.
+  await page.route('**/v1/bills', (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({
+        type: 'about:blank',
+        title: 'Bad Request',
+        status: 400,
+      }),
+    }),
+  );
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(section(page, 'Ledger')).toHaveCount(0);
+  await expect(
+    section(page, 'Security').getByRole('button', {
+      name: 'Sign out',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.unroute('**/v1/bills');
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(section(page, 'Ledger')).toBeVisible();
 });
 
 function post(
@@ -493,6 +518,28 @@ test('two-factor authentication turns on with a code and stays on while required
     }),
   ).toBeVisible();
   await expectAccessible(unenrolled);
+
+  // Once they have set it up, everything else comes back.
+  const own = unenrolled.getByRole('region', { name: 'Security', exact: true });
+  await own
+    .getByRole('button', { name: 'Turn on two-factor authentication' })
+    .click();
+  await own.getByLabel('Your password').fill(invited.password);
+  await own.getByRole('button', { name: 'Continue' }).click();
+  const theirSecret = (
+    await own.getByTestId('totp-secret').innerText()
+  ).replace(/\s/g, '');
+  await own
+    .getByLabel('Code from the app')
+    .fill(totpFromUri(`otpauth://totp/Allotr?secret=${theirSecret}`));
+  await own.getByRole('button', { name: 'Verify and turn on' }).click();
+  await expect(own.getByText('Two-factor authentication is on.')).toBeVisible();
+  await expect(
+    unenrolled.getByRole('region', { name: 'Ledger', exact: true }),
+  ).toBeVisible();
+  await expect(
+    unenrolled.getByRole('link', { name: 'Set it up in Settings' }),
+  ).toHaveCount(0);
   await other.close();
 
   await page.reload();

@@ -69,38 +69,35 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
   // Archived too: a bill can still name one.
   const accounts = useQuery({ ...allAccountsQuery, enabled });
   const all = [settings, today, categories, tags, bills, rates, accounts];
-  const ready = !enabled || all.every((q) => q.data !== undefined);
-  useHashFocus(ready);
-
-  if (!enabled)
-    return (
-      <Page title={t('settings.title')}>
-        <SecuritySection
-          session={session}
-          locale={deviceLocale}
-          timeZone={deviceTimeZone}
-        />
-      </Page>
-    );
+  // Wait for every answer, data or error, so a hash lower down does not
+  // move when the ledger sections above it appear.
+  const settled = all.every((q) => q.data !== undefined || q.isError);
+  useHashFocus(!enabled || settled);
 
   const failed = all.find((q) => q.isError && q.data === undefined);
-  if (failed !== undefined)
-    return (
-      <Page title={t('settings.title')}>
-        <div className="mt-6 grid justify-items-start gap-4">
-          <FormError message={errorMessage(failed.error)} />
-          <Button
-            onClick={() => {
-              for (const q of all) if (q.isError) void q.refetch();
-            }}
-          >
-            {t('errors.retry')}
-          </Button>
-        </div>
-      </Page>
-    );
+  // Before the ledger settings load (or when they cannot), dates in the
+  // security sections use this device's language and zone.
+  const locale = settings.data?.locale ?? deviceLocale;
+  const timeZone = settings.data?.timeZone ?? deviceTimeZone;
 
-  if (
+  // A failing ledger query only takes its own sections down: security and
+  // sign-out stay reachable.
+  let ledger;
+  if (!enabled) ledger = null;
+  else if (failed !== undefined)
+    ledger = (
+      <div className="mt-6 grid justify-items-start gap-4">
+        <FormError message={errorMessage(failed.error)} />
+        <Button
+          onClick={() => {
+            for (const q of all) if (q.isError) void q.refetch();
+          }}
+        >
+          {t('errors.retry')}
+        </Button>
+      </div>
+    );
+  else if (
     settings.data === undefined ||
     today.data === undefined ||
     categories.data === undefined ||
@@ -109,38 +106,43 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
     rates.data === undefined ||
     accounts.data === undefined
   )
-    return (
-      <Page title={t('settings.title')}>
-        <p role="status" className="mt-6 text-muted-foreground">
-          {t('settings.loading')}
-        </p>
-      </Page>
+    ledger = (
+      <p role="status" className="mt-6 text-muted-foreground">
+        {t('settings.loading')}
+      </p>
+    );
+  else
+    ledger = (
+      <>
+        <LedgerSettingsSection settings={settings.data} today={today.data} />
+        <CategoriesSection categories={categories.data.categories} />
+        <TagsSection tags={tags.data.tags} />
+        <BillsSection
+          bills={bills.data.bills}
+          accounts={accounts.data.accounts}
+          today={today.data}
+          locale={locale}
+        />
+        <RatesSection
+          rates={rates.data.rates}
+          today={today.data}
+          defaultCurrency={settings.data.defaultCurrency}
+          locale={locale}
+        />
+      </>
     );
 
-  const { locale, timeZone, defaultCurrency } = settings.data;
   return (
     <Page title={t('settings.title')}>
-      <LedgerSettingsSection settings={settings.data} today={today.data} />
-      <CategoriesSection categories={categories.data.categories} />
-      <TagsSection tags={tags.data.tags} />
-      <BillsSection
-        bills={bills.data.bills}
-        accounts={accounts.data.accounts}
-        today={today.data}
-        locale={locale}
-      />
-      <RatesSection
-        rates={rates.data.rates}
-        today={today.data}
-        defaultCurrency={defaultCurrency}
-        locale={locale}
-      />
-      <Section id="appearance" title={t('settings.appearance.title')}>
-        <ThemeModeSwitch className="mt-4" />
-        <ShortcutsSwitch className="mt-6" />
-      </Section>
+      {ledger}
+      {enabled ? (
+        <Section id="appearance" title={t('settings.appearance.title')}>
+          <ThemeModeSwitch className="mt-4" />
+          <ShortcutsSwitch className="mt-6" />
+        </Section>
+      ) : null}
       <SecuritySection session={session} locale={locale} timeZone={timeZone} />
-      {session.user.role === 'admin' ? (
+      {enabled && session.user.role === 'admin' ? (
         <InstanceSection locale={locale} timeZone={timeZone} />
       ) : null}
     </Page>
