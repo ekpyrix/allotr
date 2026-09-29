@@ -66,7 +66,12 @@ export function totalOn(
     a.localeCompare(b),
   )) {
     if (sum === 0n) continue;
-    const converted = convertOn(rates, money(Number(sum), currency), target, date);
+    const converted = convertOn(
+      rates,
+      money(Number(sum), currency),
+      target,
+      date,
+    );
     if (converted === null) missing.push(currency);
     else total += BigInt(converted.amountMinor);
   }

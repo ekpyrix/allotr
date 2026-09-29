@@ -1,4 +1,4 @@
-import type { TodayView, TransactionView } from '@allotr/shared';
+import { money, type TodayView, type TransactionView } from '@allotr/shared';
 import {
   expect,
   test,
@@ -307,7 +307,15 @@ test('a server error clears when the user edits the form', async ({ page }) => {
 test('Go to Accounts leaves focus on the new view', async ({ page }) => {
   await page.route('**/v1/accounts', (route) =>
     route.request().method() === 'GET'
-      ? route.fulfill({ json: { accounts: [] } })
+      ? route.fulfill({
+          json: {
+            accounts: [],
+            totals: {
+              on: { amount: money(0, 'USD'), missingRates: [] },
+              off: { amount: money(0, 'USD'), missingRates: [] },
+            },
+          },
+        })
       : route.fallback(),
   );
   await page.goto('/ledger');

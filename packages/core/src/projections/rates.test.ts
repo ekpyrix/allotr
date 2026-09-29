@@ -119,10 +119,12 @@ describe('totalOn', () => {
   });
 
   it('does not depend on the order of the amounts', () => {
-    const amountArb = fc.record({
-      amountMinor: fc.integer({ min: -1e9, max: 1e9 }),
-      currency: fc.constantFrom(usd, eur, jpy, currencyCode('GBP')),
-    });
+    const amountArb = fc
+      .tuple(
+        fc.integer({ min: -1e9, max: 1e9 }),
+        fc.constantFrom('USD', 'EUR', 'JPY', 'GBP'),
+      )
+      .map(([minor, currency]) => money(minor, currency));
     fc.assert(
       fc.property(fc.array(amountArb, { maxLength: 20 }), (amounts) => {
         const reversed = [...amounts].reverse();

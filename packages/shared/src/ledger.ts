@@ -65,6 +65,7 @@ export const createAccountBodySchema = z.object({
   /** The opening balance's date; today when omitted. */
   openedOn: localDateSchema.optional(),
 });
+export type CreateAccountBody = z.input<typeof createAccountBodySchema>;
 
 export const updateAccountBodySchema = z
   .object({

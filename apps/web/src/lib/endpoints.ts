@@ -1,7 +1,10 @@
 import {
   accountListSchema,
+  accountSchema,
   appearanceSchema,
+  archiveAccountBodySchema,
   categoryListSchema,
+  createAccountBodySchema,
   createTransactionBodySchema,
   editedTransactionSchema,
   ledgerSettingsSchema,
@@ -14,6 +17,7 @@ import {
   todaySchema,
   transactionListSchema,
   transactionSchema,
+  updateAccountBodySchema,
 } from '@allotr/shared';
 import { z } from 'zod';
 import { endpoint } from './api.ts';
@@ -79,6 +83,24 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/accounts',
     response: accountListSchema,
+  }),
+  createAccount: endpoint({
+    method: 'POST',
+    path: '/v1/accounts',
+    body: createAccountBodySchema,
+    response: accountSchema,
+  }),
+  updateAccount: endpoint({
+    method: 'PATCH',
+    path: '/v1/accounts/{id}',
+    body: updateAccountBodySchema,
+    response: accountSchema,
+  }),
+  archiveAccount: endpoint({
+    method: 'POST',
+    path: '/v1/accounts/{id}/archive',
+    body: archiveAccountBodySchema,
+    response: accountSchema,
   }),
   categories: endpoint({
     method: 'GET',
