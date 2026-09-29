@@ -42,10 +42,21 @@ export function reconciliation(
   };
 }
 
+/** Which kind of entry makes up a difference: the bank holds less or more. */
+export function adjustmentKind(difference: Money): 'expense' | 'income' {
+  if (difference.amountMinor === 0) {
+    throw new LedgerError(
+      'ledger.invalid_amount',
+      'The balances match; there is nothing to adjust.',
+    );
+  }
+  return difference.amountMinor < 0 ? 'expense' : 'income';
+}
+
 /**
  * The entry that brings the ledger to the bank's balance: an expense when
- * the bank holds less, an income when it holds more. `difference` is not
- * zero; `meta.occurredOn` is the reconcile date.
+ * the bank holds less, an income when it holds more, filed under a
+ * category of that kind. `meta.occurredOn` is the reconcile date.
  */
 export function unrecordedAdjustment(
   chart: Chart,
@@ -53,21 +64,14 @@ export function unrecordedAdjustment(
   input: Readonly<{
     accountId: AccountId;
     difference: Money;
-    expenseCategoryId: CategoryId;
-    incomeCategoryId: CategoryId;
+    categoryId: CategoryId;
   }>,
 ): Transaction {
-  const { accountId, difference } = input;
-  const amount = money(Math.abs(difference.amountMinor), difference.currency);
-  return difference.amountMinor < 0
-    ? expense(chart, meta, {
-        accountId,
-        amount,
-        categoryId: input.expenseCategoryId,
-      })
-    : income(chart, meta, {
-        accountId,
-        amount,
-        categoryId: input.incomeCategoryId,
-      });
+  const { accountId, difference, categoryId } = input;
+  const make = adjustmentKind(difference) === 'expense' ? expense : income;
+  return make(chart, meta, {
+    accountId,
+    amount: money(Math.abs(difference.amountMinor), difference.currency),
+    categoryId,
+  });
 }

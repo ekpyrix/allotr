@@ -1,8 +1,10 @@
--- Reconciliations (FR-L9): the bank's balance for an account on a date,
--- recorded when it matched the ledger or once the difference was posted as
--- an adjustment entry. A row whose adjustment was later undone no longer
--- counts as reconciled; readers check for the reversal. Rows are a record,
--- not the ledger: amounts are in the account's currency.
+-- Reconciliations (FR-L9): the bank's balance for an account on a date.
+-- The default policy records one when it matched the ledger or once the
+-- difference was posted as an adjustment entry; a flag-only policy (M4)
+-- may record a difference without one. A row counts as reconciled when the
+-- balances matched or its adjustment was not undone since; readers check
+-- for the reversal. Rows are a record, not the ledger: amounts are in the
+-- account's currency.
 
 CREATE TABLE reconciliations (
   id TEXT PRIMARY KEY,
@@ -19,7 +21,7 @@ CREATE TABLE reconciliations (
   computed_minor INTEGER NOT NULL,
   adjustment_transaction_id TEXT,
   created_at TEXT NOT NULL,
-  CHECK ((stated_minor = computed_minor) = (adjustment_transaction_id IS NULL)),
+  CHECK (adjustment_transaction_id IS NULL OR stated_minor <> computed_minor),
   FOREIGN KEY (account_id, user_id, currency)
     REFERENCES accounts (id, user_id, currency),
   FOREIGN KEY (adjustment_transaction_id, user_id)

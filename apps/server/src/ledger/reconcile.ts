@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
   accountId,
+  adjustmentKind,
   categoryId,
+  defaultPolicies,
   reconciliation,
   unrecordedAdjustment,
   type CategoryId,
@@ -10,7 +12,7 @@ import type { LocalDate, Money, ReconcileResultView } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
-import { getAccount } from './accounts.ts';
+import { findOwned } from './accounts.ts';
 import { insertCategory } from './categories.ts';
 import {
   appendTransaction,
@@ -23,9 +25,10 @@ import {
 } from './store.ts';
 import { getTransaction } from './transactions.ts';
 
-// Reconciling an account against the bank (FR-L9) with the default policy:
-// a match is recorded; a difference is only reported until the user asks
-// for the one-tap "Unrecorded" adjustment, which is recorded with it.
+// Reconciling an account against the bank (FR-L9). A match is recorded.
+// What happens to a difference is the reconcile policy's call; the default
+// reports it until the user asks for the one-tap "Unrecorded" adjustment,
+// which is recorded with it.
 
 export type Reconcile = Readonly<{
   balance: Money;
@@ -141,9 +144,8 @@ export async function reconcileAccount(
   now: Date,
 ): Promise<ReconcileResultView> {
   const result = await db.transaction().execute(async (trx) => {
-    // Checks the account exists, is the user's and is not a system account.
-    const account = await getAccount(trx, userId, id, now);
-    if (account.archived) {
+    const account = await findOwned(trx, userId, id);
+    if (account.archived === 1) {
       throw new RequestProblem(
         409,
         'account_archived',
@@ -182,14 +184,18 @@ export async function reconcileAccount(
       on,
     });
     const matched = check.difference.amountMinor === 0;
+    const requested = input.adjust === true;
     if (
-      input.adjust === true &&
+      requested &&
       expectedDifference !== undefined &&
       expectedDifference.amountMinor !== check.difference.amountMinor
     ) {
       throw stale();
     }
-    if (!matched && input.adjust !== true) {
+    if (
+      !matched &&
+      defaultPolicies.reconcile.onDifference(requested) === 'report'
+    ) {
       return { on, check, reconciled: false, adjustmentId: null };
     }
 
@@ -205,13 +211,12 @@ export async function reconcileAccount(
       const entry = unrecordedAdjustment(chart, newEntry(now, on), {
         accountId: accountId(id),
         difference: check.difference,
-        expenseCategoryId: await adjustmentCategory(
+        categoryId: await adjustmentCategory(
           trx,
           userId,
-          'expense',
+          adjustmentKind(check.difference),
           now,
         ),
-        incomeCategoryId: await adjustmentCategory(trx, userId, 'income', now),
       });
       await appendTransaction(trx, userId, entry, { source: 'api' });
       adjustmentId = entry.id;

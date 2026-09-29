@@ -42,6 +42,7 @@ export {
 } from './ledger/build.ts';
 export { edit, reverse, type ReversalMeta } from './ledger/reverse.ts';
 export {
+  adjustmentKind,
   reconciliation,
   unrecordedAdjustment,
   type Reconciliation,
@@ -82,12 +83,15 @@ export {
   defaultPolicies,
   dueDates,
   leftoverStays,
+  offerAdjustment,
   reserveAtPayday,
   type BillsStrategy,
   type DateWindow,
   type LeftoverStrategy,
   type OverspendStrategy,
   type Policies,
+  type ReconcileAction,
+  type ReconcileStrategy,
   type Settlement,
 } from './projections/policies.ts';
 export {

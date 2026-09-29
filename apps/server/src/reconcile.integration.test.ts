@@ -96,10 +96,13 @@ async function available(): Promise<number> {
   return (response.body as { available: Money }).available.amountMinor;
 }
 
-async function category(id: string | null): Promise<Category | undefined> {
+async function categories(): Promise<Category[]> {
   const response = await h.alice.get('/v1/categories?includeMerged=true');
-  const { categories } = response.body as { categories: Category[] };
-  return categories.find((c) => c.id === id);
+  return (response.body as { categories: Category[] }).categories;
+}
+
+async function category(id: string | null): Promise<Category | undefined> {
+  return (await categories()).find((c) => c.id === id);
 }
 
 describe('reconcile', () => {
@@ -155,6 +158,10 @@ describe('reconcile', () => {
       name: 'Unrecorded',
       kind: 'expense',
     });
+    // Only the category the entry needs is created.
+    expect(
+      (await categories()).some((c) => c.name === 'Unrecorded income'),
+    ).toBe(false);
 
     const after = await account(everyday);
     expect(after.balance).toEqual(usd(97_500));
@@ -209,7 +216,7 @@ describe('reconcile', () => {
     expect((await account(card)).balance).toEqual(usd(-21_000));
   });
 
-  it('keeps using the categories after a rename', async () => {
+  it('keeps using the categories after a rename and a merge', async () => {
     const first = await ok(everyday, {
       balance: usd(100_200),
       adjust: true,
@@ -224,6 +231,19 @@ describe('reconcile', () => {
       adjust: true,
     });
     expect(second.adjustment?.categoryId).toBe(id);
+
+    const other = (await categories()).find(
+      (c) => c.name === 'Other' && c.kind === 'expense',
+    );
+    const merged = await h.alice.delete(
+      `/v1/categories/${id}?mergeInto=${other?.id ?? ''}`,
+    );
+    expect(merged.status).toBe(204);
+    const third = await ok(everyday, {
+      balance: usd(100_000),
+      adjust: true,
+    });
+    expect(third.adjustment?.categoryId).toBe(other?.id);
   });
 
   it('refuses an adjustment when the difference moved', async () => {

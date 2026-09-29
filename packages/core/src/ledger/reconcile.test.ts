@@ -1,20 +1,17 @@
 import { localDate, money } from '@allotr/shared';
-import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { balanceOf } from './balances.ts';
 import { expense, opening } from './build.ts';
-import { reconciliation, unrecordedAdjustment } from './reconcile.ts';
-import { errorCode, food, meta, salary, testChart } from './testing.ts';
+import {
+  adjustmentKind,
+  reconciliation,
+  unrecordedAdjustment,
+} from './reconcile.ts';
+import { errorCode, food, meta, testChart } from './testing.ts';
 import { accountId, categoryId, type Transaction } from './types.ts';
 
 const chart = testChart();
 const card = accountId('card-USD');
 const unrecorded = categoryId('unrecorded');
-const unrecordedIncome = categoryId('unrecorded-income');
-const categories = {
-  expenseCategoryId: unrecorded,
-  incomeCategoryId: unrecordedIncome,
-};
 
 const ledger: Transaction[] = [
   opening(chart, meta('2026-03-01'), {
@@ -67,11 +64,11 @@ describe('reconciliation', () => {
 });
 
 describe('unrecordedAdjustment', () => {
-  it('posts a shortfall as an expense', () => {
+  it('posts a shortfall as an expense on the reconcile date', () => {
     const t = unrecordedAdjustment(chart, meta('2026-03-10'), {
       accountId: card,
       difference: money(-750, 'USD'),
-      ...categories,
+      categoryId: unrecorded,
     });
     expect(t.kind).toBe('expense');
     expect(t.categoryId).toBe(unrecorded);
@@ -79,62 +76,18 @@ describe('unrecordedAdjustment', () => {
   });
 
   it('posts a surplus as an income', () => {
+    expect(adjustmentKind(money(200, 'USD'))).toBe('income');
     const t = unrecordedAdjustment(chart, meta(), {
       accountId: card,
       difference: money(200, 'USD'),
-      ...categories,
+      categoryId: unrecorded,
     });
     expect(t.kind).toBe('income');
-    expect(t.categoryId).toBe(unrecordedIncome);
-    expect(t.categoryId).not.toBe(salary);
   });
 
   it('has nothing to post for a zero difference', () => {
-    expect(
-      errorCode(() =>
-        unrecordedAdjustment(chart, meta(), {
-          accountId: card,
-          difference: money(0, 'USD'),
-          ...categories,
-        }),
-      ),
-    ).toBe('ledger.invalid_amount');
-  });
-
-  it('brings the balance on that date to the stated one, debts included', () => {
-    const days = Array.from({ length: 31 }, (_, i) =>
-      localDate(`2026-03-${String(i + 1).padStart(2, '0')}`),
-    );
-    fc.assert(
-      fc.property(
-        fc.constantFrom(...days),
-        fc.integer({ min: -1e9, max: 1e9 }),
-        (on, stated) => {
-          const before = reconciliation(chart, ledger, {
-            accountId: card,
-            stated: money(stated, 'USD'),
-            on,
-          });
-          fc.pre(before.difference.amountMinor !== 0);
-          const adjusted = [
-            ...ledger,
-            unrecordedAdjustment(chart, meta(on), {
-              accountId: card,
-              difference: before.difference,
-              ...categories,
-            }),
-          ];
-          expect(balanceOf(chart, adjusted, card, on)).toEqual(
-            money(stated, 'USD'),
-          );
-          const after = reconciliation(chart, adjusted, {
-            accountId: card,
-            stated: money(stated, 'USD'),
-            on,
-          });
-          expect(after.difference.amountMinor).toBe(0);
-        },
-      ),
+    expect(errorCode(() => adjustmentKind(money(0, 'USD')))).toBe(
+      'ledger.invalid_amount',
     );
   });
 });

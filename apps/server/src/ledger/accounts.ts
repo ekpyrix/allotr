@@ -74,8 +74,8 @@ async function state(db: Db, userId: string, now: Date): Promise<LedgerState> {
 }
 
 /**
- * Each account's latest reconciled date. A reconciliation whose adjustment
- * was undone (or edited) no longer counts.
+ * Each account's latest reconciled date: the balances matched, or the
+ * difference was adjusted and the adjustment not undone (or edited) since.
  */
 async function lastReconciled(
   db: Db,
@@ -90,6 +90,12 @@ async function lastReconciled(
     )
     .select(['r.account_id', sql<LocalDate>`max(r.on_date)`.as('on_date')])
     .where('r.user_id', '=', userId)
+    .where((eb) =>
+      eb.or([
+        eb('r.stated_minor', '=', eb.ref('r.computed_minor')),
+        eb('r.adjustment_transaction_id', 'is not', null),
+      ]),
+    )
     .where('undo.id', 'is', null)
     .groupBy('r.account_id')
     .execute();
@@ -261,7 +267,8 @@ export async function createAccount(
   return getAccount(db, userId, id, now);
 }
 
-async function findOwned(db: Db, userId: string, id: string) {
+/** A user account of this user, archived or not; system accounts are not found. */
+export async function findOwned(db: Db, userId: string, id: string) {
   const row = await db
     .selectFrom('accounts')
     .select(['id', 'archived', 'currency'])

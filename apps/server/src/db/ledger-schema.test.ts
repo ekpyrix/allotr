@@ -458,11 +458,9 @@ describe('migration 0005_reconciliations', () => {
       );
     });
 
-    it('has an adjustment exactly when the balances differ', () => {
+    it('has an adjustment only when the balances differ', () => {
       insertReconciliation('r1', { stated: 4000, adjustment: 't1' });
-      expect(() => insertReconciliation('r2', { stated: 4000 })).toThrow(
-        /CHECK/,
-      );
+      insertReconciliation('r2', { stated: 4000 });
       expect(() => insertReconciliation('r3', { adjustment: 't1' })).toThrow(
         /CHECK/,
       );
