@@ -343,6 +343,111 @@ describe('two-factor sign-in', () => {
   });
 });
 
+describe('backup-code sign-in', () => {
+  let h: Harness;
+  let backupCodes: string[];
+  let totpURI: string;
+  const email = 'admin@example.test';
+
+  beforeAll(async () => {
+    h = await boot();
+    const admin = await onboardAdmin(h);
+    const enable = await admin.post('/v1/auth/two-factor/enable', { password });
+    ({ backupCodes, totpURI } = body(enable) as {
+      backupCodes: string[];
+      totpURI: string;
+    });
+    const verify = await admin.post('/v1/auth/two-factor/verify-totp', {
+      code: totpFromUri(totpURI),
+    });
+    expect(verify.status).toBe(200);
+  });
+  afterAll(() => h.close());
+
+  /** A client with a pending 2FA challenge after the right password. */
+  async function challenge(): Promise<TestClient> {
+    const browser = h.client();
+    const signIn = await browser.post('/v1/auth/sign-in/email', {
+      email,
+      password,
+    });
+    expect(body(signIn)).toMatchObject({ twoFactorRedirect: true });
+    return browser;
+  }
+
+  function unusedCode(): string {
+    // Backup codes are letters and digits around a hyphen; this one is not
+    // among the generated ones.
+    const code = 'zzzzz-00000';
+    expect(backupCodes).not.toContain(code);
+    return code;
+  }
+
+  it('signs in with a backup code once and refuses it again', async () => {
+    const [code] = backupCodes;
+    if (code === undefined) throw new Error('no backup codes');
+
+    const first = await challenge();
+    const used = await first.post('/v1/auth/two-factor/verify-backup-code', {
+      code,
+    });
+    expect(used.status).toBe(200);
+    expect((await first.get('/v1/session')).status).toBe(200);
+
+    const second = await challenge();
+    const reused = await second.post('/v1/auth/two-factor/verify-backup-code', {
+      code,
+    });
+    expect(reused.status).toBe(401);
+    expect(body(reused)).toMatchObject({ code: 'invalid_backup_code' });
+    expect((await second.get('/v1/session')).status).toBe(401);
+  });
+
+  it('counts wrong backup and TOTP codes toward the lockout', async () => {
+    const [, reset, code] = backupCodes;
+    if (reset === undefined || code === undefined)
+      throw new Error('no backup codes');
+    // A sign-in clears the failure left by the previous test.
+    const signedIn = await (
+      await challenge()
+    ).post('/v1/auth/two-factor/verify-backup-code', { code: reset });
+    expect(signedIn.status).toBe(200);
+
+    const wrongTotp = totpFromUri(totpURI) === '000000' ? '111111' : '000000';
+    // Each challenge allows five tries; then the password is asked again.
+    const first = await challenge();
+    for (let i = 0; i < 5; i++) {
+      const attempt = await first.post(
+        '/v1/auth/two-factor/verify-backup-code',
+        { code: unusedCode() },
+      );
+      expect(attempt.status).toBe(401);
+    }
+    const spent = await first.post('/v1/auth/two-factor/verify-backup-code', {
+      code: unusedCode(),
+    });
+    expect(spent.status).toBe(400);
+    expect(body(spent)).toMatchObject({
+      code: 'too_many_attempts_request_new_code',
+    });
+
+    const second = await challenge();
+    for (let i = 0; i < 5; i++) {
+      const attempt = await second.post('/v1/auth/two-factor/verify-totp', {
+        code: wrongTotp,
+      });
+      expect(attempt.status).toBe(401);
+    }
+
+    // Ten failures in all lock the account, even for a valid code.
+    const locked = await (
+      await challenge()
+    ).post('/v1/auth/two-factor/verify-backup-code', { code });
+    expect(locked.status).toBe(429);
+    expect(body(locked)).toMatchObject({ code: 'account_temporarily_locked' });
+  });
+});
+
 describe('sign-in lockout and rate limiting', () => {
   it('locks an account after repeated wrong passwords', async () => {
     const h = await boot();

@@ -16,6 +16,7 @@ const sizes = [
 ];
 const specs = [
   'smoke',
+  'sign-in',
   'shell',
   'quick-entry',
   'pwa',

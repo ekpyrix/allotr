@@ -4,10 +4,11 @@ import { useState, type SubmitEvent } from 'react';
 import { AuthLayout } from '@/components/auth-layout';
 import { Field, FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
+import { ApiError } from '@/lib/api';
 import { errorMessage } from '@/lib/problem';
 import type { ShellPath } from '@/lib/redirect';
 import { textField } from '@/lib/form';
-import { signIn, verifyTotp } from '@/lib/session';
+import { signIn, verifySignInCode } from '@/lib/session';
 import { t } from '@/messages/t';
 
 export function SignInPage({
@@ -58,7 +59,17 @@ export function SignInPage({
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     void run(async () => {
-      await verifyTotp(textField(form, 'code').replace(/\s/g, ''));
+      try {
+        await verifySignInCode(textField(form, 'code'));
+      } catch (caught) {
+        // Too many wrong codes end the challenge: back to the password.
+        if (
+          caught instanceof ApiError &&
+          caught.problem.code === 'too_many_attempts_request_new_code'
+        )
+          setStep('password');
+        throw caught;
+      }
       await finish();
     });
   }
@@ -69,12 +80,17 @@ export function SignInPage({
     return (
       <AuthLayout title={t('signIn.codeTitle')} intro={t('signIn.codeIntro')}>
         <form key="code" className="grid gap-5" onSubmit={submitCode}>
+          {/* A TOTP code (6 digits) or a backup code (letters and digits
+              around a hyphen), so no numeric keypad and no autocorrect. */}
           <Field
             label={t('signIn.code')}
+            hint={t('signIn.codeHint')}
             name="code"
-            inputMode="numeric"
             autoComplete="one-time-code"
-            pattern="[0-9 ]{6,7}"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            pattern="[\sA-Za-z0-9\-]{6,24}"
             required
             autoFocus
             className="h-11 font-mono text-lg tracking-widest"

@@ -10,8 +10,9 @@ export const en = {
     submitting: 'Signing in…',
     codeTitle: 'Enter your code',
     codeIntro:
-      'Open your authenticator app and enter the 6-digit code for Allotr.',
+      'Open your authenticator app and enter the 6-digit code for Allotr. Without your app, use one of your backup codes.',
     code: 'Code',
+    codeHint: 'A 6-digit code or a backup code. Each backup code works once.',
     verify: 'Verify',
     verifying: 'Checking…',
     otherAccount: 'Use a different account',
@@ -901,6 +902,10 @@ export const en = {
         'No cycle started on that day. It may have merged into another one after a paycheck was undone.',
       wrong_password: 'The password is wrong.',
       wrong_code: 'The code is wrong or has already been used.',
+      invalid_code: 'The code is wrong or has already been used.',
+      invalid_backup_code: 'The code is wrong or has already been used.',
+      too_many_attempts_request_new_code:
+        'Too many wrong codes. Sign in with your password again.',
       code_required:
         'Enter a code from your authenticator app or one of your backup codes.',
       last_admin:
