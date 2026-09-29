@@ -14,7 +14,7 @@ const sizes = [
     },
   },
 ];
-const specs = ['smoke', 'shell'];
+const specs = ['smoke', 'shell', 'quick-entry'];
 
 const projects = sizes.flatMap((size, i) =>
   specs.map((spec, j) => ({

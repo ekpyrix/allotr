@@ -1,4 +1,4 @@
-import { useId, type ComponentProps } from 'react';
+import { useId, type ComponentProps, type ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -34,3 +34,52 @@ export function FormError({ message }: { message: string | null }) {
     </p>
   );
 }
+
+export interface ControlProps {
+  id: string;
+  'aria-invalid': true | undefined;
+  'aria-describedby': string | undefined;
+}
+
+/** Label, error and hint around any control, wired for screen readers. */
+export function FieldControl({
+  label,
+  error,
+  hint,
+  children,
+}: {
+  label: string;
+  error?: string | undefined;
+  hint?: string | undefined;
+  children: (props: ControlProps) => ReactNode;
+}) {
+  const id = useId();
+  const described = [
+    error === undefined ? null : `${id}-error`,
+    hint === undefined ? null : `${id}-hint`,
+  ].filter((part) => part !== null);
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      {children({
+        id,
+        'aria-invalid': error === undefined ? undefined : true,
+        'aria-describedby':
+          described.length === 0 ? undefined : described.join(' '),
+      })}
+      {error === undefined ? null : (
+        <p id={`${id}-error`} className="text-sm font-medium text-over">
+          {error}
+        </p>
+      )}
+      {hint === undefined ? null : (
+        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export const selectClass =
+  'h-11 w-full rounded-md border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive';

@@ -86,7 +86,8 @@ chat message ─► gateway ─► POST /v1/messages {identity, platform_msg_id,
 
 ### 4.2 Web quick entry
 
-The web app sends the typed line to the same parser endpoint, shows the
+In M2 the form is structured fields only; the grammar line (M3) fills the same
+fields. The web app sends the typed line to the same parser endpoint, shows the
 result as editable fields, and posts a structured transaction on save.
 Offline entries are queued in the browser with client-generated idempotency
 keys and sent when the connection returns.
