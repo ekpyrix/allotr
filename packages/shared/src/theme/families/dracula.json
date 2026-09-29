@@ -1,0 +1,78 @@
+[
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Alucard",
+    "family": "dracula",
+    "scheme": "light",
+    "credit": {
+      "author": "Dracula Theme",
+      "licence": "MIT",
+      "url": "https://github.com/dracula/dracula-theme"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#fffbeb",
+        "surface0": "#cfcfde",
+        "subtext0": "#6c664b",
+        "text": "#1f1f1f"
+      },
+      "accents": {
+        "cyan": "#036a96",
+        "green": "#14710a",
+        "orange": "#a34d14",
+        "pink": "#a3144d",
+        "purple": "#644ac9",
+        "red": "#cb3a2a",
+        "yellow": "#846e15"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "purple": "purple",
+        "pink": "pink"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Dracula",
+    "family": "dracula",
+    "scheme": "dark",
+    "credit": {
+      "author": "Dracula Theme",
+      "licence": "MIT",
+      "url": "https://github.com/dracula/dracula-theme"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#282a36",
+        "surface0": "#44475a",
+        "overlay1": "#6272a4",
+        "text": "#f8f8f2"
+      },
+      "accents": {
+        "cyan": "#8be9fd",
+        "green": "#50fa7b",
+        "orange": "#ffb86c",
+        "pink": "#ff79c6",
+        "purple": "#bd93f9",
+        "red": "#ff5555",
+        "yellow": "#f1fa8c"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "purple": "purple",
+        "pink": "pink"
+      }
+    }
+  }
+]

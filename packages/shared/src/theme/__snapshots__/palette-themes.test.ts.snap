@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`convertV1 > fits only what v1 never checked 1`] = `
+{
+  "dark": [
+    "text-muted",
+  ],
+  "harbour": [
+    "text-muted",
+  ],
+  "high-contrast-dark": [],
+  "high-contrast-light": [],
+  "light": [
+    "warning",
+    "text-muted",
+    "outline",
+    "hero-ok",
+    "hero-tight",
+    "series-4",
+    "series-7",
+    "reserved",
+  ],
+  "paper": [],
+}
+`;

@@ -1,0 +1,86 @@
+[
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Solarized Light",
+    "family": "solarized",
+    "scheme": "light",
+    "credit": {
+      "author": "Ethan Schoonover",
+      "licence": "MIT",
+      "url": "https://github.com/altercation/solarized"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#fdf6e3",
+        "surface0": "#eee8d5",
+        "overlay0": "#93a1a1",
+        "overlay2": "#839496",
+        "subtext0": "#657b83",
+        "text": "#586e75"
+      },
+      "accents": {
+        "yellow": "#b58900",
+        "orange": "#cb4b16",
+        "red": "#dc322f",
+        "magenta": "#d33682",
+        "violet": "#6c71c4",
+        "blue": "#268bd2",
+        "cyan": "#2aa198",
+        "green": "#859900"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "blue": "blue",
+        "purple": "violet",
+        "pink": "magenta"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Solarized Dark",
+    "family": "solarized",
+    "scheme": "dark",
+    "credit": {
+      "author": "Ethan Schoonover",
+      "licence": "MIT",
+      "url": "https://github.com/altercation/solarized"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#002b36",
+        "surface0": "#073642",
+        "overlay0": "#586e75",
+        "overlay2": "#657b83",
+        "subtext0": "#839496",
+        "text": "#93a1a1"
+      },
+      "accents": {
+        "yellow": "#b58900",
+        "orange": "#cb4b16",
+        "red": "#dc322f",
+        "magenta": "#d33682",
+        "violet": "#6c71c4",
+        "blue": "#268bd2",
+        "cyan": "#2aa198",
+        "green": "#859900"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "cyan",
+        "blue": "blue",
+        "purple": "violet",
+        "pink": "magenta"
+      }
+    }
+  }
+]

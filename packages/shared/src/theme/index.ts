@@ -56,6 +56,28 @@ export {
   type SurfaceRole,
 } from './roles.ts';
 export {
+  convertV1,
+  DEFAULT_PALETTE_THEME_ID,
+  familyIdSchema,
+  findPaletteTheme,
+  PALETTE_THEMES,
+  paletteTheme,
+  readThemeFile,
+  slotPaletteTheme,
+  THEME_FAMILIES,
+  THEME_ID_ALIASES,
+  themeCreditSchema,
+  themeFileV2Schema,
+  themeRolesSchema,
+  toThemeFileV2,
+  toV2,
+  type PaletteTheme,
+  type ThemeCredit,
+  type ThemeFamily,
+  type ThemeFileV2,
+  type ThemeRoles,
+} from './palette-themes.ts';
+export {
   describeRoleFailure,
   FIT_STEP,
   resolveTheme,
