@@ -81,6 +81,13 @@ export type Figure = Readonly<{
   missingRates: readonly CurrencyCode[];
 }>;
 
+/** An unpaid bill due date, on or before the day asked about. */
+export type BillDue = Readonly<{
+  billId: BillId;
+  dueOn: LocalDate;
+  amount: Money;
+}>;
+
 export type DailyFigures = Readonly<{
   today: LocalDate;
   cycle: Cycle;
@@ -97,6 +104,10 @@ export type DailyFigures = Readonly<{
   todayAllowance: Money;
   leftToday: Money;
   liveDaily: Money;
+  /** Spending since the cycle opened, today included. */
+  cycleSpent: Money;
+  /** Bills in the cycle due by today and not yet paid. */
+  billsDue: readonly BillDue[];
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: readonly CurrencyCode[];
 }>;

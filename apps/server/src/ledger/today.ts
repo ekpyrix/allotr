@@ -72,14 +72,29 @@ async function loadView(
   return { view, timeZone: settings.timeZone };
 }
 
+async function loadBillNames(
+  db: Db,
+  userId: string,
+): Promise<Map<string, string>> {
+  const rows = await db
+    .selectFrom('bills')
+    .select(['id', 'name'])
+    .where('user_id', '=', userId)
+    .execute();
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
 export async function todayFigures(
   db: Kysely<DB>,
   userId: string,
   now: Date,
 ): Promise<TodayView> {
-  const { view, timeZone } = await db
+  const { view, timeZone, billNames } = await db
     .transaction()
-    .execute((trx) => loadView(trx, userId));
+    .execute(async (trx) => ({
+      ...(await loadView(trx, userId)),
+      billNames: await loadBillNames(trx, userId),
+    }));
   const figures = dailyFigures(view, now, timeZone);
   return {
     today: figures.today,
@@ -97,6 +112,13 @@ export async function todayFigures(
     todayAllowance: figures.todayAllowance,
     leftToday: figures.leftToday,
     liveDaily: figures.liveDaily,
+    cycleSpent: figures.cycleSpent,
+    billsDue: figures.billsDue.map((due) => ({
+      billId: due.billId,
+      name: billNames.get(due.billId) ?? '',
+      dueOn: due.dueOn,
+      amount: due.amount,
+    })),
     missingRates: [...figures.missingRates],
   };
 }

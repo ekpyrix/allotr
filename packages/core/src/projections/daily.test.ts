@@ -1,6 +1,6 @@
 import { currencyCode, money, parseRate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { transfer } from '../ledger/build.ts';
+import { budgetSwitch, transfer } from '../ledger/build.ts';
 import { reverse } from '../ledger/reverse.ts';
 import { meta } from '../ledger/testing.ts';
 import { availableOn, dailyFigures, dailyFiguresOn } from './daily.ts';
@@ -208,6 +208,92 @@ describe('dailyFiguresOn', () => {
     const missing = dailyFiguresOn(view(withEuros), day('2026-03-02'));
     expect(missing.available).toEqual(usd(310001 - 11000));
     expect(missing.missingRates).toEqual(['EUR']);
+  });
+});
+
+describe('cycle spending', () => {
+  it('adds up on-budget spending since the cycle opened, less undos', () => {
+    const lunch = spend('2026-03-04', 1500);
+    const ledger = [
+      openingUsd('2026-02-18', 100000),
+      spend('2026-02-25', 9900),
+      paycheck('2026-03-01', 310000),
+      spend('2026-03-02', 2500),
+      lunch,
+      reverse(chart, [lunch], lunch.id, meta()),
+      spend('2026-03-05', 4000, undefined, savings),
+      spend('2026-03-06', 1000),
+    ];
+    // The February entry belongs to the previous cycle, the undone lunch
+    // nets to zero and the savings spend is off budget.
+    const figures = dailyFiguresOn(view(ledger), day('2026-03-06'));
+    expect(figures.cycleSpent).toEqual(usd(3500));
+    expect(figures.spentToday).toEqual(usd(1000));
+  });
+
+  it('counts each entry by the budget group of its own day', () => {
+    const before = [
+      paycheck('2026-03-01', 310000),
+      spend('2026-03-02', 2000, undefined, savings),
+    ];
+    const ledger = [
+      ...before,
+      budgetSwitch(chart, before, meta('2026-03-03'), {
+        accountId: savings,
+        budgetGroup: 'on',
+      }),
+      spend('2026-03-04', 700, undefined, savings),
+    ];
+    // Savings joined the budget on the 3rd, so only the later spend counts.
+    expect(dailyFiguresOn(view(ledger), day('2026-03-04')).cycleSpent).toEqual(
+      usd(700),
+    );
+  });
+});
+
+describe('billsDueOn', () => {
+  const phone: Bill = {
+    id: billId('phone'),
+    amount: usd(4500),
+    dueDay: 3,
+    payments: [],
+  };
+
+  it('lists unpaid due dates up to today, earliest first', () => {
+    const ledger = [paycheck('2026-03-01', 310000)];
+    const bills = [rent, phone];
+    expect(
+      dailyFiguresOn(view(ledger, { bills }), day('2026-03-02')).billsDue,
+    ).toEqual([]);
+    expect(
+      dailyFiguresOn(view(ledger, { bills }), day('2026-03-05')).billsDue,
+    ).toEqual([
+      { billId: 'phone', dueOn: '2026-03-03', amount: usd(4500) },
+      { billId: 'rent', dueOn: '2026-03-05', amount: usd(20000) },
+    ]);
+  });
+
+  it('drops a due date once it is paid, from the day it was paid', () => {
+    const ledger = [paycheck('2026-03-01', 310000)];
+    const paid: Bill = {
+      ...rent,
+      payments: [{ dueOn: day('2026-03-05'), paidOn: day('2026-03-07') }],
+    };
+    const on = (date: string) =>
+      dailyFiguresOn(view(ledger, { bills: [paid] }), day(date)).billsDue;
+    expect(on('2026-03-06')).toHaveLength(1);
+    expect(on('2026-03-07')).toEqual([]);
+  });
+
+  it('keeps an unpaid bill due while payday is overdue', () => {
+    const ledger = [paycheck('2026-03-01', 310000)];
+    const late: Bill = { ...rent, dueDay: 30 };
+    const figures = dailyFiguresOn(
+      view(ledger, { bills: [late] }),
+      day('2026-04-02'),
+    );
+    expect(figures.overdue).toBe(true);
+    expect(figures.billsDue.map((b) => b.dueOn)).toEqual(['2026-03-30']);
   });
 });
 

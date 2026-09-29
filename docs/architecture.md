@@ -134,8 +134,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   problem details whose `code` is the error code without its namespace
   (`ledger.unbalanced` → `unbalanced`).
 - `GET /v1/today` returns the daily figures (left today, today's allowance,
-  live daily, days left, cycle end, the overdue flag and currencies left out
-  for lack of a rate), computed from the ledger on every request.
+  live daily, days left, cycle end, spending so far this cycle, the overdue
+  flag, unpaid bills due by today and currencies left out for lack of a
+  rate), computed from the ledger on every request.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
