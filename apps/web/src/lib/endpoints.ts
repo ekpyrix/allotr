@@ -4,6 +4,8 @@ import {
   appearanceSchema,
   archiveAccountBodySchema,
   categoryListSchema,
+  categorySchema,
+  createCategoryBodySchema,
   createAccountBodySchema,
   createTransactionBodySchema,
   editedTransactionSchema,
@@ -13,11 +15,14 @@ import {
   sessionSchema,
   sessionUserSchema,
   signUpBodySchema,
+  tagBodySchema,
   tagListSchema,
+  tagSchema,
   todaySchema,
   transactionListSchema,
   transactionSchema,
   updateAccountBodySchema,
+  updateCategoryBodySchema,
   updateLedgerSettingsBodySchema,
 } from '@allotr/shared';
 import { z } from 'zod';
@@ -108,10 +113,39 @@ export const endpoints = {
     path: '/v1/categories',
     response: categoryListSchema,
   }),
+  createCategory: endpoint({
+    method: 'POST',
+    path: '/v1/categories',
+    body: createCategoryBodySchema,
+    response: categorySchema,
+  }),
+  updateCategory: endpoint({
+    method: 'PATCH',
+    path: '/v1/categories/{id}',
+    body: updateCategoryBodySchema,
+    response: categorySchema,
+  }),
+  deleteCategory: endpoint({
+    method: 'DELETE',
+    path: '/v1/categories/{id}',
+    response: z.unknown(),
+  }),
   tags: endpoint({
     method: 'GET',
     path: '/v1/tags',
     response: tagListSchema,
+  }),
+  createTag: endpoint({
+    method: 'POST',
+    path: '/v1/tags',
+    body: tagBodySchema,
+    response: tagSchema,
+  }),
+  renameTag: endpoint({
+    method: 'PATCH',
+    path: '/v1/tags/{id}',
+    body: tagBodySchema,
+    response: tagSchema,
   }),
   ledgerSettings: endpoint({
     method: 'GET',

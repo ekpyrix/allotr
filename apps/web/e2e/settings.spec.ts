@@ -1,4 +1,8 @@
-import type { LedgerSettingsView, TodayView } from '@allotr/shared';
+import type {
+  CategoryView,
+  LedgerSettingsView,
+  TodayView,
+} from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
@@ -104,5 +108,119 @@ test('the locale shows a sample and is saved in canonical form', async ({
   await locale.fill('en-US');
   await ledger.getByRole('button', { name: 'Save' }).first().click();
   await expect(ledger.getByText('Saved.')).toBeVisible();
+  await expectAccessible(page);
+});
+
+function post(
+  page: Page,
+  baseURL: string | undefined,
+  path: string,
+  data: object,
+) {
+  return page.request.post(path, { data, headers: { origin: baseURL ?? '' } });
+}
+
+async function categories(page: Page): Promise<CategoryView[]> {
+  const response = await page.request.get('/v1/categories?includeMerged=true');
+  return ((await response.json()) as { categories: CategoryView[] }).categories;
+}
+
+test('deleting a category in use requires a merge target', async ({
+  page,
+  baseURL,
+}) => {
+  const created = await post(page, baseURL, '/v1/accounts', {
+    name: 'Everyday',
+    currency: 'USD',
+  });
+  expect(created.ok()).toBe(true);
+  const { id: accountId } = (await created.json()) as { id: string };
+  const target = await post(page, baseURL, '/v1/categories', {
+    name: 'Treats',
+    kind: 'expense',
+  });
+  expect(target.ok()).toBe(true);
+  const { id: treatsId } = (await target.json()) as { id: string };
+
+  await page.goto('/settings#categories');
+  const region = section(page, 'Categories');
+  await expect(
+    page.getByRole('heading', { name: 'Categories', exact: true }),
+  ).toBeFocused();
+  await region.getByRole('button', { name: 'New category' }).click();
+  const add = page.getByRole('dialog', { name: 'New category' });
+  await add.getByLabel('Name').fill('Snacks');
+  await expect(add.getByLabel('Expense')).toBeChecked();
+  await expectAccessible(page);
+  await add.getByRole('button', { name: 'Add category' }).click();
+  await expect(add).toBeHidden();
+  await expect(region.getByRole('listitem', { name: 'Snacks' })).toBeVisible();
+
+  const snacks = (await categories(page)).find((c) => c.name === 'Snacks');
+  expect(snacks).toBeDefined();
+  const spent = await post(page, baseURL, '/v1/transactions', {
+    kind: 'expense',
+    accountId,
+    amount: { amountMinor: 450, currency: 'USD' },
+    categoryId: snacks?.id,
+  });
+  expect(spent.ok()).toBe(true);
+
+  await region.getByRole('button', { name: 'Delete Snacks' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete Snacks?' });
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(
+    dialog.getByText('Entries use Snacks. Choose where they go.'),
+  ).toBeVisible();
+  const mergeInto = dialog.getByLabel('Merge into');
+  await expect(mergeInto).toBeFocused();
+  await dialog.getByRole('button', { name: 'Merge and delete' }).click();
+  await expect(
+    dialog.getByText('Choose a category to merge into.'),
+  ).toBeVisible();
+  await expectAccessible(page);
+  await mergeInto.selectOption({ label: 'Treats' });
+  await dialog.getByRole('button', { name: 'Merge and delete' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText('Snacks merged into Treats.')).toBeAttached();
+  await expect(region.getByRole('listitem', { name: 'Snacks' })).toHaveCount(0);
+  expect(
+    (await categories(page)).find((c) => c.id === snacks?.id)?.mergedIntoId,
+  ).toBe(treatsId);
+});
+
+test('a category nobody uses is deleted at once, and tags can be renamed', async ({
+  page,
+  baseURL,
+}) => {
+  const unused = await post(page, baseURL, '/v1/categories', {
+    name: 'Unused',
+    kind: 'expense',
+  });
+  expect(unused.ok()).toBe(true);
+  await page.goto('/settings#tags');
+  const tags = section(page, 'Tags');
+  await tags.getByLabel('New tag').fill('trip');
+  await tags.getByRole('button', { name: 'Add tag' }).click();
+  await expect(tags.getByRole('listitem', { name: 'trip' })).toBeVisible();
+  await tags.getByRole('button', { name: 'Rename trip' }).click();
+  const rename = page.getByRole('dialog', { name: 'Rename trip' });
+  await rename.getByLabel('Name').fill('holiday');
+  await rename.getByRole('button', { name: 'Save' }).click();
+  await expect(rename).toBeHidden();
+  await expect(tags.getByRole('listitem', { name: 'holiday' })).toBeVisible();
+  await expect(
+    tags.getByRole('button', { name: 'Rename holiday' }),
+  ).toBeFocused();
+
+  const region = section(page, 'Categories');
+  await region.getByRole('button', { name: 'Delete Unused' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Delete Unused?' });
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText('Unused deleted.')).toBeAttached();
+  await expect(
+    page.getByRole('heading', { name: 'Categories', exact: true }),
+  ).toBeFocused();
   await expectAccessible(page);
 });

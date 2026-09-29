@@ -8,9 +8,16 @@ import { ShortcutsSwitch } from '@/components/shortcuts-switch';
 import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { Button } from '@/components/ui/button';
 import { hashTarget } from '@/features/settings/hash-target';
+import { CategoriesSection } from '@/features/settings/categories';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { Section } from '@/features/settings/section';
-import { ledgerSettingsQuery, todayQuery } from '@/lib/ledger';
+import { TagsSection } from '@/features/settings/tags';
+import {
+  allCategoriesQuery,
+  ledgerSettingsQuery,
+  tagsQuery,
+  todayQuery,
+} from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { signOut } from '@/lib/session';
 import { t } from '@/messages/t';
@@ -54,8 +61,11 @@ function SignOutButton() {
 export function SettingsPage({ session }: { session: SessionView }) {
   const settings = useQuery(ledgerSettingsQuery);
   const today = useQuery(todayQuery);
-  const all = [settings, today];
-  const ready = settings.data !== undefined && today.data !== undefined;
+  // Merged categories too: they name the merge targets of older merges.
+  const categories = useQuery(allCategoriesQuery);
+  const tags = useQuery(tagsQuery);
+  const all = [settings, today, categories, tags];
+  const ready = all.every((q) => q.data !== undefined);
   useHashFocus(ready);
 
   const failed = all.find((q) => q.isError && q.data === undefined);
@@ -75,7 +85,12 @@ export function SettingsPage({ session }: { session: SessionView }) {
       </Page>
     );
 
-  if (settings.data === undefined || today.data === undefined)
+  if (
+    settings.data === undefined ||
+    today.data === undefined ||
+    categories.data === undefined ||
+    tags.data === undefined
+  )
     return (
       <Page title={t('settings.title')}>
         <p role="status" className="mt-6 text-muted-foreground">
@@ -87,6 +102,8 @@ export function SettingsPage({ session }: { session: SessionView }) {
   return (
     <Page title={t('settings.title')}>
       <LedgerSettingsSection settings={settings.data} today={today.data} />
+      <CategoriesSection categories={categories.data.categories} />
+      <TagsSection tags={tags.data.tags} />
       <Section id="appearance" title={t('settings.appearance.title')}>
         <ThemeModeSwitch className="mt-4" />
         <ShortcutsSwitch className="mt-6" />

@@ -135,6 +135,7 @@ export const deleteCategoryQuerySchema = z.object({
 });
 
 export const tagSchema = z.object({ id: idSchema, name: z.string() });
+export type TagView = z.infer<typeof tagSchema>;
 export const tagListSchema = z.object({ tags: z.array(tagSchema) });
 export const tagBodySchema = z.object({ name: nameSchema });
 
