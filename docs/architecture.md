@@ -129,7 +129,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on
   `POST /v1/transactions` makes a repeat return the entry it first created
-  (200) instead of recording another, as offline queues need. Every query is scoped to the signed-in user, and another
+  (200) instead of recording another, as offline queues need.
+  `GET /v1/transactions` pages newest first and filters by date range,
+  account, category (with its subcategories), tag and note text; an undo
+  matches whatever the entry it undoes matches. Every query is scoped to the signed-in user, and another
   user's rows answer 404. Domain errors from `core` and `shared` become
   problem details whose `code` is the error code without its namespace
   (`ledger.unbalanced` → `unbalanced`).

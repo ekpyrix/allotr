@@ -11,6 +11,7 @@ import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { LoadError } from '@/components/load-error';
 import { UpdatePrompt } from '@/components/update-prompt';
+import { validateLedgerSearch } from '@/features/ledger/search';
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
@@ -128,7 +129,19 @@ const todayRoute = createRoute({
 const ledgerRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/ledger',
-  component: LedgerPage,
+  validateSearch: validateLedgerSearch,
+  component: function Ledger() {
+    const search = ledgerRoute.useSearch();
+    const navigate = ledgerRoute.useNavigate();
+    return (
+      <LedgerPage
+        search={search}
+        navigate={(next, options) => {
+          void navigate({ search: next, replace: options?.replace === true });
+        }}
+      />
+    );
+  },
 });
 
 const accountsRoute = createRoute({

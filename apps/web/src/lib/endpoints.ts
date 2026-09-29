@@ -3,6 +3,7 @@ import {
   appearanceSchema,
   categoryListSchema,
   createTransactionBodySchema,
+  editedTransactionSchema,
   ledgerSettingsSchema,
   onboardingStatusSchema,
   reverseTransactionBodySchema,
@@ -109,6 +110,17 @@ export const endpoints = {
     path: '/v1/transactions',
     body: createTransactionBodySchema,
     response: transactionSchema,
+  }),
+  transaction: endpoint({
+    method: 'GET',
+    path: '/v1/transactions/{id}',
+    response: transactionSchema,
+  }),
+  editTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions/{id}/edit',
+    body: createTransactionBodySchema,
+    response: editedTransactionSchema,
   }),
   reverseTransaction: endpoint({
     method: 'POST',

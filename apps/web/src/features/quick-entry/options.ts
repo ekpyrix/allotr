@@ -71,6 +71,8 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
     kind: 'expense',
     amount: '',
     received: '',
+    foreign: '',
+    foreignCurrency: '',
     tagIds: [],
     note: '',
     occurredOn: defaults.today,

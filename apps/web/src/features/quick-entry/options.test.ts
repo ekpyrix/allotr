@@ -85,6 +85,8 @@ describe('newDraft', () => {
       accountId: 'Everyday',
       toAccountId: '',
       received: '',
+      foreign: '',
+      foreignCurrency: '',
       categoryId: '',
       tagIds: [],
       note: '',
