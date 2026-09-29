@@ -188,6 +188,8 @@ export type ListFilter = Readonly<{
   to?: LocalDate | undefined;
   accountId?: string | undefined;
   categoryId?: string | undefined;
+  tagId?: string | undefined;
+  q?: string | undefined;
   limit: number;
   cursor?: string | undefined;
 }>;
@@ -249,6 +251,22 @@ async function categoryFamily(
   return [...family];
 }
 
+async function checkTagExists(
+  db: Db,
+  userId: string,
+  id: string,
+): Promise<void> {
+  const row = await db
+    .selectFrom('tags')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('id', '=', id)
+    .executeTakeFirst();
+  if (row === undefined) {
+    throw new RequestProblem(404, 'tag_not_found', 'There is no such tag.');
+  }
+}
+
 /** Entries newest first, by date, then time of entry, then ID. */
 export async function listTransactions(
   db: Db,
@@ -283,6 +301,51 @@ export async function listTransactions(
   if (filter.categoryId !== undefined) {
     const family = await categoryFamily(db, userId, filter.categoryId);
     query = query.where('category_id', 'in', family);
+  }
+  // Undos are stored without tags or a note, so they match through the
+  // entry they undo; account and category are copied onto them already.
+  if (filter.tagId !== undefined) {
+    await checkTagExists(db, userId, filter.tagId);
+    const tag = filter.tagId;
+    query = query.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('transaction_tags')
+          .select('transaction_tags.tag_id')
+          .where('transaction_tags.user_id', '=', userId)
+          .where('transaction_tags.tag_id', '=', tag)
+          .where((inner) =>
+            inner.or([
+              inner(
+                'transaction_tags.transaction_id',
+                '=',
+                inner.ref('transactions.id'),
+              ),
+              inner(
+                'transaction_tags.transaction_id',
+                '=',
+                inner.ref('transactions.reverses_id'),
+              ),
+            ]),
+          ),
+      ),
+    );
+  }
+  if (filter.q !== undefined) {
+    const pattern = `%${filter.q.replace(/[\\%_]/g, '\\$&')}%`;
+    query = query.where((eb) =>
+      eb.or([
+        sql<boolean>`transactions.note like ${pattern} escape '\\'`,
+        eb.exists(
+          eb
+            .selectFrom('transactions as original')
+            .select('original.id')
+            .whereRef('original.id', '=', 'transactions.reverses_id')
+            .where('original.user_id', '=', userId)
+            .where(sql<boolean>`original.note like ${pattern} escape '\\'`),
+        ),
+      ]),
+    );
   }
   if (filter.cursor !== undefined) {
     const [occurredOn, createdAt, id] = decodeCursor(filter.cursor);

@@ -220,6 +220,12 @@ export const listTransactionsQuerySchema = z.object({
   accountId: idSchema.optional(),
   /** Includes subcategories and categories merged into it. */
   categoryId: idSchema.optional(),
+  tagId: idSchema.optional(),
+  /**
+   * Finds entries whose note contains this text; case is ignored for
+   * A–Z only. Undos match through the entry they undo, as with tags.
+   */
+  q: z.string().trim().min(1).max(100).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   cursor: z.string().max(500).optional(),
 });

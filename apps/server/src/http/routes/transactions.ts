@@ -47,7 +47,7 @@ const listRoute = createRoute({
     200: json(transactionListSchema, 'One page of entries.'),
     400: invalid,
     ...signedIn,
-    404: problemResponse('The category filter does not exist.'),
+    404: problemResponse('The category or tag filter does not exist.'),
   },
 });
 

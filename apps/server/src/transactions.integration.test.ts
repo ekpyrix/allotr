@@ -483,6 +483,63 @@ describe('listing', () => {
     ]);
   });
 
+  it('filters by tag, with undos of tagged entries', async () => {
+    const tag = (
+      (await lister.post('/v1/tags', { name: 'Trip' })).body as { id: string }
+    ).id;
+    const tagged = (
+      (
+        await lister.post('/v1/transactions', {
+          kind: 'expense',
+          accountId: a,
+          amount: { amountMinor: 700, currency: 'USD' },
+          categoryId: transport,
+          tagIds: [tag],
+          occurredOn: '2026-05-01',
+        })
+      ).body as Entry
+    ).id;
+    const undo = (
+      (await lister.post(`/v1/transactions/${tagged}/reverse`, {}))
+        .body as Entry
+    ).id;
+    const entries = await list(`tagId=${tag}`);
+    expect(entries.map((e) => e.id).sort()).toEqual([tagged, undo].sort());
+  });
+
+  it('searches notes, ignoring case, with undos of matching entries', async () => {
+    const post = (note: string) =>
+      lister.post('/v1/transactions', {
+        kind: 'expense',
+        accountId: a,
+        amount: { amountMinor: 300, currency: 'USD' },
+        categoryId: food,
+        note,
+        occurredOn: '2026-05-02',
+      });
+    const coffee = ((await post('Morning Coffee')).body as Entry).id;
+    const percent = ((await post('Tip 10% extra')).body as Entry).id;
+    await post('Tip 100 extra');
+    const undo = (
+      (await lister.post(`/v1/transactions/${coffee}/reverse`, {}))
+        .body as Entry
+    ).id;
+
+    const found = await list('q=coffee');
+    expect(found.map((e) => e.id).sort()).toEqual([coffee, undo].sort());
+    // % and _ are text here, not wildcards.
+    expect((await list('q=10%25')).map((e) => e.id)).toEqual([percent]);
+    expect(await list('q=_')).toEqual([]);
+  });
+
+  it('refuses an unknown tag or an empty search', async () => {
+    const tag = await lister.get('/v1/transactions?tagId=nope');
+    expect(tag.status).toBe(404);
+    expect(code(tag)).toBe('tag_not_found');
+    const search = await lister.get('/v1/transactions?q=%20');
+    expect(search.status).toBe(400);
+  });
+
   it('pages newest first with a cursor', async () => {
     const seen: string[] = [];
     let cursor: string | null = null;
