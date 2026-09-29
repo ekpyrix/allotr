@@ -1,6 +1,7 @@
 import { currencyCode, money, parseRate } from '@allotr/shared';
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { convertOn } from './rates.ts';
+import { convertOn, totalOn } from './rates.ts';
 import { day, usd } from './testing.ts';
 import type { ExchangeRate } from './types.ts';
 
@@ -70,5 +71,65 @@ describe('convertOn', () => {
     expect(
       convertOn(rates, money(100, 'EUR'), jpy, day('2026-03-10')),
     ).toBeNull();
+  });
+});
+
+describe('totalOn', () => {
+  const rates = [
+    rate('EUR', 'USD', '1.10', '2026-03-01'),
+    rate('USD', 'JPY', '150', '2026-03-01'),
+  ];
+  const on = day('2026-03-05');
+
+  it('sums each currency before converting it once', () => {
+    // 0.05 EUR twice converts to 0.11 USD; converted one by one it would
+    // round to 0.06 + 0.06.
+    expect(
+      totalOn(
+        rates,
+        [money(5, 'EUR'), money(5, 'EUR'), money(1000, 'USD')],
+        usd,
+        on,
+      ),
+    ).toEqual({ amount: money(1011, 'USD'), missingRates: [] });
+  });
+
+  it('leaves out and reports currencies without a rate', () => {
+    expect(
+      totalOn(
+        rates,
+        [money(100, 'GBP'), money(1000, 'USD'), money(100, 'CHF')],
+        usd,
+        on,
+      ),
+    ).toEqual({ amount: money(1000, 'USD'), missingRates: ['CHF', 'GBP'] });
+  });
+
+  it('needs no rate for a currency that sums to zero', () => {
+    expect(
+      totalOn([], [money(100, 'GBP'), money(-100, 'GBP')], usd, on),
+    ).toEqual({ amount: money(0, 'USD'), missingRates: [] });
+  });
+
+  it('is zero in the target currency with nothing to add', () => {
+    expect(totalOn(rates, [], eur, on)).toEqual({
+      amount: money(0, 'EUR'),
+      missingRates: [],
+    });
+  });
+
+  it('does not depend on the order of the amounts', () => {
+    const amountArb = fc.record({
+      amountMinor: fc.integer({ min: -1e9, max: 1e9 }),
+      currency: fc.constantFrom(usd, eur, jpy, currencyCode('GBP')),
+    });
+    fc.assert(
+      fc.property(fc.array(amountArb, { maxLength: 20 }), (amounts) => {
+        const reversed = [...amounts].reverse();
+        expect(totalOn(rates, reversed, usd, on)).toEqual(
+          totalOn(rates, amounts, usd, on),
+        );
+      }),
+    );
   });
 });

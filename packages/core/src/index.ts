@@ -68,7 +68,7 @@ export {
   dailyFigures,
   dailyFiguresOn,
 } from './projections/daily.ts';
-export { convertOn } from './projections/rates.ts';
+export { convertOn, totalOn } from './projections/rates.ts';
 export {
   carryDeficit,
   defaultPolicies,

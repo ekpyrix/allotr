@@ -1428,7 +1428,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Open accounts, and archived ones on request.",
+            "description": "Open accounts, and archived ones on request, with totals per budget group.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1502,10 +1502,84 @@
                           "createdAt"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "on": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        },
+                        "off": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "on",
+                        "off"
+                      ]
                     }
                   },
                   "required": [
-                    "accounts"
+                    "accounts",
+                    "totals"
                   ]
                 }
               }

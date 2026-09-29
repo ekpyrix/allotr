@@ -10,7 +10,7 @@ import {
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
 import { defaultPolicies, dueDates, type Policies } from './policies.ts';
-import { convertOn } from './rates.ts';
+import { totalOn } from './rates.ts';
 import type {
   BillDue,
   Cycle,
@@ -116,26 +116,13 @@ export function billsDueOn(
   );
 }
 
-// Converts each currency's sum once and adds them up; currencies without a
-// rate are left out and reported.
 function toFigure(view: LedgerView, sums: Sums, date: LocalDate): Figure {
-  const target = view.settings.defaultCurrency;
-  let total = 0n;
-  const missing: CurrencyCode[] = [];
-  for (const [currency, sum] of [...sums].sort(([a], [b]) =>
-    a.localeCompare(b),
-  )) {
-    if (sum === 0n) continue;
-    const converted = convertOn(
-      view.rates,
-      money(Number(sum), currency),
-      target,
-      date,
-    );
-    if (converted === null) missing.push(currency);
-    else total += BigInt(converted.amountMinor);
-  }
-  return { amount: money(Number(total), target), missingRates: missing };
+  return totalOn(
+    view.rates,
+    [...sums].map(([currency, sum]) => money(Number(sum), currency)),
+    view.settings.defaultCurrency,
+    date,
+  );
 }
 
 /** Available budget at the end of `date`, as seen from `today`. */

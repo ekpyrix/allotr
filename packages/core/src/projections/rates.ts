@@ -1,11 +1,12 @@
 import {
   convert,
   convertInverse,
+  money,
   type CurrencyCode,
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { ExchangeRate } from './types.ts';
+import type { ExchangeRate, Figure } from './types.ts';
 
 // Picks the rate for a figure's day (ADR 0010): the latest one dated on or
 // before it, quoted either way round. A missing rate gives null and the
@@ -39,4 +40,35 @@ export function convertOn(
   return best.base === amount.currency
     ? convert(amount, best.rate, target)
     : convertInverse(amount, best.rate, target);
+}
+
+/**
+ * Adds up amounts in any currencies as one figure in `target`: each
+ * currency is summed first and converted once. Currencies that sum to zero
+ * need no rate; the others without one are left out and reported.
+ */
+export function totalOn(
+  rates: readonly ExchangeRate[],
+  amounts: Iterable<Money>,
+  target: CurrencyCode,
+  date: LocalDate,
+): Figure {
+  const sums = new Map<CurrencyCode, bigint>();
+  for (const amount of amounts) {
+    sums.set(
+      amount.currency,
+      (sums.get(amount.currency) ?? 0n) + BigInt(amount.amountMinor),
+    );
+  }
+  let total = 0n;
+  const missing: CurrencyCode[] = [];
+  for (const [currency, sum] of [...sums].sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
+    if (sum === 0n) continue;
+    const converted = convertOn(rates, money(Number(sum), currency), target, date);
+    if (converted === null) missing.push(currency);
+    else total += BigInt(converted.amountMinor);
+  }
+  return { amount: money(Number(total), target), missingRates: missing };
 }
