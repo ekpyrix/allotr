@@ -113,6 +113,18 @@ export interface Postings {
   user_id: string;
 }
 
+export interface Reconciliations {
+  account_id: string;
+  adjustment_transaction_id: string | null;
+  computed_minor: number;
+  created_at: string;
+  currency: string;
+  id: string;
+  on_date: string;
+  stated_minor: number;
+  user_id: string;
+}
+
 export interface SchemaMigrations {
   applied_at: string;
   checksum: string;
@@ -226,6 +238,7 @@ export interface DB {
   instance_settings: InstanceSettings;
   invites: Invites;
   postings: Postings;
+  reconciliations: Reconciliations;
   schema_migrations: SchemaMigrations;
   sessions: Sessions;
   sign_in_failures: SignInFailures;

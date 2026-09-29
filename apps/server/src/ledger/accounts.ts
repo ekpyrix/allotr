@@ -24,7 +24,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
@@ -73,6 +73,29 @@ async function state(db: Db, userId: string, now: Date): Promise<LedgerState> {
   };
 }
 
+/**
+ * Each account's latest reconciled date. A reconciliation whose adjustment
+ * was undone (or edited) no longer counts.
+ */
+async function lastReconciled(
+  db: Db,
+  userId: string,
+): Promise<Map<string, LocalDate>> {
+  const rows = await db
+    .selectFrom('reconciliations as r')
+    .leftJoin('transactions as undo', (join) =>
+      join
+        .onRef('undo.reverses_id', '=', 'r.adjustment_transaction_id')
+        .onRef('undo.user_id', '=', 'r.user_id'),
+    )
+    .select(['r.account_id', sql<LocalDate>`max(r.on_date)`.as('on_date')])
+    .where('r.user_id', '=', userId)
+    .where('undo.id', 'is', null)
+    .groupBy('r.account_id')
+    .execute();
+  return new Map(rows.map((row) => [row.account_id, row.on_date]));
+}
+
 async function views(
   db: Db,
   userId: string,
@@ -94,6 +117,7 @@ async function views(
   if (rows.length === 0) return [];
 
   const { chart, ledger, today } = await state(db, userId, now);
+  const reconciled = await lastReconciled(db, userId);
   const balances = accountBalances(ledger);
   const groups = budgetGroupsOn(chart, ledger, today);
   return rows.map((row) => {
@@ -107,6 +131,7 @@ async function views(
       balance: balances.get(id) ?? money(0, row.currency),
       archived: row.archived === 1,
       createdAt: row.created_at,
+      lastReconciledOn: reconciled.get(row.id) ?? null,
     };
   });
 }

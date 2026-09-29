@@ -42,6 +42,11 @@ export {
 } from './ledger/build.ts';
 export { edit, reverse, type ReversalMeta } from './ledger/reverse.ts';
 export {
+  reconciliation,
+  unrecordedAdjustment,
+  type Reconciliation,
+} from './ledger/reconcile.ts';
+export {
   accountBalances,
   balanceOf,
   budgetGroupBalances,
