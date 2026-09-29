@@ -27,6 +27,15 @@ export const en = {
     submit: 'Create account',
     submitting: 'Creating account…',
   },
+  invite: {
+    title: 'Join Allotr',
+    intro: 'You were invited to this instance. Create your account.',
+    checking: 'Checking your invite…',
+    invalidTitle: 'Invite link not valid',
+    invalid:
+      'This invite link was used, has expired or does not exist. Ask for a new one.',
+    signIn: 'Sign in instead',
+  },
   notFound: {
     title: 'Page not found',
     intro: 'This address does not match a page in Allotr.',
@@ -443,6 +452,35 @@ export const en = {
         same: 'Choose two different currencies.',
         rate: 'Enter a rate greater than zero, such as 1.0856.',
       },
+    },
+    instance: {
+      title: 'Instance',
+      intro:
+        'Settings for everyone on this Allotr instance. Only administrators see them.',
+      registration: 'Who can create an account',
+      modes: {
+        invite_only: 'People with an invite link',
+        open: 'Anyone',
+        closed: 'Nobody',
+      },
+      modeHints: {
+        invite_only: 'Create a link below for each person.',
+        open: 'Anyone who can reach this address can sign up.',
+        closed: 'Invite links stop working too.',
+      },
+      requireTwoFactor: 'Require two-factor authentication',
+      requireTwoFactorHint:
+        'Everyone without it must set it up before they can use the app, and nobody can turn it off.',
+      inviteTitle: 'Invite someone',
+      inviteIntro: 'Each link creates one account.',
+      expiresIn: 'Link works for',
+      days: { one: '{count} day', other: '{count} days' },
+      createInvite: 'Create invite link',
+      inviteLink: 'Invite link',
+      inviteLinkHint:
+        'Shown only now. Send it to the person you invite; it works until {when}.',
+      copy: 'Copy link',
+      copied: 'Copied.',
     },
     appearance: { title: 'Appearance' },
     security: {

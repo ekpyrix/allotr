@@ -3,7 +3,7 @@ import type {
   LedgerSettingsView,
   TodayView,
 } from '@allotr/shared';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
 import { totpFromUri } from './totp.ts';
@@ -330,6 +330,66 @@ test('a manual rate brings a foreign account into the figures', async ({
   expect((await today(page)).missingRates).toEqual(['EUR']);
 });
 
+// The invited user's cookies, reused below: sign-ins are rate limited.
+let invitedState: Awaited<ReturnType<BrowserContext['storageState']>>;
+
+const invited = {
+  name: 'Robin Example',
+  email: 'robin@example.test',
+  password: 'another long example passphrase',
+};
+
+test('an invite link from the instance section signs up a new user', async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await page.goto('/settings#instance');
+  const region = section(page, 'Instance');
+  await expect(
+    page.getByRole('heading', { name: 'Instance', exact: true }),
+  ).toBeFocused();
+  await expect(region.getByLabel('People with an invite link')).toBeChecked();
+  await region.getByLabel('Link works for').selectOption({ label: '1 day' });
+  await region.getByRole('button', { name: 'Create invite link' }).click();
+  const link = region.getByLabel('Invite link', { exact: true });
+  await expect(link).toBeFocused();
+  const url = new URL(await link.inputValue());
+  expect(url.pathname).toMatch(/^\/invite\/.+/);
+  await expectAccessible(page);
+
+  const other = await browser.newContext({ baseURL: baseURL ?? '' });
+  const guest = await other.newPage();
+  await guest.goto('/invite/not-a-real-token');
+  await expect(
+    guest.getByRole('heading', { name: 'Invite link not valid' }),
+  ).toBeVisible();
+
+  await guest.goto(url.pathname);
+  await expect(
+    guest.getByRole('heading', { name: 'Join Allotr' }),
+  ).toBeVisible();
+  await expectAccessible(guest);
+  await guest.getByLabel('Name').fill(invited.name);
+  await guest.getByLabel('Email').fill(invited.email);
+  await guest.getByLabel('Password').fill(invited.password);
+  await guest.getByRole('button', { name: 'Create account' }).click();
+  await expect(guest).toHaveURL(/\/today$/);
+
+  await guest.goto('/settings');
+  await expect(
+    guest.getByRole('region', { name: 'Security', exact: true }),
+  ).toBeVisible();
+  await expect(
+    guest.getByRole('region', { name: 'Instance', exact: true }),
+  ).toHaveCount(0);
+
+  await guest.goto(url.pathname);
+  await expect(guest).toHaveURL(/\/today$/);
+  invitedState = await other.storageState();
+  await other.close();
+});
+
 // These run last: they turn 2FA on, which the sign-in above cannot pass,
 // and leave it off again.
 test('signing out other devices signs out a second browser', async ({
@@ -374,6 +434,7 @@ test('signing out other devices signs out a second browser', async ({
 
 test('two-factor authentication turns on with a code and stays on while required', async ({
   page,
+  browser,
   baseURL,
 }) => {
   await page.goto('/settings#security');
@@ -409,6 +470,31 @@ test('two-factor authentication turns on with a code and stays on while required
       headers: { origin: baseURL ?? '' },
     });
   expect((await patch(true)).ok()).toBe(true);
+
+  // Someone without 2FA can reach only the security settings until they
+  // set it up.
+  const other = await browser.newContext({
+    baseURL: baseURL ?? '',
+    storageState: invitedState,
+  });
+  const unenrolled = await other.newPage();
+  await unenrolled.goto('/today');
+  await unenrolled.getByRole('link', { name: 'Set it up in Settings' }).click();
+  await expect(unenrolled).toHaveURL(/\/settings#security$/);
+  await expect(
+    unenrolled.getByRole('heading', { name: 'Security', exact: true }),
+  ).toBeFocused();
+  await expect(
+    unenrolled.getByRole('region', { name: 'Ledger', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    unenrolled.getByRole('button', {
+      name: 'Turn on two-factor authentication',
+    }),
+  ).toBeVisible();
+  await expectAccessible(unenrolled);
+  await other.close();
+
   await page.reload();
   await expect(
     region.getByText('requires two-factor authentication, so it cannot', {

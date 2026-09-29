@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
 import { hashTarget } from '@/features/settings/hash-target';
+import { InstanceSection } from '@/features/settings/instance';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
 import { Section } from '@/features/settings/section';
@@ -139,6 +140,9 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
         <ShortcutsSwitch className="mt-6" />
       </Section>
       <SecuritySection session={session} locale={locale} timeZone={timeZone} />
+      {session.user.role === 'admin' ? (
+        <InstanceSection locale={locale} timeZone={timeZone} />
+      ) : null}
     </Page>
   );
 }

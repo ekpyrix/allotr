@@ -1,4 +1,4 @@
-import type { SignUpBody } from '@allotr/shared';
+import type { InstanceSettingsPatch, SignUpBody } from '@allotr/shared';
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { ApiError, call } from './api.ts';
 import { endpoints } from './endpoints.ts';
@@ -80,4 +80,31 @@ export async function revokeSession(token: string) {
 
 export async function revokeOtherSessions() {
   await call(endpoints.revokeOtherSessions, { body: {} });
+}
+
+/** Instance-wide settings; only administrators can read them. */
+export const instanceSettingsQuery = queryOptions({
+  queryKey: ['instance'],
+  queryFn: () => call(endpoints.instanceSettings),
+});
+
+export function updateInstanceSettings(patch: InstanceSettingsPatch) {
+  return call(endpoints.updateInstanceSettings, { body: patch });
+}
+
+/** A single-use sign-up link; its URL is only shown this once. */
+export function createInvite(expiresInDays: number) {
+  return call(endpoints.createInvite, { body: { expiresInDays } });
+}
+
+export function inviteQuery(token: string) {
+  return queryOptions({
+    queryKey: ['invite', token],
+    queryFn: () => call(endpoints.inviteStatus, { params: { token } }),
+    retry: false,
+  });
+}
+
+export function acceptInvite(token: string, body: SignUpBody) {
+  return call(endpoints.acceptInvite, { params: { token }, body });
 }
