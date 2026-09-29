@@ -1,4 +1,4 @@
-import type { ThemeMode } from '@allotr/shared';
+import type { AppearanceBody, CustomTheme, ThemeBody } from '@allotr/shared';
 import { queryOptions } from '@tanstack/react-query';
 import { call } from './api.ts';
 import { endpoints } from './endpoints.ts';
@@ -11,6 +11,26 @@ export function appearanceQuery(userId: string) {
   });
 }
 
-export function saveAppearance(mode: ThemeMode) {
-  return call(endpoints.saveAppearance, { body: { mode } });
+export function saveAppearance(body: AppearanceBody) {
+  return call(endpoints.saveAppearance, { body });
+}
+
+/** The user's custom themes, keyed by user like the appearance. */
+export function themesQuery(userId: string) {
+  return queryOptions({
+    queryKey: ['settings', 'themes', userId],
+    queryFn: async () => (await call(endpoints.themes)).themes,
+  });
+}
+
+export function createTheme(body: ThemeBody): Promise<CustomTheme> {
+  return call(endpoints.createTheme, { body });
+}
+
+export function updateTheme(id: string, body: ThemeBody): Promise<CustomTheme> {
+  return call(endpoints.updateTheme, { params: { id }, body });
+}
+
+export async function deleteTheme(id: string): Promise<void> {
+  await call(endpoints.deleteTheme, { params: { id } });
 }

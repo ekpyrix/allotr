@@ -1,6 +1,7 @@
 import {
   accountListSchema,
   accountSchema,
+  appearanceBodySchema,
   appearanceSchema,
   archiveAccountBodySchema,
   billListSchema,
@@ -16,6 +17,8 @@ import {
   createBillBodySchema,
   createBillPaymentBodySchema,
   createTransactionBodySchema,
+  customThemeListSchema,
+  customThemeSchema,
   deleteUserBodySchema,
   editedTransactionSchema,
   instanceSettingsPatchSchema,
@@ -36,6 +39,7 @@ import {
   tagBodySchema,
   tagListSchema,
   tagSchema,
+  themeBodySchema,
   todaySchema,
   transactionListSchema,
   transactionSchema,
@@ -190,8 +194,30 @@ export const endpoints = {
   saveAppearance: endpoint({
     method: 'PUT',
     path: '/v1/settings/appearance',
-    body: appearanceSchema,
+    body: appearanceBodySchema,
     response: appearanceSchema,
+  }),
+  themes: endpoint({
+    method: 'GET',
+    path: '/v1/settings/themes',
+    response: customThemeListSchema,
+  }),
+  createTheme: endpoint({
+    method: 'POST',
+    path: '/v1/settings/themes',
+    body: themeBodySchema,
+    response: customThemeSchema,
+  }),
+  updateTheme: endpoint({
+    method: 'PUT',
+    path: '/v1/settings/themes/{id}',
+    body: themeBodySchema,
+    response: customThemeSchema,
+  }),
+  deleteTheme: endpoint({
+    method: 'DELETE',
+    path: '/v1/settings/themes/{id}',
+    response: z.unknown(),
   }),
   setup: endpoint({
     method: 'GET',

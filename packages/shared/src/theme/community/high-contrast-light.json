@@ -1,0 +1,24 @@
+{
+  "format": "allotr-theme",
+  "version": 1,
+  "name": "High contrast light",
+  "scheme": "light",
+  "tokens": {
+    "background": "#ffffff",
+    "foreground": "#000000",
+    "muted": "#ececec",
+    "muted-foreground": "#333333",
+    "plot": "#f2f2f2",
+    "today": "#7a4a00",
+    "today-text": "#6b4000",
+    "over": "#8f1d10",
+    "positive": "#0b5a2f",
+    "negative": "#8f1d10",
+    "primary": "#000000",
+    "primary-foreground": "#ffffff",
+    "border": "#8a8a8a",
+    "input": "#4d4d4d",
+    "ring": "#7a4a00",
+    "destructive": "#8f1d10"
+  }
+}

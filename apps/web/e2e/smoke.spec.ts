@@ -8,7 +8,7 @@ const backgrounds = { light: 'rgb(243, 245, 242)', dark: 'rgb(15, 26, 23)' };
 
 // The radios are visually hidden inside their labels; click what people see.
 async function chooseTheme(page: Page, name: 'Light' | 'Dark' | 'System') {
-  const group = page.getByRole('group', { name: 'Theme' });
+  const group = page.getByRole('group', { name: 'Theme', exact: true });
   await group.getByText(name, { exact: true }).click();
   await expect(group.getByRole('radio', { name })).toBeChecked();
 }
@@ -22,7 +22,7 @@ function hex(rgb: string): string {
 // from the page at 3:1 (WCAG 2.2 SC 1.4.11).
 async function expectVisibleSelection(page: Page) {
   const selected = page
-    .getByRole('group', { name: 'Theme' })
+    .getByRole('group', { name: 'Theme', exact: true })
     .locator('label:has(input:checked)');
   const [fill, page_] = await Promise.all([
     selected.evaluate((el) => getComputedStyle(el).backgroundColor),
@@ -90,7 +90,11 @@ test('onboarding, sign-in with two-factor and Today', async ({
   await expectVisibleSelection(page);
   await page.reload();
   await expectScheme(page, 'dark');
-  await expect(page.getByRole('radio', { name: 'Dark' })).toBeChecked();
+  await expect(
+    page
+      .getByRole('group', { name: 'Theme', exact: true })
+      .getByRole('radio', { name: 'Dark' }),
+  ).toBeChecked();
 
   // System follows the device while the page is open.
   await chooseTheme(page, 'System');

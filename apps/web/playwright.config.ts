@@ -28,6 +28,7 @@ const specs = [
   'setup',
   'export',
   'delete-account',
+  'themes',
 ];
 
 const projects = sizes.flatMap((size, i) =>

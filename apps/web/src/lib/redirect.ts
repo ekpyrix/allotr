@@ -16,7 +16,17 @@ export const extraShellPaths = [
   // Redirects to Today once finished, as in the shell spec; setup.spec runs
   // axe on every step.
   '/setup',
+  '/settings/themes/new',
 ] as const satisfies readonly `/${string}`[];
+
+/**
+ * Signed-in routes with a parameter, which the shell E2E cannot visit; the
+ * spec named beside each runs axe on it. Never a sign-in redirect target.
+ */
+export const paramShellPaths = [
+  // themes.spec
+  '/settings/themes/$id',
+] as const;
 
 /** Every signed-in route; the shell E2E test visits each with axe. */
 export const shellPaths = [

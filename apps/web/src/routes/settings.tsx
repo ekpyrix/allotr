@@ -4,9 +4,8 @@ import { useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
-import { ShortcutsSwitch } from '@/components/shortcuts-switch';
-import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { Button } from '@/components/ui/button';
+import { AppearanceSection } from '@/features/settings/appearance';
 import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
 import { DeleteAccountSection } from '@/features/settings/delete-account';
@@ -15,7 +14,6 @@ import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
-import { Section } from '@/features/settings/section';
 import { SecuritySection } from '@/features/settings/security';
 import { TagsSection } from '@/features/settings/tags';
 import {
@@ -138,12 +136,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
   return (
     <Page title={t('settings.title')}>
       {ledger}
-      {enabled ? (
-        <Section id="appearance" title={t('settings.appearance.title')}>
-          <ThemeModeSwitch className="mt-4" />
-          <ShortcutsSwitch className="mt-6" />
-        </Section>
-      ) : null}
+      {enabled ? <AppearanceSection userId={session.user.id} /> : null}
       <SecuritySection session={session} locale={locale} timeZone={timeZone} />
       {enabled && session.user.role === 'admin' ? (
         <InstanceSection locale={locale} timeZone={timeZone} />

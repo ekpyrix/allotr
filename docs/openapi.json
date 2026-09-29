@@ -11394,7 +11394,7 @@
           "Settings"
         ],
         "summary": "Appearance settings",
-        "description": "`system` follows the device light or dark preference.",
+        "description": "`system` follows the device light or dark preference. `light` and `dark` name the theme used for each scheme: a shipped theme id or a custom theme id.",
         "responses": {
           "200": {
             "description": "Current appearance settings.",
@@ -11410,10 +11410,22 @@
                         "dark",
                         "system"
                       ]
+                    },
+                    "light": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "dark": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
                     }
                   },
                   "required": [
-                    "mode"
+                    "mode",
+                    "light",
+                    "dark"
                   ]
                 }
               }
@@ -11536,6 +11548,7 @@
           "Settings"
         ],
         "summary": "Change appearance settings",
+        "description": "A slot left out keeps its current theme.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -11549,6 +11562,16 @@
                       "dark",
                       "system"
                     ]
+                  },
+                  "light": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "dark": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                   }
                 },
                 "required": [
@@ -11573,10 +11596,22 @@
                         "dark",
                         "system"
                       ]
+                    },
+                    "light": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "dark": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
                     }
                   },
                   "required": [
-                    "mode"
+                    "mode",
+                    "light",
+                    "dark"
                   ]
                 }
               }
@@ -11694,6 +11729,1619 @@
           },
           "403": {
             "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A slot names an unknown theme (`theme_not_found`) or one of the other scheme (`theme_scheme_mismatch`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/themes": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Custom themes",
+        "responses": {
+          "200": {
+            "description": "Custom themes, oldest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "themes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "scheme": {
+                            "type": "string",
+                            "enum": [
+                              "light",
+                              "dark"
+                            ]
+                          },
+                          "tokens": {
+                            "type": "object",
+                            "properties": {
+                              "background": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "foreground": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "muted": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "muted-foreground": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "plot": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "today": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "today-text": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "over": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "positive": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "negative": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "primary": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "primary-foreground": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "border": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "input": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "ring": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              },
+                              "destructive": {
+                                "type": "string",
+                                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                              }
+                            },
+                            "required": [
+                              "background",
+                              "foreground",
+                              "muted",
+                              "muted-foreground",
+                              "plot",
+                              "today",
+                              "today-text",
+                              "over",
+                              "positive",
+                              "negative",
+                              "primary",
+                              "primary-foreground",
+                              "border",
+                              "input",
+                              "ring",
+                              "destructive"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "scheme",
+                          "tokens",
+                          "id"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "themes"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Add a custom theme",
+        "description": "Every theme must pass the contrast validator.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "scheme": {
+                    "type": "string",
+                    "enum": [
+                      "light",
+                      "dark"
+                    ]
+                  },
+                  "tokens": {
+                    "type": "object",
+                    "properties": {
+                      "background": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "muted": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "muted-foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "plot": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "today": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "today-text": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "over": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "positive": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "negative": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "primary": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "primary-foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "border": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "input": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "ring": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "destructive": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      }
+                    },
+                    "required": [
+                      "background",
+                      "foreground",
+                      "muted",
+                      "muted-foreground",
+                      "plot",
+                      "today",
+                      "today-text",
+                      "over",
+                      "positive",
+                      "negative",
+                      "primary",
+                      "primary-foreground",
+                      "border",
+                      "input",
+                      "ring",
+                      "destructive"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "scheme",
+                  "tokens"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new theme.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "light",
+                        "dark"
+                      ]
+                    },
+                    "tokens": {
+                      "type": "object",
+                      "properties": {
+                        "background": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "muted": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "muted-foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "plot": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "today": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "today-text": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "over": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "positive": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "negative": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "primary": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "primary-foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "border": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "input": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "ring": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "destructive": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        }
+                      },
+                      "required": [
+                        "background",
+                        "foreground",
+                        "muted",
+                        "muted-foreground",
+                        "plot",
+                        "today",
+                        "today-text",
+                        "over",
+                        "positive",
+                        "negative",
+                        "primary",
+                        "primary-foreground",
+                        "border",
+                        "input",
+                        "ring",
+                        "destructive"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "scheme",
+                    "tokens",
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The name is taken (`theme_name_taken`) or the limit of custom themes is reached (`theme_limit`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Some colour pairs fail WCAG 2.2 AA (`theme_contrast`); `errors` lists each failing pair at `/tokens/<foreground>`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/themes/{id}": {
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Change a custom theme",
+        "description": "If the scheme changes while the theme is in use, that slot goes back to its default theme.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "scheme": {
+                    "type": "string",
+                    "enum": [
+                      "light",
+                      "dark"
+                    ]
+                  },
+                  "tokens": {
+                    "type": "object",
+                    "properties": {
+                      "background": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "muted": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "muted-foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "plot": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "today": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "today-text": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "over": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "positive": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "negative": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "primary": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "primary-foreground": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "border": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "input": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "ring": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      },
+                      "destructive": {
+                        "type": "string",
+                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      }
+                    },
+                    "required": [
+                      "background",
+                      "foreground",
+                      "muted",
+                      "muted-foreground",
+                      "plot",
+                      "today",
+                      "today-text",
+                      "over",
+                      "positive",
+                      "negative",
+                      "primary",
+                      "primary-foreground",
+                      "border",
+                      "input",
+                      "ring",
+                      "destructive"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "scheme",
+                  "tokens"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The theme after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "scheme": {
+                      "type": "string",
+                      "enum": [
+                        "light",
+                        "dark"
+                      ]
+                    },
+                    "tokens": {
+                      "type": "object",
+                      "properties": {
+                        "background": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "muted": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "muted-foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "plot": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "today": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "today-text": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "over": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "positive": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "negative": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "primary": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "primary-foreground": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "border": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "input": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "ring": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        },
+                        "destructive": {
+                          "type": "string",
+                          "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        }
+                      },
+                      "required": [
+                        "background",
+                        "foreground",
+                        "muted",
+                        "muted-foreground",
+                        "plot",
+                        "today",
+                        "today-text",
+                        "over",
+                        "positive",
+                        "negative",
+                        "primary",
+                        "primary-foreground",
+                        "border",
+                        "input",
+                        "ring",
+                        "destructive"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "scheme",
+                    "tokens",
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such theme.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The name is taken (`theme_name_taken`) or the limit of custom themes is reached (`theme_limit`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Some colour pairs fail WCAG 2.2 AA (`theme_contrast`); `errors` lists each failing pair at `/tokens/<foreground>`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Delete a custom theme",
+        "description": "A slot that used it goes back to its default theme.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such theme.",
             "content": {
               "application/problem+json": {
                 "schema": {

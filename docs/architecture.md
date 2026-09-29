@@ -158,7 +158,15 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
-  mode (`light`, `dark` or `system`, the default). `/v1/settings/setup`
+  mode (`light`, `dark` or `system`, the default) and the theme for each
+  scheme: a shipped theme (built-in or community, in
+  `packages/shared/src/theme/`) or one of the user's custom themes.
+  `/v1/settings/themes` keeps up to 20 custom themes per user; every save
+  runs the WCAG 2.2 AA contrast validator and a failing theme is refused
+  with each failing pair listed (`theme_contrast`). Deleting a theme in use,
+  or changing its scheme, puts that slot back on the built-in theme. The web
+  app caches the mode and any non-built-in colours in localStorage, so
+  `theme-init.js` paints them before the app loads. `/v1/settings/setup`
   holds a new user's progress through setup (currency and region, payday,
   spending accounts, savings, bills): the steps saved or skipped and whether
   it is finished. With nothing saved, a user who has any account counts as

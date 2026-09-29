@@ -1,0 +1,24 @@
+{
+  "format": "allotr-theme",
+  "version": 1,
+  "name": "Harbour",
+  "scheme": "dark",
+  "tokens": {
+    "background": "#111823",
+    "foreground": "#e4eaf2",
+    "muted": "#1c2533",
+    "muted-foreground": "#9aa8ba",
+    "plot": "#1a2330",
+    "today": "#e8b04b",
+    "today-text": "#e8b04b",
+    "over": "#f0907e",
+    "positive": "#7cc7b0",
+    "negative": "#f0907e",
+    "primary": "#e4eaf2",
+    "primary-foreground": "#111823",
+    "border": "#2d3a4d",
+    "input": "#6a7b92",
+    "ring": "#e8b04b",
+    "destructive": "#f0907e"
+  }
+}
