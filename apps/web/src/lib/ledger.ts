@@ -178,6 +178,17 @@ export function archiveAccount(id: string, settle?: Settle) {
 }
 
 /**
+ * How much each way of clearing the balance would lower today's figure.
+ * Under `accounts`, so any new entry refreshes it.
+ */
+export function archiveImpactQuery(id: string) {
+  return queryOptions({
+    queryKey: ['accounts', id, 'archive-impact'],
+    queryFn: () => call(endpoints.archiveImpact, { params: { id } }),
+  });
+}
+
+/**
  * Compares the bank's balance with the ledger's; a match is recorded. With
  * `adjust`, the difference the user saw is posted as an Unrecorded entry.
  */

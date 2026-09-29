@@ -1,16 +1,18 @@
 import { formatMoney, type AccountView } from '@allotr/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useState } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import {
   archiveAccount,
+  archiveImpactQuery,
   entryQueryKeys,
   switchBudgetGroup,
   type Settle,
 } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
+import { archiveWarning, type ArchiveWarning } from './archive-impact.ts';
 import { transferTargets } from './groups.ts';
 
 // Moving an account on or off budget, and archiving it (FR-L2, FR-L8).
@@ -98,6 +100,26 @@ export function BudgetSwitch({
 
 type Method = Settle['method'];
 
+function warningText(
+  warning: ArchiveWarning,
+  amount: string,
+  locale: string,
+): string {
+  const drop = formatMoney(warning.drop, locale);
+  switch (warning.kind) {
+    case 'write_off':
+      return t('accounts.archiveFlow.impact.writeOff', { drop });
+    case 'savings':
+      return t('accounts.archiveFlow.impact.savings', {
+        amount,
+        target: warning.target.name,
+        drop,
+      });
+    case 'transfer':
+      return t('accounts.archiveFlow.impact.transfer', { drop });
+  }
+}
+
 export function ArchiveFlow({
   account,
   accounts,
@@ -120,6 +142,7 @@ export function ArchiveFlow({
   );
   const [toAccountId, setToAccountId] = useState(targets[0]?.id ?? '');
   const methodName = useId();
+  const impactId = useId();
   const archive = useLedgerMutation(
     (settle: Settle | undefined) => archiveAccount(account.id, settle),
     onBusyChange,
@@ -130,6 +153,25 @@ export function ArchiveFlow({
     : method === 'transfer'
       ? { method, toAccountId }
       : { method };
+  // Archiving never lowers today's figure without saying so (FR-L8): the
+  // drop comes from the server's projection, and confirming waits for it.
+  const impact = useQuery({
+    ...archiveImpactQuery(account.id),
+    enabled: !empty,
+  });
+  const warning =
+    impact.data === undefined
+      ? null
+      : archiveWarning(impact.data, account, settle, accounts);
+  const impactText = empty
+    ? null
+    : impact.isPending
+      ? t('accounts.archiveFlow.impact.loading')
+      : impact.isError
+        ? t('accounts.archiveFlow.impact.failed')
+        : warning === null
+          ? null
+          : warningText(warning, amount, locale);
 
   return (
     <div className="mt-4 grid gap-5">
@@ -212,12 +254,17 @@ export function ArchiveFlow({
         </fieldset>
       )}
 
+      <p id={impactId} aria-live="polite" className="empty:hidden">
+        {impactText}
+      </p>
+
       {archive.isError ? (
         <FormError message={errorMessage(archive.error)} />
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button
-          disabled={archive.isPending}
+          disabled={archive.isPending || (!empty && impact.isPending)}
+          aria-describedby={impactText === null ? undefined : impactId}
           onClick={() => {
             archive.mutate(settle, { onSuccess: onDone });
           }}

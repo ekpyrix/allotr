@@ -92,6 +92,20 @@ export const archiveAccountBodySchema = z.object({
     .optional(),
 });
 
+/**
+ * How much each way of clearing a balance before archiving would lower
+ * today's "left today" figure, in the default currency. Negative when it
+ * would raise it; zero when the account holds nothing.
+ */
+export const archiveImpactSchema = z.object({
+  writeOff: z.object({ leftTodayDrop: moneySchema }),
+  /** One entry per open account in the same currency. */
+  transfers: z.array(
+    z.object({ toAccountId: idSchema, leftTodayDrop: moneySchema }),
+  ),
+});
+export type ArchiveImpactView = z.infer<typeof archiveImpactSchema>;
+
 export const reconcileBodySchema = z
   .object({
     /** The bank's balance at the end of `on`; negative for money owed. */

@@ -339,6 +339,16 @@ export const en = {
       writeOff: 'Writing it off',
       writeOffHint:
         'Records {amount} as an expense dated today, without a category.',
+      impact: {
+        loading: 'Working out the effect on today’s figure…',
+        failed:
+          'The effect on today’s figure could not be worked out. Try again in a moment.',
+        writeOff:
+          'It counts as spending today, so today’s figure drops by {drop}.',
+        savings:
+          'From today, the {amount} counts as savings in {target} and no longer adds to what you can spend. Today’s figure drops by {drop}.',
+        transfer: 'Today’s figure drops by {drop}.',
+      },
       confirm: 'Archive',
       confirmTransfer: 'Transfer and archive',
       confirmWriteOff: 'Write off and archive',

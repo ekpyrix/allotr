@@ -8,7 +8,13 @@ import {
 } from '@allotr/shared';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { expense, income, opening, transfer } from '../ledger/build.ts';
+import {
+  expense,
+  income,
+  opening,
+  transfer,
+  writeOff,
+} from '../ledger/build.ts';
 import { reverse } from '../ledger/reverse.ts';
 import { food, salary, testChart, testCurrencies } from '../ledger/testing.ts';
 import {
@@ -18,7 +24,7 @@ import {
   type Transaction,
 } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
-import { availableOn, dailyFiguresOn } from './daily.ts';
+import { availableOn, dailyFiguresOn, leftTodayDrop } from './daily.ts';
 import { cycleReports } from './history.ts';
 import { cycleSnapshot } from './snapshot.ts';
 import {
@@ -445,6 +451,49 @@ describe('pace properties', () => {
           );
         },
       ),
+    );
+  });
+});
+
+describe('archive impact properties', () => {
+  const settleMeta = (today: LocalDate) => ({
+    id: transactionId('settle'),
+    occurredOn: today,
+    createdAt: '2026-06-01T00:00:00.000Z',
+  });
+
+  it('drops left today by a whole write-off from an on-budget account', () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, amountArb, (view, today, amount) => {
+        const entry = writeOff(chart, settleMeta(today), {
+          accountId: card,
+          balance: money(amount, 'USD'),
+        });
+        expect(leftTodayDrop(view, today, entry)).toEqual(money(amount, usd));
+      }),
+    );
+  });
+
+  it('drops left today by at most a transfer to savings, never within the budget', () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, amountArb, (view, today, amount) => {
+        const move = (toId: typeof card) =>
+          transfer(chart, settleMeta(today), {
+            fromId: card,
+            toId,
+            sent: money(amount, 'USD'),
+          });
+        const toSavings = leftTodayDrop(
+          view,
+          today,
+          move(accountId('savings-USD')),
+        ).amountMinor;
+        expect(toSavings).toBeGreaterThanOrEqual(0);
+        expect(toSavings).toBeLessThanOrEqual(amount);
+        expect(
+          leftTodayDrop(view, today, move(accountId('cash-USD'))).amountMinor,
+        ).toBe(0);
+      }),
     );
   });
 });

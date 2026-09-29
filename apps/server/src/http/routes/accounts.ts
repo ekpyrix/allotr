@@ -2,6 +2,7 @@ import {
   accountListSchema,
   accountSchema,
   archiveAccountBodySchema,
+  archiveImpactSchema,
   createAccountBodySchema,
   idParamSchema,
   listAccountsQuerySchema,
@@ -12,6 +13,7 @@ import {
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
   archiveAccount,
+  archiveImpact,
   createAccount,
   getAccount,
   listAccounts,
@@ -132,6 +134,21 @@ const archiveRoute = createRoute({
   },
 });
 
+const archiveImpactRoute = createRoute({
+  method: 'get',
+  path: '/v1/accounts/{id}/archive-impact',
+  tags,
+  summary: "What archiving would do to today's figure",
+  description:
+    "For each way of clearing the balance before archiving, how much today's left-today figure would drop, from the same projection as `/v1/today` with the settling entry added. A write-off from an on-budget account counts as spending; a transfer to an off-budget account lowers the allowance. Nothing is recorded.",
+  request: { params: idParamSchema },
+  responses: {
+    200: json(archiveImpactSchema, "The drop in today's figure per option."),
+    ...signedIn,
+    404: notFound,
+  },
+});
+
 const reconcileRoute = createRoute({
   method: 'post',
   path: '/v1/accounts/{id}/reconcile',
@@ -201,6 +218,11 @@ export function registerLedgerAccountRoutes(
       await archiveAccount(db, c.get('user').id, id, settle, now()),
       200,
     );
+  });
+
+  app.openapi(archiveImpactRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(await archiveImpact(db, c.get('user').id, id, now()), 200);
   });
 
   app.openapi(reconcileRoute, async (c) => {

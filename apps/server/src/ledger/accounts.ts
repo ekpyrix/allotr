@@ -5,6 +5,7 @@ import {
   balanceOf,
   budgetGroupsOn,
   budgetSwitch,
+  leftTodayDrop,
   opening,
   totalOn,
   transfer,
@@ -16,8 +17,10 @@ import {
 } from '@allotr/core';
 import {
   formatMoney,
+  localDateIn,
   money,
   type AccountListView,
+  type ArchiveImpactView,
   type AccountView,
   type FigureView,
   type CurrencyCode,
@@ -37,9 +40,11 @@ import {
   loadLedger,
   newEntry,
   userToday,
+  withSystemAccounts,
   type Db,
   type TransactionSource,
 } from './store.ts';
+import { loadView } from './today.ts';
 
 // Ledger accounts (FR-L2, FR-L3, FR-L8). Every query is scoped to the user;
 // another user's account is reported as not found.
@@ -418,4 +423,47 @@ export async function archiveAccount(
       .execute();
   });
   return getAccount(db, userId, id, now);
+}
+
+/**
+ * What each way of clearing the balance would do to today's figure, worked
+ * out by core's daily projection on the ledger plus the entry that
+ * archiving would record (FR-L8). Nothing is written.
+ */
+export async function archiveImpact(
+  db: Kysely<DB>,
+  userId: string,
+  id: string,
+  now: Date,
+): Promise<ArchiveImpactView> {
+  const { view, timeZone } = await db.transaction().execute(async (trx) => {
+    await findOwned(trx, userId, id);
+    return loadView(trx, userId);
+  });
+  const today = localDateIn(now, timeZone);
+  const from = accountId(id);
+  const balance = balanceOf(view.chart, view.ledger, from);
+  const chart = withSystemAccounts(view.chart, [balance.currency], now);
+  const drop = (settle: Settle) =>
+    balance.amountMinor === 0
+      ? money(0, view.settings.defaultCurrency)
+      : leftTodayDrop(
+          { ...view, chart },
+          today,
+          settlement(chart, from, balance, settle, newEntry(now, today)),
+        );
+  const targets = [...view.chart.values()].filter(
+    (a) =>
+      a.systemRole === null &&
+      !a.archived &&
+      a.id !== from &&
+      a.currency === balance.currency,
+  );
+  return {
+    writeOff: { leftTodayDrop: drop({ method: 'write_off' }) },
+    transfers: targets.map((target) => ({
+      toAccountId: target.id,
+      leftTodayDrop: drop({ method: 'transfer', toAccountId: target.id }),
+    })),
+  };
 }

@@ -159,6 +159,49 @@ export async function loadLedger(
   );
 }
 
+function plannedSystemAccounts(
+  userId: string,
+  chart: Chart,
+  currencies: Iterable<CurrencyCode>,
+  now: Date,
+) {
+  const at = now.toISOString();
+  const rows = systemAccountsNeeded(chart, currencies).map(
+    ({ role, currency }) => ({
+      id: randomUUID(),
+      user_id: userId,
+      name: `${systemAccountNames[role]}:${currency}`,
+      kind: systemAccountKinds[role],
+      system_role: role,
+      budget_group: null,
+      currency,
+      created_at: at,
+      updated_at: at,
+    }),
+  );
+  const withRows =
+    rows.length === 0
+      ? chart
+      : chartOf([
+          ...chart.values(),
+          ...rows.map((row) => toAccount({ ...row, archived: 0 })),
+        ]);
+  return { rows, chart: withRows };
+}
+
+/**
+ * The chart with the balancing accounts that entries in these currencies
+ * may need, in memory only: for working out what an entry would do
+ * without recording it.
+ */
+export function withSystemAccounts(
+  chart: Chart,
+  currencies: Iterable<CurrencyCode>,
+  now: Date,
+): Chart {
+  return plannedSystemAccounts('', chart, currencies, now).chart;
+}
+
 /**
  * Creates the balancing accounts that entries in these currencies may need
  * and returns the chart including them.
@@ -170,25 +213,10 @@ export async function ensureSystemAccounts(
   currencies: Iterable<CurrencyCode>,
   now: Date,
 ): Promise<Chart> {
-  const missing = systemAccountsNeeded(chart, currencies);
-  if (missing.length === 0) return chart;
-  const at = now.toISOString();
-  const rows = missing.map(({ role, currency }) => ({
-    id: randomUUID(),
-    user_id: userId,
-    name: `${systemAccountNames[role]}:${currency}`,
-    kind: systemAccountKinds[role],
-    system_role: role,
-    budget_group: null,
-    currency,
-    created_at: at,
-    updated_at: at,
-  }));
-  await db.insertInto('accounts').values(rows).execute();
-  return chartOf([
-    ...chart.values(),
-    ...rows.map((row) => toAccount({ ...row, archived: 0 })),
-  ]);
+  const planned = plannedSystemAccounts(userId, chart, currencies, now);
+  if (planned.rows.length === 0) return chart;
+  await db.insertInto('accounts').values(planned.rows).execute();
+  return planned.chart;
 }
 
 export type AppendOptions = Readonly<{

@@ -4,6 +4,7 @@ import {
   appearanceBodySchema,
   appearanceSchema,
   archiveAccountBodySchema,
+  archiveImpactSchema,
   billListSchema,
   billSchema,
   categoryListSchema,
@@ -259,6 +260,11 @@ export const endpoints = {
     path: '/v1/accounts/{id}/archive',
     body: archiveAccountBodySchema,
     response: accountSchema,
+  }),
+  archiveImpact: endpoint({
+    method: 'GET',
+    path: '/v1/accounts/{id}/archive-impact',
+    response: archiveImpactSchema,
   }),
   reconcileAccount: endpoint({
     method: 'POST',
