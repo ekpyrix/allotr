@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, NetworkError } from './api.ts';
 import {
   createQueryClient,
@@ -98,5 +98,27 @@ describe('queryOrCached', () => {
     await expect(
       queryOrCached(new QueryClient(), options),
     ).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  describe('offline', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('fails at once without asking the server', async () => {
+      vi.stubGlobal('navigator', { onLine: false });
+      const queryFn = vi.fn(() => Promise.resolve('fresh'));
+      await expect(
+        queryOrCached(new QueryClient(), { ...options, queryFn }),
+      ).rejects.toBeInstanceOf(NetworkError);
+      expect(queryFn).not.toHaveBeenCalled();
+    });
+
+    it('still answers from the cache', async () => {
+      vi.stubGlobal('navigator', { onLine: false });
+      const client = new QueryClient();
+      client.setQueryData(['thing'], 'cached', { updatedAt: 0 });
+      await expect(queryOrCached(client, options)).resolves.toBe('cached');
+    });
   });
 });

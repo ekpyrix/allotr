@@ -90,9 +90,22 @@ In M2 the form is structured fields only; the grammar line (M3) fills the same
 fields. The web app sends the typed line to the same parser endpoint, shows the
 result as editable fields, and posts a structured transaction on save.
 Offline entries are queued in the browser with client-generated idempotency
-keys and sent when the connection returns.
+keys and sent when the connection returns (M7).
 
-### 4.3 Assistant and MCP
+### 4.3 Installable app and service worker
+
+The web app ships a manifest (SVG plus PNG and maskable icons) and a service
+worker built from `apps/web/src/sw/`. At build time the worker gets the list
+of every file in the build and a version hashed from their contents. It
+answers page loads with the cached `index.html` and build files from its
+cache; API paths (`/v1/`, `/healthz`, `/readyz`, `/openapi.json`) and every
+non-GET request go to the network untouched. Its cache holds build output
+only, never user data. A new build installs beside the old one, and the page
+offers **Reload** instead of switching by itself. Offline, the app still
+opens and shows an offline notice in place of figures; it does not show
+cached numbers.
+
+### 4.4 Assistant and MCP
 
 The assistant (web panel and chat) and external MCP clients use one tool set:
 `get_today`, `query_report`, `list_transactions`, `simulate`,

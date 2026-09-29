@@ -1,12 +1,15 @@
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
+import { useOnline } from '@/lib/online';
 import { QuickEntryProvider } from '@/features/quick-entry/quick-entry-provider';
 import { t } from '@/messages/t';
 import { AppNav } from './app-nav.tsx';
+import { OfflineNotice } from './offline-notice.tsx';
 
 // The frame around every signed-in view. The skip link comes first so a
 // keyboard user can pass the nav; after a route change focus moves to
 // <main> so screen readers start at the new page (not on first load).
+// Offline, the view gives way to a notice so no stale figures show.
 export function AppShell({
   twoFactorRequired,
 }: {
@@ -15,6 +18,7 @@ export function AppShell({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const main = useRef<HTMLElement>(null);
   const firstPath = useRef(pathname);
+  const online = useOnline();
 
   useEffect(() => {
     if (pathname === firstPath.current) return;
@@ -46,7 +50,7 @@ export function AppShell({
               {t('shell.twoFactorRequired')}
             </p>
           ) : null}
-          <Outlet />
+          {online ? <Outlet /> : <OfflineNotice />}
         </main>
       </div>
     </QuickEntryProvider>

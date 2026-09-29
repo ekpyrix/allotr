@@ -113,6 +113,16 @@ export const en = {
       dateInvalid: 'Enter a date.',
     },
   },
+  offline: {
+    title: 'You are offline',
+    intro:
+      'Allotr needs a connection to show your figures. This page loads again when you are back online.',
+  },
+  update: {
+    ready: 'A new version of Allotr is ready.',
+    reload: 'Reload',
+    later: 'Later',
+  },
   errors: {
     pageTitle: 'This page could not load',
     retry: 'Try again',

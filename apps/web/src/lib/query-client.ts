@@ -6,6 +6,7 @@ import {
   type QueryExecuteOptions,
 } from '@tanstack/react-query';
 import { ApiError, NetworkError } from './api.ts';
+import { isOffline } from './online.ts';
 
 const MAX_RETRIES = 2;
 
@@ -25,13 +26,15 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 /**
  * Fresh data when the server answers, otherwise what is cached, so a flaky
  * connection does not turn a navigation into an error page. A 401 always
- * propagates: the session really ended.
+ * propagates: the session really ended. Offline it does not ask at all, so
+ * a page load fails at once instead of after the retries.
  */
 export async function queryOrCached<T, K extends QueryKey>(
   client: QueryClient,
   options: QueryExecuteOptions<T, Error, T, T, K>,
 ): Promise<T> {
   try {
+    if (isOffline()) throw new NetworkError(new Error('offline'));
     return await client.query(options);
   } catch (error) {
     const cached = client.getQueryData<T>(options.queryKey);
