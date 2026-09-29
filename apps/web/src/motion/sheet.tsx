@@ -235,7 +235,7 @@ export function Sheet({
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/40 data-[state=open]:scrim-in dark:bg-black/60" />
         {expanded ? (
           <DialogPrimitive.Content
-            className="fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-outline-variant bg-card-raised p-6 text-text outline-none data-[state=open]:overlay-in"
+            className="fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-outline-variant bg-card-raised p-6 text-text data-[state=open]:overlay-in"
             {...focusHandlers}
             {...describedBy}
           >
@@ -252,7 +252,7 @@ export function Sheet({
               dragMomentum={false}
               onDragEnd={onDragEnd}
               style={{ y, height: `${String(DETENT_FRACTION.large * 100)}dvh` }}
-              className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised text-text outline-none"
+              className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised text-text"
             >
               <div
                 className="flex shrink-0 touch-none justify-center pt-2 pb-1"
@@ -264,7 +264,7 @@ export function Sheet({
                   type="button"
                   aria-label={t('ui.resize')}
                   onClick={cycle}
-                  className="flex h-8 w-16 items-center justify-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-ring"
+                  className="flex h-8 w-16 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   <span
                     aria-hidden="true"
