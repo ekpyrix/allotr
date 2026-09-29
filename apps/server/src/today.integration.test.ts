@@ -115,6 +115,8 @@ describe('today for a new user', () => {
       overdue: false,
       daysLeft: 17,
       available: usd(0),
+      onBudget: usd(0),
+      reserved: usd(0),
       startOfDay: usd(0),
       spentToday: usd(0),
       todayAllowance: usd(0),

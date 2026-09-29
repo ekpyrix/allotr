@@ -17,6 +17,7 @@ type Summary = {
   spending: Money;
   leftover: Money;
   savingsNetChange: Money;
+  offBudgetClosing: Money;
   amended: boolean;
   missingRates: string[];
 };
@@ -132,6 +133,7 @@ describe('cycles', () => {
       spending: usd(2000),
       leftover: usd(98000),
       savingsNetChange: usd(0),
+      offBudgetClosing: usd(0),
       amended: false,
       missingRates: [],
     });

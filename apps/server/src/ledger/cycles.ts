@@ -1,12 +1,15 @@
 import {
   categoryId,
+  cycleDays,
   cycleReports,
+  cyclesOf,
   type CategoryId,
   type CycleReport,
   type LedgerView,
 } from '@allotr/core';
 import {
   localDateIn,
+  type CycleDayListView,
   type CycleDetailView,
   type CycleListView,
   type CycleSummaryView,
@@ -76,6 +79,7 @@ function summary(report: CycleReport): CycleSummaryView {
     spending: report.spending,
     leftover: report.leftover,
     savingsNetChange: report.savingsNetChange,
+    offBudgetClosing: report.closing.off,
     amended: report.amendments.length > 0,
     missingRates: [...report.missingRates],
   };
@@ -90,6 +94,31 @@ export async function listCycles(
   return { cycles: reports.map(summary).reverse() };
 }
 
+function cycleNotFound(openedOn: LocalDate): RequestProblem {
+  return new RequestProblem(
+    404,
+    'cycle_not_found',
+    `No cycle opened on ${openedOn}.`,
+  );
+}
+
+/** Day-by-day figures for one cycle's charts (ADR 0020). */
+export async function cycleDayList(
+  db: Kysely<DB>,
+  userId: string,
+  openedOn: LocalDate,
+  now: Date,
+): Promise<CycleDayListView> {
+  const { view, timeZone } = await db
+    .transaction()
+    .execute((trx) => loadView(trx, userId));
+  const today = localDateIn(now, timeZone);
+  const cycle = cyclesOf(view, today).find((c) => c.openedOn === openedOn);
+  if (cycle === undefined) throw cycleNotFound(openedOn);
+  const { days, budget, missingRates } = cycleDays(view, cycle, today);
+  return { days: [...days], budget, missingRates: [...missingRates] };
+}
+
 export async function cycleDetail(
   db: Kysely<DB>,
   userId: string,
@@ -98,13 +127,7 @@ export async function cycleDetail(
 ): Promise<CycleDetailView> {
   const { view, reports } = await reportsFor(db, userId, now, openedOn);
   const [report] = reports;
-  if (report === undefined) {
-    throw new RequestProblem(
-      404,
-      'cycle_not_found',
-      `No cycle opened on ${openedOn}.`,
-    );
-  }
+  if (report === undefined) throw cycleNotFound(openedOn);
   const entries = new Map(view.ledger.map((t) => [t.id, t]));
   return {
     ...summary(report),

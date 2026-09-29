@@ -1,4 +1,6 @@
 import {
+  accountHistoryQuerySchema,
+  accountHistorySchema,
   accountListSchema,
   accountSchema,
   archiveAccountBodySchema,
@@ -12,6 +14,7 @@ import {
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
+  accountHistory,
   archiveAccount,
   archiveImpact,
   createAccount,
@@ -149,6 +152,22 @@ const archiveImpactRoute = createRoute({
   },
 });
 
+const historyRoute = createRoute({
+  method: 'get',
+  path: '/v1/accounts/{id}/history',
+  tags,
+  summary: "An account's balance day by day",
+  description:
+    "The end-of-day balance in the account's currency for each of the last `days` days (7 to 365, 30 by default), today included, oldest first. Derived from the ledger by entry date, so a back-dated entry changes it at once.",
+  request: { params: idParamSchema, query: accountHistoryQuerySchema },
+  responses: {
+    200: json(accountHistorySchema, 'One point per day.'),
+    400: invalid,
+    ...signedIn,
+    404: notFound,
+  },
+});
+
 const reconcileRoute = createRoute({
   method: 'post',
   path: '/v1/accounts/{id}/reconcile',
@@ -223,6 +242,15 @@ export function registerLedgerAccountRoutes(
   app.openapi(archiveImpactRoute, async (c) => {
     const { id } = c.req.valid('param');
     return c.json(await archiveImpact(db, c.get('user').id, id, now()), 200);
+  });
+
+  app.openapi(historyRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const { days } = c.req.valid('query');
+    return c.json(
+      await accountHistory(db, c.get('user').id, id, days, now()),
+      200,
+    );
   });
 
   app.openapi(reconcileRoute, async (c) => {

@@ -160,7 +160,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   live daily, days left, cycle end, spending so far this cycle, the overdue
   flag, unpaid bills due by today, every bill due date in the cycle with
   its payment day, and currencies left out for lack of a rate), computed
-  from the ledger on every request.
+  from the ledger on every request. `onBudget` and `reserved` split
+  `available` for charts; `reserved` is always exactly
+  `onBudget − available`.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
@@ -189,7 +191,14 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   the rate on the cycle's last day, plus the `amended` flag.
   `GET /v1/cycles/{openedOn}` adds the opening and closing balances,
   income and spending by category, and the entries that amended the cycle.
-  Both are computed on every request, like today's figures.
+  Each summary also has `offBudgetClosing`, the off-budget total at the end
+  of its last day. `GET /v1/cycles/{openedOn}/days` gives the cycle day by
+  day for charts: pace spending, cumulative pace spending, an even pace
+  line, available at the end of the day and that day's allowance, from the
+  same projection as `/v1/today` (ADR 0020). All are computed on every
+  request, like today's figures.
+- `GET /v1/accounts/{id}/history?days=30` gives an account's end-of-day
+  balance for the last 7 to 365 days, in its own currency.
 - `POST /v1/import` fills an empty ledger from a JSON bundle (see
   [§5.1](#51-import-bundle)): validated as a whole, then applied in one
   database transaction through the same writes as the API. A ledger that
