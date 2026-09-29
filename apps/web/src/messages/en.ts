@@ -230,6 +230,9 @@ export const en = {
     moveOff: 'Move off budget',
     moveOn: 'Move on budget',
     archive: 'Archive',
+    reconcile: 'Reconcile',
+    lastReconciled: 'Reconciled {date}',
+    neverReconciled: 'Not reconciled yet',
     archived: {
       title: {
         one: 'Archived ({count} account)',
@@ -241,6 +244,8 @@ export const en = {
       movedOn: '{name} moved on budget.',
       movedOff: '{name} moved off budget.',
       archived: '{name} archived.',
+      reconciled: '{name} matches the bank.',
+      adjusted: '{name} now matches the bank.',
     },
     close: 'Close',
     cancel: 'Cancel',
@@ -292,6 +297,36 @@ export const en = {
       confirmTransfer: 'Transfer and archive',
       confirmWriteOff: 'Write off and archive',
       saving: 'Archiving…',
+    },
+    reconcileFlow: {
+      title: 'Reconcile {name}',
+      intro:
+        'Enter the balance your bank shows. It is compared with the ledger at the end of that day.',
+      balance: 'Bank balance in {currency}',
+      balanceHint: 'Negative for money owed, such as a card.',
+      on: 'Balance as of',
+      check: 'Compare',
+      checking: 'Comparing…',
+      ledger: 'Ledger',
+      bank: 'Bank',
+      difference: 'Difference',
+      less: 'The bank shows {amount} less than the ledger on {date}.',
+      more: 'The bank shows {amount} more than the ledger on {date}.',
+      adjustExpense:
+        'Adjusting records {amount} as an expense in Unrecorded, dated {date}.',
+      adjustIncome:
+        'Adjusting records {amount} as income in Unrecorded income, dated {date}.',
+      onBudget: 'This changes what you can spend.',
+      undoHint: 'You can undo it in the ledger like any entry.',
+      adjust: 'Adjust to match',
+      adjusting: 'Adjusting…',
+      errors: {
+        balanceRequired: 'Enter the bank balance.',
+        balanceInvalid: 'Enter an amount such as {example}.',
+        balanceDecimals: 'This currency has fewer decimal places.',
+        dateInvalid: 'Enter a date.',
+        dateFuture: 'Use today or an earlier day.',
+      },
     },
   },
   settings: {

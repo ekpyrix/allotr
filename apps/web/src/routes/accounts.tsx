@@ -13,7 +13,9 @@ import {
 } from '@/features/accounts/account-actions';
 import { CreateAccountForm } from '@/features/accounts/create-account-form';
 import { groupAccounts } from '@/features/accounts/groups';
+import { ReconcileFlow } from '@/features/accounts/reconcile-flow';
 import { Sheet } from '@/features/accounts/sheet';
+import { formatLongDay } from '@/features/ledger/format';
 import {
   allAccountsQuery,
   ledgerSettingsQuery,
@@ -26,7 +28,7 @@ import { t } from '@/messages/t';
 // the dialog closes, and an archived account drops out of it.
 type Open =
   | { kind: 'create' }
-  | { kind: 'budget' | 'archive'; account: AccountView }
+  | { kind: 'budget' | 'archive' | 'reconcile'; account: AccountView }
   | null;
 
 const linkClass = 'font-medium underline underline-offset-4';
@@ -113,6 +115,16 @@ function AccountRow({
         >
           {formatMoney(account.balance, locale)}
         </p>
+        <p
+          data-testid="account-row-reconciled"
+          className="basis-full text-sm text-muted-foreground"
+        >
+          {account.lastReconciledOn === null
+            ? t('accounts.neverReconciled')
+            : t('accounts.lastReconciled', {
+                date: formatLongDay(account.lastReconciledOn, locale),
+              })}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="ghost" size="sm">
@@ -132,6 +144,16 @@ function AccountRow({
           {account.budgetGroup === 'on'
             ? t('accounts.moveOff')
             : t('accounts.moveOn')}
+          <span className="sr-only"> {account.name}</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            onOpen({ kind: 'reconcile', account });
+          }}
+        >
+          {t('accounts.reconcile')}
           <span className="sr-only"> {account.name}</span>
         </Button>
         <Button
@@ -258,7 +280,9 @@ export function AccountsPage() {
         ? ''
         : open?.kind === 'budget'
           ? budgetTitle(selected)
-          : t('accounts.archiveFlow.title', { name: selected.name });
+          : open?.kind === 'reconcile'
+            ? t('accounts.reconcileFlow.title', { name: selected.name })
+            : t('accounts.archiveFlow.title', { name: selected.name });
   const opening = (next: Open) => {
     lastAccount.current =
       next?.kind === 'create' ? undefined : next?.account.id;
@@ -362,6 +386,22 @@ export function AccountsPage() {
                 selected.budgetGroup === 'on'
                   ? t('accounts.announce.movedOff', { name: selected.name })
                   : t('accounts.announce.movedOn', { name: selected.name }),
+              );
+            }}
+          />
+        ) : open?.kind === 'reconcile' ? (
+          <ReconcileFlow
+            account={selected}
+            today={today.data.today}
+            locale={locale}
+            onBusyChange={setBusy}
+            onCancel={close}
+            onDone={(outcome) => {
+              close();
+              setAnnouncement(
+                outcome === 'matched'
+                  ? t('accounts.announce.reconciled', { name: selected.name })
+                  : t('accounts.announce.adjusted', { name: selected.name }),
               );
             }}
           />

@@ -172,6 +172,7 @@ are shared by all strategies.
 | Deleting a category in use | Must be merged into another category. |
 | Editing any past entry | Reversal plus a new entry. |
 | Offline entries arriving late | Treated as back-dated entries; idempotency keys prevent duplicates. |
+| Reconciling with a difference | The bank's balance is compared with the ledger's at the end of the chosen day. A match is recorded. A difference is only recorded once adjusted: an expense (bank lower) or income (bank higher) dated that day, in the "Unrecorded" or "Unrecorded income" category, created on first use and found again by ID. Undoing the adjustment also takes back that reconciliation. |
 
 ## AI boundaries
 
@@ -232,7 +233,7 @@ goals(id, user_id, name, target_minor, earmarked_minor, currency)
 counterparties(id, user_id, name)
 fx_rates(id, user_id, base, quote, rate, as_of, source)
 currencies(code, numeric, minor_unit, active)          -- ISO 4217, read-only
-reconciliations(id, account_id, stated_minor, computed_minor, at, adjustment_txn_id)
+reconciliations(id, user_id, account_id, currency, on_date, stated_minor, computed_minor, adjustment_transaction_id, created_at)
 proposals(id, user_id, source, payload, status, created_at, expires_at, session_id)
 messages(id, identity_id, platform_msg_id UNIQUE, raw_text, received_at, parse_result)
 chat_sessions(id, user_id, origin_platform, origin_id, created_at, last_message_at, summary)
