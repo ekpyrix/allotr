@@ -297,6 +297,34 @@ describe('billsDueOn', () => {
   });
 });
 
+describe('cycleBills', () => {
+  it('lists every due date in the cycle with its payment day', () => {
+    const ledger = [paycheck('2026-03-01', 310000)];
+    const paid: Bill = {
+      ...rent,
+      payments: [{ dueOn: day('2026-03-05'), paidOn: day('2026-03-04') }],
+    };
+    const phone: Bill = {
+      id: billId('phone'),
+      amount: usd(4500),
+      dueDay: 20,
+      payments: [],
+    };
+    expect(
+      dailyFiguresOn(view(ledger, { bills: [phone, paid] }), day('2026-03-02'))
+        .cycleBills,
+    ).toEqual([
+      {
+        billId: 'rent',
+        dueOn: '2026-03-05',
+        amount: usd(20000),
+        paidOn: '2026-03-04',
+      },
+      { billId: 'phone', dueOn: '2026-03-20', amount: usd(4500), paidOn: null },
+    ]);
+  });
+});
+
 describe('dailyFigures', () => {
   it('takes today from the user’s time zone', () => {
     const ledger = [paycheck('2026-03-01', 310000)];

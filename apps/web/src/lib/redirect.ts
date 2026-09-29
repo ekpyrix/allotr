@@ -1,7 +1,12 @@
 import { navItems } from '../nav-items.ts';
 
 /** Routes outside the shell; everything else requires a session. */
-export const publicPaths = ['/', '/sign-in', '/onboarding'] as const;
+export const publicPaths = [
+  '/',
+  '/sign-in',
+  '/onboarding',
+  '/invite/$token',
+] as const;
 
 /** Signed-in routes that are not in the nav but still get axe checks. */
 export const extraShellPaths = [] as const satisfies readonly `/${string}`[];

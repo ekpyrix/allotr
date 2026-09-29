@@ -179,6 +179,9 @@ test('a missing rate shows a needs-attention item that links to rates', async ({
   await expectAccessible(page);
   await attention.getByRole('link', { name: 'Add a EUR rate' }).click();
   await expect(page).toHaveURL(/\/settings#rates$/);
+  const heading = page.getByRole('heading', { name: 'Exchange rates' });
+  await expect(heading).toBeFocused();
+  await expect(heading).toBeInViewport();
 });
 
 test('a bill due today and not paid needs attention', async ({

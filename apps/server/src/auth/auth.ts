@@ -124,6 +124,17 @@ export function createAuth({ db, config, limits, logger, now }: AuthDeps) {
             });
           }
         }
+        // Users may not turn 2FA off while the instance requires it.
+        if (ctx.path === '/two-factor/disable') {
+          const { requireTwoFactor } = await readSettings(db);
+          if (requireTwoFactor) {
+            throw new APIError('FORBIDDEN', {
+              message:
+                'This instance requires two-factor authentication, so it cannot be turned off.',
+              code: 'TWO_FACTOR_REQUIRED',
+            });
+          }
+        }
         if (ctx.path === '/sign-in/email') {
           const email = emailFrom(ctx.body);
           if (

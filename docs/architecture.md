@@ -125,6 +125,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`/v1/onboarding`, first user becomes admin), single-use invites
   (`/v1/invites`), the current session (`/v1/session`) and instance settings
   (`/v1/admin/settings`: registration mode, required 2FA) are Allotr routes.
+  While 2FA is required, turning it off is refused (`two_factor_required`)
+  and `/v1/session` reports `twoFactorEnforced`. Invite links open the web
+  app's public `/invite/<token>` page.
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on
@@ -138,8 +141,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`ledger.unbalanced` → `unbalanced`).
 - `GET /v1/today` returns the daily figures (left today, today's allowance,
   live daily, days left, cycle end, spending so far this cycle, the overdue
-  flag, unpaid bills due by today and currencies left out for lack of a
-  rate), computed from the ledger on every request.
+  flag, unpaid bills due by today, every bill due date in the cycle with
+  its payment day, and currencies left out for lack of a rate), computed
+  from the ledger on every request.
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme

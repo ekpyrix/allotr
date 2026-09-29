@@ -309,9 +309,10 @@ export async function updateCategory(
   return getCategory(db, userId, id);
 }
 
-// Committed entries, postings or merged categories point at it.
+// Committed entries, postings or merged categories point at it. A merged
+// subcategory counts too: deleting the parent would delete it with it.
 async function inUse(db: Db, userId: string, id: string): Promise<boolean> {
-  const [transaction, posting, merged] = await Promise.all([
+  const [transaction, posting, merged, child] = await Promise.all([
     db
       .selectFrom('transactions')
       .select('id')
@@ -330,9 +331,18 @@ async function inUse(db: Db, userId: string, id: string): Promise<boolean> {
       .where('user_id', '=', userId)
       .where('merged_into_id', '=', id)
       .executeTakeFirst(),
+    db
+      .selectFrom('categories')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('parent_id', '=', id)
+      .executeTakeFirst(),
   ]);
   return (
-    transaction !== undefined || posting !== undefined || merged !== undefined
+    transaction !== undefined ||
+    posting !== undefined ||
+    merged !== undefined ||
+    child !== undefined
   );
 }
 

@@ -20,6 +20,7 @@ import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
 import { AccountsPage } from './routes/accounts.tsx';
+import { InvitePage } from './routes/invite.tsx';
 import { LedgerPage } from './routes/ledger.tsx';
 import { OnboardingPage } from './routes/onboarding.tsx';
 import { SettingsPage } from './routes/settings.tsx';
@@ -96,6 +97,21 @@ const signInRoute = createRoute({
   },
 });
 
+// An invite link is for someone without an account: a signed-in visitor
+// goes to Today, and before onboarding there is no one to invite them.
+const inviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invite/$token',
+  beforeLoad: async ({ context }) => {
+    const target = await destination(context.queryClient);
+    if (target !== '/sign-in') throw redirect({ to: target });
+  },
+  component: function Invite() {
+    const { token } = inviteRoute.useParams();
+    return <InvitePage token={token} />;
+  },
+});
+
 // Every signed-in route lives under this pathless layout, so the session is
 // loaded and checked once and shared through the route context.
 const appRoute = createRoute({
@@ -156,13 +172,17 @@ const accountsRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
-  component: SettingsPage,
+  component: function Settings() {
+    const { session } = settingsRoute.useRouteContext();
+    return <SettingsPage session={session} />;
+  },
 });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
   onboardingRoute,
   signInRoute,
+  inviteRoute,
   appRoute.addChildren([todayRoute, ledgerRoute, accountsRoute, settingsRoute]),
 ]);
 

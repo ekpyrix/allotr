@@ -119,6 +119,12 @@ export async function todayFigures(
       dueOn: due.dueOn,
       amount: due.amount,
     })),
+    cycleBills: figures.cycleBills.map((bill) => ({
+      billId: bill.billId,
+      dueOn: bill.dueOn,
+      amount: bill.amount,
+      paidOn: bill.paidOn,
+    })),
     missingRates: [...figures.missingRates],
   };
 }

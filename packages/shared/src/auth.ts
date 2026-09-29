@@ -15,6 +15,7 @@ export const instanceSettingsSchema = z.object({
 export type InstanceSettings = z.infer<typeof instanceSettingsSchema>;
 
 export const instanceSettingsPatchSchema = instanceSettingsSchema.partial();
+export type InstanceSettingsPatch = z.infer<typeof instanceSettingsPatchSchema>;
 
 export const signUpBodySchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -37,7 +38,10 @@ export type SessionUser = z.infer<typeof sessionUserSchema>;
 export const sessionSchema = z.object({
   user: sessionUserSchema,
   twoFactorRequired: z.boolean(),
+  /** The instance requires 2FA, so enrolled users cannot turn it off. */
+  twoFactorEnforced: z.boolean(),
 });
+export type SessionView = z.infer<typeof sessionSchema>;
 
 export const onboardingStatusSchema = z.object({ required: z.boolean() });
 

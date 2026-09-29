@@ -973,11 +973,15 @@
                     },
                     "twoFactorRequired": {
                       "type": "boolean"
+                    },
+                    "twoFactorEnforced": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "user",
-                    "twoFactorRequired"
+                    "twoFactorRequired",
+                    "twoFactorEnforced"
                   ]
                 }
               }
@@ -8910,6 +8914,52 @@
                         ]
                       }
                     },
+                    "cycleBills": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "billId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "dueOn": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "paidOn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          }
+                        },
+                        "required": [
+                          "billId",
+                          "dueOn",
+                          "amount",
+                          "paidOn"
+                        ]
+                      }
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -8932,6 +8982,7 @@
                     "liveDaily",
                     "cycleSpent",
                     "billsDue",
+                    "cycleBills",
                     "missingRates"
                   ]
                 }

@@ -3,21 +3,40 @@ import {
   accountSchema,
   appearanceSchema,
   archiveAccountBodySchema,
+  billListSchema,
+  billSchema,
   categoryListSchema,
+  categorySchema,
+  createCategoryBodySchema,
+  createInviteBodySchema,
+  createRateBodySchema,
   createAccountBodySchema,
+  createBillBodySchema,
+  createBillPaymentBodySchema,
   createTransactionBodySchema,
   editedTransactionSchema,
+  instanceSettingsPatchSchema,
+  instanceSettingsSchema,
+  inviteSchema,
+  inviteStatusSchema,
+  exchangeRateListSchema,
+  exchangeRateSchema,
   ledgerSettingsSchema,
   onboardingStatusSchema,
   reverseTransactionBodySchema,
   sessionSchema,
   sessionUserSchema,
   signUpBodySchema,
+  tagBodySchema,
   tagListSchema,
+  tagSchema,
   todaySchema,
   transactionListSchema,
   transactionSchema,
   updateAccountBodySchema,
+  updateBillBodySchema,
+  updateCategoryBodySchema,
+  updateLedgerSettingsBodySchema,
 } from '@allotr/shared';
 import { z } from 'zod';
 import { endpoint } from './api.ts';
@@ -26,6 +45,18 @@ import { endpoint } from './api.ts';
 // endpoints.test.ts checks them against docs/openapi.json.
 
 const signInBodySchema = z.object({ email: z.string(), password: z.string() });
+const passwordBodySchema = z.object({ password: z.string() });
+
+/** A Better Auth session as its list route returns it. */
+export const authSessionSchema = z.object({
+  id: z.string(),
+  token: z.string(),
+  userAgent: z.string().nullish(),
+  ipAddress: z.string().nullish(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+export type AuthSession = z.infer<typeof authSessionSchema>;
 
 export const endpoints = {
   onboardingStatus: endpoint({
@@ -61,12 +92,83 @@ export const endpoints = {
     response: z.unknown(),
     openapi: false,
   }),
+  enableTwoFactor: endpoint({
+    method: 'POST',
+    path: '/v1/auth/two-factor/enable',
+    body: passwordBodySchema,
+    response: z.object({
+      totpURI: z.string(),
+      backupCodes: z.array(z.string()),
+    }),
+    openapi: false,
+  }),
+  disableTwoFactor: endpoint({
+    method: 'POST',
+    path: '/v1/auth/two-factor/disable',
+    body: passwordBodySchema,
+    response: z.unknown(),
+    openapi: false,
+  }),
+  currentAuthSession: endpoint({
+    method: 'GET',
+    path: '/v1/auth/get-session',
+    response: z.object({ session: z.object({ token: z.string() }) }).nullable(),
+    openapi: false,
+  }),
+  authSessions: endpoint({
+    method: 'GET',
+    path: '/v1/auth/list-sessions',
+    response: z.array(authSessionSchema),
+    openapi: false,
+  }),
+  revokeSession: endpoint({
+    method: 'POST',
+    path: '/v1/auth/revoke-session',
+    body: z.object({ token: z.string() }),
+    response: z.unknown(),
+    openapi: false,
+  }),
+  revokeOtherSessions: endpoint({
+    method: 'POST',
+    path: '/v1/auth/revoke-other-sessions',
+    body: z.object({}),
+    response: z.unknown(),
+    openapi: false,
+  }),
   signOut: endpoint({
     method: 'POST',
     path: '/v1/auth/sign-out',
     body: z.object({}),
     response: z.unknown(),
     openapi: false,
+  }),
+  instanceSettings: endpoint({
+    method: 'GET',
+    path: '/v1/admin/settings',
+    response: instanceSettingsSchema,
+  }),
+  updateInstanceSettings: endpoint({
+    method: 'PATCH',
+    path: '/v1/admin/settings',
+    body: instanceSettingsPatchSchema,
+    response: instanceSettingsSchema,
+  }),
+  createInvite: endpoint({
+    method: 'POST',
+    path: '/v1/invites',
+    body: createInviteBodySchema,
+    response: inviteSchema,
+  }),
+  inviteStatus: endpoint({
+    method: 'GET',
+    path: '/v1/invites/{token}',
+    response: inviteStatusSchema,
+  }),
+  acceptInvite: endpoint({
+    method: 'POST',
+    path: '/v1/invites/{token}/accept',
+    body: signUpBodySchema,
+    response: z.object({ user: sessionUserSchema }),
   }),
   appearance: endpoint({
     method: 'GET',
@@ -107,15 +209,99 @@ export const endpoints = {
     path: '/v1/categories',
     response: categoryListSchema,
   }),
+  createCategory: endpoint({
+    method: 'POST',
+    path: '/v1/categories',
+    body: createCategoryBodySchema,
+    response: categorySchema,
+  }),
+  updateCategory: endpoint({
+    method: 'PATCH',
+    path: '/v1/categories/{id}',
+    body: updateCategoryBodySchema,
+    response: categorySchema,
+  }),
+  deleteCategory: endpoint({
+    method: 'DELETE',
+    path: '/v1/categories/{id}',
+    response: z.unknown(),
+  }),
   tags: endpoint({
     method: 'GET',
     path: '/v1/tags',
     response: tagListSchema,
   }),
+  createTag: endpoint({
+    method: 'POST',
+    path: '/v1/tags',
+    body: tagBodySchema,
+    response: tagSchema,
+  }),
+  renameTag: endpoint({
+    method: 'PATCH',
+    path: '/v1/tags/{id}',
+    body: tagBodySchema,
+    response: tagSchema,
+  }),
   ledgerSettings: endpoint({
     method: 'GET',
     path: '/v1/settings/ledger',
     response: ledgerSettingsSchema,
+  }),
+  updateLedgerSettings: endpoint({
+    method: 'PATCH',
+    path: '/v1/settings/ledger',
+    body: updateLedgerSettingsBodySchema,
+    response: ledgerSettingsSchema,
+  }),
+  bills: endpoint({
+    method: 'GET',
+    path: '/v1/bills',
+    response: billListSchema,
+  }),
+  createBill: endpoint({
+    method: 'POST',
+    path: '/v1/bills',
+    body: createBillBodySchema,
+    response: billSchema,
+  }),
+  updateBill: endpoint({
+    method: 'PATCH',
+    path: '/v1/bills/{id}',
+    body: updateBillBodySchema,
+    response: billSchema,
+  }),
+  deleteBill: endpoint({
+    method: 'DELETE',
+    path: '/v1/bills/{id}',
+    response: z.unknown(),
+  }),
+  payBill: endpoint({
+    method: 'POST',
+    path: '/v1/bills/{id}/payments',
+    body: createBillPaymentBodySchema,
+    response: billSchema,
+  }),
+  unpayBill: endpoint({
+    method: 'DELETE',
+    path: '/v1/bills/{id}/payments/{dueOn}',
+    response: billSchema,
+  }),
+  rates: endpoint({
+    method: 'GET',
+    path: '/v1/rates',
+    response: exchangeRateListSchema,
+  }),
+  createRate: endpoint({
+    method: 'POST',
+    path: '/v1/rates',
+    body: createRateBodySchema,
+    response: exchangeRateSchema,
+  }),
+  deleteRate: endpoint({
+    method: 'DELETE',
+    path: '/v1/rates/{id}',
+    response: z.unknown(),
   }),
   today: endpoint({
     method: 'GET',

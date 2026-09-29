@@ -66,7 +66,11 @@ export function registerSessionRoutes(
     const user = c.get('user');
     const { requireTwoFactor } = await readSettings(deps.db);
     return c.json(
-      { user, twoFactorRequired: requireTwoFactor && !user.twoFactorEnabled },
+      {
+        user,
+        twoFactorRequired: requireTwoFactor && !user.twoFactorEnabled,
+        twoFactorEnforced: requireTwoFactor,
+      },
       200,
     );
   });

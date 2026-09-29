@@ -135,6 +135,7 @@ export const deleteCategoryQuerySchema = z.object({
 });
 
 export const tagSchema = z.object({ id: idSchema, name: z.string() });
+export type TagView = z.infer<typeof tagSchema>;
 export const tagListSchema = z.object({ tags: z.array(tagSchema) });
 export const tagBodySchema = z.object({ name: nameSchema });
 
@@ -322,6 +323,16 @@ export const todaySchema = z.object({
       amount: moneySchema,
     }),
   ),
+  /** Every due date this cycle reserves, paid or not, earliest first. */
+  cycleBills: z.array(
+    z.object({
+      billId: idSchema,
+      dueOn: localDateSchema,
+      amount: moneySchema,
+      /** When it was marked paid; null while it is still reserved. */
+      paidOn: localDateSchema.nullable(),
+    }),
+  ),
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
 });
@@ -422,3 +433,12 @@ export const billPaymentParamSchema = z.object({
   id: idSchema,
   dueOn: localDateSchema,
 });
+
+export type UpdateLedgerSettingsBody = z.input<
+  typeof updateLedgerSettingsBodySchema
+>;
+export type CreateCategoryBody = z.input<typeof createCategoryBodySchema>;
+export type UpdateCategoryBody = z.input<typeof updateCategoryBodySchema>;
+export type CreateRateBody = z.input<typeof createRateBodySchema>;
+export type CreateBillBody = z.input<typeof createBillBodySchema>;
+export type UpdateBillBody = z.input<typeof updateBillBodySchema>;

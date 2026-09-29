@@ -22,6 +22,12 @@ type Today = {
   liveDaily: Money;
   cycleSpent: Money;
   billsDue: { billId: string; name: string; dueOn: string; amount: Money }[];
+  cycleBills: {
+    billId: string;
+    dueOn: string;
+    amount: Money;
+    paidOn: string | null;
+  }[];
   missingRates: string[];
 };
 type Bill = {
@@ -115,6 +121,7 @@ describe('today for a new user', () => {
       liveDaily: usd(0),
       cycleSpent: usd(0),
       billsDue: [],
+      cycleBills: [],
       missingRates: [],
     });
   });
@@ -204,6 +211,14 @@ describe('daily figures', () => {
         { dueOn: '2026-03-20', paidOn: '2026-03-15', transactionId: null },
       ]);
       expect((await today(h.alice)).available).toEqual(usd(167500));
+      expect((await today(h.alice)).cycleBills).toEqual([
+        {
+          billId: rent.id,
+          dueOn: '2026-03-20',
+          amount: usd(30000),
+          paidOn: '2026-03-15',
+        },
+      ]);
 
       const again = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
         dueOn: '2026-03-20',
@@ -217,6 +232,14 @@ describe('daily figures', () => {
       expect(undone.status).toBe(200);
       expect((undone.body as Bill).payments).toEqual([]);
       expect((await today(h.alice)).available).toEqual(usd(137500));
+      expect((await today(h.alice)).cycleBills).toEqual([
+        {
+          billId: rent.id,
+          dueOn: '2026-03-20',
+          amount: usd(30000),
+          paidOn: null,
+        },
+      ]);
     });
 
     it('lists a due date that has passed unpaid until it is paid', async () => {

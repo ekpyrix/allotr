@@ -1,0 +1,318 @@
+import {
+  formatMoney,
+  money,
+  type LedgerSettingsView,
+  type TodayView,
+  type UpdateLedgerSettingsBody,
+} from '@allotr/shared';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState, type SubmitEvent } from 'react';
+import { FieldControl, FormError, selectClass } from '@/components/field';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { formatLongDay } from '@/features/ledger/format';
+import { useCurrencyOptions } from '@/lib/currency-options';
+import { describeProblem } from '@/lib/problem';
+import {
+  figureQueryKeys,
+  invalidate,
+  updateLedgerSettings,
+} from '@/lib/settings';
+import { t } from '@/messages/t';
+import { Section } from './section.tsx';
+
+const dueDays = Array.from({ length: 31 }, (_, i) => i + 1);
+
+function useSaveLedgerSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateLedgerSettings,
+    onSuccess: async () => {
+      await invalidate(queryClient, figureQueryKeys);
+    },
+  });
+}
+
+/** A formatted sample amount, or null when the locale is not usable. */
+function sample(locale: string, currency: string): string | null {
+  try {
+    return formatMoney(money(12_345_678, currency), locale);
+  } catch {
+    return null;
+  }
+}
+
+function timeZones(current: string): readonly string[] {
+  const zones = Intl.supportedValuesOf('timeZone');
+  return zones.includes(current) ? zones : [current, ...zones];
+}
+
+function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
+  const [locale, setLocale] = useState(settings.locale);
+  const [timeZone, setTimeZone] = useState(settings.timeZone);
+  const [currency, setCurrency] = useState<string>(settings.defaultCurrency);
+  const [saved, setSaved] = useState(false);
+  const save = useSaveLedgerSettings();
+  const zones = useMemo(() => timeZones(settings.timeZone), [settings]);
+  const currencies = useCurrencyOptions(settings.locale);
+  const example = sample(locale.trim(), currency);
+  const problem = save.isError ? describeProblem(save.error) : null;
+
+  const changed = (): void => {
+    setSaved(false);
+    if (save.isError) save.reset();
+  };
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const body: UpdateLedgerSettingsBody = {
+      ...(locale.trim() === settings.locale ? {} : { locale: locale.trim() }),
+      ...(timeZone === settings.timeZone ? {} : { timeZone }),
+      ...(currency === settings.defaultCurrency
+        ? {}
+        : { defaultCurrency: currency }),
+    };
+    if (Object.keys(body).length === 0) {
+      setSaved(true);
+      return;
+    }
+    save.mutate(body, {
+      onSuccess: (next) => {
+        setLocale(next.locale);
+        setTimeZone(next.timeZone);
+        setSaved(true);
+      },
+    });
+  }
+
+  return (
+    <form className="mt-4 grid max-w-md gap-5" onSubmit={submit} noValidate>
+      <FieldControl
+        label={t('settings.ledger.locale')}
+        error={problem?.fields.locale}
+        hint={
+          example === null
+            ? t('settings.ledger.localeUnknown')
+            : t('settings.ledger.localeSample', { sample: example })
+        }
+      >
+        {(props) => (
+          <Input
+            {...props}
+            name="locale"
+            value={locale}
+            autoComplete="off"
+            spellCheck={false}
+            required
+            className="h-11 text-base"
+            onChange={(e) => {
+              setLocale(e.currentTarget.value);
+              changed();
+            }}
+          />
+        )}
+      </FieldControl>
+      <FieldControl
+        label={t('settings.ledger.timeZone')}
+        error={problem?.fields.timeZone}
+      >
+        {(props) => (
+          <select
+            {...props}
+            name="timeZone"
+            value={timeZone}
+            className={selectClass}
+            onChange={(e) => {
+              setTimeZone(e.currentTarget.value);
+              changed();
+            }}
+          >
+            {zones.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
+        )}
+      </FieldControl>
+      <FieldControl
+        label={t('settings.ledger.currency')}
+        hint={t('settings.ledger.currencyHint')}
+      >
+        {(props) => (
+          <select
+            {...props}
+            name="defaultCurrency"
+            value={currency}
+            className={selectClass}
+            onChange={(e) => {
+              setCurrency(e.currentTarget.value);
+              changed();
+            }}
+          >
+            {currencies.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </FieldControl>
+      <FormError message={problem?.message ?? null} />
+      <div className="flex flex-wrap items-center gap-4">
+        <Button type="submit" className="h-11" disabled={save.isPending}>
+          {save.isPending ? t('settings.saving') : t('settings.save')}
+        </Button>
+        <p role="status" className="text-sm text-muted-foreground">
+          {saved ? t('settings.saved') : ''}
+        </p>
+      </div>
+    </form>
+  );
+}
+
+function PaydayForm({
+  settings,
+  today,
+}: {
+  settings: LedgerSettingsView;
+  today: TodayView;
+}) {
+  const [day, setDay] = useState(settings.paydayDay);
+  const [override, setOverride] = useState(settings.paydayOverride ?? '');
+  const [status, setStatus] = useState('');
+  const save = useSaveLedgerSettings();
+  const problem = save.isError ? describeProblem(save.error) : null;
+
+  const changed = (): void => {
+    setStatus('');
+    if (save.isError) save.reset();
+  };
+  const send = (body: UpdateLedgerSettingsBody, done: string) => {
+    save.mutate(body, {
+      onSuccess: (next) => {
+        setOverride(next.paydayOverride ?? '');
+        setStatus(done);
+      },
+    });
+  };
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    send(
+      {
+        paydayDay: day,
+        paydayOverride: override === '' ? null : override,
+      },
+      t('settings.saved'),
+    );
+  }
+
+  return (
+    <section
+      id="payday"
+      aria-labelledby="payday-title"
+      className="mt-10 scroll-mt-6"
+    >
+      <h3
+        id="payday-title"
+        tabIndex={-1}
+        className="text-lg font-semibold outline-none"
+      >
+        {t('settings.payday.title')}
+      </h3>
+      <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+        {t('settings.payday.next', {
+          date: formatLongDay(today.cycle.payday, settings.locale),
+          count: today.daysLeft,
+        })}
+      </p>
+      <form className="mt-4 grid max-w-md gap-5" onSubmit={submit} noValidate>
+        <FieldControl
+          label={t('settings.payday.day')}
+          hint={t('settings.payday.dayHint')}
+        >
+          {(props) => (
+            <select
+              {...props}
+              name="paydayDay"
+              value={day}
+              className={selectClass}
+              onChange={(e) => {
+                setDay(Number(e.currentTarget.value));
+                changed();
+              }}
+            >
+              {dueDays.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          )}
+        </FieldControl>
+        <FieldControl
+          label={t('settings.payday.override')}
+          hint={t('settings.payday.overrideHint')}
+          error={problem?.fields.paydayOverride}
+        >
+          {(props) => (
+            <Input
+              {...props}
+              type="date"
+              name="paydayOverride"
+              value={override}
+              className="h-11 text-base"
+              onChange={(e) => {
+                setOverride(e.currentTarget.value);
+                changed();
+              }}
+            />
+          )}
+        </FieldControl>
+        <FormError message={problem?.message ?? null} />
+        <div className="flex flex-wrap items-center gap-4">
+          <Button type="submit" className="h-11" disabled={save.isPending}>
+            {save.isPending ? t('settings.saving') : t('settings.save')}
+          </Button>
+          {settings.paydayOverride === null ? null : (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              disabled={save.isPending}
+              onClick={() => {
+                send(
+                  { paydayOverride: null },
+                  t('settings.payday.overrideCleared'),
+                );
+              }}
+            >
+              {t('settings.payday.clearOverride')}
+            </Button>
+          )}
+          <p role="status" className="text-sm text-muted-foreground">
+            {status}
+          </p>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+// Locale, time zone and default currency change how figures come out, never
+// the entries; the payday rule sets the cycle (FR-C2, FR-X2).
+export function LedgerSettingsSection({
+  settings,
+  today,
+}: {
+  settings: LedgerSettingsView;
+  today: TodayView;
+}) {
+  return (
+    <Section id="ledger" title={t('settings.ledger.title')}>
+      <LedgerForm settings={settings} />
+      <PaydayForm settings={settings} today={today} />
+    </Section>
+  );
+}
