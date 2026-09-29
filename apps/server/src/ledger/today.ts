@@ -1,8 +1,10 @@
 import {
   categoryId,
   dailyFigures,
+  transactionId,
   type CategoryId,
   type LedgerView,
+  type TransactionId,
 } from '@allotr/core';
 import { localDateIn, type TodayView } from '@allotr/shared';
 import type { Kysely } from 'kysely';
@@ -38,25 +40,53 @@ async function paycheckCategories(
   return new Set(rows.map((row) => categoryId(row.id)));
 }
 
+// The entries reconciling posted to make up a difference, which pace
+// leaves out (docs/domain.md "Daily usable"). Found by the reconciliation
+// that recorded them, not by category, so renaming or merging the
+// Unrecorded categories changes nothing.
+async function reconcileAdjustments(
+  db: Db,
+  userId: string,
+): Promise<Set<TransactionId>> {
+  const rows = await db
+    .selectFrom('reconciliations')
+    .select('adjustment_transaction_id as id')
+    .where('user_id', '=', userId)
+    .where('adjustment_transaction_id', 'is not', null)
+    .execute();
+  return new Set(
+    rows.flatMap((row) => (row.id === null ? [] : [transactionId(row.id)])),
+  );
+}
+
 /** Everything core's projections read, and the user's time zone. */
 export async function loadView(
   db: Db,
   userId: string,
 ): Promise<{ view: LedgerView; timeZone: string }> {
-  const [chart, settings, user, paychecks, bills, rates, importedFrom] =
-    await Promise.all([
-      loadChart(db, userId),
-      readLedgerSettings(db, userId),
-      db
-        .selectFrom('users')
-        .select('created_at')
-        .where('id', '=', userId)
-        .executeTakeFirstOrThrow(),
-      paycheckCategories(db, userId),
-      loadBills(db, userId),
-      loadRates(db, userId),
-      readLedgerStart(db, userId),
-    ]);
+  const [
+    chart,
+    settings,
+    user,
+    paychecks,
+    bills,
+    rates,
+    importedFrom,
+    adjustments,
+  ] = await Promise.all([
+    loadChart(db, userId),
+    readLedgerSettings(db, userId),
+    db
+      .selectFrom('users')
+      .select('created_at')
+      .where('id', '=', userId)
+      .executeTakeFirstOrThrow(),
+    paycheckCategories(db, userId),
+    loadBills(db, userId),
+    loadRates(db, userId),
+    readLedgerStart(db, userId),
+    reconcileAdjustments(db, userId),
+  ]);
   const joinedOn = localDateIn(new Date(user.created_at), settings.timeZone);
   const view: LedgerView = {
     chart,
@@ -76,6 +106,7 @@ export async function loadView(
     },
     bills,
     rates,
+    reconcileAdjustments: adjustments,
   };
   return { view, timeZone: settings.timeZone };
 }
@@ -121,6 +152,7 @@ export async function todayFigures(
     leftToday: figures.leftToday,
     liveDaily: figures.liveDaily,
     cycleSpent: figures.cycleSpent,
+    paceSpent: figures.paceSpent,
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,
       name: billNames.get(due.billId) ?? '',

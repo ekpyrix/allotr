@@ -249,6 +249,69 @@ describe('cycle spending', () => {
       usd(700),
     );
   });
+
+  it('leaves linked bill payments and reconcile adjustments out of pace', () => {
+    const rentPaid = spend('2026-03-05', 20000);
+    const unrecorded = spend('2026-03-06', 1200);
+    const ledger = [
+      paycheck('2026-03-01', 310000),
+      spend('2026-03-02', 2500),
+      rentPaid,
+      unrecorded,
+    ];
+    const paid: Bill = {
+      ...rent,
+      payments: [
+        {
+          dueOn: day('2026-03-05'),
+          paidOn: day('2026-03-05'),
+          transactionId: rentPaid.id,
+        },
+      ],
+    };
+    const figures = dailyFiguresOn(
+      view(ledger, {
+        bills: [paid],
+        reconcileAdjustments: new Set([unrecorded.id]),
+      }),
+      day('2026-03-06'),
+    );
+    // Both still count as spending and lower what is available.
+    expect(figures.cycleSpent).toEqual(usd(23700));
+    expect(figures.available).toEqual(usd(310000 - 23700));
+    expect(figures.paceSpent).toEqual(usd(2500));
+  });
+
+  it('counts an unlinked bill payment toward pace', () => {
+    const rentPaid = spend('2026-03-05', 20000);
+    const paid: Bill = {
+      ...rent,
+      payments: [{ dueOn: day('2026-03-05'), paidOn: day('2026-03-05') }],
+    };
+    const figures = dailyFiguresOn(
+      view([paycheck('2026-03-01', 310000), rentPaid], { bills: [paid] }),
+      day('2026-03-06'),
+    );
+    expect(figures.paceSpent).toEqual(usd(20000));
+  });
+
+  it('leaves the undo of a left-out entry out of pace too', () => {
+    const unrecorded = spend('2026-03-06', 1200);
+    const undo = reverse(
+      chart,
+      [unrecorded],
+      unrecorded.id,
+      meta('2026-03-07'),
+    );
+    const figures = dailyFiguresOn(
+      view([paycheck('2026-03-01', 310000), undo, unrecorded], {
+        reconcileAdjustments: new Set([unrecorded.id]),
+      }),
+      day('2026-03-07'),
+    );
+    expect(figures.cycleSpent).toEqual(usd(0));
+    expect(figures.paceSpent).toEqual(usd(0));
+  });
 });
 
 describe('billsDueOn', () => {

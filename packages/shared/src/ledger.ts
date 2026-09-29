@@ -382,6 +382,11 @@ export const todaySchema = z.object({
   liveDaily: moneySchema,
   /** Spending since the cycle opened, today included. */
   cycleSpent: moneySchema,
+  /**
+   * `cycleSpent` without payments linked to a bill and reconcile
+   * adjustments, which still lower `available`: what the pace reads.
+   */
+  paceSpent: moneySchema,
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(
     z.object({

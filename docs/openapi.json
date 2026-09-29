@@ -9969,6 +9969,22 @@
                         "currency"
                       ]
                     },
+                    "paceSpent": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "billsDue": {
                       "type": "array",
                       "items": {
@@ -10078,6 +10094,7 @@
                     "leftToday",
                     "liveDaily",
                     "cycleSpent",
+                    "paceSpent",
                     "billsDue",
                     "cycleBills",
                     "missingRates"

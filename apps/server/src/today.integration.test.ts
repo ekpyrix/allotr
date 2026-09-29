@@ -21,6 +21,7 @@ type Today = {
   leftToday: Money;
   liveDaily: Money;
   cycleSpent: Money;
+  paceSpent: Money;
   billsDue: { billId: string; name: string; dueOn: string; amount: Money }[];
   cycleBills: {
     billId: string;
@@ -120,6 +121,7 @@ describe('today for a new user', () => {
       leftToday: usd(0),
       liveDaily: usd(0),
       cycleSpent: usd(0),
+      paceSpent: usd(0),
       billsDue: [],
       cycleBills: [],
       missingRates: [],
@@ -161,6 +163,7 @@ describe('daily figures', () => {
       // 167500 / 17 = 9852.94, rounded down.
       liveDaily: usd(9852),
       cycleSpent: usd(2500),
+      paceSpent: usd(2500),
     });
   });
 
@@ -323,6 +326,60 @@ describe('daily figures', () => {
       expect((await h.alice.delete(`/v1/bills/${rent.id}`)).status).toBe(204);
       expect((await h.alice.get(`/v1/bills/${rent.id}`)).status).toBe(404);
       expect((await today(h.alice)).available).toEqual(usd(167500));
+    });
+  });
+
+  it('leaves linked bill payments and reconcile adjustments out of pace', async () => {
+    const water = (
+      await h.alice.post('/v1/bills', {
+        name: 'Water',
+        amount: usd(5000),
+        accountId: everyday,
+        dueDay: 25,
+      })
+    ).body as Bill;
+    const payment = await spend(5000);
+    expect(payment.status).toBe(201);
+    const paymentId = (payment.body as { id: string }).id;
+    expect(
+      (
+        await h.alice.post(`/v1/bills/${water.id}/payments`, {
+          dueOn: '2026-03-25',
+          transactionId: paymentId,
+        })
+      ).status,
+    ).toBe(201);
+    // Paying the bill is spending, but its reserve was already set aside.
+    expect(await today(h.alice)).toMatchObject({
+      available: usd(162500),
+      cycleSpent: usd(7500),
+      paceSpent: usd(2500),
+    });
+
+    const reconciled = await h.alice.post(
+      `/v1/accounts/${everyday}/reconcile`,
+      { balance: usd(161300), adjust: true },
+    );
+    expect(reconciled.status).toBe(200);
+    const adjustment = (reconciled.body as { adjustment: { id: string } })
+      .adjustment;
+    // The adjustment still lowers what is available.
+    expect(await today(h.alice)).toMatchObject({
+      available: usd(161300),
+      cycleSpent: usd(8700),
+      paceSpent: usd(2500),
+    });
+
+    for (const id of [adjustment.id, paymentId]) {
+      expect(
+        (await h.alice.post(`/v1/transactions/${id}/reverse`, {})).status,
+      ).toBe(201);
+    }
+    expect((await h.alice.delete(`/v1/bills/${water.id}`)).status).toBe(204);
+    expect(await today(h.alice)).toMatchObject({
+      available: usd(167500),
+      cycleSpent: usd(2500),
+      paceSpent: usd(2500),
     });
   });
 });

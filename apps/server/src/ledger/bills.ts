@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { billId, type Bill } from '@allotr/core';
+import { billId, transactionId, type Bill } from '@allotr/core';
 import {
   addDays,
   localDate,
@@ -128,6 +128,10 @@ export async function loadBills(db: Db, userId: string): Promise<Bill[]> {
       payments: payments.map((payment) => ({
         dueOn: localDate(payment.due_on),
         paidOn: localDate(payment.paid_on),
+        transactionId:
+          payment.transaction_id === null
+            ? null
+            : transactionId(payment.transaction_id),
       })),
     }),
   );
