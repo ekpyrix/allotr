@@ -86,3 +86,18 @@ export function switchKind(
 ): QuickEntryDraft {
   return { ...draft, kind, received: '', ...choicesFor(kind, defaults) };
 }
+
+/**
+ * The draft as the user sees it: until the date is edited it is the latest
+ * `today` from the server, since the form can open on a cached day that a
+ * background refetch then corrects.
+ */
+export function withToday(
+  draft: QuickEntryDraft,
+  today: string,
+  dateEdited: boolean,
+): QuickEntryDraft {
+  return dateEdited || draft.occurredOn === today
+    ? draft
+    : { ...draft, occurredOn: today };
+}

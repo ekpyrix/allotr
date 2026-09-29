@@ -18,11 +18,14 @@ import { Input } from '@/components/ui/input';
 import { describeProblem } from '@/lib/problem';
 import { t } from '@/messages/t';
 import {
+  amountExample,
+  draftErrorText,
   ENTRY_KINDS,
   FIELD_ORDER,
   keyForBody,
   toBody,
   type DraftErrors,
+  type DraftField,
   type DraftKey,
   type QuickEntryDraft,
 } from './draft.ts';
@@ -31,6 +34,7 @@ import {
   categoryOptions,
   newDraft,
   switchKind,
+  withToday,
   type DraftDefaults,
 } from './options.ts';
 import { useSaveEntry } from './use-save-entry.ts';
@@ -84,8 +88,20 @@ export function QuickEntryForm({
     today,
     lastUsed: readLastUsed(storage()),
   }));
-  const [draft, setDraft] = useState(() => newDraft(defaults));
+  const [typed, setDraft] = useState(() => newDraft(defaults));
+  // Until the user picks a date it follows `today`, which can be corrected
+  // by a refetch after the form opened on a cached value.
+  const [dateEdited, setDateEdited] = useState(false);
+  const draft = withToday(typed, today, dateEdited);
   const [errors, setErrors] = useState<DraftErrors>({});
+  // Set after the failed field errors are on screen, so the alert changes
+  // (empty, then text) on every failed save and is announced again.
+  const [failure, setFailure] = useState<{
+    count: number;
+    first: DraftField | undefined;
+  } | null>(null);
+  const [summary, setSummary] = useState('');
+  const form = useRef<HTMLFormElement>(null);
   const save = useSaveEntry();
   const saving = save.isPending;
   useEffect(() => {
@@ -98,12 +114,36 @@ export function QuickEntryForm({
   const inFlight = useRef(false);
   const kindName = useId();
 
-  const update = (patch: Partial<QuickEntryDraft>) => {
-    setDraft((current) => ({ ...current, ...patch }));
+  // Focus and the summary wait for the render that shows the field errors:
+  // focusing inside the submit handler would run before aria-invalid and
+  // aria-describedby exist, and say nothing when the field already has focus.
+  useEffect(() => {
+    if (failure === null) return;
+    const element =
+      failure.first === undefined
+        ? null
+        : form.current?.elements.namedItem(failure.first);
+    if (element instanceof HTMLElement) element.focus();
+    const frame = requestAnimationFrame(() => {
+      setSummary(t('errors.validationSummary', { count: failure.count }));
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [failure]);
+
+  const clearErrors = () => {
+    setErrors({});
+    setFailure(null);
+    setSummary('');
   };
-  const error = (field: keyof DraftErrors) => {
-    const message = errors[field];
-    return message === undefined ? undefined : t(message);
+  // A server error is about the request that was sent, not the next edit.
+  const editing = () => {
+    if (save.isError) save.reset();
+  };
+  const update = (patch: Partial<QuickEntryDraft>) => {
+    editing();
+    setDraft((current) => ({ ...current, ...patch }));
   };
   const source = accounts.find((a) => a.id === draft.accountId);
   const target = accounts.find((a) => a.id === draft.toAccountId);
@@ -114,6 +154,15 @@ export function QuickEntryForm({
     target !== undefined &&
     source.currency !== target.currency;
   const options = categoryOptions(categories, draft.kind);
+  const error = (field: keyof DraftErrors, currency: string | undefined) => {
+    const message = errors[field];
+    return message === undefined
+      ? undefined
+      : draftErrorText(
+          message,
+          amountExample(currency ?? accounts[0]?.currency ?? 'USD', locale),
+        );
+  };
 
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,17 +170,14 @@ export function QuickEntryForm({
     const result = toBody(draft, { accounts, locale });
     if (!result.ok) {
       setErrors(result.errors);
-      const first = FIELD_ORDER.find(
-        (field) => result.errors[field] !== undefined,
-      );
-      const element =
-        first === undefined
-          ? null
-          : event.currentTarget.elements.namedItem(first);
-      if (element instanceof HTMLElement) element.focus();
+      setSummary('');
+      setFailure({
+        count: Object.keys(result.errors).length,
+        first: FIELD_ORDER.find((field) => result.errors[field] !== undefined),
+      });
       return;
     }
-    setErrors({});
+    clearErrors();
     key.current = keyForBody(key.current, result.body, () =>
       crypto.randomUUID(),
     );
@@ -153,6 +199,7 @@ export function QuickEntryForm({
 
   return (
     <form
+      ref={form}
       noValidate
       onSubmit={submit}
       onKeyDown={submitOnEnter}
@@ -174,8 +221,9 @@ export function QuickEntryForm({
                 value={kind}
                 checked={draft.kind === kind}
                 onChange={() => {
+                  editing();
                   setDraft((current) => switchKind(current, kind, defaults));
-                  setErrors({});
+                  clearErrors();
                 }}
                 className="sr-only"
               />
@@ -191,7 +239,7 @@ export function QuickEntryForm({
             ? t('quickEntry.amount')
             : t('quickEntry.amountIn', { currency: source.currency })
         }
-        error={error('amount')}
+        error={error('amount', source?.currency)}
       >
         {(props) => (
           <Input
@@ -211,7 +259,7 @@ export function QuickEntryForm({
 
       <FieldControl
         label={transfer ? t('quickEntry.fromAccount') : t('quickEntry.account')}
-        error={error('accountId')}
+        error={error('accountId', undefined)}
       >
         {(props) => (
           <select
@@ -235,7 +283,7 @@ export function QuickEntryForm({
       {transfer ? (
         <FieldControl
           label={t('quickEntry.toAccount')}
-          error={error('toAccountId')}
+          error={error('toAccountId', undefined)}
         >
           {(props) => (
             <select
@@ -260,7 +308,7 @@ export function QuickEntryForm({
       {needsReceived ? (
         <FieldControl
           label={t('quickEntry.receivedIn', { currency: target.currency })}
-          error={error('received')}
+          error={error('received', target.currency)}
         >
           {(props) => (
             <Input
@@ -282,7 +330,7 @@ export function QuickEntryForm({
         label={
           transfer ? t('quickEntry.categoryOptional') : t('quickEntry.category')
         }
-        error={error('categoryId')}
+        error={error('categoryId', undefined)}
       >
         {(props) => (
           <select
@@ -310,7 +358,10 @@ export function QuickEntryForm({
         )}
       </FieldControl>
 
-      <FieldControl label={t('quickEntry.date')} error={error('occurredOn')}>
+      <FieldControl
+        label={t('quickEntry.date')}
+        error={error('occurredOn', undefined)}
+      >
         {(props) => (
           <Input
             {...props}
@@ -319,6 +370,7 @@ export function QuickEntryForm({
             className="h-11 text-base"
             value={draft.occurredOn}
             onChange={(e) => {
+              setDateEdited(true);
               update({ occurredOn: e.currentTarget.value });
             }}
           />
@@ -358,6 +410,7 @@ export function QuickEntryForm({
                   checked={draft.tagIds.includes(tag.id)}
                   onChange={(e) => {
                     const on = e.currentTarget.checked;
+                    editing();
                     setDraft((current) => ({
                       ...current,
                       tagIds: on
@@ -374,7 +427,13 @@ export function QuickEntryForm({
       )}
 
       <FormError
-        message={save.isError ? describeProblem(save.error).message : null}
+        message={
+          summary === ''
+            ? save.isError
+              ? describeProblem(save.error).message
+              : null
+            : summary
+        }
       />
       <Button
         type="submit"

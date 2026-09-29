@@ -19,10 +19,12 @@ import { QuickEntryForm } from './quick-entry-form.tsx';
 function QuickEntryLoader({
   onSaved,
   onClose,
+  onNavigate,
   onSavingChange,
 }: {
   onSaved: (message: string) => void;
   onClose: () => void;
+  onNavigate: () => void;
   onSavingChange: (saving: boolean) => void;
 }) {
   const accounts = useQuery(accountsQuery);
@@ -70,7 +72,10 @@ function QuickEntryLoader({
         <p>{t('quickEntry.noAccounts')}</p>
         <Link
           to="/accounts"
-          onClick={onClose}
+          onClick={() => {
+            onNavigate();
+            onClose();
+          }}
           className="font-medium underline underline-offset-4"
         >
           {t('quickEntry.goToAccounts')}
@@ -98,11 +103,14 @@ export function QuickEntryDialog({
   open,
   onOpenChange,
   onSaved,
+  onNavigate,
   onCloseAutoFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: (message: string) => void;
+  /** The dialog closes because a link in it is taking the user elsewhere. */
+  onNavigate: () => void;
   onCloseAutoFocus: () => void;
 }) {
   const content = useRef<HTMLDivElement>(null);
@@ -155,6 +163,7 @@ export function QuickEntryDialog({
             onClose={() => {
               onOpenChange(false);
             }}
+            onNavigate={onNavigate}
             onSavingChange={setSaving}
           />
         </Dialog.Content>

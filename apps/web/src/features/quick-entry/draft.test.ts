@@ -1,7 +1,18 @@
-import { formatMoney, money, type AccountView } from '@allotr/shared';
+import {
+  formatMoney,
+  money,
+  parseMoney,
+  type AccountView,
+} from '@allotr/shared';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { keyForBody, toBody, type QuickEntryDraft } from './draft.ts';
+import {
+  amountExample,
+  draftErrorText,
+  keyForBody,
+  toBody,
+  type QuickEntryDraft,
+} from './draft.ts';
 
 function account(
   id: string,
@@ -173,6 +184,26 @@ describe('toBody', () => {
       });
     });
 
+    it('sends the optional category of a transfer', () => {
+      const usdPair = [...accounts, account('usd2', 'USD', 'off')];
+      expect(
+        toBody(transfer({ toAccountId: 'usd2', categoryId: 'fees' }), {
+          ...ctx,
+          accounts: usdPair,
+        }),
+      ).toEqual({
+        ok: true,
+        body: {
+          kind: 'transfer',
+          fromAccountId: 'usd',
+          toAccountId: 'usd2',
+          sent: { amountMinor: 1250, currency: 'USD' },
+          categoryId: 'fees',
+          occurredOn: '2026-03-14',
+        },
+      });
+    });
+
     it('needs the received amount across currencies, in the target currency', () => {
       expect(toBody(transfer({ toAccountId: 'jpy' }), ctx)).toEqual({
         ok: false,
@@ -235,6 +266,39 @@ describe('toBody', () => {
           });
         },
       ),
+    );
+  });
+});
+
+describe('amountExample', () => {
+  it.each([
+    ['USD', 'en-US', '$12.50'],
+    ['JPY', 'en-US', '¥12'],
+    ['BHD', 'en-US', 'BHD\u00a012.500'],
+    ['EUR', 'de-DE', '12,50\u00a0€'],
+  ])('shows 12.50 in %s digits for %s', (currency, locale, expected) => {
+    expect(amountExample(currency, locale)).toBe(expected);
+  });
+
+  it('is always something the parser accepts', () => {
+    for (const currency of ['USD', 'JPY', 'BHD', 'EUR'])
+      for (const locale of ['en-US', 'de-DE', 'fr-FR', 'ja-JP'])
+        expect(() =>
+          parseMoney(amountExample(currency, locale), currency, locale),
+        ).not.toThrow();
+  });
+});
+
+describe('draftErrorText', () => {
+  it('names the example in the invalid amount message', () => {
+    expect(draftErrorText('quickEntry.errors.amountInvalid', '€12,50')).toBe(
+      'Enter an amount, for example €12,50.',
+    );
+  });
+
+  it('leaves the other messages as they are', () => {
+    expect(draftErrorText('quickEntry.errors.amountRequired', '$12.50')).toBe(
+      'Enter an amount.',
     );
   });
 });

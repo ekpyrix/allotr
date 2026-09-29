@@ -5,6 +5,7 @@ import {
   categoryOptions,
   newDraft,
   switchKind,
+  withToday,
   type DraftDefaults,
 } from './options.ts';
 
@@ -250,5 +251,24 @@ describe('last used', () => {
     expect(() => {
       rememberChoice(blocked, newDraft(defaults()));
     }).not.toThrow();
+  });
+});
+
+describe('withToday', () => {
+  const draft = newDraft(defaults());
+
+  it('follows the latest today until the date was edited', () => {
+    expect(withToday(draft, '2026-03-15', false).occurredOn).toBe('2026-03-15');
+  });
+
+  it('keeps an edited date, even an emptied one', () => {
+    const edited = { ...draft, occurredOn: '2026-03-01' };
+    expect(withToday(edited, '2026-03-15', true)).toBe(edited);
+    const emptied = { ...draft, occurredOn: '' };
+    expect(withToday(emptied, '2026-03-15', true).occurredOn).toBe('');
+  });
+
+  it('returns the same draft when nothing changes', () => {
+    expect(withToday(draft, '2026-03-14', false)).toBe(draft);
   });
 });

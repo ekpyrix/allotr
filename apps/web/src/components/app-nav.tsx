@@ -23,13 +23,18 @@ const icons: Record<NavPath, LucideIcon> = {
 const itemClass =
   'flex min-h-14 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs text-muted-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring aria-[current=page]:bg-plot aria-[current=page]:font-medium aria-[current=page]:text-foreground md:min-h-16 md:w-20 lg:w-52 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm';
 
+// The bottom-bar Add button follows this destination.
+const ADD_AFTER: NavPath = '/ledger';
+
 // A button, not a route: it opens quick entry over the current view.
 function AddButton({ className }: { className: string }) {
   const { open, shortcutsEnabled } = useQuickEntry();
   return (
     <button
       type="button"
-      onClick={open}
+      onClick={(event) => {
+        open(event.currentTarget);
+      }}
       aria-keyshortcuts={shortcutsEnabled ? 'n' : undefined}
       className={cn(itemClass, 'font-medium text-foreground', className)}
     >
@@ -52,7 +57,7 @@ export function AppNav() {
         <AddButton className="w-full" />
       </div>
       <ul className="grid auto-cols-fr grid-flow-col md:flex md:flex-col md:gap-1 md:p-2 lg:px-3">
-        {navItems.flatMap((item, index) => {
+        {navItems.flatMap((item) => {
           const Icon = icons[item.to];
           const link = (
             <li key={item.to}>
@@ -66,7 +71,9 @@ export function AppNav() {
               </Link>
             </li>
           );
-          return index === 1
+          // On phones the Add button sits in the middle of the bar, right
+          // after the ledger, so it stays in thumb reach.
+          return item.to === ADD_AFTER
             ? [
                 link,
                 <li key="add" className="md:hidden">

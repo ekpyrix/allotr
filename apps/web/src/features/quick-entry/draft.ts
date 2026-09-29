@@ -1,12 +1,16 @@
 import {
+  currencyCode,
+  formatMoney,
   localDateSchema,
+  minorUnit,
+  money,
   MoneyError,
   parseMoney,
   type AccountView,
   type CreateTransactionBody,
   type Money,
 } from '@allotr/shared';
-import type { MessageKey } from '@/messages/t';
+import { t, type MessageKey } from '@/messages/t';
 
 // The quick entry form's state and its translation into an API request.
 // The M3 grammar line fills the same draft, so nothing here knows about
@@ -33,9 +37,26 @@ export interface QuickEntryDraft {
 }
 
 export type DraftField = keyof QuickEntryDraft;
-/** Draft messages take no placeholders, so `t(key)` accepts any of them. */
 export type DraftErrorKey = Extract<MessageKey, `quickEntry.errors.${string}`>;
 export type DraftErrors = Partial<Record<DraftField, DraftErrorKey>>;
+
+/**
+ * 12.50 written in the currency's own digits and the locale's style, for
+ * example "$12.50", "¥12" or "12,50 €". Built from minor units, no floats.
+ */
+export function amountExample(currency: string, locale: string): string {
+  const digits = minorUnit(currencyCode(currency));
+  const minor =
+    digits === 0 ? 12 : 12 * 10 ** digits + 5 * 10 ** Math.max(digits - 1, 0);
+  return formatMoney(money(minor, currency), locale);
+}
+
+/** The text for a draft error; `example` fills the invalid amount hint. */
+export function draftErrorText(key: DraftErrorKey, example: string): string {
+  return key === 'quickEntry.errors.amountInvalid'
+    ? t(key, { example })
+    : t(key);
+}
 
 /** Fields in form order, for moving focus to the first invalid one. */
 export const FIELD_ORDER: readonly DraftField[] = [

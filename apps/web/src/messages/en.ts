@@ -102,7 +102,7 @@ export const en = {
     },
     errors: {
       amountRequired: 'Enter an amount.',
-      amountInvalid: 'Enter an amount, for example 12.50.',
+      amountInvalid: 'Enter an amount, for example {example}.',
       amountDecimals: 'This currency has fewer decimal places.',
       amountPositive:
         'Enter the amount without a sign; the type sets the direction.',

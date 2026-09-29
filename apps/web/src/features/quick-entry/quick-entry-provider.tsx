@@ -16,7 +16,8 @@ import {
 import { QuickEntryDialog } from './quick-entry-dialog.tsx';
 
 interface QuickEntryContextValue {
-  open: () => void;
+  /** Pass the element that was clicked: Safari does not focus buttons. */
+  open: (opener?: HTMLElement) => void;
   shortcutsEnabled: boolean;
   setShortcutsEnabled: (enabled: boolean) => void;
 }
@@ -44,6 +45,8 @@ const SAVED_MESSAGE_MS = 6000;
 export function QuickEntryProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
   const opener = useRef<HTMLElement | null>(null);
+  // Off when the dialog closes to navigate: the new view has focus by then.
+  const restoreFocus = useRef(true);
   const [saved, setSaved] = useState('');
   // Shown once the dialog is gone: while it is open everything behind it is
   // aria-hidden, so text set then would not be announced.
@@ -53,12 +56,14 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
   );
 
   // Radix only returns focus to its own trigger, and this dialog has none:
-  // remember what had focus and give it back on close.
-  const show = useCallback(() => {
+  // remember the opener (or what had focus) and give focus back on close.
+  const show = useCallback((from?: HTMLElement) => {
     opener.current =
-      document.activeElement instanceof HTMLElement
+      from ??
+      (document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : null;
+        : null);
+    restoreFocus.current = true;
     pendingSaved.current = '';
     setSaved('');
     setOpen(true);
@@ -123,8 +128,11 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
         onSaved={(message) => {
           pendingSaved.current = message;
         }}
+        onNavigate={() => {
+          restoreFocus.current = false;
+        }}
         onCloseAutoFocus={() => {
-          opener.current?.focus();
+          if (restoreFocus.current) opener.current?.focus();
           setSaved(pendingSaved.current);
           pendingSaved.current = '';
         }}

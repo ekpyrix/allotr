@@ -68,6 +68,8 @@ async function today(page: Page): Promise<TodayView> {
   return (await (await page.request.get('/v1/today')).json()) as TodayView;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const dialog = (page: Page) =>
   page.getByRole('dialog', { name: 'Add an entry' });
 
@@ -190,7 +192,127 @@ test('a double click on Save records one entry', async ({ page }) => {
     entry.postings.some((p) => p.amount.amountMinor === -777),
   );
   expect(matching).toHaveLength(1);
+  // A header-less request would pass the single-key check on its own.
+  expect(posts.length).toBeGreaterThan(0);
+  for (const key of posts) expect(key).toMatch(UUID);
   expect(new Set(posts).size).toBe(1);
+});
+
+test('failed validation is announced, focused and described', async ({
+  page,
+}) => {
+  await page.goto('/ledger');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('n');
+  const amount = page.getByLabel('Amount in USD');
+  await expect(amount).toBeFocused();
+
+  // Enter on an empty amount: the field already has focus, so the alert
+  // and the error text linked to the field are all that announce it.
+  await page.keyboard.press('Enter');
+  await expect(dialog(page).getByRole('alert')).toHaveText(
+    '2 fields need attention.',
+  );
+  await expect(amount).toBeFocused();
+  await expect(amount).toHaveAttribute('aria-invalid', 'true');
+  const describedBy = await amount.getAttribute('aria-describedby');
+  expect(describedBy).not.toBeNull();
+  await expect(page.locator(`[id="${describedBy ?? ''}"]`)).toHaveText(
+    'Enter an amount.',
+  );
+
+  // An unreadable amount names an example in the account's currency.
+  await amount.fill('abc');
+  await page.keyboard.press('Enter');
+  await expect(page.locator(`[id="${describedBy ?? ''}"]`)).toHaveText(
+    'Enter an amount, for example $12.50.',
+  );
+
+  // Focus moves to the first invalid field once its error is rendered.
+  await amount.fill('5');
+  await page.keyboard.press('Enter');
+  await expect(dialog(page).getByRole('alert')).toHaveText(
+    '1 field needs attention.',
+  );
+  const category = page.getByLabel('Category');
+  await expect(category).toBeFocused();
+  await expect(category).toHaveAttribute('aria-invalid', 'true');
+  await expectAccessible(page);
+});
+
+test('the date follows a corrected today until the user edits it', async ({
+  page,
+}) => {
+  const real = (await today(page)).today;
+  let reads = 0;
+  await page.route('**/v1/today', async (route) => {
+    reads += 1;
+    const response = await route.fetch();
+    const body = (await response.json()) as TodayView;
+    if (reads === 1)
+      return route.fulfill({
+        response,
+        json: { ...body, today: '2026-01-01' },
+      });
+    // The correction arrives after the form has shown the cached day.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return route.fulfill({ response, json: body });
+  });
+  await page.clock.install();
+  await page.goto('/ledger');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('n');
+  const date = page.getByLabel('Date');
+  await expect(date).toHaveValue('2026-01-01');
+  await page.keyboard.press('Escape');
+  await expect(dialog(page)).toBeHidden();
+
+  // Past the 30 s freshness window, so opening refetches behind the form.
+  await page.clock.fastForward(60_000);
+  await page.keyboard.press('n');
+  await expect(date).toHaveValue('2026-01-01');
+  await expect(date).toHaveValue(real);
+  await date.fill('2026-02-03');
+  await expect(date).toHaveValue('2026-02-03');
+});
+
+test('a server error clears when the user edits the form', async ({ page }) => {
+  await page.route('**/v1/transactions', (route) =>
+    route.request().method() === 'POST'
+      ? route.fulfill({
+          status: 409,
+          contentType: 'application/problem+json',
+          json: { type: 'about:blank', title: 'Conflict', status: 409 },
+        })
+      : route.fallback(),
+  );
+  await page.goto('/ledger');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByLabel('Amount in USD').fill('3.21');
+  await page.getByLabel('Category').selectOption({ label: 'Transport' });
+  await page.getByRole('button', { name: 'Save' }).click();
+  const alert = dialog(page).getByRole('alert');
+  await expect(alert).toHaveText(
+    'This changed in the meantime. Refresh and try again.',
+  );
+  await page.getByLabel('Amount in USD').fill('3.22');
+  await expect(alert).toBeEmpty();
+});
+
+test('Go to Accounts leaves focus on the new view', async ({ page }) => {
+  await page.route('**/v1/accounts', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({ json: { accounts: [] } })
+      : route.fallback(),
+  );
+  await page.goto('/ledger');
+  const add = page.getByRole('button', { name: 'Add', exact: true });
+  await add.click();
+  await page.getByRole('link', { name: 'Go to Accounts' }).click();
+  await expect(page).toHaveURL(/\/accounts$/);
+  await expect(dialog(page)).toBeHidden();
+  await expect(page.locator('main')).toBeFocused();
+  await expect(add).not.toBeFocused();
 });
 
 test('a save in flight cannot be dismissed and still announces', async ({

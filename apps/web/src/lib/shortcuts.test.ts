@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isQuickEntryShortcut,
+  SHORTCUTS_KEY,
   readShortcutsEnabled,
   saveShortcutsEnabled,
   type ShortcutEvent,
@@ -61,6 +62,10 @@ describe('isQuickEntryShortcut', () => {
 });
 
 describe('shortcut preference', () => {
+  it('is stored under a stable key', () => {
+    expect(SHORTCUTS_KEY).toBe('allotr.shortcuts');
+  });
+
   it('is on unless saved off, and survives blocked storage', () => {
     const items = new Map<string, string>();
     const storage = {
@@ -69,6 +74,7 @@ describe('shortcut preference', () => {
     };
     expect(readShortcutsEnabled(storage)).toBe(true);
     saveShortcutsEnabled(storage, false);
+    expect(items.get(SHORTCUTS_KEY)).toBe('off');
     expect(readShortcutsEnabled(storage)).toBe(false);
     saveShortcutsEnabled(storage, true);
     expect(readShortcutsEnabled(storage)).toBe(true);
