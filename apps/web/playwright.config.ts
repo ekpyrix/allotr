@@ -27,6 +27,7 @@ const specs = [
   'cycles',
   'setup',
   'export',
+  'delete-account',
 ];
 
 const projects = sizes.flatMap((size, i) =>

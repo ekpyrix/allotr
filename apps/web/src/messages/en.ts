@@ -15,6 +15,7 @@ export const en = {
     verify: 'Verify',
     verifying: 'Checking…',
     otherAccount: 'Use a different account',
+    deleted: 'Your account and all its data have been deleted.',
   },
   onboarding: {
     title: 'Set up Allotr',
@@ -583,6 +584,19 @@ export const en = {
         hint: 'Every entry as a double-entry text ledger, undos included.',
       },
     },
+    deleteAccount: {
+      title: 'Delete account',
+      intro: 'Remove your account and all your data from this server for good.',
+      open: 'Delete account…',
+      dialogTitle: 'Delete your account?',
+      what: 'This permanently deletes your account, sign-ins and two-factor setup, and every account, entry, bill, rate and setting in your ledger. It cannot be undone.',
+      exportFirst:
+        'Keep a copy first: a backup file can be imported into another Allotr ledger.',
+      codeHint:
+        'The 6-digit code from your authenticator app, or one of your backup codes.',
+      confirm: 'Delete my account and data',
+      deleting: 'Deleting…',
+    },
     security: {
       title: 'Security',
       signedInAs: 'Signed in as {email}.',
@@ -785,6 +799,13 @@ export const en = {
       registration_closed: 'This instance is not accepting new accounts.',
       cycle_not_found:
         'No cycle started on that day. It may have merged into another one after a paycheck was undone.',
+      wrong_password: 'The password is wrong.',
+      wrong_code: 'The code is wrong or has already been used.',
+      code_required:
+        'Enter a code from your authenticator app or one of your backup codes.',
+      last_admin:
+        'You are the only administrator and other people use this instance, so your account cannot be deleted.',
+      account_temporarily_locked: 'Too many failed attempts. Try again later.',
       origin_mismatch:
         'This request came from another site and was refused. Open Allotr from its own address.',
     },

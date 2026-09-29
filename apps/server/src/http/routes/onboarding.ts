@@ -17,7 +17,6 @@ import {
   releaseInvite,
 } from '../../auth/invites.ts';
 import { signUpWithEmail } from '../../auth/session-user.ts';
-import { createMutex } from '../../mutex.ts';
 import { readSettings } from '../../settings.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { authHeaders, requireUser } from '../guards.ts';
@@ -119,11 +118,13 @@ function setCookies(c: Context, cookies: readonly string[]): void {
 export function registerOnboardingRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
+  /**
+   * Account creation checks and writes must not interleave with each other
+   * (first-admin race, single-use invites) or with account deletion.
+   */
+  serialise: <T>(task: () => Promise<T>) => Promise<T>,
 ): void {
   const { db, auth, config, limits, now } = deps;
-  // Account creation checks and writes must not interleave (first-admin
-  // race, single-use invites).
-  const serialise = createMutex();
 
   app.openapi(onboardingStatusRoute, async (c) =>
     c.json({ required: (await countUsers(db)) === 0 }, 200),

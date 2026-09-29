@@ -182,6 +182,14 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   earliest day becomes the ledger's start, so the first cycle covers it.
 - `GET /v1/export?format=json|csv|beancount` downloads all ledger data
   (see [§5.2](#52-export)).
+- `POST /v1/user/delete` hard-deletes the signed-in user and every row
+  they own, then clears the session cookie. It needs the password and,
+  when 2FA is on, a TOTP or backup code; wrong ones count toward the
+  sign-in lockout. The only admin cannot leave while other users exist
+  (`last_admin`). Rows go by cascade from `users` (the ledger's
+  append-only triggers allow deletes once the user row is gone), plus the
+  user's `verifications` and `sign_in_failures`. It shares a lock with
+  onboarding and invites, so a join cannot race the last user leaving.
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`

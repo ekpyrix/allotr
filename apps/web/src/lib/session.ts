@@ -1,4 +1,8 @@
-import type { InstanceSettingsPatch, SignUpBody } from '@allotr/shared';
+import type {
+  DeleteUserBody,
+  InstanceSettingsPatch,
+  SignUpBody,
+} from '@allotr/shared';
 import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import { ApiError, call } from './api.ts';
 import { endpoints } from './endpoints.ts';
@@ -41,6 +45,19 @@ export async function verifyTotp(code: string) {
 
 export async function signOut(queryClient: QueryClient) {
   await call(endpoints.signOut, { body: {} });
+  forgetSession(queryClient);
+}
+
+/** Deletes the user and all their data; the server also signs them out. */
+export async function deleteUser(
+  queryClient: QueryClient,
+  body: DeleteUserBody,
+) {
+  await call(endpoints.deleteUser, { body });
+  forgetSession(queryClient);
+}
+
+function forgetSession(queryClient: QueryClient) {
   // Tell mounted observers (ThemeProvider lives above the router) that the
   // session is gone, and keep that query so they see the next sign-in.
   // clear() would drop it without telling them.
