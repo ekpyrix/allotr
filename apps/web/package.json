@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/generate-tokens.ts && vite build",
+    "tokens": "node scripts/generate-tokens.ts",
+    "tokens:check": "node scripts/generate-tokens.ts --check",
     "preview": "vite preview",
     "typecheck": "tsc && tsc -p src/sw",
     "test": "vitest run",

@@ -2,7 +2,8 @@ import {
   DEFAULT_APPEARANCE,
   type Appearance,
   type AppearanceBody,
-  type CustomTheme,
+  type CustomThemeView,
+  type PaletteTheme,
   type ThemeMode,
   type ThemeScheme,
 } from '@allotr/shared';
@@ -21,17 +22,18 @@ import { sessionQuery } from '@/lib/session';
 import {
   applyScheme,
   cacheMode,
-  cacheTokens,
+  cacheRoles,
+  customPaletteThemes,
   readCachedMode,
-  readCachedTokens,
+  readCachedRoles,
   resolveScheme,
-  slotTokens,
+  slotRoles,
 } from '@/lib/theme-mode';
 
-// Owns the theme for the whole app. Signed out, it is the mode and colours
-// cached on this device (the ones theme-init.js already applied); signed
-// in, the account's copy wins. `system` follows the device while the page
-// is open.
+// Owns the theme for the whole app. Signed out, it is the mode and role
+// colours cached on this device (the ones theme-init.js already applied);
+// signed in, the account's copy wins. `system` follows the device while
+// the page is open.
 
 type ThemeState = Readonly<{
   mode: ThemeMode;
@@ -41,7 +43,9 @@ type ThemeState = Readonly<{
   /** Picks the theme for a scheme; ignored while signed out. */
   setSlot: (scheme: ThemeScheme, id: string) => void;
   /** Undefined until loaded, or while signed out. */
-  customThemes: readonly CustomTheme[] | undefined;
+  customThemes: readonly CustomThemeView[] | undefined;
+  /** The same themes, resolved for painting and picking. */
+  customPalettes: readonly PaletteTheme[];
   saveError: boolean;
 }>;
 
@@ -62,7 +66,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [deviceMode, setDeviceMode] = useState(() =>
     readCachedMode(deviceStorage()),
   );
-  const [deviceTokens] = useState(() => readCachedTokens(deviceStorage()));
+  const [deviceRoles] = useState(() => readCachedRoles(deviceStorage()));
   const { data: session } = useQuery(sessionQuery);
   const userId = session?.user.id;
   const signedIn = userId !== undefined;
@@ -74,13 +78,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   });
   const mode = signedIn && stored ? stored.mode : deviceMode;
   const appearance = signedIn && stored ? stored : DEFAULT_APPEARANCE;
+  const customPalettes = useMemo(
+    () => customPaletteThemes(customThemes ?? []),
+    [customThemes],
+  );
   // Until the account's themes load, keep the colours already painted.
-  const tokens = useMemo(
+  const roles = useMemo(
     () =>
       signedIn && stored && customThemes
-        ? slotTokens(stored, customThemes)
-        : deviceTokens,
-    [signedIn, stored, customThemes, deviceTokens],
+        ? slotRoles(stored, customPalettes)
+        : deviceRoles,
+    [signedIn, stored, customThemes, customPalettes, deviceRoles],
   );
   // The user whose last save failed, so the message goes with the account.
   const [failedFor, setFailedFor] = useState<string | null>(null);
@@ -89,11 +97,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storage = deviceStorage();
     cacheMode(storage, mode);
-    cacheTokens(storage, tokens);
+    cacheRoles(storage, roles);
     const media = window.matchMedia(darkQuery);
     const apply = () => {
       const scheme = resolveScheme(mode, media.matches);
-      applyScheme(document, scheme, tokens[scheme]);
+      applyScheme(document, scheme, roles[scheme]);
     };
     apply();
     if (mode !== 'system') return;
@@ -101,7 +109,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => {
       media.removeEventListener('change', apply);
     };
-  }, [mode, tokens]);
+  }, [mode, roles]);
 
   const saves = useRef(0);
 
@@ -146,6 +154,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         appearance,
         setSlot,
         customThemes: signedIn ? customThemes : undefined,
+        customPalettes: signedIn ? customPalettes : [],
         saveError,
       }}
     >

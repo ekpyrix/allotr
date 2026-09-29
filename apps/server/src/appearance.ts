@@ -6,7 +6,7 @@ import {
   convertV1,
   CUSTOM_THEME_LIMIT,
   customThemeSchema,
-  DEFAULT_PALETTE_THEME_ID,
+  DEFAULT_APPEARANCE,
   describeRoleFailure,
   familyIdSchema,
   findPaletteTheme,
@@ -45,12 +45,6 @@ import { RequestProblem } from './http/domain-errors.ts';
 
 const appearanceKey = 'appearance';
 const themesKey = 'themes';
-
-/** What a user gets before saving any appearance. */
-export const DEFAULT_APPEARANCE: Appearance = {
-  mode: 'system',
-  ...DEFAULT_PALETTE_THEME_ID,
-};
 
 // An earlier id of a shipped theme reads as the theme it now names.
 const themeId = (id: string) =>

@@ -4,7 +4,8 @@ import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
 import { totpFromUri } from './totp.ts';
 
-const backgrounds = { light: 'rgb(243, 245, 242)', dark: 'rgb(15, 26, 23)' };
+// The default themes' canvas: Catppuccin Latte and Mocha.
+const backgrounds = { light: 'rgb(239, 241, 245)', dark: 'rgb(30, 30, 46)' };
 
 // The radios are visually hidden inside their labels; click what people see.
 async function chooseTheme(page: Page, name: 'Light' | 'Dark' | 'System') {

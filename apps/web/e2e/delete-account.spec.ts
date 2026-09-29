@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { SHIPPED_THEMES } from '@allotr/shared';
+import { findPaletteTheme } from '@allotr/shared';
 import {
   expect,
   test,
@@ -118,9 +118,20 @@ test('the only admin is refused while others use the instance', async ({
   ).toBeFocused();
 });
 
-// The outline fill darkens on hover in the dark scheme; axe reads the
-// hovered fill, so each shipped dark theme is checked in that state.
-test('destructive buttons keep contrast on hover in every dark theme', async ({
+// Destructive text sits on the outline button's hover fill; axe reads the
+// hovered state. A spread of dark themes is checked: the default, the
+// palettes whose reds fit the most, and the converted Allotr themes.
+const darkThemes = [
+  'catppuccin-mocha',
+  'catppuccin-frappe',
+  'solarized-dark',
+  'nord',
+  'allotr-classic-dark',
+  'high-contrast-dark',
+  'harbour',
+];
+
+test('destructive buttons keep contrast on hover in dark themes', async ({
   page,
   baseURL,
 }) => {
@@ -133,7 +144,9 @@ test('destructive buttons keep contrast on hover in every dark theme', async ({
   });
   expect(signIn.ok()).toBe(true);
 
-  for (const theme of SHIPPED_THEMES.filter((t) => t.scheme === 'dark')) {
+  for (const id of darkThemes) {
+    const theme = findPaletteTheme(id, []);
+    if (theme === undefined) throw new Error(`No theme ${id}`);
     const saved = await page.request.put('/v1/settings/appearance', {
       data: { mode: 'dark', dark: theme.id },
       headers: origin,
@@ -144,7 +157,7 @@ test('destructive buttons keep contrast on hover in every dark theme', async ({
     await page.goto('/settings#delete-account');
     await expect(page.locator('body')).toHaveCSS(
       'background-color',
-      rgb(theme.tokens.background),
+      rgb(theme.resolved.roles.canvas),
     );
     const open = page.getByRole('button', { name: 'Delete account…' });
     await open.hover();

@@ -1,64 +1,127 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
+@import './generated/tokens.css';
 
 /* The user's choice, not the device setting, decides dark mode. */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /*
- * Allotr theme tokens. The name comes from "allotment": money split into
- * plots, each with a job. Surfaces are flat tinted plots rather than
- * shadowed cards; ochre is reserved for today's number and focus.
+ * Allotr design tokens (ADRs 0016, 0018, 0019).
  *
- * data-theme on <html> is always light or dark, resolved from the user's
- * mode by public/theme-init.js before first paint and by ThemeProvider
- * after. The values repeat lightTheme and darkTheme in @allotr/shared,
- * whose validateTheme checks WCAG 2.2 AA; styles.test.ts fails on drift.
+ * Colour: every theme resolves to the same roles (canvas, card, text,
+ * primary, hero-ok…), each fitted to WCAG 2.2 AA by the resolver in
+ * @allotr/shared. generated/tokens.css holds the default theme of each
+ * scheme, Catppuccin Latte and Mocha, plus the spring easings; any other
+ * theme is painted over them as custom properties on <html> by
+ * public/theme-init.js before first paint and by ThemeProvider after.
+ * data-theme on <html> is always light or dark.
+ *
+ * Depth is tone only: canvas → card → card-raised, with chrome for
+ * persistent navigation. There are no shadows.
  */
 :root {
-  --background: #f3f5f2;
-  --foreground: #17302a;
-  --muted: #e3eae4;
-  --muted-foreground: #55655e;
-  --plot: #e3eae4;
-  --today: #b7791f;
-  --today-text: #8a5a12;
-  --over: #9c4a3c;
-  --positive: #2f6b4f;
-  --negative: #9c4a3c;
-  --primary: #17302a;
-  --primary-foreground: #f3f5f2;
-  --border: #c9d3cc;
-  --input: #7c8f85;
-  --ring: #a86f1c;
-  --destructive: #9c4a3c;
-  --radius: 0.25rem;
-  --duration-fast: 120ms;
-  --duration-base: 200ms;
-  color-scheme: light;
+  /* Spacing a density setting changes. */
+  --card-pad: 16px;
+  --row-h: 56px;
 }
 
-:root[data-theme='dark'] {
-  --background: #0f1a17;
-  --foreground: #e6eee9;
-  --muted: #1b2a25;
-  --muted-foreground: #93a39b;
-  --plot: #1b2a25;
-  --today: #d9a441;
-  --today-text: #d9a441;
-  --over: #d98270;
-  --positive: #7fc4a0;
-  --negative: #d98270;
-  --primary: #e6eee9;
-  --primary-foreground: #0f1a17;
-  --border: #2c3d37;
-  --input: #5f756b;
-  --ring: #d9a441;
-  --destructive: #e3a497;
-  color-scheme: dark;
+:root[data-density='compact'] {
+  --card-pad: 12px;
+  --row-h: 48px;
+}
+
+@theme {
+  /* Shape: plain large radii, pills for buttons and chips (spec §3). */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+
+  /* Window size classes (spec §6); sm/md/lg stay until the cleanup. */
+  --breakpoint-medium: 600px;
+  --breakpoint-expanded: 840px;
+  --breakpoint-large: 1200px;
+  --breakpoint-xl: 1600px;
+
+  /* Type roles (spec §5). */
+  --text-display-hero: clamp(3.5rem, 16vw, 6rem);
+  --text-display-hero--line-height: 0.95;
+  --text-display-hero--letter-spacing: -0.04em;
+  --text-display-hero--font-weight: 600;
+  --text-display: 2.75rem;
+  --text-display--line-height: 3rem;
+  --text-display--font-weight: 600;
+  --text-headline: 1.75rem;
+  --text-headline--line-height: 2.125rem;
+  --text-headline--font-weight: 600;
+  --text-title-lg: 1.375rem;
+  --text-title-lg--line-height: 1.75rem;
+  --text-title-lg--font-weight: 600;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.375rem;
+  --text-title--font-weight: 600;
+  --text-body-lg: 1.0625rem;
+  --text-body-lg--line-height: 1.5rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.125rem;
+  --text-label--font-weight: 500;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--font-weight: 500;
+
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
 }
 
 @theme inline {
+  /* Every role as a colour utility: bg-card, text-text-muted… */
+  --color-canvas: var(--canvas);
+  --color-chrome: var(--chrome);
+  --color-card: var(--card);
+  --color-card-raised: var(--card-raised);
+  --color-inverse: var(--inverse);
+  --color-primary: var(--primary);
+  --color-info: var(--info);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-primary-container: var(--primary-container);
+  --color-info-container: var(--info-container);
+  --color-success-container: var(--success-container);
+  --color-warning-container: var(--warning-container);
+  --color-danger-container: var(--danger-container);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-on-inverse: var(--on-inverse);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-on-danger-container: var(--on-danger-container);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-ring: var(--ring);
+  --color-hero-ok: var(--hero-ok);
+  --color-hero-tight: var(--hero-tight);
+  --color-hero-over: var(--hero-over);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
+  --color-pace: var(--pace);
+  --color-reserved: var(--reserved);
+  --color-selection: var(--selection);
+
+  /* Legacy names, until every screen uses the roles (see below). */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
@@ -67,43 +130,72 @@
   --color-today: var(--today);
   --color-today-text: var(--today-text);
   --color-over: var(--over);
-  --color-positive: var(--positive);
-  --color-negative: var(--negative);
-  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
-  --color-ring: var(--ring);
   --color-destructive: var(--destructive);
-  --radius-sm: calc(var(--radius) - 0.125rem);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 0.125rem);
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+}
+
+/*
+ * Legacy aliases: the v1 token names screens not yet redesigned still use,
+ * each pointing at a role checked for the same use. `over` and
+ * `destructive` carry small text, so they take `negative` (fitted to
+ * 4.5:1 on canvas, card and card-raised) rather than the hero or danger
+ * fills, which are only fitted to 3:1.
+ */
+:root {
+  --background: var(--canvas);
+  --foreground: var(--text);
+  --muted: var(--card);
+  --muted-foreground: var(--text-muted);
+  --plot: var(--card);
+  --today: var(--hero-ok);
+  --today-text: var(--hero-ok);
+  --over: var(--negative);
+  --primary-foreground: var(--on-primary);
+  --border: var(--outline-variant);
+  --input: var(--outline);
+  --destructive: var(--negative);
+  --duration-fast: var(--dur-fade);
+  --duration-base: var(--dur-snappy);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-outline-variant;
   }
   html {
     font-feature-settings: 'tnum' 1;
   }
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-canvas font-sans text-text antialiased;
+  }
+  ::selection {
+    background-color: var(--selection);
   }
 }
 
-/* Transitions use var(--duration-*), so they stop here too. */
+/*
+ * Reduced motion, from the device or the in-app setting: token durations
+ * drop to 0 (generated/tokens.css), and anything still animating with a
+ * hard-coded duration stops too. Full motion chosen in the app wins over
+ * the device setting.
+ */
 @media (prefers-reduced-motion: reduce) {
-  :root {
-    --duration-fast: 0ms;
-    --duration-base: 0ms;
-  }
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion='full']) *,
+  :root:not([data-motion='full']) *::before,
+  :root:not([data-motion='full']) *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after,
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
 }
