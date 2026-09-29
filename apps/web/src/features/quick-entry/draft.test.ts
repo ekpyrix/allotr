@@ -7,10 +7,18 @@ import {
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
+  addLine,
   amountExample,
   draftErrorText,
+  endSplit,
+  fieldOrder,
   keyForBody,
+  MAX_SPLIT_LINES,
+  removeLine,
+  splitRemainder,
+  startSplit,
   toBody,
+  updateLine,
   type QuickEntryDraft,
 } from './draft.ts';
 
@@ -46,6 +54,7 @@ const draft = (patch: Partial<QuickEntryDraft> = {}): QuickEntryDraft => ({
   received: '',
   foreign: '',
   foreignCurrency: '',
+  lines: [],
   categoryId: 'food',
   tagIds: [],
   note: '',
@@ -327,5 +336,144 @@ describe('keyForBody', () => {
   it('gives a new key after a save (previous cleared)', () => {
     const first = keyForBody(null, body(5), makeKey);
     expect(keyForBody(null, body(5), makeKey).key).not.toBe(first.key);
+  });
+});
+
+describe('splits', () => {
+  const split = (
+    lines: [string, string][],
+    patch: Partial<QuickEntryDraft> = {},
+  ) =>
+    draft({
+      amount: '80.00',
+      categoryId: '',
+      lines: lines.map(([categoryId, amount]) => ({ categoryId, amount })),
+      ...patch,
+    });
+
+  it('sends lines instead of a category', () => {
+    expect(
+      toBody(
+        split([
+          ['food', '60'],
+          ['fun', '20.00'],
+        ]),
+        ctx,
+      ),
+    ).toEqual({
+      ok: true,
+      body: {
+        kind: 'expense',
+        accountId: 'usd',
+        amount: money(8000, 'USD'),
+        lines: [
+          { categoryId: 'food', amount: money(6000, 'USD') },
+          { categoryId: 'fun', amount: money(2000, 'USD') },
+        ],
+        occurredOn: '2026-03-14',
+      },
+    });
+  });
+
+  it('puts lines in the foreign price currency when there is one', () => {
+    const result = toBody(
+      split(
+        [
+          ['food', '30'],
+          ['fun', '15'],
+        ],
+        { amount: '49.20', foreign: '45', foreignCurrency: 'EUR' },
+      ),
+      ctx,
+    );
+    expect(
+      result.ok && result.body.kind === 'expense' && result.body.lines,
+    ).toEqual([
+      { categoryId: 'food', amount: money(3000, 'EUR') },
+      { categoryId: 'fun', amount: money(1500, 'EUR') },
+    ]);
+  });
+
+  it('reports each line, and a sum that misses the amount', () => {
+    expect(
+      toBody(
+        split([
+          ['', '60'],
+          ['fun', 'x'],
+          ['fun', '5'],
+        ]),
+        ctx,
+      ),
+    ).toEqual({
+      ok: false,
+      errors: {
+        'lines.0.categoryId': 'quickEntry.errors.categoryRequired',
+        'lines.1.amount': 'quickEntry.errors.amountInvalid',
+        'lines.2.categoryId': 'quickEntry.errors.categoryTwice',
+      },
+    });
+    expect(
+      toBody(
+        split([
+          ['food', '60'],
+          ['fun', '19.99'],
+        ]),
+        ctx,
+      ),
+    ).toEqual({
+      ok: false,
+      errors: { lines: 'quickEntry.errors.splitMismatch' },
+    });
+  });
+
+  it('shows what is left to assign', () => {
+    expect(
+      splitRemainder(
+        split([
+          ['food', '60'],
+          ['fun', ''],
+        ]),
+        ctx,
+      ),
+    ).toEqual(money(2000, 'USD'));
+    expect(
+      splitRemainder(split([['food', '90']], { amount: '' }), ctx),
+    ).toBeNull();
+  });
+
+  it('starts from the chosen category and returns to the first line', () => {
+    const started = startSplit(draft({ categoryId: 'food' }));
+    expect(started).toMatchObject({
+      categoryId: '',
+      lines: [
+        { categoryId: 'food', amount: '' },
+        { categoryId: '', amount: '' },
+      ],
+    });
+    const edited = updateLine(started, 0, { categoryId: 'fun' });
+    expect(endSplit(edited)).toMatchObject({ categoryId: 'fun', lines: [] });
+  });
+
+  it('keeps between two and the maximum number of lines', () => {
+    const two = startSplit(draft());
+    expect(removeLine(two, 0)).toBe(two);
+    const three = addLine(two);
+    expect(removeLine(three, 0).lines).toEqual(three.lines.slice(1));
+    let full = two;
+    for (let i = 0; i < MAX_SPLIT_LINES; i += 1) full = addLine(full);
+    expect(full.lines).toHaveLength(MAX_SPLIT_LINES);
+  });
+
+  it('orders line fields between the category and the date', () => {
+    const order = fieldOrder(startSplit(draft()));
+    expect(order.slice(order.indexOf('categoryId'))).toEqual([
+      'categoryId',
+      'lines.0.categoryId',
+      'lines.0.amount',
+      'lines.1.categoryId',
+      'lines.1.amount',
+      'lines',
+      'occurredOn',
+    ]);
   });
 });

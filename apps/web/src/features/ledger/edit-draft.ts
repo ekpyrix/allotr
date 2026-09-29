@@ -1,4 +1,9 @@
-import { formatMoneyInput, type TransactionView } from '@allotr/shared';
+import {
+  formatMoneyInput,
+  money,
+  type Money,
+  type TransactionView,
+} from '@allotr/shared';
 import type { EntryKind, QuickEntryDraft } from '@/features/quick-entry/draft';
 
 // An existing entry as a quick entry draft, so edit uses the same form and
@@ -28,6 +33,7 @@ export function draftFromEntry(
     categoryId: entry.categoryId ?? '',
     foreign: '',
     foreignCurrency: '',
+    lines: [],
   };
 
   if (entry.kind === 'transfer') {
@@ -47,14 +53,24 @@ export function draftFromEntry(
   // The account side, and the category side on the expenses or income
   // account: in another currency when the entry recorded a foreign price.
   const account = entry.kind === 'expense' ? out : into;
-  const priced = entry.postings.find(
+  // One posting per category; more than one is a split.
+  const categorySide = entry.postings.filter(
     (p) => p.systemRole === (entry.kind === 'expense' ? 'expenses' : 'income'),
   );
+  // Unsigned: an income's category side is negative.
+  const unsigned = (m: Money) => money(Math.abs(m.amountMinor), m.currency);
+  const sideCurrency = categorySide[0]?.amount.currency;
   const foreign =
     account !== undefined &&
-    priced !== undefined &&
-    priced.amount.currency !== account.amount.currency
-      ? priced.amount
+    sideCurrency !== undefined &&
+    sideCurrency !== account.amount.currency
+      ? money(
+          categorySide.reduce(
+            (sum, p) => sum + Math.abs(p.amount.amountMinor),
+            0,
+          ),
+          sideCurrency,
+        )
       : undefined;
   return {
     ...base,
@@ -63,6 +79,15 @@ export function draftFromEntry(
     accountId: account?.accountId ?? '',
     toAccountId: '',
     received: '',
+    ...(categorySide.length > 1
+      ? {
+          categoryId: '',
+          lines: categorySide.map((p) => ({
+            categoryId: p.categoryId ?? '',
+            amount: formatMoneyInput(unsigned(p.amount), locale),
+          })),
+        }
+      : {}),
     ...(foreign === undefined
       ? {}
       : {

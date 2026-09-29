@@ -15,7 +15,10 @@ const accounts = [
   { id: 'a-everyday', name: 'Everyday' },
   { id: 'a-savings', name: 'Savings' },
 ] as AccountView[];
-const categories = [{ id: 'c-food', name: 'Food' }] as CategoryView[];
+const categories = [
+  { id: 'c-food', name: 'Food' },
+  { id: 'c-fun', name: 'Fun' },
+] as CategoryView[];
 
 function entry(overrides: Partial<TransactionView>): TransactionView {
   return {
@@ -50,6 +53,26 @@ const balancing = (amountMinor: number) => ({
 });
 
 describe('ledgerRows', () => {
+  it('names every line of a split, with the whole amount', () => {
+    const [row] = ledgerRows(
+      [
+        entry({
+          postings: [
+            posting('a-everyday', -8000),
+            balancing(6000),
+            { ...balancing(2000), categoryId: 'c-fun' },
+          ],
+        }),
+      ],
+      accounts,
+      categories,
+    );
+    expect(row).toMatchObject({
+      title: 'Split: Food, Fun',
+      amount: usd(-8000),
+    });
+  });
+
   it('shows an undo as its own row, signed the other way', () => {
     const rows = ledgerRows(
       [

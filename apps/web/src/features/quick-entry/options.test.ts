@@ -87,6 +87,7 @@ describe('newDraft', () => {
       received: '',
       foreign: '',
       foreignCurrency: '',
+      lines: [],
       categoryId: '',
       tagIds: [],
       note: '',

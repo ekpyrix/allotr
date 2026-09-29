@@ -73,6 +73,7 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
     received: '',
     foreign: '',
     foreignCurrency: '',
+    lines: [],
     tagIds: [],
     note: '',
     occurredOn: defaults.today,
@@ -86,7 +87,13 @@ export function switchKind(
   kind: EntryKind,
   defaults: DraftDefaults,
 ): QuickEntryDraft {
-  return { ...draft, kind, received: '', ...choicesFor(kind, defaults) };
+  return {
+    ...draft,
+    kind,
+    received: '',
+    lines: [],
+    ...choicesFor(kind, defaults),
+  };
 }
 
 /**

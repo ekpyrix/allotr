@@ -35,15 +35,43 @@ export interface QuickEntryDraft {
   readonly foreign: string;
   /** Empty when the entry has no foreign price. */
   readonly foreignCurrency: string;
-  /** Required for expenses and income, optional for transfers. */
+  /**
+   * Required for expenses and income unless split, optional for
+   * transfers. Empty while the entry is split.
+   */
   readonly categoryId: string;
+  /**
+   * A split across categories (FR-L5): empty, or two or more lines in the
+   * category side's currency, the foreign price's if there is one.
+   */
+  readonly lines: readonly SplitLineDraft[];
   readonly tagIds: readonly string[];
   readonly note: string;
   /** YYYY-MM-DD; empty leaves the day to the server. */
   readonly occurredOn: string;
 }
 
-export type DraftField = keyof QuickEntryDraft;
+export interface SplitLineDraft {
+  readonly categoryId: string;
+  /** As typed, in the category side's currency. */
+  readonly amount: string;
+}
+
+/** The server takes up to 20 lines. */
+export const MAX_SPLIT_LINES = 20;
+
+/** A form control's name: a draft field, or one control of a split line. */
+export type DraftField =
+  | Exclude<keyof QuickEntryDraft, 'lines'>
+  | 'lines'
+  | `lines.${number}.${keyof SplitLineDraft}`;
+/** The control name of one field of a split line. */
+export function lineField(
+  index: number,
+  key: keyof SplitLineDraft,
+): DraftField {
+  return `lines.${String(index)}.${key}` as DraftField;
+}
 export type DraftErrorKey = Extract<MessageKey, `quickEntry.errors.${string}`>;
 export type DraftErrors = Partial<Record<DraftField, DraftErrorKey>>;
 
@@ -66,15 +94,110 @@ export function draftErrorText(key: DraftErrorKey, example: string): string {
 }
 
 /** Fields in form order, for moving focus to the first invalid one. */
-export const FIELD_ORDER: readonly DraftField[] = [
-  'amount',
-  'accountId',
-  'toAccountId',
-  'received',
-  'foreign',
-  'categoryId',
-  'occurredOn',
-];
+export function fieldOrder(draft: QuickEntryDraft): DraftField[] {
+  return [
+    'amount',
+    'accountId',
+    'toAccountId',
+    'received',
+    'foreign',
+    'categoryId',
+    ...draft.lines.flatMap((_, i) => [
+      lineField(i, 'categoryId'),
+      lineField(i, 'amount'),
+    ]),
+    'lines',
+    'occurredOn',
+  ];
+}
+
+export function isSplit(draft: QuickEntryDraft): boolean {
+  return draft.lines.length > 0;
+}
+
+/** Splits the entry: its category becomes the first of two lines. */
+export function startSplit(draft: QuickEntryDraft): QuickEntryDraft {
+  return {
+    ...draft,
+    categoryId: '',
+    lines: [
+      { categoryId: draft.categoryId, amount: '' },
+      { categoryId: '', amount: '' },
+    ],
+  };
+}
+
+/** Back to one category, the first line's. */
+export function endSplit(draft: QuickEntryDraft): QuickEntryDraft {
+  return { ...draft, categoryId: draft.lines[0]?.categoryId ?? '', lines: [] };
+}
+
+export function addLine(draft: QuickEntryDraft): QuickEntryDraft {
+  return draft.lines.length >= MAX_SPLIT_LINES
+    ? draft
+    : { ...draft, lines: [...draft.lines, { categoryId: '', amount: '' }] };
+}
+
+/** A split keeps at least two lines; ending it is `endSplit`. */
+export function removeLine(
+  draft: QuickEntryDraft,
+  index: number,
+): QuickEntryDraft {
+  return draft.lines.length <= 2
+    ? draft
+    : { ...draft, lines: draft.lines.filter((_, i) => i !== index) };
+}
+
+export function updateLine(
+  draft: QuickEntryDraft,
+  index: number,
+  patch: Partial<SplitLineDraft>,
+): QuickEntryDraft {
+  return {
+    ...draft,
+    lines: draft.lines.map((line, i) =>
+      i === index ? { ...line, ...patch } : line,
+    ),
+  };
+}
+
+/** The currency split lines are in: the foreign price's, else the account's. */
+export function splitCurrency(
+  draft: QuickEntryDraft,
+  accounts: readonly AccountView[],
+): string | undefined {
+  return priced(draft)
+    ? draft.foreignCurrency
+    : accounts.find((a) => a.id === draft.accountId)?.currency;
+}
+
+// A cleared foreign price is left out, so the account's amount is the total.
+function priced(draft: QuickEntryDraft): boolean {
+  return draft.foreignCurrency !== '' && draft.foreign.trim() !== '';
+}
+
+/**
+ * What is left to assign to the lines, or null while the total cannot be
+ * read. Lines that cannot be read yet count as nothing.
+ */
+export function splitRemainder(
+  draft: QuickEntryDraft,
+  context: DraftContext,
+): Money | null {
+  const currency = splitCurrency(draft, context.accounts);
+  if (currency === undefined) return null;
+  const total = parseAmount(
+    priced(draft) ? draft.foreign : draft.amount,
+    currency,
+    context.locale,
+  );
+  if (typeof total === 'string') return null;
+  const assigned = draft.lines.reduce((sum, line) => {
+    const amount = parseAmount(line.amount, currency, context.locale);
+    return typeof amount === 'string' ? sum : sum + amount.amountMinor;
+  }, 0);
+  return money(total.amountMinor - assigned, currency);
+}
 
 export interface DraftContext {
   readonly accounts: readonly AccountView[];
@@ -169,7 +292,7 @@ export function toBody(
     };
   }
 
-  if (draft.categoryId === '')
+  if (!isSplit(draft) && draft.categoryId === '')
     errors.categoryId = 'quickEntry.errors.categoryRequired';
   // Cleared, it is left out: the entry then has no foreign price.
   const foreign =
@@ -177,6 +300,7 @@ export function toBody(
       ? undefined
       : parseAmount(draft.foreign, draft.foreignCurrency, context.locale);
   if (typeof foreign === 'string') errors.foreign = foreign;
+  const lines = splitLines(draft, account, foreign, context, errors);
   if (
     Object.keys(errors).length > 0 ||
     account === undefined ||
@@ -189,11 +313,48 @@ export function toBody(
       kind: draft.kind,
       accountId: account.id,
       amount,
-      categoryId: draft.categoryId,
+      ...(lines === undefined ? { categoryId: draft.categoryId } : { lines }),
       ...(typeof foreign === 'object' ? { foreignAmount: foreign } : {}),
       ...entry,
     },
   };
+}
+
+// A split's lines for the request, adding any errors to `errors`. The sum
+// is only checked once the total and every line can be read.
+function splitLines(
+  draft: QuickEntryDraft,
+  account: AccountView | undefined,
+  foreign: Money | DraftErrorKey | undefined,
+  context: DraftContext,
+  errors: DraftErrors,
+): { categoryId: string; amount: Money }[] | undefined {
+  if (!isSplit(draft)) return undefined;
+  const currency =
+    foreign === undefined ? account?.currency : draft.foreignCurrency;
+  const seen = new Set<string>();
+  const lines = draft.lines.map((line, i) => {
+    if (line.categoryId === '')
+      errors[lineField(i, 'categoryId')] = 'quickEntry.errors.categoryRequired';
+    else if (seen.has(line.categoryId))
+      errors[lineField(i, 'categoryId')] = 'quickEntry.errors.categoryTwice';
+    seen.add(line.categoryId);
+    if (currency === undefined) return undefined;
+    const amount = parseAmount(line.amount, currency, context.locale);
+    if (typeof amount === 'string') {
+      errors[lineField(i, 'amount')] = amount;
+      return undefined;
+    }
+    return { categoryId: line.categoryId, amount };
+  });
+  const remainder = splitRemainder(draft, context);
+  if (
+    lines.every((line) => line !== undefined) &&
+    remainder !== null &&
+    remainder.amountMinor !== 0
+  )
+    errors.lines = 'quickEntry.errors.splitMismatch';
+  return lines.filter((line) => line !== undefined);
 }
 
 export interface DraftKey {
