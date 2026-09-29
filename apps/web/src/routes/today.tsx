@@ -1,5 +1,6 @@
 import { formatMoney, type SessionUser } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { AttentionList } from '@/features/today/attention-list';
@@ -123,6 +124,11 @@ export function TodayPage({ user }: { user: SessionUser }) {
 
       <AttentionList figures={figures} locale={locale} />
       <PaceMeter figures={figures} locale={locale} />
+      <p className="mt-3">
+        <Link to="/cycle" className="font-medium underline underline-offset-4">
+          {t('today.pace.details')}
+        </Link>
+      </p>
       {entries.data === undefined ||
       accounts.data === undefined ||
       categories.data === undefined ? null : (

@@ -20,6 +20,10 @@ Made-up ledgers with hand-worked expected figures. Each directory holds:
     so only list them once every dated entry has happened.
   - `today`: any fields of `GET /v1/today`; `cycle` compares `openedOn`
     and `payday` only.
+  - `cycles`: every cycle of `GET /v1/cycles`, newest first. Each needs
+    `openedOn`; any other listed field is compared.
+    The web E2E test (`apps/web/e2e/cycles.spec.ts`) checks the
+    single-currency-month March cycle against it too.
 
 Steps run before a checkpoint at the same instant. Figures round down to
 the minor unit. Keep notes unique per day for entries a step targets.
@@ -61,3 +65,16 @@ Yen, 0 digits. Cycle 2 runs 25 Jun → 25 Jul and reserves Rent due 27 Jun until
 | after undoing the 10 Jun cinema (+2,000) | 597,000 | 0 | 597,000 | 0 | 597,000 | 22,961 | 22,961 | 22,961 |
 | after editing 28 Jun 6,000 → 4,500 | 598,500 | 0 | 598,500 | 0 | 598,500 | 23,019 | 23,019 | 23,019 |
 | after 3,000 spent today | 595,500 | 0 | 595,500 | 3,000 | 598,500 | 23,019 | 20,019 | 22,903 |
+
+### Cycles
+
+Import makes the earliest imported day the ledger's start, so each fixture
+has one closed cycle before its paycheck. Opening balances dated inside a
+cycle count as opening money, not savings.
+
+| Fixture | Cycle | Income | Spending | Left at the end | Savings change | Amended |
+|---|---|---|---|---|---|---|
+| single-currency-month | 1–24 Mar | 0 | 585.00 (45.00 + 500.00 + 12.00 + 8.00 + 20.00) | 515.00 | 100.00 | no |
+| multi-currency-month | 1–27 May | 0 | 153.00 (USD 120.00 × 0.9 + JPY 3,200 ÷ 160 + 25.00) | 1,609.50 | 300.00 | no |
+| backdated-corrections, before the steps | 1–24 Jun | 0 | 7,000 | 293,000 | 0 | no |
+| backdated-corrections, after the steps | 1–24 Jun | 0 | 17,000 (5,000 + the 15 Jun 12,000; the cinema undone) | 283,000 | 0 | yes: the 15 Jun entry and the cinema undo were recorded on 29 Jun |

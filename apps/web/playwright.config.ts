@@ -24,6 +24,7 @@ const specs = [
   'accounts',
   'settings',
   'splits',
+  'cycles',
 ];
 
 const projects = sizes.flatMap((size, i) =>

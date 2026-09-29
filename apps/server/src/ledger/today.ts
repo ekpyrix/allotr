@@ -8,7 +8,7 @@ import { localDateIn, type TodayView } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { loadBills } from './bills.ts';
-import { readLedgerSettings } from './ledger-settings.ts';
+import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
 import { loadChart, loadLedger, type Db } from './store.ts';
 
@@ -38,31 +38,39 @@ async function paycheckCategories(
   return new Set(rows.map((row) => categoryId(row.id)));
 }
 
-async function loadView(
+/** Everything core's projections read, and the user's time zone. */
+export async function loadView(
   db: Db,
   userId: string,
 ): Promise<{ view: LedgerView; timeZone: string }> {
-  const [chart, settings, user, paychecks, bills, rates] = await Promise.all([
-    loadChart(db, userId),
-    readLedgerSettings(db, userId),
-    db
-      .selectFrom('users')
-      .select('created_at')
-      .where('id', '=', userId)
-      .executeTakeFirstOrThrow(),
-    paycheckCategories(db, userId),
-    loadBills(db, userId),
-    loadRates(db, userId),
-  ]);
+  const [chart, settings, user, paychecks, bills, rates, importedFrom] =
+    await Promise.all([
+      loadChart(db, userId),
+      readLedgerSettings(db, userId),
+      db
+        .selectFrom('users')
+        .select('created_at')
+        .where('id', '=', userId)
+        .executeTakeFirstOrThrow(),
+      paycheckCategories(db, userId),
+      loadBills(db, userId),
+      loadRates(db, userId),
+      readLedgerStart(db, userId),
+    ]);
+  const joinedOn = localDateIn(new Date(user.created_at), settings.timeZone);
   const view: LedgerView = {
     chart,
     ledger: await loadLedger(db, userId, chart),
     paycheckCategories: paychecks,
     settings: {
       defaultCurrency: settings.defaultCurrency,
-      // The first cycle opens on the day the user joined (docs/domain.md
-      // "Cycles"); imported paychecks before it move the start earlier.
-      startedOn: localDateIn(new Date(user.created_at), settings.timeZone),
+      // The first cycle opens on the day the user joined, or with the
+      // imported history (docs/domain.md "Cycles"); imported paychecks
+      // before it move the start earlier still.
+      startedOn:
+        importedFrom !== null && importedFrom < joinedOn
+          ? importedFrom
+          : joinedOn,
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
     },

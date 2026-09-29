@@ -12,6 +12,7 @@ import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { LoadError } from '@/components/load-error';
 import { UpdatePrompt } from '@/components/update-prompt';
+import { validateCycleSearch } from '@/features/cycles/search';
 import {
   validateLedgerSearch,
   type LedgerSearch,
@@ -20,9 +21,12 @@ import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
 import { AccountsPage } from './routes/accounts.tsx';
+import { CyclePage } from './routes/cycle.tsx';
+import { HistoryPage } from './routes/history.tsx';
 import { InvitePage } from './routes/invite.tsx';
 import { LedgerPage } from './routes/ledger.tsx';
 import { OnboardingPage } from './routes/onboarding.tsx';
+import { SavingsPage } from './routes/savings.tsx';
 import { SettingsPage } from './routes/settings.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
@@ -169,6 +173,30 @@ const accountsRoute = createRoute({
   component: AccountsPage,
 });
 
+// The cycle, history and savings views hang off Today and Accounts rather
+// than the nav.
+const cycleRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/cycle',
+  validateSearch: validateCycleSearch,
+  component: function Cycle() {
+    const { start } = cycleRoute.useSearch();
+    return <CyclePage start={start} />;
+  },
+});
+
+const historyRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/history',
+  component: HistoryPage,
+});
+
+const savingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/savings',
+  component: SavingsPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
@@ -183,7 +211,15 @@ const routeTree = rootRoute.addChildren([
   onboardingRoute,
   signInRoute,
   inviteRoute,
-  appRoute.addChildren([todayRoute, ledgerRoute, accountsRoute, settingsRoute]),
+  appRoute.addChildren([
+    todayRoute,
+    ledgerRoute,
+    accountsRoute,
+    cycleRoute,
+    historyRoute,
+    savingsRoute,
+    settingsRoute,
+  ]),
 ]);
 
 export function createAppRouter(queryClient: QueryClient) {

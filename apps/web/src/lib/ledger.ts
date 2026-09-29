@@ -53,6 +53,26 @@ export const todayQuery = queryOptions({
   queryFn: () => call(endpoints.today),
 });
 
+// Cycles are figures like today's: they sit under ['today'], so whatever
+// refreshes today's figures refreshes them too.
+
+/** Every cycle, the current one first. */
+export const cyclesQuery = queryOptions({
+  queryKey: ['today', 'cycles'],
+  queryFn: () => call(endpoints.cycles),
+});
+
+/** One cycle in detail; waits while the day it opened is not known yet. */
+export function cycleQuery(openedOn: LocalDate | undefined) {
+  return queryOptions({
+    queryKey: ['today', 'cycles', openedOn],
+    queryFn:
+      openedOn === undefined
+        ? skipToken
+        : () => call(endpoints.cycle, { params: { openedOn } }),
+  });
+}
+
 /**
  * Entries dated `day`, newest first; a day rarely has more than a page.
  * Waits while the day is not known yet.

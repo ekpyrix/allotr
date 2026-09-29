@@ -4,6 +4,7 @@ import {
   accountListSchema,
   bundleSchema,
   categoryListSchema,
+  cycleListSchema,
   localDateSchema,
   moneySchema,
   tagListSchema,
@@ -60,11 +61,27 @@ const expectedTodaySchema = z.strictObject({
   missingRates: z.array(z.string()).optional(),
 });
 
+// A cycle in GET /v1/cycles; the paycheck ids are not known to a fixture.
+const expectedCycleSchema = z.strictObject({
+  openedOn: localDateSchema,
+  closedOn: localDateSchema.nullable().optional(),
+  lastDay: localDateSchema.optional(),
+  payday: localDateSchema.optional(),
+  income: moneySchema.optional(),
+  spending: moneySchema.optional(),
+  leftover: moneySchema.optional(),
+  savingsNetChange: moneySchema.optional(),
+  amended: z.boolean().optional(),
+  missingRates: z.array(z.string()).optional(),
+});
+
 const checkpointSchema = z.strictObject({
   at: instantSchema,
   /** Every unarchived account by name; balances are all-time. */
   balances: z.record(z.string(), moneySchema).optional(),
   today: expectedTodaySchema.optional(),
+  /** Every cycle, newest first, as GET /v1/cycles lists them. */
+  cycles: z.array(expectedCycleSchema).optional(),
 });
 
 const time = (at: string) => Date.parse(at);
@@ -298,5 +315,20 @@ export async function checkCheckpoint(
       Object.keys(checkpoint.today).map((field) => [field, actual[field]]),
     );
     expect(picked, 'today').toEqual(checkpoint.today);
+  }
+  if (checkpoint.cycles !== undefined) {
+    const { cycles } = cycleListSchema.parse(
+      (await client.get('/v1/cycles')).body,
+    );
+    const picked = cycles.map((cycle, i) => {
+      const expected = checkpoint.cycles?.[i] ?? { openedOn: '' };
+      return Object.fromEntries(
+        Object.keys(expected).map((field) => [
+          field,
+          (cycle as Record<string, unknown>)[field],
+        ]),
+      );
+    });
+    expect(picked, 'cycles').toEqual(checkpoint.cycles);
   }
 }

@@ -21,7 +21,7 @@ import {
   resolveBundle,
   type ExistingCategory,
 } from './import-resolve.ts';
-import { applyLedgerSettings } from './ledger-settings.ts';
+import { applyLedgerSettings, recordLedgerStart } from './ledger-settings.ts';
 import { upsertRate } from './rates.ts';
 import type { Db } from './store.ts';
 import { createTag, listTags } from './tags.ts';
@@ -282,6 +282,10 @@ export async function importBundle(
         billPayments += 1;
       }
     }
+
+    // The first cycle opens with the imported history, not on the day of
+    // the import.
+    await recordLedgerStart(trx, userId, now);
 
     return {
       accounts: bundle.accounts.length,

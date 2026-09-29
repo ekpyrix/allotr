@@ -19,10 +19,11 @@ import {
 } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
 import { availableOn, dailyFiguresOn } from './daily.ts';
+import { cycleReports } from './history.ts';
 import { cycleSnapshot } from './snapshot.ts';
 import { billId, type ExchangeRate, type LedgerView } from './types.ts';
 
-// Invariants 5 and 8 and FR-C6 over random ledgers spanning three months,
+// Invariants 5 and 8, FR-C6 and amended history over random ledgers spanning three months,
 // with paychecks, bills, other currencies and undos. fast-check prints the
 // seed of any failure.
 
@@ -284,6 +285,50 @@ describe('replay properties', () => {
           expect(now.todayAllowance.amountMinor).toBe(
             Math.floor(now.startOfDay.amountMinor / now.daysLeft),
           );
+        },
+      ),
+    );
+  });
+
+  it('marks only the closed cycle a later entry is dated in as amended', () => {
+    fc.assert(
+      fc.property(
+        viewArb,
+        todayArb,
+        dayArb,
+        amountArb,
+        (view, today, date, amount) => {
+          fc.pre(date <= today);
+          // An import records every row at one instant: nothing is amended.
+          const imported = {
+            ...view,
+            ledger: view.ledger.map((t) => ({
+              ...t,
+              createdAt: '2026-05-01T00:00:00.000Z',
+            })),
+          };
+          for (const report of cycleReports(imported, today)) {
+            expect(report.amendments).toEqual([]);
+          }
+
+          const late = expense(
+            chart,
+            {
+              id: transactionId('late'),
+              occurredOn: date,
+              createdAt: '2026-06-01T00:00:00.000Z',
+            },
+            { accountId: card, amount: money(amount, 'USD'), categoryId: food },
+          );
+          const after = { ...imported, ledger: [...imported.ledger, late] };
+          for (const report of cycleReports(after, today)) {
+            const { openedOn, closedOn } = report.cycle;
+            const holds =
+              closedOn !== null && date >= openedOn && date < closedOn;
+            expect(report.amendments.map((a) => a.transactionId)).toEqual(
+              holds ? ['late'] : [],
+            );
+          }
         },
       ),
     );

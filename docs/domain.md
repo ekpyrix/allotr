@@ -135,8 +135,22 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   irregular income: income lands in *ready to assign* and funds each period.
 - The first cycle opens on the day the user joined, from opening balances,
   or with an older paycheck from imported history. Back-dated spending never moves it.
+- The first cycle opens on the day the user joined. An imported history
+  with a paycheck starts on its earliest imported day instead, if that is
+  earlier.
 - Snapshots are computed from the ledger when read, never stored, so a
   back-dated entry amends a closed cycle's snapshot too.
+- A closed cycle is *amended* when an entry dated in it was recorded after
+  the paycheck that closed it. This covers new entries, undos and edits.
+  The close is when the first paycheck dated that day was recorded, so
+  editing the paycheck later does not hide an amendment. Entries imported
+  together share one recording time, so they never count.
+- A snapshot's opening balances include accounts opened during the cycle.
+  An opening balance is money that was already there, so it is never
+  counted as income or as savings.
+- Snapshot figures are in the default currency at the rate on the cycle's
+  last day. Spending by category counts every expense, whichever account
+  paid it.
 
 ## Policies
 

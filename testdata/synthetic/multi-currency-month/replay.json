@@ -50,7 +50,27 @@
         "leftToday": { "amountMinor": 10998, "currency": "EUR" },
         "liveDaily": { "amountMinor": 10998, "currency": "EUR" },
         "missingRates": []
-      }
+      },
+      "cycles": [
+        {
+          "openedOn": "2026-05-28",
+          "closedOn": null,
+          "income": { "amountMinor": 180000, "currency": "EUR" },
+          "spending": { "amountMinor": 0, "currency": "EUR" },
+          "leftover": { "amountMinor": 340950, "currency": "EUR" },
+          "savingsNetChange": { "amountMinor": 0, "currency": "EUR" },
+          "amended": false
+        },
+        {
+          "openedOn": "2026-05-01",
+          "closedOn": "2026-05-28",
+          "income": { "amountMinor": 0, "currency": "EUR" },
+          "spending": { "amountMinor": 15300, "currency": "EUR" },
+          "leftover": { "amountMinor": 160950, "currency": "EUR" },
+          "savingsNetChange": { "amountMinor": 30000, "currency": "EUR" },
+          "amended": false
+        }
+      ]
     }
   ]
 }

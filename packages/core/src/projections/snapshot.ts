@@ -26,7 +26,10 @@ export type CycleSnapshot = Readonly<{
   cycle: Cycle;
   /** The last day it covers: the day before it closed, or today. */
   lastDay: LocalDate;
-  /** At the end of the day before it opened. */
+  /**
+   * At the end of the day before it opened, plus accounts opened during
+   * it, so an opening balance is never counted as saved.
+   */
   opening: GroupBalances;
   /** At the end of `lastDay`. */
   closing: GroupBalances;
@@ -68,6 +71,8 @@ export function cycleSnapshot(
   view: LedgerView,
   cycle: Cycle,
   today: LocalDate,
+  /** `cyclesOf(view, today)`, when the caller already has it. */
+  cycles: readonly Cycle[] = cyclesOf(view, today),
 ): CycleSnapshot {
   const lastDay = cycle.closedOn === null ? today : addDays(cycle.closedOn, -1);
   const inCycle = view.ledger.filter(
@@ -89,14 +94,29 @@ export function cycleSnapshot(
       ),
     );
 
+  // An account opened during the cycle brings money that was already
+  // there, not income or savings: its opening entry (and any undo of it)
+  // counts toward the opening balances.
+  const openingDay = addDays(cycle.openedOn, -1);
+  const openings = new Set(
+    inCycle.filter((t) => t.kind === 'opening').map((t) => t.id),
+  );
   const opening = budgetGroupBalances(
     view.chart,
-    view.ledger,
-    addDays(cycle.openedOn, -1),
+    view.ledger.flatMap((t) => {
+      if (t.occurredOn < cycle.openedOn) return [t];
+      const opens =
+        openings.has(t.id) ||
+        (t.reversesId !== null && openings.has(t.reversesId));
+      return opens && t.occurredOn <= lastDay
+        ? [{ ...t, occurredOn: openingDay }]
+        : [];
+    }),
+    openingDay,
   );
   const closing = budgetGroupBalances(view.chart, view.ledger, lastDay);
   const policies = policiesOf(view);
-  const leftover = [...availableSums(view, cyclesOf(view, today), lastDay)]
+  const leftover = [...availableSums(view, cycles, lastDay)]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([currency, sum]): Leftover => {
       const amount = money(Number(sum), currency);
