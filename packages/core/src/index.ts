@@ -95,6 +95,13 @@ export {
   type Settlement,
 } from './projections/policies.ts';
 export {
+  amendmentsOf,
+  cycleReports,
+  type Amendment,
+  type CycleReport,
+  type GroupTotals,
+} from './projections/history.ts';
+export {
   cycleSnapshot,
   type CategoryTotal,
   type CycleSnapshot,

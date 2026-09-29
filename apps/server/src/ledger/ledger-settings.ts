@@ -63,6 +63,50 @@ export async function readLedgerSettings(
   };
 }
 
+const startedOnKey = 'ledger_started_on';
+
+/**
+ * The earliest day of imported history, if the ledger was imported. The
+ * first cycle opens then when it is before the day the user joined
+ * (docs/domain.md "Cycles"). It is internal, not a user setting.
+ */
+export async function readLedgerStart(
+  db: Db,
+  userId: string,
+): Promise<LocalDate | null> {
+  const row = await db
+    .selectFrom('user_settings')
+    .select('value')
+    .where('user_id', '=', userId)
+    .where('key', '=', startedOnKey)
+    .executeTakeFirst();
+  return parsed(localDateSchema, row?.value);
+}
+
+/** Records the start of imported history: its earliest dated entry. */
+export async function recordLedgerStart(
+  db: Db,
+  userId: string,
+  now: Date,
+): Promise<void> {
+  const earliest = await db
+    .selectFrom('transactions')
+    .select((eb) => eb.fn.min('occurred_on').as('day'))
+    .where('user_id', '=', userId)
+    .executeTakeFirst();
+  const day = earliest?.day ?? null;
+  if (day === null) return;
+  const value = JSON.stringify(day);
+  const at = now.toISOString();
+  await db
+    .insertInto('user_settings')
+    .values({ user_id: userId, key: startedOnKey, value, updated_at: at })
+    .onConflict((oc) =>
+      oc.columns(['user_id', 'key']).doUpdateSet({ value, updated_at: at }),
+    )
+    .execute();
+}
+
 export type LedgerSettingsPatch = Readonly<{
   locale?: string | undefined;
   timeZone?: string | undefined;

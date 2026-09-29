@@ -381,6 +381,70 @@ export const todaySchema = z.object({
 });
 export type TodayView = z.infer<typeof todaySchema>;
 
+export const cycleParamSchema = z.object({ openedOn: localDateSchema });
+
+const groupTotalsSchema = z.object({ on: moneySchema, off: moneySchema });
+
+/**
+ * A cycle's snapshot (FR-C1), computed from the ledger when read. Amounts
+ * are in the default currency at the rate on `lastDay`.
+ */
+export const cycleSummarySchema = z.object({
+  openedOn: localDateSchema,
+  /** The paycheck that opened it; null for the first cycle. */
+  openedBy: idSchema.nullable(),
+  /** The day the next cycle opened; null for the current cycle. */
+  closedOn: localDateSchema.nullable(),
+  /** The last day it covers: the day before it closed, or today. */
+  lastDay: localDateSchema,
+  payday: localDateSchema,
+  income: moneySchema,
+  /** Every entry in an expense category, whichever account paid. */
+  spending: moneySchema,
+  /** Available budget at the end of `lastDay`. */
+  leftover: moneySchema,
+  /** Change in the off-budget total over the cycle. */
+  savingsNetChange: moneySchema,
+  /** An entry dated in it was recorded after it closed. */
+  amended: z.boolean(),
+  /** Currencies without a rate on `lastDay`, left out of the figures. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CycleSummaryView = z.infer<typeof cycleSummarySchema>;
+
+export const cycleListSchema = z.object({
+  /** Newest first; the current cycle comes first. */
+  cycles: z.array(cycleSummarySchema),
+});
+export type CycleListView = z.infer<typeof cycleListSchema>;
+
+const categoryTotalSchema = z.object({
+  /** A merged category counts as the one it was merged into. */
+  categoryId: idSchema.nullable(),
+  amount: moneySchema,
+});
+
+export const cycleDetailSchema = cycleSummarySchema.extend({
+  /** At the end of the day before it opened, plus accounts opened during it. */
+  opening: groupTotalsSchema,
+  /** At the end of `lastDay`. */
+  closing: groupTotalsSchema,
+  /** Largest first. */
+  incomeByCategory: z.array(categoryTotalSchema),
+  spendingByCategory: z.array(categoryTotalSchema),
+  /** Entries dated in the cycle that were recorded after it closed. */
+  amendments: z.array(
+    z.object({
+      transactionId: idSchema,
+      kind: transactionKindSchema,
+      occurredOn: localDateSchema,
+      recordedAt: z.iso.datetime(),
+      note: z.string().nullable(),
+    }),
+  ),
+});
+export type CycleDetailView = z.infer<typeof cycleDetailSchema>;
+
 export const exchangeRateSchema = z.object({
   id: idSchema,
   base: currencyCodeSchema,
