@@ -187,7 +187,7 @@ are shared by all strategies.
 |---|---|
 | Reversing the paycheck that opened the cycle | The cycle merges back into the previous one after a confirmation listing what is undone; the old snapshot is marked superseded. |
 | Back-dated entry into a closed cycle | It belongs to the cycle of its date. That snapshot is recomputed and marked amended; the difference carries into the current cycle. Completed sweeps are not redone. |
-| Archiving an account with a balance | Not allowed; the user transfers the balance or writes it off first. |
+| Archiving an account with a balance | Not allowed; the user transfers the balance or writes it off first. A write-off from an on-budget account counts as spending and a transfer to an off-budget account lowers the allowance, like any other entry; before either, the user is told how much today's figure drops, worked out by the same projection with the entry added. |
 | Switching an account on/off-budget | Effective today, recorded as a dated system transaction. |
 | Deleting a category in use | Must be merged into another category. |
 | Editing any past entry | Reversal plus a new entry. |

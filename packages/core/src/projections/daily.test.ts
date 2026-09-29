@@ -1,11 +1,18 @@
 import { currencyCode, money, parseRate } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { budgetSwitch, transfer } from '../ledger/build.ts';
+import { budgetSwitch, opening, transfer, writeOff } from '../ledger/build.ts';
 import { reverse } from '../ledger/reverse.ts';
 import { meta } from '../ledger/testing.ts';
-import { availableOn, dailyFigures, dailyFiguresOn } from './daily.ts';
+import { accountId } from '../ledger/types.ts';
+import {
+  availableOn,
+  dailyFigures,
+  dailyFiguresOn,
+  leftTodayDrop,
+} from './daily.ts';
 import {
   card,
+  cash,
   chart,
   day,
   openingUsd,
@@ -409,5 +416,113 @@ describe('availableOn', () => {
     expect(availableOn(v, day('2026-03-05'), day('2026-03-20')).amount).toEqual(
       usd(289000),
     );
+  });
+});
+
+describe('leftTodayDrop', () => {
+  // $3,100.00 on budget, 21 days left on the 11th: $147.61 a day.
+  const today = day('2026-03-11');
+  const ledger = [
+    paycheck('2026-03-01', 310000),
+    openingUsd('2026-03-01', 50000, savings),
+  ];
+
+  it('counts a write-off from an on-budget account as spending', () => {
+    const entry = writeOff(chart, meta('2026-03-11'), {
+      accountId: card,
+      balance: usd(25000),
+    });
+    expect(leftTodayDrop(view(ledger), today, entry)).toEqual(usd(25000));
+  });
+
+  it('lowers the allowance for a transfer to savings', () => {
+    const entry = transfer(chart, meta('2026-03-11'), {
+      fromId: card,
+      toId: savings,
+      sent: usd(100000),
+    });
+    // $3,100.00 / 21 = $147.61 before, $2,100.00 / 21 = $100.00 after.
+    expect(leftTodayDrop(view(ledger), today, entry)).toEqual(usd(4761));
+  });
+
+  it('matches the figures before and after the entry is recorded', () => {
+    const entry = transfer(chart, meta('2026-03-11'), {
+      fromId: card,
+      toId: savings,
+      sent: usd(12345),
+    });
+    const before = dailyFiguresOn(view(ledger), today).leftToday;
+    const after = dailyFiguresOn(view([...ledger, entry]), today).leftToday;
+    expect(leftTodayDrop(view(ledger), today, entry)).toEqual(
+      usd(before.amountMinor - after.amountMinor),
+    );
+  });
+
+  it('is zero for a write-off from savings or a transfer within the budget', () => {
+    const fromSavings = writeOff(chart, meta('2026-03-11'), {
+      accountId: savings,
+      balance: usd(50000),
+    });
+    const withinBudget = transfer(chart, meta('2026-03-11'), {
+      fromId: card,
+      toId: cash,
+      sent: usd(100000),
+    });
+    expect(leftTodayDrop(view(ledger), today, fromSavings)).toEqual(usd(0));
+    expect(leftTodayDrop(view(ledger), today, withinBudget)).toEqual(usd(0));
+  });
+
+  it('is negative for a transfer out of savings', () => {
+    const entry = transfer(chart, meta('2026-03-11'), {
+      fromId: savings,
+      toId: card,
+      sent: usd(21000),
+    });
+    // $3,310.00 / 21 = $157.61.
+    expect(leftTodayDrop(view(ledger), today, entry)).toEqual(usd(-1000));
+  });
+
+  it('converts write-offs in 0- and 3-digit currencies to the default one', () => {
+    const yen = accountId('card-JPY');
+    const dinar = accountId('card-KWD');
+    const withForeign = [
+      ...ledger,
+      opening(chart, meta('2026-03-01'), {
+        accountId: yen,
+        amount: money(1500, 'JPY'),
+      }),
+      opening(chart, meta('2026-03-01'), {
+        accountId: dinar,
+        amount: money(1500, 'KWD'),
+      }),
+    ];
+    const rates = [
+      {
+        base: currencyCode('JPY'),
+        quote: currencyCode('USD'),
+        rate: parseRate('0.0067'),
+        asOf: day('2026-03-01'),
+      },
+      {
+        base: currencyCode('KWD'),
+        quote: currencyCode('USD'),
+        rate: parseRate('3.25'),
+        asOf: day('2026-03-01'),
+      },
+    ];
+    const rated = view(withForeign, { rates });
+    const yenOff = writeOff(chart, meta('2026-03-11'), {
+      accountId: yen,
+      balance: money(1500, 'JPY'),
+    });
+    const dinarOff = writeOff(chart, meta('2026-03-11'), {
+      accountId: dinar,
+      balance: money(1500, 'KWD'),
+    });
+    // ¥1,500 is $10.05; KWD 1.500 is $4.875, rounded half to even.
+    expect(leftTodayDrop(rated, today, yenOff)).toEqual(usd(1005));
+    expect(leftTodayDrop(rated, today, dinarOff)).toEqual(usd(488));
+    // Without a rate the currency is left out of the figure entirely.
+    expect(leftTodayDrop(view(withForeign), today, yenOff)).toEqual(usd(0));
   });
 });

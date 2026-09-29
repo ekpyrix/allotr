@@ -2,6 +2,7 @@ import {
   formatMoney,
   money,
   type AccountListView,
+  type ArchiveImpactView,
   type TodayView,
 } from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
@@ -48,6 +49,16 @@ async function accounts(page: Page): Promise<AccountListView> {
 
 async function today(page: Page): Promise<TodayView> {
   return (await (await page.request.get('/v1/today')).json()) as TodayView;
+}
+
+async function archiveImpact(
+  page: Page,
+  name: string,
+): Promise<ArchiveImpactView> {
+  const id = (await accounts(page)).accounts.find((a) => a.name === name)?.id;
+  return (await (
+    await page.request.get(`/v1/accounts/${id ?? ''}/archive-impact`)
+  ).json()) as ArchiveImpactView;
 }
 
 const section = (page: Page, name: 'On budget' | 'Off budget') =>
@@ -212,13 +223,29 @@ test('archiving an account with a balance goes through a transfer, then archives
   await expect(
     dialog.getByLabel('Transferring it to another account'),
   ).toBeChecked();
-  await expect(dialog.getByLabel('Transfer to')).toHaveValue(
+  const euroSavings =
     (await accounts(page)).accounts.find((a) => a.name === 'Euro savings')
-      ?.id ?? '',
+      ?.id ?? '';
+  await expect(dialog.getByLabel('Transfer to')).toHaveValue(euroSavings);
+
+  // Moving on-budget euros to savings lowers today's figure, and says so
+  // with the amount from the server's projection.
+  const drop = (await archiveImpact(page, 'Travel')).transfers.find(
+    (t) => t.toAccountId === euroSavings,
+  )?.leftTodayDrop;
+  if (drop === undefined) throw new Error('no impact for Euro savings');
+  expect(drop.amountMinor).toBeGreaterThan(0);
+  const confirm = dialog.getByRole('button', { name: 'Transfer and archive' });
+  await expect(confirm).toHaveAccessibleDescription(
+    `From today, the €200.00 counts as savings in Euro savings and no longer adds to what you can spend. Today’s figure drops by ${formatMoney(drop, 'en-US')}.`,
   );
   await expectAccessible(page);
-  await dialog.getByRole('button', { name: 'Transfer and archive' }).click();
+  const before = await today(page);
+  await confirm.click();
   await expect(dialog).toBeHidden();
+  expect((await today(page)).leftToday).toEqual(
+    money(before.leftToday.amountMinor - drop.amountMinor, 'USD'),
+  );
 
   await expect(row(page, 'Travel')).toHaveCount(0);
   await expect(page.getByText('Travel archived.')).toBeAttached();
@@ -260,6 +287,45 @@ test('an account at zero balance archives after a plain confirm', async ({
   await expect(dialog).toBeHidden();
   await expect(row(page, 'Old wallet')).toHaveCount(0);
   await expect(page.getByText('Archived (2 accounts)')).toBeVisible();
+});
+
+test('writing off an on-budget balance counts as spending and says how much today’s figure drops', async ({
+  page,
+}) => {
+  await page.goto('/accounts');
+  await createAccount(page, {
+    name: 'Pocket cash',
+    currency: 'USD',
+    balance: '40',
+  });
+  await row(page, 'Pocket cash')
+    .getByRole('button', { name: 'Archive' })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Archive Pocket cash?' });
+  await dialog.getByLabel('Writing it off').check();
+
+  const { writeOff } = await archiveImpact(page, 'Pocket cash');
+  expect(writeOff.leftTodayDrop).toEqual(money(4_000, 'USD'));
+  const confirm = dialog.getByRole('button', { name: 'Write off and archive' });
+  await expect(confirm).toHaveAccessibleDescription(
+    'It counts as spending today, so today’s figure drops by $40.00.',
+  );
+  await expectAccessible(page);
+
+  const before = await today(page);
+  await confirm.click();
+  await expect(dialog).toBeHidden();
+  const after = await today(page);
+  expect(after.leftToday).toEqual(
+    money(before.leftToday.amountMinor - 4_000, 'USD'),
+  );
+  expect(after.spentToday).toEqual(
+    money(before.spentToday.amountMinor + 4_000, 'USD'),
+  );
+  await page.getByRole('link', { name: 'Today' }).first().click();
+  await expect(page.getByTestId('left-today')).toHaveText(
+    formatMoney(after.leftToday, 'en-US'),
+  );
 });
 
 test('reconciling an on-budget account records a match, then adjusts a difference and changes Today', async ({

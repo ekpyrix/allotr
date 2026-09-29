@@ -9,6 +9,7 @@ import {
 } from '@allotr/shared';
 import type { TransactionId } from '../ledger/types.ts';
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
+import type { Transaction } from '../ledger/types.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
 import { defaultPolicies, dueDates, type Policies } from './policies.ts';
 import { totalOn } from './rates.ts';
@@ -274,4 +275,25 @@ export function dailyFiguresOn(
       ]),
     ].sort(),
   };
+}
+
+/**
+ * How much recording `entry` would lower today's "left today" figure, in
+ * the default currency; negative when it would raise it. The figures come
+ * from the same projection before and after, so an entry is described
+ * exactly as it will count: a write-off from an on-budget account is
+ * spending, a transfer to savings lowers the allowance (docs/domain.md
+ * "Daily usable"). `view.chart` must hold every account the entry posts to.
+ */
+export function leftTodayDrop(
+  view: LedgerView,
+  today: LocalDate,
+  entry: Transaction,
+): Money {
+  const before = dailyFiguresOn(view, today).leftToday;
+  const after = dailyFiguresOn(
+    { ...view, ledger: [...view.ledger, entry] },
+    today,
+  ).leftToday;
+  return minus(before, after);
 }
