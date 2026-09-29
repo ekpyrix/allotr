@@ -7,7 +7,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { TransactionId } from '../ledger/types.ts';
+import type { AccountId, TransactionId } from '../ledger/types.ts';
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
@@ -27,14 +27,50 @@ import type {
 // default currency (ADR 0010). Figures for any day come from the same
 // functions, so a back-dated entry corrects past and present alike.
 
-type Sums = Map<CurrencyCode, bigint>;
+export type Sums = Map<CurrencyCode, bigint>;
 
-function add(sums: Sums, currency: CurrencyCode, amount: bigint): void {
+export function add(sums: Sums, currency: CurrencyCode, amount: bigint): void {
   sums.set(currency, (sums.get(currency) ?? 0n) + amount);
 }
 
 export function policiesOf(view: LedgerView): Policies {
   return { ...defaultPolicies, ...view.policies };
+}
+
+/**
+ * On-budget balances at the end of `date`, per currency. `balances` may be
+ * passed in when the caller already has them for that day.
+ */
+export function onBudgetSums(
+  view: LedgerView,
+  date: LocalDate,
+  balances: ReadonlyMap<AccountId, Money> = accountBalances(view.ledger, date),
+): Sums {
+  const groups = budgetGroupsOn(view.chart, view.ledger, date);
+  const sums: Sums = new Map();
+  for (const [id, balance] of balances) {
+    if (groups.get(id) === 'on') {
+      add(sums, balance.currency, BigInt(balance.amountMinor));
+    }
+  }
+  return sums;
+}
+
+/** On-budget sums less the bills reserved and unpaid at the end of `date`. */
+export function lessReserved(
+  view: LedgerView,
+  cycles: readonly Cycle[],
+  date: LocalDate,
+  onBudget: Sums,
+): Sums {
+  const sums: Sums = new Map(onBudget);
+  const reserved = policiesOf(view).bills.reserved(
+    view.bills,
+    billWindow(cycleOn(cycles, date)),
+    date,
+  );
+  for (const [currency, amount] of reserved) add(sums, currency, -amount);
+  return sums;
 }
 
 /** On-budget balances minus unpaid reserved bills, per currency. */
@@ -43,20 +79,7 @@ export function availableSums(
   cycles: readonly Cycle[],
   date: LocalDate,
 ): Sums {
-  const groups = budgetGroupsOn(view.chart, view.ledger, date);
-  const sums: Sums = new Map();
-  for (const [id, balance] of accountBalances(view.ledger, date)) {
-    if (groups.get(id) === 'on') {
-      add(sums, balance.currency, BigInt(balance.amountMinor));
-    }
-  }
-  const reserved = policiesOf(view).bills.reserved(
-    view.bills,
-    billWindow(cycleOn(cycles, date)),
-    date,
-  );
-  for (const [currency, amount] of reserved) add(sums, currency, -amount);
-  return sums;
+  return lessReserved(view, cycles, date, onBudgetSums(view, date));
 }
 
 /**
@@ -89,7 +112,7 @@ export function paceExclusions(view: LedgerView): Set<TransactionId> {
  * its undo. Each entry counts by the budget groups of its own day. `kept`
  * is the same without the `excluded` entries, found in the same pass.
  */
-function spentSums(
+export function spentSums(
   view: LedgerView,
   from: LocalDate,
   to: LocalDate,
@@ -174,7 +197,11 @@ export function billsInCycle(view: LedgerView, cycle: Cycle): CycleBill[] {
   );
 }
 
-function toFigure(view: LedgerView, sums: Sums, date: LocalDate): Figure {
+export function toFigure(
+  view: LedgerView,
+  sums: ReadonlyMap<CurrencyCode, bigint>,
+  date: LocalDate,
+): Figure {
   return totalOn(
     view.rates,
     [...sums].map(([currency, sum]) => money(Number(sum), currency)),
@@ -194,7 +221,7 @@ export function availableOn(
 
 // Rounds down (toward negative infinity) so a daily figure never promises
 // more than is there; the spare minor units show up in later days.
-function perDay(amount: Money, days: number): Money {
+export function perDay(amount: Money, days: number): Money {
   const total = BigInt(amount.amountMinor);
   const n = BigInt(days);
   let quotient = total / n;
@@ -202,8 +229,17 @@ function perDay(amount: Money, days: number): Money {
   return money(Number(quotient), amount.currency);
 }
 
-function minus(a: Money, b: Money): Money {
+export function minus(a: Money, b: Money): Money {
   return money(a.amountMinor - b.amountMinor, a.currency);
+}
+
+/**
+ * The day after the cycle's last day as seen on `date`: the payday, or,
+ * from payday on until a paycheck arrives, the next day (the cycle runs
+ * one day at a time, and is overdue the day after payday).
+ */
+export function cycleEndOn(cycle: Cycle, date: LocalDate): LocalDate {
+  return date >= cycle.payday ? addDays(date, 1) : cycle.payday;
 }
 
 /** Today's figures for the user's local day at `now`. */
@@ -221,12 +257,11 @@ export function dailyFiguresOn(
 ): DailyFigures {
   const cycles = cyclesOf(view, today);
   const cycle = cycleOn(cycles, today);
-  // From payday on, until a paycheck arrives, the cycle runs one day at a
-  // time; the day after payday it is overdue.
   const overdue = today > cycle.payday;
-  const cycleEnd = today >= cycle.payday ? addDays(today, 1) : cycle.payday;
+  const cycleEnd = cycleEndOn(cycle, today);
   const daysLeft = Math.max(1, daysBetween(today, cycleEnd));
 
+  const onBudgetNative = onBudgetSums(view, today);
   const availableNative = availableSums(view, cycles, today);
   const spentNative = spentSums(view, today, today).spent;
   const { spent: cycleSpentNative, kept: paceSpentNative } = spentSums(
@@ -242,6 +277,7 @@ export function dailyFiguresOn(
     add(startNative, currency, amount);
   }
 
+  const onBudget = toFigure(view, onBudgetNative, today);
   const available = toFigure(view, availableNative, today);
   const startOfDay = toFigure(view, startNative, today);
   const spentToday = toFigure(view, spentNative, today);
@@ -256,6 +292,10 @@ export function dailyFiguresOn(
     overdue,
     daysLeft,
     available: available.amount,
+    onBudget: onBudget.amount,
+    // The difference rather than its own conversion, so the split always
+    // adds up exactly in the default currency.
+    reserved: minus(onBudget.amount, available.amount),
     startOfDay: startOfDay.amount,
     spentToday: spentToday.amount,
     todayAllowance,
@@ -267,6 +307,7 @@ export function dailyFiguresOn(
     cycleBills: billsInCycle(view, cycle),
     missingRates: [
       ...new Set([
+        ...onBudget.missingRates,
         ...available.missingRates,
         ...startOfDay.missingRates,
         ...spentToday.missingRates,

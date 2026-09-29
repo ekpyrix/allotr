@@ -113,6 +113,10 @@ export type DailyFigures = Readonly<{
   daysLeft: number;
   /** On-budget money minus unpaid reserved bills, now. */
   available: Money;
+  /** On-budget balances now. */
+  onBudget: Money;
+  /** Unpaid reserved bills now: always `onBudget − available`. */
+  reserved: Money;
   /** `available` before today's spending: what today's allowance splits. */
   startOfDay: Money;
   spentToday: Money;

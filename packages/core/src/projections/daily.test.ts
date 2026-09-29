@@ -50,6 +50,8 @@ describe('dailyFiguresOn', () => {
       overdue: false,
       daysLeft: 31,
       available: usd(180000),
+      onBudget: usd(200000),
+      reserved: usd(20000),
       startOfDay: usd(180000),
       todayAllowance: usd(5806),
       spentToday: usd(0),

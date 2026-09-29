@@ -15,6 +15,7 @@ import {
   transfer,
   writeOff,
 } from '../ledger/build.ts';
+import { balanceOf } from '../ledger/balances.ts';
 import { reverse } from '../ledger/reverse.ts';
 import { food, salary, testChart, testCurrencies } from '../ledger/testing.ts';
 import {
@@ -23,9 +24,10 @@ import {
   type Account,
   type Transaction,
 } from '../ledger/types.ts';
-import { cyclesOf } from './cycles.ts';
+import { cycleOn, cyclesOf } from './cycles.ts';
 import { availableOn, dailyFiguresOn, leftTodayDrop } from './daily.ts';
 import { cycleReports } from './history.ts';
+import { balanceHistory, cycleDays } from './series.ts';
 import { cycleSnapshot } from './snapshot.ts';
 import {
   billId,
@@ -495,5 +497,110 @@ describe('archive impact properties', () => {
         ).toBe(0);
       }),
     );
+  });
+});
+
+describe('chart series properties', () => {
+  it('splits available into on-budget money less reserved bills', () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, (view, today) => {
+        const { onBudget, reserved, available } = dailyFiguresOn(view, today);
+        expect(onBudget.amountMinor - reserved.amountMinor).toBe(
+          available.amountMinor,
+        );
+      }),
+    );
+  });
+
+  it("ends the cycle's past days on today's figures", () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, (view, today) => {
+        const figures = dailyFiguresOn(view, today);
+        const { days } = cycleDays(view, figures.cycle, today);
+        const last = days.filter((row) => row.cumulativeSpent !== null).at(-1);
+        expect(last?.date).toBe(today);
+        expect(last?.cumulativeSpent).toEqual(figures.paceSpent);
+        expect(last?.availableEnd).toEqual(figures.available);
+        expect(last?.allowance).toEqual(figures.todayAllowance);
+      }),
+    );
+  });
+
+  it('paces evenly from the first day to the budget', () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, (view, today) => {
+        for (const cycle of cyclesOf(view, today)) {
+          const { days, budget } = cycleDays(view, cycle, today);
+          const sign = Math.sign(budget.amountMinor);
+          days.slice(1).forEach((row, at) => {
+            const step =
+              row.pace.amountMinor - (days[at]?.pace.amountMinor ?? 0);
+            expect(Math.sign(step) * sign).toBeGreaterThanOrEqual(0);
+          });
+          expect(days.at(-1)?.pace).toEqual(budget);
+          expect(
+            cycleOn(cyclesOf(view, today), days[0]?.date ?? today),
+          ).toEqual(cycle);
+        }
+      }),
+    );
+  });
+
+  it("ends an account's history on its balance that day", () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, (view, today) => {
+        for (const account of userAccounts) {
+          const points = balanceHistory(
+            view,
+            account.id,
+            addDays(today, -29),
+            today,
+          );
+          expect(points).toHaveLength(30);
+          expect(points.at(-1)?.balance).toEqual(
+            balanceOf(view.chart, view.ledger, account.id, today),
+          );
+        }
+      }),
+    );
+  });
+});
+
+describe('chart series performance', () => {
+  it('builds a cycle from 5,000 entries quickly', () => {
+    const pick = (i: number): Account => {
+      const account = userAccounts[i % userAccounts.length];
+      if (account === undefined) throw new Error('No user accounts');
+      return account;
+    };
+    const ops = Array.from(
+      { length: 5000 },
+      (_, i): readonly [Op, LocalDate] => [
+        i % 50 === 0
+          ? { t: 'earn', account: pick(0), amount: 90000 }
+          : { t: 'spend', account: pick(i), amount: 100 + (i % 900) },
+        days[i % days.length] ?? start,
+      ],
+    );
+    const view: LedgerView = {
+      chart,
+      ledger: build(ops),
+      paycheckCategories: new Set([salary]),
+      settings: {
+        defaultCurrency: usd,
+        startedOn: start,
+        paydayDay: 1,
+        paydayOverride: null,
+      },
+      bills: [],
+      rates,
+    };
+    const today = localDate('2026-03-20');
+    const cycle = dailyFiguresOn(view, today).cycle;
+    const began = Date.now();
+    const { days: rows } = cycleDays(view, cycle, today);
+    const took = Date.now() - began;
+    expect(rows.length).toBeGreaterThan(0);
+    expect(took, `took ${String(took)} ms`).toBeLessThan(150);
   });
 });
