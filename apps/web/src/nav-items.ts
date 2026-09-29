@@ -10,3 +10,13 @@ export const navItems = [
 ] as const satisfies readonly { to: `/${string}`; label: MessageKey }[];
 
 export type NavPath = (typeof navItems)[number]['to'];
+
+/**
+ * Destinations only the rail and drawer have room for; on phones they stay
+ * reachable from their parent view (Savings from Accounts).
+ */
+export const wideNavItems = [
+  { to: '/savings', label: 'nav.savings' },
+] as const satisfies readonly { to: `/${string}`; label: MessageKey }[];
+
+export type WideNavPath = (typeof wideNavItems)[number]['to'];

@@ -92,6 +92,7 @@ export const en = {
     ledger: 'Ledger',
     accounts: 'Accounts',
     settings: 'Settings',
+    savings: 'Savings',
   },
   shell: {
     twoFactorRequired:
@@ -756,6 +757,7 @@ export const en = {
     },
   },
   offline: {
+    banner: 'Offline. Figures come back when you reconnect.',
     title: 'You are offline',
     intro:
       'Allotr needs a connection to show your figures. This page loads again when you are back online.',

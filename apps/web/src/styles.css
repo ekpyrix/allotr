@@ -274,6 +274,54 @@
 }
 
 /*
+ * Shell (spec §4, §6). Focused elements scroll clear of the sticky top app
+ * bar and, on phones, the bottom bar (WCAG 2.4.11).
+ */
+html {
+  scroll-padding-top: 4.5rem;
+  scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+@media (width >= 600px) {
+  html {
+    scroll-padding-bottom: 1rem;
+  }
+}
+
+/* The top app bar fills in as content scrolls under it. */
+.top-app-bar {
+  background-color: var(--chrome);
+  border-color: var(--outline-variant);
+}
+@supports (animation-timeline: scroll()) {
+  .top-app-bar {
+    animation: top-bar-fill linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 3rem;
+  }
+  .top-app-bar-title {
+    animation: fade-in linear both;
+    animation-timeline: scroll(root);
+    animation-range: 2rem 4rem;
+  }
+}
+/* Reduced motion: the bar stays chrome with its title shown. */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) :is(.top-app-bar, .top-app-bar-title) {
+    animation: none;
+  }
+}
+:root[data-motion='reduced'] :is(.top-app-bar, .top-app-bar-title),
+:root[data-motion='off'] :is(.top-app-bar, .top-app-bar-title) {
+  animation: none;
+}
+@keyframes top-bar-fill {
+  from {
+    background-color: transparent;
+    border-color: transparent;
+  }
+}
+
+/*
  * Route changes (ADR 0019). The router sets a transition type: `tab`
  * between top-level destinations fades through (out 90 ms, in 210 ms with
  * a 0.92 → 1 scale), `push` and `pop` slide 24 px with a fade. With reduced
