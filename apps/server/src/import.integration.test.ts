@@ -475,6 +475,7 @@ async function view(client: TestClient) {
     }[];
   }[];
   const bills = body(await client.get('/v1/bills')).bills as {
+    id: string;
     name: string;
     amount: unknown;
     dueDay: number;
@@ -537,8 +538,26 @@ async function view(client: TestClient) {
     rates: rates
       .map(({ base, quote, rate, asOf }) => ({ base, quote, rate, asOf }))
       .sort((a, b) => a.base.localeCompare(b.base)),
-    today: body(await client.get('/v1/today')),
+    today: byBillName(body(await client.get('/v1/today')), bills),
     settings: body(await client.get('/v1/settings/ledger')),
+  };
+}
+
+// Bill ids differ between the two users; their names do not.
+function byBillName(
+  today: Record<string, unknown>,
+  bills: readonly { id: string; name: string }[],
+): Record<string, unknown> {
+  const name = new Map(bills.map((b) => [b.id, b.name]));
+  const rename = (list: unknown) =>
+    (list as { billId: string }[]).map(({ billId, ...rest }) => ({
+      bill: name.get(billId),
+      ...rest,
+    }));
+  return {
+    ...today,
+    billsDue: rename(today.billsDue),
+    cycleBills: rename(today.cycleBills),
   };
 }
 
