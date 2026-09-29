@@ -323,6 +323,16 @@ export const todaySchema = z.object({
       amount: moneySchema,
     }),
   ),
+  /** Every due date this cycle reserves, paid or not, earliest first. */
+  cycleBills: z.array(
+    z.object({
+      billId: idSchema,
+      dueOn: localDateSchema,
+      amount: moneySchema,
+      /** When it was marked paid; null while it is still reserved. */
+      paidOn: localDateSchema.nullable(),
+    }),
+  ),
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
 });

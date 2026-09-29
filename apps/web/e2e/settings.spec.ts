@@ -224,3 +224,107 @@ test('a category nobody uses is deleted at once, and tags can be renamed', async
   ).toBeFocused();
   await expectAccessible(page);
 });
+
+test('a bill due this cycle is set aside until it is marked paid', async ({
+  page,
+}) => {
+  const before = await today(page);
+  const dueDay = Number(before.today.slice(8));
+  await page.goto('/settings#bills');
+  await expect(
+    page.getByRole('heading', { name: 'Bills', exact: true }),
+  ).toBeFocused();
+  const region = section(page, 'Bills');
+  await region.getByRole('button', { name: 'New bill' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New bill' });
+  await dialog.getByLabel('Name').fill('Phone');
+  await expect(dialog.getByLabel('Paid from')).toHaveValue(/.+/);
+  await dialog.getByLabel('Amount in USD').fill('0');
+  await dialog.getByRole('button', { name: 'Add bill' }).click();
+  await expect(
+    dialog.getByText('Enter an amount greater than zero.'),
+  ).toBeVisible();
+  await expect(dialog.getByLabel('Amount in USD')).toBeFocused();
+  await dialog.getByLabel('Amount in USD').fill('35');
+  await dialog.getByLabel('Due each month on day').selectOption(String(dueDay));
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: 'Add bill' }).click();
+  await expect(dialog).toBeHidden();
+
+  const bill = region.getByRole('listitem', { name: 'Phone' });
+  await expect(bill).toContainText('$35.00');
+  await expect(bill).toContainText('set aside');
+  const reserved = await today(page);
+  expect(reserved.cycleBills).toHaveLength(1);
+  expect(reserved.cycleBills[0]?.paidOn).toBeNull();
+
+  await bill.getByRole('button', { name: /^Mark paid/ }).click();
+  await expect(bill).toContainText('paid');
+  await expect(bill.getByRole('button', { name: /^Undo paid/ })).toBeVisible();
+  const paid = await today(page);
+  expect(paid.cycleBills[0]?.paidOn).toBe(paid.today);
+  expect(paid.available.amountMinor - reserved.available.amountMinor).toBe(
+    3_500,
+  );
+  await expectAccessible(page);
+
+  await bill.getByRole('button', { name: /^Undo paid/ }).click();
+  await expect(bill.getByRole('button', { name: /^Mark paid/ })).toBeVisible();
+  expect((await today(page)).cycleBills[0]?.paidOn).toBeNull();
+
+  await bill.getByRole('button', { name: 'Edit Phone' }).click();
+  const edit = page.getByRole('dialog', { name: 'Edit Phone' });
+  await edit.getByLabel('Active').uncheck();
+  await edit.getByRole('button', { name: 'Save' }).click();
+  await expect(edit).toBeHidden();
+  await expect(bill).toContainText('Inactive');
+  expect((await today(page)).cycleBills).toEqual([]);
+
+  await bill.getByRole('button', { name: 'Delete Phone' }).click();
+  await page
+    .getByRole('dialog', { name: 'Delete Phone?' })
+    .getByRole('button', { name: 'Delete' })
+    .click();
+  await expect(region.getByRole('listitem', { name: 'Phone' })).toHaveCount(0);
+});
+
+test('a manual rate brings a foreign account into the figures', async ({
+  page,
+  baseURL,
+}) => {
+  const created = await post(page, baseURL, '/v1/accounts', {
+    name: 'Travel',
+    currency: 'EUR',
+    openingBalance: { amountMinor: 10_000, currency: 'EUR' },
+  });
+  expect(created.ok()).toBe(true);
+  expect((await today(page)).missingRates).toEqual(['EUR']);
+
+  await page.goto('/settings#rates');
+  const region = section(page, 'Exchange rates');
+  await expect(
+    page.getByRole('heading', { name: 'Exchange rates' }),
+  ).toBeFocused();
+  await expect(region).toContainText('No rate yet for EUR');
+  await expect(region.getByLabel('From currency')).toHaveValue('EUR');
+  await expect(region.getByLabel('To currency')).toHaveValue('USD');
+  await region.getByLabel('USD for 1 EUR').fill('abc');
+  await region.getByRole('button', { name: 'Save rate' }).click();
+  await expect(
+    region.getByText('Enter a rate greater than zero', { exact: false }),
+  ).toBeVisible();
+  await region.getByLabel('USD for 1 EUR').fill('1.1');
+  await region.getByRole('button', { name: 'Save rate' }).click();
+  const list = region.getByRole('list', { name: 'Rates, newest first' });
+  await expect(list.getByRole('listitem')).toHaveText([/1 EUR = 1.1 USD/]);
+  await expect(region).not.toContainText('No rate yet for EUR');
+  expect((await today(page)).missingRates).toEqual([]);
+  await expectAccessible(page);
+
+  await list.getByRole('button', { name: /^Delete 1 EUR = 1.1 USD/ }).click();
+  await expect(list).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Exchange rates' }),
+  ).toBeFocused();
+  expect((await today(page)).missingRates).toEqual(['EUR']);
+});

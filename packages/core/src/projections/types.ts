@@ -88,6 +88,14 @@ export type BillDue = Readonly<{
   amount: Money;
 }>;
 
+/** A bill's due date in the current cycle, and when it was marked paid. */
+export type CycleBill = Readonly<{
+  billId: BillId;
+  dueOn: LocalDate;
+  amount: Money;
+  paidOn: LocalDate | null;
+}>;
+
 export type DailyFigures = Readonly<{
   today: LocalDate;
   cycle: Cycle;
@@ -108,6 +116,8 @@ export type DailyFigures = Readonly<{
   cycleSpent: Money;
   /** Bills in the cycle due by today and not yet paid. */
   billsDue: readonly BillDue[];
+  /** Every due date the cycle reserves, paid or not, earliest first. */
+  cycleBills: readonly CycleBill[];
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: readonly CurrencyCode[];
 }>;

@@ -20,6 +20,7 @@ function figures(overrides: object): TodayView {
     liveDaily: usd(0),
     cycleSpent: usd(0),
     billsDue: [],
+    cycleBills: [],
     missingRates: [],
     ...overrides,
   });

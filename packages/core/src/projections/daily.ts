@@ -14,6 +14,7 @@ import { totalOn } from './rates.ts';
 import type {
   BillDue,
   Cycle,
+  CycleBill,
   DailyFigures,
   Figure,
   LedgerView,
@@ -116,6 +117,27 @@ export function billsDueOn(
   );
 }
 
+/** Every due date in the cycle's bill window, with its payment day. */
+export function billsInCycle(view: LedgerView, cycle: Cycle): CycleBill[] {
+  const window = billWindow(cycle);
+  const bills: CycleBill[] = [];
+  for (const bill of view.bills) {
+    for (const dueOn of dueDates(bill.dueDay, window)) {
+      const payment = bill.payments.find((p) => p.dueOn === dueOn);
+      bills.push({
+        billId: bill.id,
+        dueOn,
+        amount: bill.amount,
+        paidOn: payment?.paidOn ?? null,
+      });
+    }
+  }
+  return bills.sort(
+    (a, b) =>
+      a.dueOn.localeCompare(b.dueOn) || a.billId.localeCompare(b.billId),
+  );
+}
+
 function toFigure(view: LedgerView, sums: Sums, date: LocalDate): Figure {
   return totalOn(
     view.rates,
@@ -199,6 +221,7 @@ export function dailyFiguresOn(
     liveDaily: perDay(available.amount, daysLeft),
     cycleSpent: cycleSpent.amount,
     billsDue: billsDueOn(view, cycle, today),
+    cycleBills: billsInCycle(view, cycle),
     missingRates: [
       ...new Set([
         ...available.missingRates,
