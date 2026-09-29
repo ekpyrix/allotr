@@ -12,7 +12,13 @@ import { account } from './account.ts';
 // and opens a synthetic account; every test signs in through the API.
 test.describe.configure({ mode: 'serial' });
 
-const ids = { everyday: '', groceries: '', eatingOut: '' };
+const ids = {
+  everyday: '',
+  groceries: '',
+  eatingOut: '',
+  transport: '',
+  fun: '',
+};
 
 async function created(api: APIRequestContext, path: string, data: object) {
   const response = await api.post(path, { data });
@@ -39,6 +45,8 @@ test.beforeAll(async ({ playwright }, testInfo) => {
     categories.find((c) => c.name === name)?.id ?? '';
   ids.groceries = category('Groceries');
   ids.eatingOut = category('Eating out');
+  ids.transport = category('Transport');
+  ids.fun = category('Fun');
   await api.dispose();
 });
 
@@ -152,4 +160,67 @@ test('edits one line of a split', async ({ page }) => {
     [ids.groceries, 5500],
     [ids.eatingOut, 2000],
   ]);
+});
+
+test('splits from the keyboard only, keeping focus as lines come and go', async ({
+  page,
+}) => {
+  await page.goto('/today');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('n');
+  const form = page.getByRole('dialog', { name: 'Add an entry' });
+  await expect(form.getByLabel('Amount in USD')).toBeFocused();
+  await page.keyboard.type('30');
+  await page.keyboard.press('Tab'); // account
+  await page.keyboard.press('Tab'); // category
+  await page.keyboard.type('Transport');
+  await page.keyboard.press('Tab');
+  await expect(
+    form.getByRole('button', { name: 'Split across categories' }),
+  ).toBeFocused();
+  await page.keyboard.press('Enter');
+
+  // The chosen category is the first line's, so its amount is next.
+  await expect(form.getByLabel('Amount 1 in USD')).toBeFocused();
+  await page.keyboard.type('10');
+  await page.keyboard.press('Tab');
+  await expect(form.getByLabel('Category 2')).toBeFocused();
+  await page.keyboard.type('Fun');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('20');
+  await page.keyboard.press('Tab');
+  await expect(form.getByRole('button', { name: 'Add a line' })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(form.getByLabel('Category 3')).toBeFocused();
+  await page.keyboard.press('Tab'); // amount 3
+  await page.keyboard.press('Tab');
+  await expect(
+    form.getByRole('button', { name: 'Remove line 3' }),
+  ).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(form.getByLabel('Category 2')).toBeFocused();
+  await expectAccessible(page);
+
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('Expense of $30.00 saved.');
+  expect(lines(await latest(page))).toEqual([
+    [ids.transport, 1000],
+    [ids.fun, 2000],
+  ]);
+});
+
+test('going back to one category keeps the first line’s', async ({ page }) => {
+  await page.goto('/today');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.keyboard.press('n');
+  const form = page.getByRole('dialog', { name: 'Add an entry' });
+  await form.getByLabel('Category', { exact: true }).selectOption({
+    label: 'Fun',
+  });
+  await form.getByRole('button', { name: 'Split across categories' }).click();
+  await form.getByRole('button', { name: 'Use one category' }).focus();
+  await page.keyboard.press('Enter');
+  const category = form.getByLabel('Category', { exact: true });
+  await expect(category).toBeFocused();
+  await expect(category.locator('option:checked')).toHaveText('Fun');
 });

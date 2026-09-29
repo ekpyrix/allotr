@@ -22,7 +22,16 @@
       "kind": "expense",
       "account": "Wallet",
       "amount": { "amountMinor": 4500, "currency": "EUR" },
-      "category": "Food/Groceries",
+      "lines": [
+        {
+          "category": "Food/Groceries",
+          "amount": { "amountMinor": 3700, "currency": "EUR" }
+        },
+        {
+          "category": "Shopping",
+          "amount": { "amountMinor": 800, "currency": "EUR" }
+        }
+      ],
       "occurredOn": "2026-03-02",
       "note": "Weekly shop"
     },

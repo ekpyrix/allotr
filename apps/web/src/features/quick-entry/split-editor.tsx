@@ -1,6 +1,5 @@
 import { formatMoney, type Money } from '@allotr/shared';
 import { Plus, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { FieldControl, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,18 +42,6 @@ export function SplitEditor({
   onRemove: (index: number) => void;
   onEnd: () => void;
 }) {
-  // A new line takes focus, so keyboard users can go on typing.
-  const count = useRef(lines.length);
-  const list = useRef<HTMLOListElement>(null);
-  useEffect(() => {
-    if (lines.length > count.current) {
-      list.current
-        ?.querySelector<HTMLSelectElement>('li:last-child select')
-        ?.focus();
-    }
-    count.current = lines.length;
-  }, [lines.length]);
-
   // A split keeps two lines; "Use one category" ends it.
   const removable = lines.length > 2;
   const left =
@@ -78,7 +65,7 @@ export function SplitEditor({
       <legend className="mb-2 text-sm font-medium">
         {t('quickEntry.split.legend')}
       </legend>
-      <ol ref={list} className="grid gap-3">
+      <ol className="grid gap-3">
         {lines.map((line, i) => {
           const n = String(i + 1);
           return (

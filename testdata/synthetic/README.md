@@ -30,7 +30,7 @@ Days are the days left to payday. Amounts are in the default currency.
 
 ### single-currency-month
 
-Cycle 1 runs 1 Mar → payday 25 Mar; Rent (due 5 Mar) and Phone (due 20 Mar) are reserved until paid. The 25 Mar paycheck opens cycle 2 (payday 25 Apr), which reserves April's Rent (5 Apr) and Phone (20 Apr).
+The 2 Mar weekly shop is split between Groceries and Shopping. Cycle 1 runs 1 Mar → payday 25 Mar; Rent (due 5 Mar) and Phone (due 20 Mar) are reserved until paid. The 25 Mar paycheck opens cycle 2 (payday 25 Apr), which reserves April's Rent (5 Apr) and Phone (20 Apr).
 
 | At (day) | Wallet on the day | Reserved | Available | Spent | Start | Days | Allowance | Left | Live |
 |---|---|---|---|---|---|---|---|---|---|
@@ -51,7 +51,7 @@ Conversions: USD 380.00 × 0.9 = EUR 342.00; JPY 6,800 ÷ 160 = EUR 42.50 (inver
 
 ### backdated-corrections
 
-Yen, 0 digits. Cycle 2 runs 25 Jun → 25 Jul and reserves Rent due 27 Jun until paid. All steps happen on 29 Jun (Tokyo), 26 days before payday. The first checkpoint is 25 Jun 16:00 UTC, which is already 26 Jun in Tokyo.
+Yen, 0 digits. Cycle 2 runs 25 Jun → 25 Jul and reserves Rent due 27 Jun until paid. All steps happen on 29 Jun (Tokyo), 26 days before payday. The back-dated 15 Jun receipt is split between Shopping and Fun. The first checkpoint is 25 Jun 16:00 UTC, which is already 26 Jun in Tokyo.
 
 | Checkpoint | Main | Reserved | Available | Spent | Start | Allowance | Left | Live |
 |---|---|---|---|---|---|---|---|---|

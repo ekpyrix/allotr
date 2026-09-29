@@ -27,6 +27,7 @@ import {
   fieldOrder,
   isSplit,
   keyForBody,
+  lineField,
   removeLine,
   splitCurrency,
   splitRemainder,
@@ -166,6 +167,15 @@ export function QuickEntryForm({
     editing();
     setDraft(next);
   };
+  // The split controls add and remove the button that was pressed, so
+  // focus moves to where the user goes on typing once the change renders.
+  const focusNext = useRef<DraftField | null>(null);
+  useEffect(() => {
+    if (focusNext.current === null) return;
+    const element = form.current?.elements.namedItem(focusNext.current);
+    focusNext.current = null;
+    if (element instanceof HTMLElement) element.focus();
+  });
   const source = accounts.find((a) => a.id === draft.accountId);
   const target = accounts.find((a) => a.id === draft.toAccountId);
   const transfer = draft.kind === 'transfer';
@@ -387,12 +397,18 @@ export function QuickEntryForm({
             change((current) => updateLine(current, index, patch));
           }}
           onAdd={() => {
+            focusNext.current = lineField(draft.lines.length, 'categoryId');
             change(addLine);
           }}
           onRemove={(index) => {
+            focusNext.current = lineField(
+              Math.min(index, draft.lines.length - 2),
+              'categoryId',
+            );
             change((current) => removeLine(current, index));
           }}
           onEnd={() => {
+            focusNext.current = 'categoryId';
             change(endSplit);
             clearErrors();
           }}
@@ -438,6 +454,11 @@ export function QuickEntryForm({
               variant="outline"
               className="justify-self-start"
               onClick={() => {
+                // The chosen category is already the first line's.
+                focusNext.current = lineField(
+                  0,
+                  draft.categoryId === '' ? 'categoryId' : 'amount',
+                );
                 change(startSplit);
                 clearErrors();
               }}

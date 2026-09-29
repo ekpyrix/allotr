@@ -7,7 +7,16 @@
         "kind": "expense",
         "account": "Main",
         "amount": { "amountMinor": 12000, "currency": "JPY" },
-        "category": "Shopping",
+        "lines": [
+          {
+            "category": "Shopping",
+            "amount": { "amountMinor": 9000, "currency": "JPY" }
+          },
+          {
+            "category": "Fun",
+            "amount": { "amountMinor": 3000, "currency": "JPY" }
+          }
+        ],
         "occurredOn": "2026-06-15",
         "note": "Forgotten receipt"
       }
