@@ -221,3 +221,24 @@ test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) =>
     formatMoney(after.leftToday, 'en-US'),
   );
 });
+
+test('a filter for a tag that no longer exists drops out', async ({ page }) => {
+  await page.goto('/ledger?tag=gone');
+  await expect(page).not.toHaveURL(/tag=/);
+  await expect(entry(page, 'Eating out')).toHaveCount(1);
+});
+
+test('closing an entry that the filters hide returns focus to the page', async ({
+  page,
+}) => {
+  const list = (await (
+    await page.request.get('/v1/transactions?limit=1')
+  ).json()) as { transactions: TransactionView[] };
+  const id = list.transactions[0]?.id ?? '';
+  await page.goto(`/ledger?q=nothing-matches&entry=${id}`);
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/entry=/);
+  await expect(page.locator('main')).toBeFocused();
+  await expect(page.getByText('No entries match these filters.')).toBeVisible();
+});

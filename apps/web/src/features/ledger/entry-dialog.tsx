@@ -26,22 +26,15 @@ import {
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { draftFromEntry, isEditable } from './edit-draft.ts';
-import { formatLongDay, formatMoment, rowAmount, rowTitle } from './format.ts';
+import {
+  formatLongDay,
+  formatMoment,
+  rateText,
+  rowAmount,
+  rowTitle,
+} from './format.ts';
 import { ledgerRows } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
-
-/** The currencies a rate converts between, read from the exchange legs. */
-function rateCurrencies(entry: TransactionView) {
-  const legs = entry.postings.filter((p) => p.systemRole === 'conversion');
-  // Core books the sent side positive and the received side negative; an
-  // undo has them the other way round.
-  const sign = entry.kind === 'reversal' ? -1 : 1;
-  const from = legs.find((p) => sign * p.amount.amountMinor > 0);
-  const to = legs.find((p) => sign * p.amount.amountMinor < 0);
-  return from === undefined || to === undefined
-    ? null
-    : { from: from.amount.currency, to: to.amount.currency };
-}
 
 function useUndo(onUndone: () => void) {
   const queryClient = useQueryClient();
@@ -117,7 +110,7 @@ function EntryDetail({
   const tagNames = entry.tagIds
     .map((id) => tags.find((tag) => tag.id === id)?.name)
     .filter((name) => name !== undefined);
-  const rate = entry.impliedRate === null ? null : rateCurrencies(entry);
+  const rate = rateText(entry);
   const touchesArchived = entry.postings.some(
     (p) => accountOf.get(p.accountId)?.archived === true,
   );
@@ -158,14 +151,9 @@ function EntryDetail({
     ...(tagNames.length === 0
       ? []
       : [[t('ledger.entry.tags'), tagNames.join(', ')] as [string, string]]),
-    ...(rate === null || entry.impliedRate === null
+    ...(rate === null
       ? []
-      : [
-          [
-            t('ledger.entry.rate'),
-            t('ledger.entry.rateValue', { ...rate, rate: entry.impliedRate }),
-          ] as [string, string],
-        ]),
+      : [[t('ledger.entry.rate'), rate] as [string, string]]),
     [
       t('ledger.entry.entered'),
       formatMoment(entry.createdAt, locale, timeZone),
@@ -326,6 +314,7 @@ function EntryLoader({
   id,
   search,
   editing,
+  saving,
   onEditingChange,
   onSavingChange,
   onEdited,
@@ -334,6 +323,7 @@ function EntryLoader({
   id: string;
   search: LedgerSearch;
   editing: boolean;
+  saving: boolean;
   onEditingChange: (editing: boolean) => void;
   onSavingChange: (saving: boolean) => void;
   onEdited: (replacementId: string) => void;
@@ -377,6 +367,14 @@ function EntryLoader({
 
   const { locale, timeZone } = settings.data;
   const view = entry.data;
+  const byId = new Map(categories.data.categories.map((c) => [c.id, c]));
+  // A merged category files under its target, which the form offers.
+  const current = (id: string | null): string | null => {
+    let found = id === null ? undefined : byId.get(id);
+    for (let hops = 0; found?.mergedIntoId != null && hops < 10; hops += 1)
+      found = byId.get(found.mergedIntoId);
+    return found?.id ?? id;
+  };
   if (editing && isEditable(view))
     return (
       <>
@@ -386,7 +384,13 @@ function EntryLoader({
           tags={tags.data.tags}
           locale={locale}
           today={today.data.today}
-          edit={{ id: view.id, draft: draftFromEntry(view, locale) }}
+          edit={{
+            id: view.id,
+            draft: draftFromEntry(
+              { ...view, categoryId: current(view.categoryId) },
+              locale,
+            ),
+          }}
           onSavingChange={onSavingChange}
           onSaved={(_message, replacementId) => {
             onEdited(replacementId);
@@ -395,6 +399,7 @@ function EntryLoader({
         <Button
           variant="ghost"
           className="mt-2 w-full"
+          disabled={saving}
           onClick={() => {
             onEditingChange(false);
           }}
@@ -497,7 +502,8 @@ export function EntryDialog({
                 : document.querySelector<HTMLElement>(
                     `[data-entry-id="${CSS.escape(id)}"]`,
                   );
-            (row ?? document.querySelector<HTMLElement>('main h1'))?.focus();
+            // The shell makes <main> focusable; the row may be filtered out.
+            (row ?? document.querySelector<HTMLElement>('main'))?.focus();
           }}
           className="fixed inset-x-0 bottom-0 z-40 max-h-[90dvh] overflow-y-auto rounded-t-lg border bg-background p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg"
         >
@@ -529,6 +535,7 @@ export function EntryDialog({
               id={id}
               search={search}
               editing={editing}
+              saving={saving}
               onEditingChange={(next) => {
                 setEditing(next);
                 setAnnouncement('');

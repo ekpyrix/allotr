@@ -7,11 +7,15 @@ import {
   Outlet,
   redirect,
 } from '@tanstack/react-router';
+import { useCallback } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { LoadError } from '@/components/load-error';
 import { UpdatePrompt } from '@/components/update-prompt';
-import { validateLedgerSearch } from '@/features/ledger/search';
+import {
+  validateLedgerSearch,
+  type LedgerSearch,
+} from '@/features/ledger/search';
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
@@ -133,14 +137,13 @@ const ledgerRoute = createRoute({
   component: function Ledger() {
     const search = ledgerRoute.useSearch();
     const navigate = ledgerRoute.useNavigate();
-    return (
-      <LedgerPage
-        search={search}
-        navigate={(next, options) => {
-          void navigate({ search: next, replace: options?.replace === true });
-        }}
-      />
+    const go = useCallback(
+      (next: LedgerSearch, options?: { replace?: boolean }) => {
+        void navigate({ search: next, replace: options?.replace === true });
+      },
+      [navigate],
     );
+    return <LedgerPage search={search} navigate={go} />;
   },
 });
 

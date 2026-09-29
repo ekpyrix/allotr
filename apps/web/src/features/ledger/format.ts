@@ -1,4 +1,8 @@
-import { formatMoney, type LocalDate } from '@allotr/shared';
+import {
+  formatMoney,
+  type LocalDate,
+  type TransactionView,
+} from '@allotr/shared';
 import { t } from '@/messages/t';
 import type { LedgerRow } from './rows.ts';
 
@@ -68,4 +72,24 @@ export function rowTitle(row: LedgerRow): string {
       ? t('ledger.budgetOn')
       : t('ledger.budgetOff');
   return row.title ?? row.note ?? t(`ledger.kinds.${row.kind}`);
+}
+
+/**
+ * An entry's implied rate as "1 USD = 0.92 EUR", or null without one. The
+ * currencies come from the exchange legs: core books what was given up
+ * positive and what came out negative, and an undo has them the other way.
+ * The rate is shown as stored, never recomputed.
+ */
+export function rateText(entry: TransactionView): string | null {
+  if (entry.impliedRate === null) return null;
+  const legs = entry.postings.filter((p) => p.systemRole === 'conversion');
+  const sign = entry.kind === 'reversal' ? -1 : 1;
+  const from = legs.find((p) => sign * p.amount.amountMinor > 0);
+  const to = legs.find((p) => sign * p.amount.amountMinor < 0);
+  if (from === undefined || to === undefined) return null;
+  return t('ledger.entry.rateValue', {
+    from: from.amount.currency,
+    to: to.amount.currency,
+    rate: entry.impliedRate,
+  });
 }

@@ -1,6 +1,7 @@
 import { formatMoney } from '@allotr/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
+import { useEffect } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
@@ -21,8 +22,16 @@ import {
   ledgerSettingsQuery,
   tagsQuery,
 } from '@/lib/ledger';
+import { ApiError } from '@/lib/api';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
+
+function staleFilter(error: unknown): 'tag' | 'category' | undefined {
+  if (!(error instanceof ApiError)) return undefined;
+  if (error.problem.code === 'tag_not_found') return 'tag';
+  if (error.problem.code === 'category_not_found') return 'category';
+  return undefined;
+}
 
 // The ledger view (FR-W2, FR-L4): every entry, filtered and paged by the
 // server, with a detail dialog to edit or undo. Balances come from the
@@ -42,8 +51,16 @@ export function LedgerPage({
   const quickEntry = useQuickEntry();
   const all = [entries, accounts, categories, tags, settings];
 
+  // A tag or category that no longer exists (an old bookmark) drops out of
+  // the filters instead of leaving an error that retrying cannot fix.
+  const stale = staleFilter(entries.error);
+  useEffect(() => {
+    if (stale !== undefined)
+      navigate({ ...search, [stale]: undefined }, { replace: true });
+  }, [stale, search, navigate]);
+
   const failed = all.find((q) => q.isError && q.data === undefined);
-  if (failed !== undefined)
+  if (failed !== undefined && stale === undefined)
     return (
       <Page title={t('ledger.title')}>
         <div className="mt-6 grid justify-items-start gap-4">
@@ -159,8 +176,9 @@ export function LedgerPage({
       <EntryDialog
         id={search.entry}
         search={search}
+        // Replaced, so back after closing does not open it again.
         onClose={() => {
-          navigate(filters);
+          navigate(filters, { replace: true });
         }}
         onShow={(id) => {
           navigate({ ...filters, entry: id }, { replace: true });
