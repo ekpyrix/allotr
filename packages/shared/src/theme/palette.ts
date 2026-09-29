@@ -97,7 +97,8 @@ export const paletteSchema = z
     ),
     hues: z.strictObject(shape(CANONICAL_HUES, accentNameSchema)),
   })
-  .superRefine(checkHues);
+  .superRefine(checkHues)
+  .meta({ id: 'Palette' });
 export type Palette = z.infer<typeof paletteSchema>;
 
 /** What an importer can give: at least the page and text colours. */
@@ -111,7 +112,8 @@ export const partialPaletteSchema = z
     accents: accentsSchema,
     hues: z.strictObject(shape(CANONICAL_HUES, accentNameSchema.optional())),
   })
-  .superRefine(checkHues);
+  .superRefine(checkHues)
+  .meta({ id: 'PartialPalette' });
 export type PartialPalette = z.infer<typeof partialPaletteSchema>;
 
 // Where each missing ramp slot sits between `base` (0) and `text` (1).
