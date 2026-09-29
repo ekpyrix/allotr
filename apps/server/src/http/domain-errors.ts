@@ -15,6 +15,8 @@ const ledgerStatus: Record<LedgerErrorCode, ProblemStatus> = {
   'ledger.posting_count': 400,
   'ledger.zero_amount': 400,
   'ledger.invalid_amount': 400,
+  'ledger.invalid_split': 400,
+  'ledger.split_mismatch': 400,
   'ledger.same_account': 400,
   'ledger.not_a_user_account': 400,
   // The server creates system accounts before it builds an entry.

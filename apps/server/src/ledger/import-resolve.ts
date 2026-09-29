@@ -241,7 +241,16 @@ export function resolveBundle(
       }
     } else {
       checkAccount([...at, 'account'], entry.account);
-      checkCategory([...at, 'category'], entry.category, entry.kind);
+      if (entry.category !== undefined) {
+        checkCategory([...at, 'category'], entry.category, entry.kind);
+      }
+      entry.lines?.forEach((line, l) => {
+        checkCategory(
+          [...at, 'lines', l, 'category'],
+          line.category,
+          entry.kind,
+        );
+      });
     }
     if (entry.ref !== undefined) {
       if (refs.has(entry.ref)) {

@@ -36,6 +36,7 @@ export {
   writeOff,
   type PostingDraft,
   type SpendInput,
+  type SplitLine,
   type TransactionDraft,
   type TransferInput,
 } from './ledger/build.ts';

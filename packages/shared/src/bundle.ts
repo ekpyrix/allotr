@@ -66,14 +66,36 @@ const spendFields = {
   account: nameSchema,
   /** In the account's currency. */
   amount: moneySchema,
-  category: categoryPathSchema,
+  /** Give this or `lines`. */
+  category: categoryPathSchema.optional(),
+  /** A split (FR-L5): each line in the category side's currency. */
+  lines: z
+    .array(
+      z.strictObject({ category: categoryPathSchema, amount: moneySchema }),
+    )
+    .min(2)
+    .max(20)
+    .optional(),
   foreignAmount: moneySchema.optional(),
   ...entryFields,
 };
 
+const oneCategorySide = (entry: {
+  category?: string | undefined;
+  lines?: unknown[] | undefined;
+}) => (entry.category === undefined) !== (entry.lines === undefined);
+const oneCategorySideError = {
+  error: 'Give either category or lines',
+  path: ['category'],
+};
+
 const transactionSchema = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('expense'), ...spendFields }),
-  z.strictObject({ kind: z.literal('income'), ...spendFields }),
+  z
+    .strictObject({ kind: z.literal('expense'), ...spendFields })
+    .refine(oneCategorySide, oneCategorySideError),
+  z
+    .strictObject({ kind: z.literal('income'), ...spendFields })
+    .refine(oneCategorySide, oneCategorySideError),
   z.strictObject({
     kind: z.literal('transfer'),
     from: nameSchema,

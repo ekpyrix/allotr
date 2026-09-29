@@ -207,7 +207,14 @@ function toCreateBody(
     kind: t.kind,
     accountId: lookup(names.accounts, t.account, 'account'),
     amount: t.amount,
-    categoryId: lookup(names.categories, t.category, 'category'),
+    ...(t.lines === undefined
+      ? { categoryId: lookup(names.categories, t.category ?? '', 'category') }
+      : {
+          lines: t.lines.map((line) => ({
+            categoryId: lookup(names.categories, line.category, 'category'),
+            amount: line.amount,
+          })),
+        }),
     ...(t.foreignAmount === undefined
       ? {}
       : { foreignAmount: t.foreignAmount }),

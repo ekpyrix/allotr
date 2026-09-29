@@ -192,19 +192,45 @@ const entryFields = {
   tagIds: z.array(idSchema).max(20).optional(),
 };
 
+/** One category's share of a split expense or income (FR-L5). */
+export const splitLineSchema = z.object({
+  categoryId: idSchema,
+  /** In the foreign price's currency if there is one, else the account's. */
+  amount: moneySchema,
+});
+
 const spendFields = {
   accountId: idSchema,
   /** In the account's currency. */
   amount: moneySchema,
-  categoryId: idSchema,
+  /** The entry's category; give this or `lines`. */
+  categoryId: idSchema.optional(),
+  /**
+   * A split across categories instead of `categoryId`: two or more lines
+   * with distinct categories that add up to the amount (or foreign price).
+   */
+  lines: z.array(splitLineSchema).min(2).max(20).optional(),
   /** The price in another currency, recorded as well (FR-X3). */
   foreignAmount: moneySchema.optional(),
   ...entryFields,
 };
 
+const oneCategorySide = (body: {
+  categoryId?: string | undefined;
+  lines?: unknown[] | undefined;
+}) => (body.categoryId === undefined) !== (body.lines === undefined);
+const oneCategorySideError = {
+  error: 'Give either categoryId or lines',
+  path: ['categoryId'],
+};
+
 export const createTransactionBodySchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('expense'), ...spendFields }),
-  z.object({ kind: z.literal('income'), ...spendFields }),
+  z
+    .object({ kind: z.literal('expense'), ...spendFields })
+    .refine(oneCategorySide, oneCategorySideError),
+  z
+    .object({ kind: z.literal('income'), ...spendFields })
+    .refine(oneCategorySide, oneCategorySideError),
   z.object({
     kind: z.literal('transfer'),
     fromAccountId: idSchema,

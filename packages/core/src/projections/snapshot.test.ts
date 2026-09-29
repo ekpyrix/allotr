@@ -1,6 +1,6 @@
 import { money } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { transfer } from '../ledger/build.ts';
+import { expense, transfer } from '../ledger/build.ts';
 import { food, meta, salary } from '../ledger/testing.ts';
 import { categoryId } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
@@ -79,6 +79,21 @@ describe('cycleSnapshot', () => {
       amount: usd(8000),
     });
     expect(amended.leftover[0]?.leftover).toEqual(usd(286000));
+  });
+
+  it('counts each line of a split under its own category', () => {
+    const split = expense(chart, meta('2026-03-12'), {
+      accountId: card,
+      amount: usd(9000),
+      lines: [
+        { categoryId: food, amount: usd(7000) },
+        { categoryId: fun, amount: usd(2000) },
+      ],
+    });
+    expect(marchSnapshot([...ledger, split]).spending).toEqual([
+      { categoryId: food, amount: usd(12500) },
+      { categoryId: fun, amount: usd(8000) },
+    ]);
   });
 
   it('runs an open cycle up to today', () => {

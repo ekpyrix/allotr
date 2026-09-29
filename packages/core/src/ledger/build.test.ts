@@ -19,7 +19,7 @@ import {
   testChart,
   userAccount,
 } from './testing.ts';
-import { accountId, type Transaction } from './types.ts';
+import { accountId, categoryId, type Transaction } from './types.ts';
 
 const chart = testChart([userAccount('old-USD', 'USD', 'on', true)]);
 const card = accountId('card-USD');
@@ -163,6 +163,131 @@ describe('income', () => {
       ['card-KWD', 30750, 'KWD', null],
     ]);
     expect(t.impliedRate).toBe('0.3075');
+  });
+});
+
+describe('split', () => {
+  const fun = categoryId('fun');
+
+  it('gives each line its own posting on Expenses, and the entry no category', () => {
+    const t = expense(chart, meta(), {
+      accountId: card,
+      amount: money(8000, 'USD'),
+      lines: [
+        { categoryId: food, amount: money(6000, 'USD') },
+        { categoryId: fun, amount: money(2000, 'USD') },
+      ],
+    });
+    expect(t.categoryId).toBeNull();
+    expect(legs(t)).toEqual([
+      ['card-USD', -8000, 'USD', null],
+      ['expenses-USD', 6000, 'USD', food],
+      ['expenses-USD', 2000, 'USD', fun],
+    ]);
+  });
+
+  it('splits income across categories', () => {
+    const t = income(chart, meta(), {
+      accountId: card,
+      amount: money(150000, 'USD'),
+      lines: [
+        { categoryId: salary, amount: money(140000, 'USD') },
+        { categoryId: fun, amount: money(10000, 'USD') },
+      ],
+    });
+    expect(legs(t)).toEqual([
+      ['income-USD', -140000, 'USD', salary],
+      ['income-USD', -10000, 'USD', fun],
+      ['card-USD', 150000, 'USD', null],
+    ]);
+  });
+
+  it('puts the lines of a foreign purchase in the price currency', () => {
+    const t = expense(chart, meta(), {
+      accountId: card,
+      amount: money(4920, 'USD'),
+      foreignAmount: money(4500, 'EUR'),
+      lines: [
+        { categoryId: food, amount: money(3000, 'EUR') },
+        { categoryId: fun, amount: money(1500, 'EUR') },
+      ],
+    });
+    expect(legs(t)).toEqual([
+      ['card-USD', -4920, 'USD', null],
+      ['conversion-USD', 4920, 'USD', null],
+      ['conversion-EUR', -4500, 'EUR', null],
+      ['expenses-EUR', 3000, 'EUR', food],
+      ['expenses-EUR', 1500, 'EUR', fun],
+    ]);
+  });
+
+  it('refuses lines that do not add up, or are in another currency', () => {
+    const input = (lines: [number, string][]) => ({
+      accountId: card,
+      amount: money(8000, 'USD'),
+      lines: lines.map(([amount, currency], i) => ({
+        categoryId: i === 0 ? food : fun,
+        amount: money(amount, currency),
+      })),
+    });
+    expect(
+      errorCode(() =>
+        expense(
+          chart,
+          meta(),
+          input([
+            [6000, 'USD'],
+            [1999, 'USD'],
+          ]),
+        ),
+      ),
+    ).toBe('ledger.split_mismatch');
+    expect(
+      errorCode(() =>
+        expense(
+          chart,
+          meta(),
+          input([
+            [6000, 'USD'],
+            [2000, 'EUR'],
+          ]),
+        ),
+      ),
+    ).toBe('ledger.split_mismatch');
+    expect(
+      errorCode(() =>
+        expense(
+          chart,
+          meta(),
+          input([
+            [8000, 'USD'],
+            [0, 'USD'],
+          ]),
+        ),
+      ),
+    ).toBe('ledger.invalid_amount');
+  });
+
+  it('needs two lines with distinct categories', () => {
+    const line = { categoryId: food, amount: money(4000, 'USD') };
+    expect(
+      errorCode(() =>
+        expense(chart, meta(), {
+          accountId: card,
+          amount: money(4000, 'USD'),
+          lines: [line],
+        }),
+      ),
+    ).toBe('ledger.invalid_split');
+    expect(
+      errorCode(() =>
+        expense(chart, meta(), {
+          accountId: card,
+          amount: money(8000, 'USD'),
+          lines: [line, line],
+        }),
+      ),
+    ).toBe('ledger.invalid_split');
   });
 });
 

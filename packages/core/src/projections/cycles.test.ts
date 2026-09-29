@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { reverse } from '../ledger/reverse.ts';
-import { meta } from '../ledger/testing.ts';
+import { money } from '@allotr/shared';
+import { income } from '../ledger/build.ts';
+import { meta, salary } from '../ledger/testing.ts';
+import { categoryId } from '../ledger/types.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
 import {
+  card,
   chart,
   day,
   openingUsd,
@@ -42,6 +46,19 @@ describe('cyclesOf', () => {
         closedOn: null,
       },
     ]);
+  });
+
+  it('opens a cycle with a split income that has a paycheck line', () => {
+    const pay = income(chart, meta('2026-03-01'), {
+      accountId: card,
+      amount: money(150000, 'USD'),
+      lines: [
+        { categoryId: categoryId('bonus'), amount: money(10000, 'USD') },
+        { categoryId: salary, amount: money(140000, 'USD') },
+      ],
+    });
+    const cycles = cyclesOf(view([pay]), day('2026-03-10'));
+    expect(cycles.at(-1)?.openedBy).toBe(pay.id);
   });
 
   it('closes the cycle when a paycheck arrives and opens the next', () => {

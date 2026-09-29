@@ -126,6 +126,16 @@ const month = {
       occurredOn: '2026-03-10',
       note: 'March rent',
     },
+    {
+      kind: 'expense',
+      account: 'Wallet',
+      amount: eur(7_500),
+      lines: [
+        { category: 'Food/Groceries', amount: eur(5_000) },
+        { category: 'Food/Coffee', amount: eur(2_500) },
+      ],
+      occurredOn: '2026-03-11',
+    },
   ],
   bills: [
     {
@@ -414,7 +424,16 @@ async function postOneByOne(client: TestClient): Promise<void> {
             kind: t.kind,
             accountId: accountId(t.account ?? ''),
             amount: t.amount,
-            categoryId: await categoryId(t.category ?? ''),
+            ...(t.lines === undefined
+              ? { categoryId: await categoryId(t.category ?? '') }
+              : {
+                  lines: await Promise.all(
+                    t.lines.map(async (line) => ({
+                      categoryId: await categoryId(line.category),
+                      amount: line.amount,
+                    })),
+                  ),
+                }),
             ...common,
           };
     const created = await ok(client.post('/v1/transactions', request));
@@ -472,6 +491,7 @@ async function view(client: TestClient) {
     postings: {
       accountId: string;
       amount: { amountMinor: number; currency: string };
+      categoryId: string | null;
     }[];
   }[];
   const bills = body(await client.get('/v1/bills')).bills as {
@@ -517,7 +537,11 @@ async function view(client: TestClient) {
           t.note,
           t.tagIds.length,
           t.postings
-            .map((p) => [accountName.get(p.accountId) ?? 'system', p.amount])
+            .map((p) => [
+              accountName.get(p.accountId) ?? 'system',
+              p.amount,
+              p.categoryId === null ? null : categoryName.get(p.categoryId),
+            ])
             .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
         ]),
       )
@@ -581,7 +605,7 @@ describe('an imported bundle matches the same entries posted one by one', () => 
       categoriesMatched: 0,
       rates: 3,
       tags: 2,
-      transactions: 8,
+      transactions: 9,
       bills: 3,
       billPayments: 1,
     });

@@ -269,6 +269,33 @@ describe('resolveBundle', () => {
     ).toContain(path);
   });
 
+  it('checks each line of a split', () => {
+    const r = resolveBundle(
+      bundle({
+        accounts: [wallet],
+        transactions: [
+          {
+            kind: 'expense',
+            account: 'Wallet',
+            amount: eur(100),
+            occurredOn: '2026-03-02',
+            lines: [
+              { category: 'Food/Groceries', amount: eur(60) },
+              { category: 'Paycheck', amount: eur(40) },
+            ],
+          },
+        ],
+      }),
+      starters,
+    );
+    expect(r.errors).toEqual([
+      {
+        path: '/transactions/0/lines/1/category',
+        message: '"Paycheck" is not a expense category.',
+      },
+    ]);
+  });
+
   it('hints at the full path for a child named alone', () => {
     const r = resolveBundle(
       bundle({ accounts: [wallet], transactions: [spend('Groceries')] }),
