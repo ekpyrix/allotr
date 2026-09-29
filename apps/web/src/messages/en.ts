@@ -42,7 +42,8 @@ export const en = {
   },
   shell: {
     twoFactorRequired:
-      'This instance requires two-factor authentication for your account. Setting it up from the web app arrives in a later release; ask your administrator in the meantime.',
+      'This instance requires two-factor authentication for your account.',
+    twoFactorSetUp: 'Set it up in Settings',
   },
   today: {
     title: 'Left today',
@@ -447,6 +448,40 @@ export const en = {
     security: {
       title: 'Security',
       signedInAs: 'Signed in as {email}.',
+      twoFactorTitle: 'Two-factor authentication',
+      twoFactorOn:
+        'On. Signing in asks for a code from your authenticator app.',
+      twoFactorOff:
+        'Off. Turn it on to ask for a code from an authenticator app when you sign in.',
+      turnOn: 'Turn on two-factor authentication',
+      turnOff: 'Turn off two-factor authentication',
+      enforced:
+        'This instance requires two-factor authentication, so it cannot be turned off.',
+      password: 'Your password',
+      continue: 'Continue',
+      checking: 'Checking…',
+      turnOffSubmit: 'Turn off',
+      scanTitle: 'Add Allotr to your authenticator app',
+      scanIntro:
+        'Scan the code with your authenticator app, then enter the 6-digit code it shows.',
+      qrAlt: 'QR code for your authenticator app',
+      secretIntro: 'Cannot scan it? Enter this key instead:',
+      backupTitle: 'Backup codes',
+      backupIntro:
+        'Keep these somewhere safe. Each one signs you in once without your phone. They are not shown again.',
+      code: 'Code from the app',
+      codeHint: '6 digits.',
+      turnOnSubmit: 'Verify and turn on',
+      turnedOn: 'Two-factor authentication is on.',
+      turnedOff: 'Two-factor authentication is off.',
+      devicesTitle: 'Signed-in devices',
+      deviceOn: '{browser} on {system}',
+      unknownDevice: 'Unknown device',
+      thisDevice: 'This device',
+      lastActive: 'Last active {when}',
+      revoked: '{name} signed out.',
+      revokeOthers: 'Sign out all other devices',
+      revokedOthers: 'Every other device is signed out.',
     },
   },
   quickEntry: {

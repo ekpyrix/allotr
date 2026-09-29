@@ -49,3 +49,35 @@ export async function signOut(queryClient: QueryClient) {
     predicate: (query) => query.queryKey[0] !== sessionQuery.queryKey[0],
   });
 }
+
+/**
+ * Starts TOTP enrolment. It is on only once a code from the new secret is
+ * verified; the backup codes are shown this once.
+ */
+export function enableTwoFactor(password: string) {
+  return call(endpoints.enableTwoFactor, { body: { password } });
+}
+
+export async function disableTwoFactor(password: string) {
+  await call(endpoints.disableTwoFactor, { body: { password } });
+}
+
+/** This device's sign-ins and the others, with which one is this. */
+export const authSessionsQuery = queryOptions({
+  queryKey: ['devices'],
+  queryFn: async () => {
+    const [current, sessions] = await Promise.all([
+      call(endpoints.currentAuthSession),
+      call(endpoints.authSessions),
+    ]);
+    return { currentToken: current?.session.token ?? null, sessions };
+  },
+});
+
+export async function revokeSession(token: string) {
+  await call(endpoints.revokeSession, { body: { token } });
+}
+
+export async function revokeOtherSessions() {
+  await call(endpoints.revokeOtherSessions, { body: {} });
+}

@@ -40,6 +40,18 @@ import { endpoint } from './api.ts';
 // endpoints.test.ts checks them against docs/openapi.json.
 
 const signInBodySchema = z.object({ email: z.string(), password: z.string() });
+const passwordBodySchema = z.object({ password: z.string() });
+
+/** A Better Auth session as its list route returns it. */
+export const authSessionSchema = z.object({
+  id: z.string(),
+  token: z.string(),
+  userAgent: z.string().nullish(),
+  ipAddress: z.string().nullish(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+export type AuthSession = z.infer<typeof authSessionSchema>;
 
 export const endpoints = {
   onboardingStatus: endpoint({
@@ -72,6 +84,49 @@ export const endpoints = {
     method: 'POST',
     path: '/v1/auth/two-factor/verify-totp',
     body: z.object({ code: z.string() }),
+    response: z.unknown(),
+    openapi: false,
+  }),
+  enableTwoFactor: endpoint({
+    method: 'POST',
+    path: '/v1/auth/two-factor/enable',
+    body: passwordBodySchema,
+    response: z.object({
+      totpURI: z.string(),
+      backupCodes: z.array(z.string()),
+    }),
+    openapi: false,
+  }),
+  disableTwoFactor: endpoint({
+    method: 'POST',
+    path: '/v1/auth/two-factor/disable',
+    body: passwordBodySchema,
+    response: z.unknown(),
+    openapi: false,
+  }),
+  currentAuthSession: endpoint({
+    method: 'GET',
+    path: '/v1/auth/get-session',
+    response: z.object({ session: z.object({ token: z.string() }) }).nullable(),
+    openapi: false,
+  }),
+  authSessions: endpoint({
+    method: 'GET',
+    path: '/v1/auth/list-sessions',
+    response: z.array(authSessionSchema),
+    openapi: false,
+  }),
+  revokeSession: endpoint({
+    method: 'POST',
+    path: '/v1/auth/revoke-session',
+    body: z.object({ token: z.string() }),
+    response: z.unknown(),
+    openapi: false,
+  }),
+  revokeOtherSessions: endpoint({
+    method: 'POST',
+    path: '/v1/auth/revoke-other-sessions',
+    body: z.object({}),
     response: z.unknown(),
     openapi: false,
   }),

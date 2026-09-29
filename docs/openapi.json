@@ -973,11 +973,15 @@
                     },
                     "twoFactorRequired": {
                       "type": "boolean"
+                    },
+                    "twoFactorEnforced": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "user",
-                    "twoFactorRequired"
+                    "twoFactorRequired",
+                    "twoFactorEnforced"
                   ]
                 }
               }

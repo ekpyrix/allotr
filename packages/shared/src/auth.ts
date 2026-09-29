@@ -38,6 +38,8 @@ export type SessionUser = z.infer<typeof sessionUserSchema>;
 export const sessionSchema = z.object({
   user: sessionUserSchema,
   twoFactorRequired: z.boolean(),
+  /** The instance requires 2FA, so enrolled users cannot turn it off. */
+  twoFactorEnforced: z.boolean(),
 });
 export type SessionView = z.infer<typeof sessionSchema>;
 

@@ -1,18 +1,19 @@
 import type { SessionView } from '@allotr/shared';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { ShortcutsSwitch } from '@/components/shortcuts-switch';
 import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { Button } from '@/components/ui/button';
-import { hashTarget } from '@/features/settings/hash-target';
 import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
+import { hashTarget } from '@/features/settings/hash-target';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
 import { Section } from '@/features/settings/section';
+import { SecuritySection } from '@/features/settings/security';
 import { TagsSection } from '@/features/settings/tags';
 import {
   allAccountsQuery,
@@ -22,7 +23,7 @@ import {
   todayQuery,
 } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
-import { signOut } from '@/lib/session';
+import { sessionQuery } from '@/lib/session';
 import { billsQuery, ratesQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
@@ -45,36 +46,41 @@ function useHashFocus(ready: boolean) {
   }, [ready, hash]);
 }
 
-function SignOutButton() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  return (
-    <Button
-      variant="outline"
-      className="mt-6 h-11"
-      onClick={() => {
-        void signOut(queryClient).then(() => navigate({ to: '/sign-in' }));
-      }}
-    >
-      {t('settings.signOut')}
-    </Button>
-  );
-}
+// This device's language and zone, for a user who cannot read their ledger
+// settings until they enrol in 2FA.
+const deviceLocale = navigator.language;
+const deviceTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 // The settings view (FR-W2): one page of sections, each with its own hash.
-export function SettingsPage({ session }: { session: SessionView }) {
-  const settings = useQuery(ledgerSettingsQuery);
-  const today = useQuery(todayQuery);
+// The route context holds the session as it was on arrival; the query has
+// it after enrolment or turning 2FA off.
+export function SettingsPage({ session: initial }: { session: SessionView }) {
+  const session = useQuery(sessionQuery).data ?? initial;
+  // Until they enrol, the server refuses everything but the session.
+  const enabled = !session.twoFactorRequired;
+  const settings = useQuery({ ...ledgerSettingsQuery, enabled });
+  const today = useQuery({ ...todayQuery, enabled });
   // Merged categories too: they name the merge targets of older merges.
-  const categories = useQuery(allCategoriesQuery);
-  const tags = useQuery(tagsQuery);
-  const bills = useQuery(billsQuery);
-  const rates = useQuery(ratesQuery);
+  const categories = useQuery({ ...allCategoriesQuery, enabled });
+  const tags = useQuery({ ...tagsQuery, enabled });
+  const bills = useQuery({ ...billsQuery, enabled });
+  const rates = useQuery({ ...ratesQuery, enabled });
   // Archived too: a bill can still name one.
-  const accounts = useQuery(allAccountsQuery);
+  const accounts = useQuery({ ...allAccountsQuery, enabled });
   const all = [settings, today, categories, tags, bills, rates, accounts];
-  const ready = all.every((q) => q.data !== undefined);
+  const ready = !enabled || all.every((q) => q.data !== undefined);
   useHashFocus(ready);
+
+  if (!enabled)
+    return (
+      <Page title={t('settings.title')}>
+        <SecuritySection
+          session={session}
+          locale={deviceLocale}
+          timeZone={deviceTimeZone}
+        />
+      </Page>
+    );
 
   const failed = all.find((q) => q.isError && q.data === undefined);
   if (failed !== undefined)
@@ -110,6 +116,7 @@ export function SettingsPage({ session }: { session: SessionView }) {
       </Page>
     );
 
+  const { locale, timeZone, defaultCurrency } = settings.data;
   return (
     <Page title={t('settings.title')}>
       <LedgerSettingsSection settings={settings.data} today={today.data} />
@@ -119,24 +126,19 @@ export function SettingsPage({ session }: { session: SessionView }) {
         bills={bills.data.bills}
         accounts={accounts.data.accounts}
         today={today.data}
-        locale={settings.data.locale}
+        locale={locale}
       />
       <RatesSection
         rates={rates.data.rates}
         today={today.data}
-        defaultCurrency={settings.data.defaultCurrency}
-        locale={settings.data.locale}
+        defaultCurrency={defaultCurrency}
+        locale={locale}
       />
       <Section id="appearance" title={t('settings.appearance.title')}>
         <ThemeModeSwitch className="mt-4" />
         <ShortcutsSwitch className="mt-6" />
       </Section>
-      <Section id="security" title={t('settings.security.title')}>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t('settings.security.signedInAs', { email: session.user.email })}
-        </p>
-        <SignOutButton />
-      </Section>
+      <SecuritySection session={session} locale={locale} timeZone={timeZone} />
     </Page>
   );
 }

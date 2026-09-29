@@ -316,6 +316,31 @@ describe('two-factor sign-in', () => {
       code: 'two_factor_enrollment_required',
     });
   });
+
+  it('keeps 2FA on while the instance requires it', async () => {
+    expect(body(await admin.get('/v1/session'))).toMatchObject({
+      twoFactorRequired: false,
+      twoFactorEnforced: true,
+    });
+    const refused = await admin.post('/v1/auth/two-factor/disable', {
+      password,
+    });
+    expect(refused.status).toBe(403);
+    expect(body(refused)).toMatchObject({ code: 'two_factor_required' });
+    expect(body(await admin.get('/v1/session'))).toMatchObject({
+      user: { twoFactorEnabled: true },
+    });
+
+    await admin.patch('/v1/admin/settings', { requireTwoFactor: false });
+    const disabled = await admin.post('/v1/auth/two-factor/disable', {
+      password,
+    });
+    expect(disabled.status).toBe(200);
+    expect(body(await admin.get('/v1/session'))).toMatchObject({
+      user: { twoFactorEnabled: false },
+      twoFactorEnforced: false,
+    });
+  });
 });
 
 describe('sign-in lockout and rate limiting', () => {

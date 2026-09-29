@@ -6,6 +6,7 @@ import type {
 import { expect, test, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
+import { totpFromUri } from './totp.ts';
 
 // The settings view (FR-W2). One instance per size; the tests build on each
 // other. The server runs on the real clock, so figures are compared with
@@ -327,4 +328,106 @@ test('a manual rate brings a foreign account into the figures', async ({
     page.getByRole('heading', { name: 'Exchange rates' }),
   ).toBeFocused();
   expect((await today(page)).missingRates).toEqual(['EUR']);
+});
+
+// These run last: they turn 2FA on, which the sign-in above cannot pass,
+// and leave it off again.
+test('signing out other devices signs out a second browser', async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  const other = await browser.newContext({ baseURL: baseURL ?? '' });
+  const otherPage = await other.newPage();
+  const signIn = await otherPage.request.post('/v1/auth/sign-in/email', {
+    data: { email: account.email, password: account.password },
+    headers: { origin: baseURL ?? '' },
+  });
+  expect(signIn.ok()).toBe(true);
+  await otherPage.goto('/today');
+  await expect(otherPage).toHaveURL(/\/today$/);
+
+  await page.goto('/settings#security');
+  const region = section(page, 'Security');
+  await expect(
+    page.getByRole('heading', { name: 'Security', exact: true }),
+  ).toBeFocused();
+  const devices = region.getByRole('list', { name: 'Signed-in devices' });
+  await expect(devices.getByText('This device')).toHaveCount(1);
+  expect(await devices.getByRole('listitem').count()).toBeGreaterThan(1);
+  await expectAccessible(page);
+
+  await region
+    .getByRole('button', { name: 'Sign out all other devices' })
+    .click();
+  await expect(
+    region.getByText('Every other device is signed out.'),
+  ).toBeVisible();
+  await expect(devices.getByRole('listitem')).toHaveCount(1);
+
+  await otherPage.goto('/today');
+  await expect(otherPage).toHaveURL(/\/sign-in/);
+  await other.close();
+  await page.reload();
+  await expect(page).toHaveURL(/\/settings/);
+});
+
+test('two-factor authentication turns on with a code and stays on while required', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('/settings#security');
+  const region = section(page, 'Security');
+  await region
+    .getByRole('button', { name: 'Turn on two-factor authentication' })
+    .click();
+  await region.getByLabel('Your password').fill(account.password);
+  await region.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    region.getByRole('img', { name: 'QR code for your authenticator app' }),
+  ).toBeVisible();
+  await expect(
+    region.getByRole('list', { name: 'Backup codes' }).getByRole('listitem'),
+  ).not.toHaveCount(0);
+  await expectAccessible(page);
+
+  const secret = (await region.getByTestId('totp-secret').innerText()).replace(
+    /\s/g,
+    '',
+  );
+  const uri = `otpauth://totp/Allotr?secret=${secret}`;
+  await region.getByLabel('Code from the app').fill(totpFromUri(uri));
+  await region.getByRole('button', { name: 'Verify and turn on' }).click();
+  await expect(
+    region.getByText('Two-factor authentication is on.'),
+  ).toBeVisible();
+  await expect(region).toContainText('On. Signing in asks for a code');
+
+  const patch = (requireTwoFactor: boolean) =>
+    page.request.patch('/v1/admin/settings', {
+      data: { requireTwoFactor },
+      headers: { origin: baseURL ?? '' },
+    });
+  expect((await patch(true)).ok()).toBe(true);
+  await page.reload();
+  await expect(
+    region.getByText('requires two-factor authentication, so it cannot', {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(
+    region.getByRole('button', { name: 'Turn off two-factor authentication' }),
+  ).toHaveCount(0);
+
+  expect((await patch(false)).ok()).toBe(true);
+  await page.reload();
+  await region
+    .getByRole('button', { name: 'Turn off two-factor authentication' })
+    .click();
+  await region.getByLabel('Your password').fill(account.password);
+  await region.getByRole('button', { name: 'Turn off' }).click();
+  await expect(
+    region.getByText('Two-factor authentication is off.'),
+  ).toBeVisible();
+  await expectAccessible(page);
 });
