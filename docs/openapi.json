@@ -8758,6 +8758,64 @@
                         "currency"
                       ]
                     },
+                    "cycleSpent": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "billsDue": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "billId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "dueOn": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "billId",
+                          "name",
+                          "dueOn",
+                          "amount"
+                        ]
+                      }
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -8778,6 +8836,8 @@
                     "todayAllowance",
                     "leftToday",
                     "liveDaily",
+                    "cycleSpent",
+                    "billsDue",
                     "missingRates"
                   ]
                 }

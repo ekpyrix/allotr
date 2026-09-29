@@ -9,9 +9,15 @@ import {
 } from '@allotr/shared';
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
-import { defaultPolicies, type Policies } from './policies.ts';
+import { defaultPolicies, dueDates, type Policies } from './policies.ts';
 import { convertOn } from './rates.ts';
-import type { Cycle, DailyFigures, Figure, LedgerView } from './types.ts';
+import type {
+  BillDue,
+  Cycle,
+  DailyFigures,
+  Figure,
+  LedgerView,
+} from './types.ts';
 
 // The daily usable figures (docs/domain.md "Daily usable", FR-C4, FR-C5).
 // Sums stay per currency until the end and each is converted once to the
@@ -51,11 +57,20 @@ export function availableSums(
 }
 
 /**
- * What left the budget as spending on `date`, per currency: the on-budget
- * side of every entry that reaches an Expenses account, less its undo.
+ * What left the budget as spending from `from` through `to`, per currency:
+ * the on-budget side of every entry that reaches an Expenses account, less
+ * its undo. Each entry counts by the budget groups of its own day.
  */
-function spentSums(view: LedgerView, date: LocalDate): Sums {
-  const groups = budgetGroupsOn(view.chart, view.ledger, date);
+function spentSums(view: LedgerView, from: LocalDate, to: LocalDate): Sums {
+  const groupsByDay = new Map<LocalDate, ReturnType<typeof budgetGroupsOn>>();
+  const groupsOn = (date: LocalDate) => {
+    let groups = groupsByDay.get(date);
+    if (groups === undefined) {
+      groups = budgetGroupsOn(view.chart, view.ledger, date);
+      groupsByDay.set(date, groups);
+    }
+    return groups;
+  };
   const expenseAccounts = new Set(
     [...view.chart.values()]
       .filter((a) => a.systemRole === 'expenses')
@@ -63,8 +78,9 @@ function spentSums(view: LedgerView, date: LocalDate): Sums {
   );
   const sums: Sums = new Map();
   for (const t of view.ledger) {
-    if (t.occurredOn !== date) continue;
+    if (t.occurredOn < from || t.occurredOn > to) continue;
     if (!t.postings.some((p) => expenseAccounts.has(p.accountId))) continue;
+    const groups = groupsOn(t.occurredOn);
     for (const p of t.postings) {
       if (groups.get(p.accountId) === 'on') {
         add(sums, p.amount.currency, -BigInt(p.amount.amountMinor));
@@ -72,6 +88,32 @@ function spentSums(view: LedgerView, date: LocalDate): Sums {
     }
   }
   return sums;
+}
+
+/**
+ * Bill due dates in the cycle's bill window, on or before `date`, that are
+ * not paid by the end of it, earliest first.
+ */
+export function billsDueOn(
+  view: LedgerView,
+  cycle: Cycle,
+  date: LocalDate,
+): BillDue[] {
+  const window = billWindow(cycle);
+  const due: BillDue[] = [];
+  for (const bill of view.bills) {
+    for (const dueOn of dueDates(bill.dueDay, window)) {
+      if (dueOn > date) break;
+      const paid = bill.payments.some(
+        (payment) => payment.dueOn === dueOn && payment.paidOn <= date,
+      );
+      if (!paid) due.push({ billId: bill.id, dueOn, amount: bill.amount });
+    }
+  }
+  return due.sort(
+    (a, b) =>
+      a.dueOn.localeCompare(b.dueOn) || a.billId.localeCompare(b.billId),
+  );
 }
 
 // Converts each currency's sum once and adds them up; currencies without a
@@ -141,7 +183,8 @@ export function dailyFiguresOn(
   const daysLeft = Math.max(1, daysBetween(today, cycleEnd));
 
   const availableNative = availableSums(view, cycles, today);
-  const spentNative = spentSums(view, today);
+  const spentNative = spentSums(view, today, today);
+  const cycleSpentNative = spentSums(view, cycle.openedOn, today);
   // The start of the day counts everything dated today except spending,
   // so a paycheck that lands today is in today's allowance.
   const startNative: Sums = new Map(availableNative);
@@ -152,6 +195,7 @@ export function dailyFiguresOn(
   const available = toFigure(view, availableNative, today);
   const startOfDay = toFigure(view, startNative, today);
   const spentToday = toFigure(view, spentNative, today);
+  const cycleSpent = toFigure(view, cycleSpentNative, today);
   const todayAllowance = perDay(startOfDay.amount, daysLeft);
 
   return {
@@ -166,11 +210,14 @@ export function dailyFiguresOn(
     todayAllowance,
     leftToday: minus(todayAllowance, spentToday.amount),
     liveDaily: perDay(available.amount, daysLeft),
+    cycleSpent: cycleSpent.amount,
+    billsDue: billsDueOn(view, cycle, today),
     missingRates: [
       ...new Set([
         ...available.missingRates,
         ...startOfDay.missingRates,
         ...spentToday.missingRates,
+        ...cycleSpent.missingRates,
       ]),
     ].sort(),
   };

@@ -1,5 +1,5 @@
-import type { CreateTransactionBody } from '@allotr/shared';
-import { queryOptions } from '@tanstack/react-query';
+import type { CreateTransactionBody, LocalDate } from '@allotr/shared';
+import { queryOptions, skipToken } from '@tanstack/react-query';
 import { call } from './api.ts';
 import { endpoints } from './endpoints.ts';
 
@@ -31,6 +31,23 @@ export const todayQuery = queryOptions({
   queryFn: () => call(endpoints.today),
 });
 
+/**
+ * Entries dated `day`, newest first; a day rarely has more than a page.
+ * Waits while the day is not known yet.
+ */
+export function entriesOnQuery(day: LocalDate | undefined) {
+  return queryOptions({
+    queryKey: ['transactions', { from: day, to: day }],
+    queryFn:
+      day === undefined
+        ? skipToken
+        : () =>
+            call(endpoints.transactions, {
+              query: { from: day, to: day, limit: 200 },
+            }),
+  });
+}
+
 /** What a new entry changes; Today (#59) and the ledger (#60) read these. */
 export const entryQueryKeys = [
   ['transactions'],
@@ -47,4 +64,9 @@ export function createTransaction(
     body,
     headers: { 'idempotency-key': idempotencyKey },
   });
+}
+
+/** Undo: posts a reversal; the same key set as a new entry goes stale. */
+export function reverseTransaction(id: string) {
+  return call(endpoints.reverseTransaction, { params: { id }, body: {} });
 }

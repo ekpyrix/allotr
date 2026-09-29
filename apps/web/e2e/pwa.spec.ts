@@ -103,7 +103,10 @@ test('offline, the app loads and shows a notice instead of figures', async ({
     page.getByRole('heading', { name: t('offline.title') }),
   ).toBeVisible();
   await expect(page.getByText(t('offline.intro'))).toBeVisible();
-  await expect(page.getByLabel(t('today.noFigure'))).toHaveCount(0);
+  // No stale figures: the Today view is not rendered at all.
+  await expect(
+    page.getByRole('heading', { name: t('today.title') }),
+  ).toHaveCount(0);
   await expectAccessible(page);
 
   // Back online, the page loads by itself.
@@ -127,7 +130,10 @@ test('losing the connection hides the view until it returns', async ({
   await expect(main.locator('[aria-live="polite"]')).toHaveText(
     t('offline.title'),
   );
-  await expect(page.getByLabel(t('today.noFigure'))).toHaveCount(0);
+  // No stale figures: the Today view is not rendered at all.
+  await expect(
+    page.getByRole('heading', { name: t('today.title') }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('navigation', { name: t('nav.label') }),
   ).toBeVisible();

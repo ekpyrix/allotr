@@ -287,6 +287,18 @@ export const todaySchema = z.object({
   leftToday: moneySchema,
   /** Available now split over the days left, rounded down. */
   liveDaily: moneySchema,
+  /** Spending since the cycle opened, today included. */
+  cycleSpent: moneySchema,
+  /** Unpaid due dates in this cycle on or before today, earliest first. */
+  billsDue: z.array(
+    z.object({
+      billId: idSchema,
+      name: z.string(),
+      dueOn: localDateSchema,
+      /** In the currency of the account it is paid from. */
+      amount: moneySchema,
+    }),
+  ),
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
 });

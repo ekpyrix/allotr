@@ -5,11 +5,13 @@ import {
   createTransactionBodySchema,
   ledgerSettingsSchema,
   onboardingStatusSchema,
+  reverseTransactionBodySchema,
   sessionSchema,
   sessionUserSchema,
   signUpBodySchema,
   tagListSchema,
   todaySchema,
+  transactionListSchema,
   transactionSchema,
 } from '@allotr/shared';
 import { z } from 'zod';
@@ -97,10 +99,21 @@ export const endpoints = {
     path: '/v1/today',
     response: todaySchema,
   }),
+  transactions: endpoint({
+    method: 'GET',
+    path: '/v1/transactions',
+    response: transactionListSchema,
+  }),
   createTransaction: endpoint({
     method: 'POST',
     path: '/v1/transactions',
     body: createTransactionBodySchema,
+    response: transactionSchema,
+  }),
+  reverseTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions/{id}/reverse',
+    body: reverseTransactionBodySchema,
     response: transactionSchema,
   }),
 };

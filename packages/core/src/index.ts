@@ -51,6 +51,7 @@ export {
 export {
   billId,
   type Bill,
+  type BillDue,
   type BillId,
   type BillPayment,
   type Cycle,
@@ -63,6 +64,7 @@ export {
 export { cycleOn, cyclesOf } from './projections/cycles.ts';
 export {
   availableOn,
+  billsDueOn,
   dailyFigures,
   dailyFiguresOn,
 } from './projections/daily.ts';

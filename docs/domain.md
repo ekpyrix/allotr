@@ -110,6 +110,13 @@ live_daily       = available(now) / days_left
   paid; payments name the due date they settle. A payment mark is not a
   ledger entry: it may link the entry that paid it, and undoing the mark
   reserves the bill again.
+- A bill is *due* once a due date in the cycle is today or past and it is
+  not paid; the Today view lists it until it is marked paid.
+- `cycle_spent` is `spent_today` summed from the day the cycle opened through
+  today, each entry by the budget groups of its own day. The Today view's
+  pace bar sets `cycle_spent / (cycle_spent + available)` against the share
+  of the cycle's days gone. Paying a bill counts as spending, because the
+  reserve is released at the same time.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 

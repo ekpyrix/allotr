@@ -20,6 +20,8 @@ type Today = {
   todayAllowance: Money;
   leftToday: Money;
   liveDaily: Money;
+  cycleSpent: Money;
+  billsDue: { billId: string; name: string; dueOn: string; amount: Money }[];
   missingRates: string[];
 };
 type Bill = {
@@ -111,6 +113,8 @@ describe('today for a new user', () => {
       todayAllowance: usd(0),
       leftToday: usd(0),
       liveDaily: usd(0),
+      cycleSpent: usd(0),
+      billsDue: [],
       missingRates: [],
     });
   });
@@ -149,6 +153,7 @@ describe('daily figures', () => {
       leftToday: usd(7500),
       // 167500 / 17 = 9852.94, rounded down.
       liveDaily: usd(9852),
+      cycleSpent: usd(2500),
     });
   });
 
@@ -162,6 +167,8 @@ describe('daily figures', () => {
       todayAllowance: usd(9800),
       leftToday: usd(7300),
       liveDaily: usd(9652),
+      // The cycle opened on the 15th, so the 14th is not in it.
+      cycleSpent: usd(2500),
     });
 
     const { id } = response.body as { id: string };
@@ -210,6 +217,32 @@ describe('daily figures', () => {
       expect(undone.status).toBe(200);
       expect((undone.body as Bill).payments).toEqual([]);
       expect((await today(h.alice)).available).toEqual(usd(137500));
+    });
+
+    it('lists a due date that has passed unpaid until it is paid', async () => {
+      expect((await today(h.alice)).billsDue).toEqual([]);
+      clock = new Date('2026-03-21T12:00:00Z');
+      try {
+        expect((await today(h.alice)).billsDue).toEqual([
+          {
+            billId: rent.id,
+            name: 'Rent',
+            dueOn: '2026-03-20',
+            amount: usd(30000),
+          },
+        ]);
+        const paid = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
+          dueOn: '2026-03-20',
+        });
+        expect(paid.status).toBe(201);
+        expect((await today(h.alice)).billsDue).toEqual([]);
+        expect(
+          (await h.alice.delete(`/v1/bills/${rent.id}/payments/2026-03-20`))
+            .status,
+        ).toBe(200);
+      } finally {
+        clock = started;
+      }
     });
 
     it('only accepts payments for real due dates and entries', async () => {
