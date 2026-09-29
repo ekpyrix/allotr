@@ -105,6 +105,21 @@ describe('resolveBundle', () => {
     expect(r.matched).toBe(1);
   });
 
+  it('takes the paycheck flag of a matched category from the bundle', () => {
+    const r = resolveBundle(
+      bundle({
+        categories: [
+          { name: 'Other income', isPaycheck: true },
+          { name: 'Paycheck', isPaycheck: false },
+        ],
+      }),
+      starters,
+    );
+    expect(r.errors).toEqual([]);
+    expect(r.matched).toBe(2);
+    expect([...r.paycheckFlags.values()]).toEqual([true, false]);
+  });
+
   it('creates new parents before their children', () => {
     const r = resolveBundle(
       bundle({
@@ -172,9 +187,53 @@ describe('resolveBundle', () => {
       '/categories/0/kind',
     ],
     [
-      'a match whose paycheck flag differs',
-      { categories: [{ name: 'Other income', isPaycheck: true }] },
+      'a paycheck flag on an expense category',
+      { categories: [{ name: 'Fun', isPaycheck: true }] },
       '/categories/0/isPaycheck',
+    ],
+    [
+      'a write-off from an unknown account',
+      {
+        transactions: [
+          {
+            kind: 'write_off',
+            account: 'Bank',
+            balance: eur(1),
+            occurredOn: '2026-03-02',
+          },
+        ],
+      },
+      '/transactions/0/account',
+    ],
+    [
+      'a reconciliation of an unknown account',
+      {
+        reconciliations: [
+          {
+            account: 'Bank',
+            on: '2026-03-02',
+            stated: eur(1),
+            computed: eur(1),
+          },
+        ],
+      },
+      '/reconciliations/0/account',
+    ],
+    [
+      'a reconciliation adjusted by an unknown ref',
+      {
+        accounts: [wallet],
+        reconciliations: [
+          {
+            account: 'Wallet',
+            on: '2026-03-02',
+            stated: eur(2),
+            computed: eur(1),
+            adjustment: 'nope',
+          },
+        ],
+      },
+      '/reconciliations/0/adjustment',
     ],
     [
       'an unknown account',

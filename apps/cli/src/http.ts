@@ -9,8 +9,15 @@ export interface ApiResponse {
   readonly body: unknown;
 }
 
+/** An answer whose text is kept as sent, for downloads. */
+export interface Download extends ApiResponse {
+  readonly text: string;
+  readonly headers: Headers;
+}
+
 export interface Session {
   post(path: string, body?: unknown): Promise<ApiResponse>;
+  get(path: string): Promise<Download>;
 }
 
 /** The server could not be reached at all. */
@@ -33,36 +40,45 @@ export function createSession(server: string, fetchFn: typeof fetch): Session {
     }
   }
 
-  return {
-    async post(path, body = {}) {
-      const headers = new Headers({
-        origin,
-        accept: 'application/json',
-        'content-type': 'application/json',
+  async function send(
+    method: 'GET' | 'POST',
+    path: string,
+    body?: unknown,
+  ): Promise<Download> {
+    const headers = new Headers({ origin, accept: 'application/json' });
+    if (body !== undefined) headers.set('content-type', 'application/json');
+    if (cookies.size > 0) {
+      headers.set(
+        'cookie',
+        [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
+      );
+    }
+    // The connection can also drop while the answer is being read.
+    try {
+      const response = await fetchFn(`${base}${path}`, {
+        method,
+        headers,
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
-      if (cookies.size > 0) {
-        headers.set(
-          'cookie',
-          [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
-        );
-      }
-      // The connection can also drop while the answer is being read.
-      try {
-        const response = await fetchFn(`${base}${path}`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(body),
-        });
-        remember(response);
-        const text = await response.text();
-        return { status: response.status, body: parseJson(text) };
-      } catch (error) {
-        throw new UnreachableError(
-          error instanceof Error ? error.message : String(error),
-          { cause: error },
-        );
-      }
-    },
+      remember(response);
+      const text = await response.text();
+      return {
+        status: response.status,
+        body: parseJson(text),
+        text,
+        headers: response.headers,
+      };
+    } catch (error) {
+      throw new UnreachableError(
+        error instanceof Error ? error.message : String(error),
+        { cause: error },
+      );
+    }
+  }
+
+  return {
+    post: (path, body = {}) => send('POST', path, body),
+    get: (path) => send('GET', path),
   };
 }
 

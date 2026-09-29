@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CliExit, type CliIo } from './io.ts';
+import { suggestedName } from './export-command.ts';
 import { run } from './run.ts';
 import {
   fakeFetch,
@@ -25,6 +26,7 @@ const result = {
   transactions: 12,
   bills: 1,
   billPayments: 1,
+  reconciliations: 0,
 };
 
 const withTwoFactor: Record<string, Handler> = {
@@ -51,7 +53,9 @@ function harness(
   const answers = [
     ...(options.answers ?? ['alice@example.test', 'correct horse', '123456']),
   ];
-  const files = options.files ?? { 'month.json': JSON.stringify(bundle) };
+  const files: Record<string, string> = {
+    ...(options.files ?? { 'month.json': JSON.stringify(bundle) }),
+  };
   const io: CliIo = {
     fetch: fake.fetch,
     readFile: (path) => {
@@ -59,6 +63,17 @@ function harness(
       return text === undefined
         ? Promise.reject(new Error(`ENOENT: no such file, open '${path}'`))
         : Promise.resolve(text);
+    },
+    writeNewFile: (path, text) => {
+      if (path in files) {
+        return Promise.reject(
+          Object.assign(new Error(`EEXIST: file already exists '${path}'`), {
+            code: 'EEXIST',
+          }),
+        );
+      }
+      files[path] = text;
+      return Promise.resolve();
     },
     prompt: (question, { hidden }) => {
       questions.push({ question, hidden });
@@ -71,7 +86,7 @@ function harness(
     stderr: (line) => err.push(line),
   };
   const calls = () => fake.requests.map((r) => `${r.method} ${r.path}`);
-  return { io, requests: fake.requests, out, err, questions, calls };
+  return { io, requests: fake.requests, out, err, questions, calls, files };
 }
 
 const importArgs = ['import', 'month.json', '--server', server];
@@ -334,5 +349,90 @@ describe('arguments', () => {
     const h = harness(withTwoFactor);
     expect(await run(['--help'], h.io)).toBe(0);
     expect(h.out.join('\n')).toContain('allotr import <file.json>');
+  });
+});
+
+describe('allotr export', () => {
+  const csv = 'date,entry_id\r\n2026-03-02,e1\r\n';
+  const exporting: Record<string, Handler> = {
+    ...withTwoFactor,
+    'GET /v1/export': () =>
+      new Response(csv, {
+        status: 200,
+        headers: {
+          'content-type': 'text/csv; charset=utf-8',
+          'content-disposition':
+            'attachment; filename="allotr-export-2026-03-02.csv"',
+        },
+      }),
+  };
+  const exportArgs = ['export', '--server', server, '--format', 'csv'];
+
+  it('signs in, saves under the suggested name and signs out', async () => {
+    const h = harness(exporting, { files: {} });
+    expect(await run(exportArgs, h.io)).toBe(0);
+    expect(h.calls()).toEqual([
+      'POST /v1/auth/sign-in/email',
+      'POST /v1/auth/two-factor/verify-totp',
+      'GET /v1/export',
+      'POST /v1/auth/sign-out',
+    ]);
+    expect(h.requests[2]?.url).toBe(`${server}/v1/export?format=csv`);
+    expect(h.files['allotr-export-2026-03-02.csv']).toBe(csv);
+    expect(h.out).toEqual([
+      'Saved the csv export to allotr-export-2026-03-02.csv.',
+    ]);
+  });
+
+  it('writes to --out and asks for JSON by default', async () => {
+    const h = harness(exporting, { files: {} });
+    expect(
+      await run(['export', '--server', server, '--out', 'backup.json'], h.io),
+    ).toBe(0);
+    expect(h.requests[2]?.url).toBe(`${server}/v1/export?format=json`);
+    expect(h.files['backup.json']).toBe(csv);
+  });
+
+  it('never overwrites a file and still signs out', async () => {
+    const h = harness(exporting, { files: { 'backup.csv': 'old' } });
+    expect(await run([...exportArgs, '--out', 'backup.csv'], h.io)).toBe(1);
+    expect(h.files['backup.csv']).toBe('old');
+    expect(h.err).toEqual([
+      'backup.csv already exists. Choose another name with --out.',
+    ]);
+    expect(h.calls().at(-1)).toBe('POST /v1/auth/sign-out');
+  });
+
+  it('reports a refused export', async () => {
+    const h = harness(
+      {
+        ...exporting,
+        'GET /v1/export': () =>
+          problem(403, 'Forbidden', {
+            code: 'two_factor_enrollment_required',
+          }),
+      },
+      { files: {} },
+    );
+    expect(await run(exportArgs, h.io)).toBe(1);
+    expect(h.err[0]).toMatch(
+      /^Export failed: this instance requires two-factor/,
+    );
+  });
+
+  it.each([
+    [['export', '--server', server, '--format', 'xlsx']],
+    [['export', 'extra.json', '--server', server]],
+    [['import', 'month.json', '--server', server, '--format', 'csv']],
+  ])('refuses %j before asking anything', async (args) => {
+    const h = harness(exporting, { files: {} });
+    expect(await run(args, h.io)).toBe(2);
+    expect(h.questions).toEqual([]);
+  });
+
+  it('ignores a suggested name with a directory in it', () => {
+    expect(suggestedName('attachment; filename="../x.csv"')).toBeNull();
+    expect(suggestedName('attachment; filename=".hidden"')).toBeNull();
+    expect(suggestedName(null)).toBeNull();
   });
 });

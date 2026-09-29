@@ -1,4 +1,6 @@
 import { parseArgs } from 'node:util';
+import { exportFormatSchema } from '@allotr/shared';
+import { runExport } from './export-command.ts';
 import { UnreachableError } from './http.ts';
 import { runImport } from './import-command.ts';
 import { CliExit, messageOf, type CliIo } from './io.ts';
@@ -8,11 +10,17 @@ import { CliExit, messageOf, type CliIo } from './io.ts';
 
 export const usage = `Usage:
   allotr import <file.json> --server <url> [--email <address>]
+  allotr export --server <url> [--format json|csv|beancount] [--out <file>]
+                [--email <address>]
   allotr --help
 
 Commands:
-  import   Fill an empty ledger from an Allotr JSON bundle. Asks for the
-           password and, when two-factor is on, the authenticator code.`;
+  import   Fill an empty ledger from an Allotr JSON bundle.
+  export   Save all ledger data to a new file: the JSON bundle (the
+           default, which import takes back), CSV or Beancount.
+
+Both ask for the password and, when two-factor is on, the authenticator
+code, and sign out when done.`;
 
 function parse(argv: readonly string[]) {
   return parseArgs({
@@ -22,6 +30,8 @@ function parse(argv: readonly string[]) {
     options: {
       server: { type: 'string' },
       email: { type: 'string' },
+      format: { type: 'string' },
+      out: { type: 'string' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -54,13 +64,22 @@ export async function run(argv: readonly string[], io: CliIo): Promise<number> {
     return 0;
   }
   const [command, file, ...rest] = positionals;
-  if (
-    command !== 'import' ||
-    file === undefined ||
-    rest.length > 0 ||
-    values.server === undefined
-  ) {
+  const isImport =
+    command === 'import' &&
+    file !== undefined &&
+    rest.length === 0 &&
+    values.format === undefined &&
+    values.out === undefined;
+  const isExport = command === 'export' && file === undefined;
+  if (!(isImport || isExport) || values.server === undefined) {
     io.stderr(usage);
+    return 2;
+  }
+  const format = exportFormatSchema.safeParse(values.format ?? 'json');
+  if (!format.success) {
+    io.stderr(
+      `--format must be json, csv or beancount, not "${values.format ?? ''}".`,
+    );
     return 2;
   }
   const server = serverUrl(values.server);
@@ -74,10 +93,17 @@ export async function run(argv: readonly string[], io: CliIo): Promise<number> {
     );
   }
   try {
-    return await runImport(
-      { file, server: server.href, email: values.email },
-      io,
-    );
+    return isImport
+      ? await runImport({ file, server: server.href, email: values.email }, io)
+      : await runExport(
+          {
+            server: server.href,
+            format: format.data,
+            out: values.out,
+            email: values.email,
+          },
+          io,
+        );
   } catch (error) {
     if (error instanceof CliExit) {
       io.stderr(error.message);

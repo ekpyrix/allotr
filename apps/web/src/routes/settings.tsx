@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
 import { hashTarget } from '@/features/settings/hash-target';
+import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
@@ -129,6 +130,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
           defaultCurrency={settings.data.defaultCurrency}
           locale={locale}
         />
+        <ExportSection />
       </>
     );
 

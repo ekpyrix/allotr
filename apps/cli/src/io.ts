@@ -4,6 +4,8 @@
 export interface CliIo {
   readonly fetch: typeof fetch;
   readFile(path: string): Promise<string>;
+  /** Writes a file that must not exist yet; rejects with code EEXIST. */
+  writeNewFile(path: string, text: string): Promise<void>;
   /** Reads one line; `hidden` input is not echoed. */
   prompt(
     question: string,

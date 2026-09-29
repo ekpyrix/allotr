@@ -566,6 +566,23 @@ export const en = {
       copied: 'Copied.',
     },
     appearance: { title: 'Appearance' },
+    export: {
+      title: 'Export',
+      intro:
+        'Download all your data. Nothing leaves this server until you save the file.',
+      json: {
+        label: 'Download backup (JSON)',
+        hint: 'Everything in the ledger as it stands now. Import it into an empty ledger to restore it.',
+      },
+      csv: {
+        label: 'Download spreadsheet (CSV)',
+        hint: 'One row per posting, undos included, for a spreadsheet.',
+      },
+      beancount: {
+        label: 'Download Beancount',
+        hint: 'Every entry as a double-entry text ledger, undos included.',
+      },
+    },
     security: {
       title: 'Security',
       signedInAs: 'Signed in as {email}.',

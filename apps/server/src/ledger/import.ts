@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
+import { accountId, balanceOf, budgetSwitch, writeOff } from '@allotr/core';
 import type {
   Bundle,
   BundleTransaction,
   CreateTransactionBody,
   ImportResult,
   LocalDate,
+  Money,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
@@ -24,9 +27,16 @@ import {
 } from './import-resolve.ts';
 import { applyLedgerSettings, recordLedgerStart } from './ledger-settings.ts';
 import { upsertRate } from './rates.ts';
-import type { Db } from './store.ts';
+import {
+  appendTransaction,
+  ensureSystemAccounts,
+  loadChart,
+  loadLedger,
+  newEntry,
+  type Db,
+} from './store.ts';
 import { createTag, listTags } from './tags.ts';
-import { recordTransaction } from './transactions.ts';
+import { recordTransaction, storeTransaction } from './transactions.ts';
 
 // Fills an empty ledger from a bundle (docs/architecture.md "Import
 // bundle"). One database transaction and the same writes the API uses; a
@@ -93,8 +103,10 @@ function earliestDay(bundle: Bundle): LocalDate | undefined {
   return bundle.transactions.map((t) => t.occurredOn).sort()[0];
 }
 
+type SpendOrTransfer = Exclude<BundleTransaction, { kind: 'write_off' }>;
+
 function toBody(
-  entry: BundleTransaction,
+  entry: SpendOrTransfer,
   account: (name: string) => string,
   category: (path: string) => string,
   tagIds: string[],
@@ -136,6 +148,139 @@ function toBody(
   };
 }
 
+// A write-off, as archiving with `settle: write_off` records it.
+async function recordWriteOff(
+  db: Db,
+  userId: string,
+  entry: Extract<BundleTransaction, { kind: 'write_off' }>,
+  id: string,
+  tagIds: readonly string[],
+  now: Date,
+): Promise<string> {
+  const chart = await ensureSystemAccounts(
+    db,
+    userId,
+    await loadChart(db, userId),
+    [entry.balance.currency],
+    now,
+  );
+  const account = chart.get(accountId(id));
+  if (account !== undefined && account.currency !== entry.balance.currency) {
+    throw new RequestProblem(
+      400,
+      'currency_mismatch',
+      `The write-off must be in ${account.currency}.`,
+    );
+  }
+  const transaction = writeOff(
+    chart,
+    newEntry(now, entry.occurredOn, entry.note),
+    { accountId: accountId(id), balance: entry.balance },
+  );
+  await storeTransaction(db, userId, transaction, tagIds, null, 'import');
+  return transaction.id;
+}
+
+async function recordSwitch(
+  db: Db,
+  userId: string,
+  id: string,
+  on: LocalDate,
+  budgetGroup: 'on' | 'off',
+  now: Date,
+): Promise<void> {
+  const chart = await loadChart(db, userId);
+  const ledger = await loadLedger(db, userId, chart);
+  const entry = budgetSwitch(chart, ledger, newEntry(now, on), {
+    accountId: accountId(id),
+    budgetGroup,
+  });
+  await appendTransaction(db, userId, entry, { source: 'import' });
+}
+
+async function insertReconciliation(
+  db: Db,
+  userId: string,
+  item: Bundle['reconciliations'][number],
+  account: Readonly<{ id: string; currency: string }>,
+  adjustmentId: string | null,
+  now: Date,
+): Promise<void> {
+  const mismatch = (['stated', 'computed'] as const).find(
+    (field) => item[field].currency !== account.currency,
+  );
+  if (mismatch !== undefined) {
+    throw atPath(
+      new RequestProblem(
+        400,
+        'currency_mismatch',
+        `The balances must be in ${account.currency}.`,
+      ),
+      `/${mismatch}`,
+    );
+  }
+  if (adjustmentId !== null && same(item.stated, item.computed)) {
+    throw atPath(
+      new RequestProblem(
+        400,
+        'invalid_reconciliation',
+        'Only a difference is adjusted.',
+      ),
+      '/adjustment',
+    );
+  }
+  await db
+    .insertInto('reconciliations')
+    .values({
+      id: randomUUID(),
+      user_id: userId,
+      account_id: account.id,
+      currency: account.currency,
+      on_date: item.on,
+      stated_minor: item.stated.amountMinor,
+      computed_minor: item.computed.amountMinor,
+      adjustment_transaction_id: adjustmentId,
+      created_at: now.toISOString(),
+    })
+    .execute();
+}
+
+function same(a: Money, b: Money): boolean {
+  return a.amountMinor === b.amountMinor && a.currency === b.currency;
+}
+
+// Archives the bundle's archived accounts once everything else is in. As
+// in the API, only an account at zero is archived.
+async function archiveAccounts(
+  db: Db,
+  userId: string,
+  ids: ReadonlyMap<number, string>,
+  now: Date,
+): Promise<void> {
+  if (ids.size === 0) return;
+  const chart = await loadChart(db, userId);
+  const ledger = await loadLedger(db, userId, chart);
+  for (const [index, id] of ids) {
+    const balance = balanceOf(chart, ledger, accountId(id));
+    if (balance.amountMinor !== 0) {
+      throw atPath(
+        new RequestProblem(
+          409,
+          'account_not_empty',
+          'An archived account must end at zero. Add the transfer or write-off that emptied it.',
+        ),
+        `/accounts/${String(index)}/archived`,
+      );
+    }
+    await db
+      .updateTable('accounts')
+      .set({ archived: 1, updated_at: now.toISOString() })
+      .where('user_id', '=', userId)
+      .where('id', '=', id)
+      .execute();
+  }
+}
+
 export async function importBundle(
   db: Kysely<DB>,
   userId: string,
@@ -170,6 +315,15 @@ export async function importBundle(
       );
     }
 
+    for (const [id, isPaycheck] of resolved.paycheckFlags) {
+      await trx
+        .updateTable('categories')
+        .set({ is_paycheck: isPaycheck ? 1 : 0, updated_at: now.toISOString() })
+        .where('user_id', '=', userId)
+        .where('id', '=', id)
+        .execute();
+    }
+
     const categoryIds = new Map(resolved.existingIds);
     for (const item of resolved.toCreate) {
       const category = bundle.categories[item.index];
@@ -194,17 +348,21 @@ export async function importBundle(
     }
 
     const accountIds = new Map<string, string>();
+    const toArchive = new Map<number, string>();
     const firstDay = earliestDay(bundle);
     for (const [index, account] of bundle.accounts.entries()) {
-      const openedOn = account.openedOn ?? firstDay;
+      // Switches are recorded after the entries; insertAccount ignores them.
+      const { archived, ...fields } = account;
+      const openedOn = fields.openedOn ?? firstDay;
       const input = {
-        ...account,
+        ...fields,
         ...(openedOn === undefined ? {} : { openedOn }),
       };
       const id = await at(`/accounts/${String(index)}`, () =>
         insertAccount(trx, userId, input, now, 'import'),
       );
       accountIds.set(nameKey(account.name), id);
+      if (archived === true) toArchive.set(index, id);
     }
 
     for (const [index, rate] of bundle.rates.entries()) {
@@ -239,15 +397,39 @@ export async function importBundle(
         ),
       ];
       const id = await at(`/transactions/${String(index)}`, () =>
-        recordTransaction(
-          trx,
-          userId,
-          toBody(entry, account, category, tags),
-          'import',
-          now,
-        ),
+        entry.kind === 'write_off'
+          ? recordWriteOff(
+              trx,
+              userId,
+              entry,
+              account(entry.account),
+              tags,
+              now,
+            )
+          : recordTransaction(
+              trx,
+              userId,
+              toBody(entry, account, category, tags),
+              'import',
+              now,
+            ),
       );
       if (entry.ref !== undefined) refs.set(entry.ref, id);
+    }
+
+    for (const [index, item] of bundle.accounts.entries()) {
+      for (const [s, change] of (item.switches ?? []).entries()) {
+        await at(`/accounts/${String(index)}/switches/${String(s)}`, () =>
+          recordSwitch(
+            trx,
+            userId,
+            account(item.name),
+            change.on,
+            change.budgetGroup,
+            now,
+          ),
+        );
+      }
     }
 
     let billPayments = 0;
@@ -284,6 +466,27 @@ export async function importBundle(
       }
     }
 
+    for (const [index, item] of bundle.reconciliations.entries()) {
+      const id = account(item.account);
+      const currency =
+        bundle.accounts.find((a) => nameKey(a.name) === nameKey(item.account))
+          ?.currency ?? '';
+      const adjustment =
+        item.adjustment === undefined ? null : lookup(refs, item.adjustment);
+      await at(`/reconciliations/${String(index)}`, () =>
+        insertReconciliation(
+          trx,
+          userId,
+          item,
+          { id, currency },
+          adjustment,
+          now,
+        ),
+      );
+    }
+
+    await archiveAccounts(trx, userId, toArchive, now);
+
     // The first cycle opens with the imported history, not on the day of
     // the import.
     await recordLedgerStart(trx, userId, now);
@@ -299,6 +502,7 @@ export async function importBundle(
       transactions: bundle.transactions.length,
       bills: bundle.bills.length,
       billPayments,
+      reconciliations: bundle.reconciliations.length,
     };
   });
 }

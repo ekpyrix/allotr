@@ -180,6 +180,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   already has accounts, entries, bills or rates is refused
   (`ledger_not_empty`). When the imported history has a paycheck, its
   earliest day becomes the ledger's start, so the first cycle covers it.
+- `GET /v1/export?format=json|csv|beancount` downloads all ledger data
+  (see [§5.2](#52-export)).
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`
@@ -197,9 +199,16 @@ Items refer to each other by name: account names, category paths (`"Fun"`,
 `"Food/Coffee"`) and tag names, all compared without case. A category that
 matches an existing one by name and parent is reused; the rest are created.
 Transactions need `occurredOn`; an account without `openedOn` opens on the
-earliest entry day. A transaction `ref` lets a bill payment link to it.
-An expense or income gives `category` or, for a split, `lines: [{category,
-amount}]`.
+earliest entry day. A transaction `ref` lets a bill payment or a
+reconciliation's adjustment link to it. An expense or income gives
+`category` or, for a split, `lines: [{category, amount}]`. A `write_off`
+entry (`account`, `balance`) empties an account into Expenses, as archiving
+does. An account may list `switches: [{on, budgetGroup}]`, later moves on or
+off budget (its `budgetGroup` is the group it started in), and
+`archived: true`, applied last and only at a zero balance
+(`account_not_empty`). `reconciliations: [{account, on, stated, computed,
+adjustment?}]` restore last-reconciled dates. A category that matches an
+existing one takes the bundle's `isPaycheck`.
 Unknown fields are refused. Other apps' exports are converted to this
 bundle rather than imported directly.
 
@@ -243,7 +252,8 @@ bundle rather than imported directly.
 Errors are problem details whose `errors[].path` is a JSON Pointer into the
 bundle: `invalid_bundle`, `unsupported_bundle_version`, `invalid_reference`
 (all collected, at most 100), or the refused item's usual code while
-applying. Limits: 10 MB, 50,000 transactions, 1,000 of each other list.
+applying. Limits: 10 MB, 50,000 transactions and reconciliations, 1,000 of
+each other list.
 The import holds the database's write lock while it runs, roughly a second
 per thousand transactions, so a bundle near the limit takes tens of seconds;
 allow for that in a reverse proxy's timeout.
@@ -253,6 +263,41 @@ The CLI posts a bundle for you:
 file first, then asks for the password and, when two-factor is on, the
 authenticator code, and signs out when done. It only prompts in an
 interactive terminal.
+
+### 5.2 Export
+
+`GET /v1/export?format=` returns an attachment named
+`allotr-export-<today>.<format>`:
+
+- `json` (the default): the import bundle of §5.1, so an export imports
+  back unchanged into an empty ledger. It holds the ledger as it stands:
+  undone entries and the entries an edit replaced are left out with their
+  undos, which leaves every balance and every day's figure as it was. An
+  entry on a merged category is filed under the one it was merged into; an
+  archived account whose name was reused becomes `"<name> (archived)"`; a
+  `/` in a category name becomes `∕`; a bill payment for a day the bill is
+  no longer due on is left out. Lost on the way: undo history and
+  `amended` markers, times of entry, unused tags, category order and
+  default accounts, and the start of a ledger that was not itself imported.
+  A ledger over the import limits exports but does not import back.
+- `csv`: one row per posting, every entry including undos, RFC 4180:
+  `date, entry_id, kind, account, amount, currency, category, note, tags,
+  reverses_id, recorded_at`. System legs are `Expenses`, `Income`,
+  `Equity:Opening` and `Equity:Conversion`; text starting with `= + - @`
+  gets a leading `'` so spreadsheets do not run it.
+- `beancount`: every entry including undos, with `id`, `kind` and
+  `reverses` metadata. Accounts are `Assets:`, `Assets:Receivable:`,
+  `Liabilities:`, `Liabilities:Payable:` plus the account name, categories
+  `Expenses:<Top>:<Child>` and `Income:…`, write-offs
+  `Expenses:Write-off`, and `Equity:Opening-Balances` and
+  `Equity:Conversion`; names are cleaned to letters, digits and dashes.
+  Rates become `price` directives and budget switches
+  `custom "allotr-budget-group"`. Every entry balances per currency, so no
+  price annotations are needed.
+
+`allotr export --server <url> [--format json|csv|beancount] [--out <file>]
+[--email <address>]` signs in as `import` does and saves the file under the
+server's suggested name, or `--out`. It never overwrites a file.
 
 ## 6. Data
 

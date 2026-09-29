@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { stderr, stdin, stdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import { CliExit, type CliIo } from './io.ts';
@@ -70,6 +70,7 @@ function readHidden(question: string): Promise<string> {
 const io: CliIo = {
   fetch,
   readFile: (path) => readFile(path, 'utf8'),
+  writeNewFile: (path, text) => writeFile(path, text, { flag: 'wx' }),
   prompt,
   stdout: (line) => {
     stdout.write(`${line}\n`);
