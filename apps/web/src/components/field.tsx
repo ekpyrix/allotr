@@ -1,5 +1,5 @@
 import { useId, type ComponentProps, type ReactNode } from 'react';
-import { Input } from '@/components/ui/input';
+import { fieldClass, Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function Field({
@@ -15,11 +15,10 @@ export function Field({
       <Input
         id={id}
         aria-describedby={hint === undefined ? undefined : hintId}
-        className="h-11 text-base"
         {...input}
       />
       {hint === undefined ? null : (
-        <p id={hintId} className="text-sm text-muted-foreground">
+        <p id={hintId} className="text-body text-text-muted">
           {hint}
         </p>
       )}
@@ -29,7 +28,7 @@ export function Field({
 
 export function FormError({ message }: { message: string | null }) {
   return (
-    <p role="alert" className="min-h-6 text-sm font-medium text-over">
+    <p role="alert" className="min-h-6 text-body font-medium text-negative">
       {message}
     </p>
   );
@@ -68,12 +67,12 @@ export function FieldControl({
           described.length === 0 ? undefined : described.join(' '),
       })}
       {error === undefined ? null : (
-        <p id={`${id}-error`} className="text-sm font-medium text-over">
+        <p id={`${id}-error`} className="text-body font-medium text-negative">
           {error}
         </p>
       )}
       {hint === undefined ? null : (
-        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+        <p id={`${id}-hint`} className="text-body text-text-muted">
           {hint}
         </p>
       )}
@@ -81,5 +80,4 @@ export function FieldControl({
   );
 }
 
-export const selectClass =
-  'h-11 w-full rounded-md border border-input bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive';
+export const selectClass = fieldClass;

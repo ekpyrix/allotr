@@ -234,7 +234,7 @@ export function CyclePage({ start }: { start: LocalDate | undefined }) {
         locale={locale}
       />
       <Balances cycle={data} locale={locale} />
-      <Button asChild variant="outline" className="mt-10">
+      <Button asChild variant="outlined" className="mt-10">
         <Link to="/history">
           <History aria-hidden />
           {t('cycle.history')}

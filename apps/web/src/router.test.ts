@@ -5,13 +5,16 @@ import { createAppRouter } from './router.tsx';
 
 // Every signed-in route must be in shellPaths, which the shell E2E test
 // visits with axe (NFR-8), or in paramShellPaths with its own axe check. Add
-// new views to nav-items.ts, extraShellPaths or paramShellPaths.
+// new views to nav-items.ts, extraShellPaths or paramShellPaths. Routes
+// under /dev/ exist in development only and have their own axe spec
+// (e2e/components.spec.ts).
 describe('route tree', () => {
   it('lists every signed-in route for the accessibility checks', () => {
     const router = createAppRouter(new QueryClient());
     const routed = Object.keys(router.routesByPath).filter(
       (path) =>
         path.startsWith('/') &&
+        !path.startsWith('/dev/') &&
         !(publicPaths as readonly string[]).includes(path),
     );
     expect(new Set(routed)).toEqual(

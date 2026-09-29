@@ -1,40 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import { buttonVariants } from './button.tsx';
 
-// Destructive buttons are outline buttons with destructive text, which
-// paints with the `negative` role. The resolver fits `negative` on
-// canvas, card and card-raised only, so the outline button may only be
-// filled with those surfaces: never a translucent tint, which no role is
-// checked against.
+// Button labels are fitted by the resolver on their fill only, so no
+// variant may tint a label's surface with a translucent fill, and hover
+// changes tone or adds a ring rather than laying colour over the label.
 
-describe('outline button', () => {
-  const classes = buttonVariants({ variant: 'outline' }).split(/\s+/);
+const variants = [
+  'filled',
+  'tonal',
+  'outlined',
+  'text',
+  'danger-tonal',
+  'link',
+] as const;
+
+// The fills each label role is fitted on (packages/shared roles.ts).
+const fitted: Readonly<Record<string, readonly string[]>> = {
+  'text-on-primary': ['primary'],
+  'text-on-primary-container': ['primary-container'],
+  'text-on-danger-container': ['danger-container'],
+  'text-text': ['transparent', 'card-raised'],
+};
+
+describe.each(variants)('%s button', (variant) => {
+  const classes = buttonVariants({ variant }).split(/\s+/);
 
   it('has no translucent fill', () => {
     expect(classes.filter((name) => /bg-[a-z-]+\/\d+$/.test(name))).toEqual([]);
   });
 
-  it('fills only with surfaces negative text is fitted on', () => {
+  it('fills only with surfaces its label is fitted on', () => {
+    const label = classes.find((name) => name in fitted);
+    expect(label, 'label colour').toBeDefined();
     const fills = classes.flatMap((name) => {
       const match = /^(?:[a-z-]+:)*bg-([a-z-]+)$/.exec(name);
       return match ? [match[1]] : [];
     });
-    expect(fills.length).toBeGreaterThan(0);
-    for (const fill of fills)
-      expect(['background', 'canvas', 'card', 'plot', 'card-raised']).toContain(
-        fill,
-      );
+    for (const fill of fills) expect(fitted[label ?? '']).toContain(fill);
   });
-});
-
-describe('every variant', () => {
-  it.each(['default', 'outline', 'ghost', 'link'] as const)(
-    '%s has no translucent fill',
-    (variant) => {
-      const classes = buttonVariants({ variant }).split(/\s+/);
-      expect(classes.filter((name) => /bg-[a-z-]+\/\d+$/.test(name))).toEqual(
-        [],
-      );
-    },
-  );
 });

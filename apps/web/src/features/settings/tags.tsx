@@ -124,7 +124,7 @@ function RenameTagForm({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={busy}
           onClick={onCancel}
@@ -153,8 +153,8 @@ function TagItem({
         {tag.name}
       </span>
       <Button
-        variant="outline"
-        size="sm"
+        variant="outlined"
+        size="dense"
         onClick={() => {
           onRename(tag);
         }}

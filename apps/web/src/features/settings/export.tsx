@@ -19,7 +19,7 @@ export function ExportSection() {
       <ul className="mt-4 space-y-4">
         {formats.map((format) => (
           <li key={format}>
-            <Button asChild variant="outline">
+            <Button asChild variant="outlined">
               <a href={`/v1/export?format=${format}`} download>
                 <Download aria-hidden="true" />
                 {t(`settings.export.${format}.label`)}

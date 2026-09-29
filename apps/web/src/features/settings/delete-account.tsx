@@ -14,12 +14,8 @@ import { Section } from './section.tsx';
 
 // Deleting the account (FR-U3): a hard delete, confirmed with the password
 // and, with 2FA on, a TOTP or backup code. The dialog offers a backup
-// first. Outline buttons with destructive text: the filled destructive
-// variant fails contrast in the dark theme. They keep the outline fills,
-// which the contrast validator checks destructive text against.
-
-const destructive =
-  'h-11 border-destructive text-destructive hover:text-destructive';
+// first. Destructive actions use the danger-tonal button, whose label the
+// resolver fits on its container.
 
 function DeleteForm({
   session,
@@ -64,7 +60,7 @@ function DeleteForm({
           <p className="text-sm text-muted-foreground">
             {t('settings.deleteAccount.exportFirst')}
           </p>
-          <Button asChild variant="outline" className="h-11">
+          <Button asChild variant="outlined" className="h-11">
             <a href="/v1/export?format=json" download>
               <Download aria-hidden="true" />
               {t('settings.export.json.label')}
@@ -96,8 +92,7 @@ function DeleteForm({
         <div className="flex flex-wrap gap-3">
           <Button
             type="submit"
-            variant="outline"
-            className={destructive}
+            variant="danger-tonal"
             disabled={remove.isPending}
           >
             {remove.isPending
@@ -106,7 +101,7 @@ function DeleteForm({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             className="h-11"
             disabled={remove.isPending}
             onClick={onCancel}
@@ -129,8 +124,8 @@ export function DeleteAccountSection({ session }: { session: SessionView }) {
       intro={t('settings.deleteAccount.intro')}
     >
       <Button
-        variant="outline"
-        className={`mt-4 ${destructive}`}
+        variant="danger-tonal"
+        className="mt-4"
         onClick={() => {
           setOpen(true);
         }}

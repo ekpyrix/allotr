@@ -127,8 +127,8 @@ export function SplitEditor({
               {removable ? (
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon-lg"
+                  variant="text"
+                  size="icon"
                   className="size-11"
                   aria-label={t('quickEntry.split.remove', { n })}
                   onClick={() => {
@@ -163,12 +163,12 @@ export function SplitEditor({
       </p>
       <div className="flex flex-wrap gap-2">
         {lines.length < MAX_SPLIT_LINES ? (
-          <Button type="button" variant="outline" onClick={onAdd}>
+          <Button type="button" variant="outlined" onClick={onAdd}>
             <Plus aria-hidden />
             {t('quickEntry.split.add')}
           </Button>
         ) : null}
-        <Button type="button" variant="ghost" onClick={onEnd}>
+        <Button type="button" variant="text" onClick={onEnd}>
           {t('quickEntry.split.end')}
         </Button>
       </div>

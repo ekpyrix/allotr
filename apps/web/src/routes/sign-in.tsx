@@ -96,7 +96,7 @@ export function SignInPage({
             className="h-11 font-mono text-lg tracking-widest"
           />
           <FormError message={error} />
-          <Button type="submit" size="lg" className="h-11" disabled={pending}>
+          <Button type="submit" className="h-11" disabled={pending}>
             {pending ? t('signIn.verifying') : t('signIn.verify')}
           </Button>
           <Button
@@ -136,7 +136,7 @@ export function SignInPage({
           required
         />
         <FormError message={error} />
-        <Button type="submit" size="lg" className="h-11" disabled={pending}>
+        <Button type="submit" className="h-11" disabled={pending}>
           {pending ? t('signIn.submitting') : t('signIn.submit')}
         </Button>
       </form>

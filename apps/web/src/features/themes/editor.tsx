@@ -321,7 +321,7 @@ export function ThemeEditor({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             className="h-11"
             disabled={busy}
             onClick={() => {
@@ -330,7 +330,7 @@ export function ThemeEditor({
           >
             {t('themes.saveAndUse')}
           </Button>
-          <Button asChild variant="ghost" className="h-11">
+          <Button asChild variant="text" className="h-11">
             <Link to="/settings" hash="appearance">
               {t('themes.cancel')}
             </Link>

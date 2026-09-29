@@ -21,7 +21,7 @@ export function UpdatePrompt() {
         <div className="flex flex-wrap items-center gap-3 rounded-md border bg-background p-4 shadow-lg">
           <p className="grow">{t('update.ready')}</p>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={updateStore.dismiss}>
+            <Button variant="text" onClick={updateStore.dismiss}>
               {t('update.later')}
             </Button>
             <Button

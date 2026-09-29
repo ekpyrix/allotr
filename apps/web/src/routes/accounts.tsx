@@ -127,15 +127,15 @@ function AccountRow({
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button asChild variant="ghost" size="sm">
+        <Button asChild variant="text" size="dense">
           <Link to="/ledger" search={{ account: account.id }}>
             {t('accounts.showEntries')}
             <span className="sr-only"> {account.name}</span>
           </Link>
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           data-action="budget"
           onClick={() => {
             onOpen({ kind: 'budget', account });
@@ -147,8 +147,8 @@ function AccountRow({
           <span className="sr-only"> {account.name}</span>
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           onClick={() => {
             onOpen({ kind: 'reconcile', account });
           }}
@@ -157,8 +157,8 @@ function AccountRow({
           <span className="sr-only"> {account.name}</span>
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           onClick={() => {
             onOpen({ kind: 'archive', account });
           }}

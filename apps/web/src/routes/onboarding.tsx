@@ -62,7 +62,7 @@ export function OnboardingPage() {
           hint={t('onboarding.passwordHint', { min: MIN_PASSWORD_LENGTH })}
         />
         <FormError message={error} />
-        <Button type="submit" size="lg" className="h-11" disabled={pending}>
+        <Button type="submit" className="h-11" disabled={pending}>
           {pending ? t('onboarding.submitting') : t('onboarding.submit')}
         </Button>
       </form>

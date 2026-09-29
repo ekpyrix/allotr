@@ -145,7 +145,7 @@ export function LedgerPage({
           </p>
           {isFiltered(search) ? null : (
             <Button
-              variant="outline"
+              variant="outlined"
               onClick={(event) => {
                 quickEntry.open(event.currentTarget);
               }}

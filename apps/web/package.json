@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc && tsc -p src/sw",
     "test": "vitest run",
-    "e2e": "vite build && playwright test"
+    "e2e": "node scripts/generate-tokens.ts && vite build && playwright test && playwright test -c playwright.components.config.ts",
+    "e2e:components": "playwright test -c playwright.components.config.ts"
   },
   "dependencies": {
     "@allotr/shared": "workspace:*",

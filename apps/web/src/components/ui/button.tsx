@@ -3,32 +3,37 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Slot } from 'radix-ui';
 
+// Pill buttons (spec §8.2). Every fill is an opaque role the resolver fits
+// the label on; hover and press change tone or add a ring, never a tint
+// over the label (see "Interaction states" in styles.css).
+
+const ring =
+  'hover:outline-2 hover:outline-offset-2 hover:outline-outline-variant';
+
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "pressable inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[0.9375rem] leading-5 font-medium whitespace-nowrap outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:outline-2 aria-invalid:outline-negative [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
-        // Hover never tints a filled button: on-primary is fitted to the
-        // primary fill itself. State layers come with the redesign.
-        default:
-          'bg-primary text-primary-foreground underline-offset-4 hover:underline',
-        outline: 'border border-outline bg-background hover:bg-card-raised',
-        ghost: 'hover:bg-card-raised',
-        link: 'text-foreground underline-offset-4 hover:underline',
+        filled: `bg-primary text-on-primary ${ring}`,
+        tonal: `bg-primary-container text-on-primary-container ${ring}`,
+        outlined:
+          'border border-outline bg-transparent text-text hover:bg-card-raised',
+        text: 'bg-transparent text-text hover:bg-card-raised',
+        'danger-tonal': `bg-danger-container text-on-danger-container ${ring}`,
+        link: 'h-auto rounded-xs px-0 text-text underline underline-offset-4 hover:decoration-2 active:transform-none',
       },
       size: {
-        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: 'h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
-        icon: 'size-9',
-        'icon-xs': "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        'icon-sm': 'size-8',
-        'icon-lg': 'size-10',
+        default: 'h-12 px-6 has-[>svg]:px-5',
+        dense: 'h-10 px-4 has-[>svg]:px-3.5',
+        icon: 'size-12',
       },
     },
+    compoundVariants: [
+      { variant: 'link', size: ['default', 'dense'], className: 'h-auto px-0' },
+    ],
     defaultVariants: {
-      variant: 'default',
+      variant: 'filled',
       size: 'default',
     },
   },
@@ -36,7 +41,7 @@ const buttonVariants = cva(
 
 function Button({
   className,
-  variant = 'default',
+  variant = 'filled',
   size = 'default',
   asChild = false,
   ...props

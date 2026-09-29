@@ -52,7 +52,7 @@ function Actions({
     <div className="mt-6 flex flex-wrap gap-3">
       <Button
         type={primary.onClick === undefined ? 'submit' : 'button'}
-        size="lg"
+
         className="h-11"
         disabled={busy}
         onClick={primary.onClick}
@@ -62,8 +62,8 @@ function Actions({
       {onSkip === undefined ? null : (
         <Button
           type="button"
-          variant="outline"
-          size="lg"
+          variant="outlined"
+
           className="h-11"
           disabled={busy}
           onClick={onSkip}

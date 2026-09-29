@@ -121,41 +121,28 @@
   --color-reserved: var(--reserved);
   --color-selection: var(--selection);
 
-  /* Legacy names, until every screen uses the roles (see below). */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-plot: var(--plot);
-  --color-today: var(--today);
-  --color-today-text: var(--today-text);
-  --color-over: var(--over);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-destructive: var(--destructive);
+  /*
+   * Legacy names, until every screen uses the roles. Inlined, so they
+   * resolve where they are used: a subtree that scopes its own roles (a
+   * theme preview) gets its own colours. The v1 editor preview still sets
+   * the old names, which win.
+   */
+  --color-background: var(--background, var(--canvas));
+  --color-foreground: var(--foreground, var(--text));
+  --color-muted: var(--muted, var(--card));
+  --color-muted-foreground: var(--muted-foreground, var(--text-muted));
+  --color-plot: var(--plot, var(--card));
+  --color-today: var(--today, var(--hero-ok));
+  --color-today-text: var(--today-text, var(--hero-ok));
+  --color-over: var(--over, var(--negative));
+  --color-primary-foreground: var(--primary-foreground, var(--on-primary));
+  --color-border: var(--border, var(--outline-variant));
+  --color-input: var(--input, var(--outline));
+  --color-destructive: var(--destructive, var(--negative));
 }
 
-/*
- * Legacy aliases: the v1 token names screens not yet redesigned still use,
- * each pointing at a role checked for the same use. `over` and
- * `destructive` carry small text, so they take `negative` (fitted to
- * 4.5:1 on canvas, card and card-raised) rather than the hero or danger
- * fills, which are only fitted to 3:1.
- */
+/* Legacy duration names, until every screen uses the spring tokens. */
 :root {
-  --background: var(--canvas);
-  --foreground: var(--text);
-  --muted: var(--card);
-  --muted-foreground: var(--text-muted);
-  --plot: var(--card);
-  --today: var(--hero-ok);
-  --today-text: var(--hero-ok);
-  --over: var(--negative);
-  --primary-foreground: var(--on-primary);
-  --border: var(--outline-variant);
-  --input: var(--outline);
-  --destructive: var(--negative);
   --duration-fast: var(--dur-fade);
   --duration-base: var(--dur-snappy);
 }
@@ -172,6 +159,102 @@
   }
   ::selection {
     background-color: var(--selection);
+  }
+}
+
+/*
+ * Interaction states (ADR 0018). State is tonal: a hovered or pressed row,
+ * card or text button steps up one surface tier (card → card-raised),
+ * where every text role is already fitted to AA, instead of a colour
+ * overlay that would thin its contrast. Filled and tonal buttons show a
+ * hairline ring on hover. Tappable things scale to 0.97 on press with the
+ * snappy spring and come back with the smooth one.
+ */
+@layer components {
+  .pressable {
+    transition-property: transform, background-color, outline-color;
+    transition-duration: var(--dur-smooth);
+    transition-timing-function: var(--ease-smooth);
+  }
+  .pressable:active {
+    transform: scale(0.97);
+    transition-duration: var(--dur-snappy);
+    transition-timing-function: var(--ease-snappy);
+  }
+  :root[data-motion='reduced'] .pressable:active,
+  :root[data-motion='off'] .pressable:active {
+    transform: none;
+  }
+  /* A 0.01 ms infinite pulse would flicker; it stops instead. */
+  :root[data-motion='reduced'] .skeleton-pulse,
+  :root[data-motion='off'] .skeleton-pulse {
+    animation: none;
+  }
+
+  .skeleton-pulse {
+    animation: pulse-soft 1.2s ease-in-out infinite alternate;
+  }
+}
+
+/* Enter and exit animations, usable with data-state variants. */
+@utility overlay-in {
+  animation: overlay-in var(--dur-snappy) var(--ease-snappy);
+}
+@utility overlay-out {
+  animation: overlay-out var(--dur-exit) var(--ease-exit) forwards;
+}
+@utility scrim-in {
+  animation: fade-in var(--dur-snappy) var(--ease-snappy);
+}
+@utility scrim-out {
+  animation: fade-out var(--dur-exit) var(--ease-exit) forwards;
+}
+@utility rise-in {
+  animation: rise-in var(--dur-smooth) var(--ease-smooth);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion='full']) .pressable:active {
+    transform: none;
+  }
+  :root:not([data-motion='full']) .skeleton-pulse {
+    animation: none;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes pulse-soft {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.6;
   }
 }
 

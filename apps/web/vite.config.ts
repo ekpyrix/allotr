@@ -13,6 +13,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // The component gallery is a lazy dev-only route; scanning it up front
+  // keeps a cold dev server from reloading mid-visit to pre-bundle its
+  // imports.
+  optimizeDeps: { entries: ['index.html', 'src/routes/dev-components.tsx'] },
   server: {
     port: 5173,
     strictPort: true,
