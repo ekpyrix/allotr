@@ -40,7 +40,7 @@ const listRoute = createRoute({
   responses: {
     200: json(
       accountListSchema,
-      'Open accounts, and archived ones on request.',
+      'Open accounts, and archived ones on request, with totals per budget group.',
     ),
     400: invalid,
     ...signedIn,
@@ -139,13 +139,13 @@ export function registerLedgerAccountRoutes(
 
   app.openapi(listRoute, async (c) => {
     const { includeArchived } = c.req.valid('query');
-    const accounts = await listAccounts(
+    const list = await listAccounts(
       db,
       c.get('user').id,
       now(),
       includeArchived === true,
     );
-    return c.json({ accounts }, 200);
+    return c.json(list, 200);
   });
 
   app.openapi(createRouteDef, async (c) => {

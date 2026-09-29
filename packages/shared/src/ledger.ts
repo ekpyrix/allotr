@@ -33,7 +33,23 @@ export const accountSchema = z.object({
 });
 export type AccountView = z.infer<typeof accountSchema>;
 
-export const accountListSchema = z.object({ accounts: z.array(accountSchema) });
+/** A sum in the default currency, and the currencies it leaves out. */
+export const figureSchema = z.object({
+  amount: moneySchema,
+  /** Currencies without a rate to the default one, left out of `amount`. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type FigureView = z.infer<typeof figureSchema>;
+
+export const accountListSchema = z.object({
+  accounts: z.array(accountSchema),
+  /**
+   * Open accounts' balances per budget group, in the default currency at
+   * today's rates. Savings are never added to the on-budget total.
+   */
+  totals: z.object({ on: figureSchema, off: figureSchema }),
+});
+export type AccountListView = z.infer<typeof accountListSchema>;
 
 export const listAccountsQuerySchema = z.object({
   includeArchived: z.stringbool().optional(),
@@ -49,6 +65,7 @@ export const createAccountBodySchema = z.object({
   /** The opening balance's date; today when omitted. */
   openedOn: localDateSchema.optional(),
 });
+export type CreateAccountBody = z.input<typeof createAccountBodySchema>;
 
 export const updateAccountBodySchema = z
   .object({

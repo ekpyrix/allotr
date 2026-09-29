@@ -6,6 +6,7 @@ import {
   budgetGroupsOn,
   budgetSwitch,
   opening,
+  totalOn,
   transfer,
   writeOff,
   type AccountId,
@@ -16,7 +17,9 @@ import {
 import {
   formatMoney,
   money,
+  type AccountListView,
   type AccountView,
+  type FigureView,
   type CurrencyCode,
   type LocalDate,
   type Money,
@@ -24,6 +27,8 @@ import {
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { RequestProblem } from '../http/domain-errors.ts';
+import { readLedgerSettings } from './ledger-settings.ts';
+import { loadRates } from './rates.ts';
 import { uniquely } from './sqlite-errors.ts';
 import {
   appendTransaction,
@@ -106,13 +111,36 @@ async function views(
   });
 }
 
+/**
+ * The accounts, and the open ones' balances per budget group in the default
+ * currency at today's rates, read in one transaction.
+ */
 export function listAccounts(
-  db: Db,
+  db: Kysely<DB>,
   userId: string,
   now: Date,
   includeArchived: boolean,
-): Promise<AccountView[]> {
-  return views(db, userId, now, { includeArchived });
+): Promise<AccountListView> {
+  return db.transaction().execute(async (trx) => {
+    const [accounts, settings, rates, today] = await Promise.all([
+      views(trx, userId, now, { includeArchived }),
+      readLedgerSettings(trx, userId),
+      loadRates(trx, userId),
+      userToday(trx, userId, now),
+    ]);
+    const total = (group: BudgetGroup): FigureView => {
+      const figure = totalOn(
+        rates,
+        accounts
+          .filter((a) => !a.archived && a.budgetGroup === group)
+          .map((a) => a.balance),
+        settings.defaultCurrency,
+        today,
+      );
+      return { amount: figure.amount, missingRates: [...figure.missingRates] };
+    };
+    return { accounts, totals: { on: total('on'), off: total('off') } };
+  });
 }
 
 export async function getAccount(

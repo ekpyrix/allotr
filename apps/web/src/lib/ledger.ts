@@ -1,4 +1,9 @@
-import type { CreateTransactionBody, LocalDate } from '@allotr/shared';
+import type {
+  AccountView,
+  CreateAccountBody,
+  CreateTransactionBody,
+  LocalDate,
+} from '@allotr/shared';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -121,4 +126,32 @@ export function editTransaction(id: string, body: CreateTransactionBody) {
 /** Undo: posts a reversal; the same key set as a new entry goes stale. */
 export function reverseTransaction(id: string) {
   return call(endpoints.reverseTransaction, { params: { id }, body: {} });
+}
+
+/** Opens an account; its opening balance is an entry. */
+export function createAccount(body: CreateAccountBody) {
+  return call(endpoints.createAccount, { body });
+}
+
+/** Moves an account on or off budget from today: a dated entry. */
+export function switchBudgetGroup(
+  id: string,
+  budgetGroup: AccountView['budgetGroup'],
+) {
+  return call(endpoints.updateAccount, {
+    params: { id },
+    body: { budgetGroup },
+  });
+}
+
+/** How a remaining balance is cleared before the account is archived. */
+export type Settle =
+  { method: 'transfer'; toAccountId: string } | { method: 'write_off' };
+
+/** Archives an account, clearing its balance first in the same request. */
+export function archiveAccount(id: string, settle?: Settle) {
+  return call(endpoints.archiveAccount, {
+    params: { id },
+    body: settle === undefined ? {} : { settle },
+  });
 }
