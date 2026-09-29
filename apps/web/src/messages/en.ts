@@ -348,7 +348,11 @@ export const en = {
       intro:
         'Enter the balance your bank shows. It is compared with the ledger at the end of that day.',
       balance: 'Bank balance in {currency}',
-      balanceHint: 'Negative for money owed, such as a card.',
+      balanceHint: 'Negative if the account is overdrawn.',
+      owedIntro:
+        'Enter the amount owed your statement shows. It is compared with the ledger at the end of that day.',
+      owed: 'Amount owed in {currency}',
+      owedHint: 'As the statement shows it. Negative for a credit.',
       on: 'Balance as of',
       check: 'Compare',
       checking: 'Comparing…',
@@ -357,6 +361,12 @@ export const en = {
       difference: 'Difference',
       less: 'The bank shows {amount} less than the ledger on {date}.',
       more: 'The bank shows {amount} more than the ledger on {date}.',
+      owedMore:
+        'The statement shows {amount} more owed than the ledger on {date}.',
+      owedLess:
+        'The statement shows {amount} less owed than the ledger on {date}.',
+      ledgerOwed: 'Owed in the ledger',
+      bankOwed: 'Owed on the statement',
       adjustExpense:
         'Adjusting records {amount} as an expense in Unrecorded, dated {date}.',
       adjustIncome:
@@ -367,6 +377,7 @@ export const en = {
       adjusting: 'Adjusting…',
       errors: {
         balanceRequired: 'Enter the bank balance.',
+        owedRequired: 'Enter the amount owed.',
         balanceInvalid: 'Enter an amount such as {example}.',
         balanceDecimals: 'This currency has fewer decimal places.',
         dateInvalid: 'Enter a date.',

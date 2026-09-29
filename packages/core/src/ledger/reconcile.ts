@@ -18,6 +18,15 @@ export type Reconciliation = Readonly<{
   difference: Money;
 }>;
 
+/**
+ * The balance a debt's statement stands for. Statements show what is owed
+ * as a positive amount; the ledger holds it as a negative balance, so a
+ * credit (overpayment) is a negative amount owed.
+ */
+export function balanceFromOwed(amountOwed: Money): Money {
+  return money(-amountOwed.amountMinor, amountOwed.currency);
+}
+
 /** Compares the bank's balance with the ledger's at the end of `on`. */
 export function reconciliation(
   chart: Chart,

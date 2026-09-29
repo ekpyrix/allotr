@@ -2,6 +2,7 @@ import {
   formatMoney,
   money,
   type AccountView,
+  type Money,
   type ReconcileResultView,
 } from '@allotr/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,14 +17,18 @@ import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import {
   newReconcileDraft,
+  reconcileMode,
   toReconcileCheck,
   type ReconcileCheck,
   type ReconcileDraft,
   type ReconcileDraftErrors,
+  type ReconcileMode,
 } from './reconcile-draft.ts';
 
 // Reconciling an account with the bank (FR-L9), default policy: compare
 // first; a match is recorded, a difference is offered as one adjustment.
+// A debt is entered and shown as the positive amount owed, as statements
+// show it.
 
 type Outcome = 'matched' | 'adjusted';
 
@@ -43,6 +48,8 @@ export function ReconcileFlow({
   onBusyChange: (busy: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  // Fixed while the dialog is open, even if an adjustment moves the balance.
+  const [mode] = useState<ReconcileMode>(() => reconcileMode(account));
   const [draft, setDraft] = useState<ReconcileDraft>(() =>
     newReconcileDraft(today),
   );
@@ -88,7 +95,7 @@ export function ReconcileFlow({
   };
 
   const compare = () => {
-    const parsed = toReconcileCheck(draft, account, today, locale);
+    const parsed = toReconcileCheck(draft, account, today, locale, mode);
     if (!parsed.ok) {
       setErrors(parsed.errors);
       (parsed.errors.balance === undefined
@@ -115,8 +122,9 @@ export function ReconcileFlow({
         expectedDifference: found.result.difference,
       },
       {
-        onSuccess: () => {
-          onDone('adjusted');
+        // A difference that dropped to zero meanwhile is recorded as a match.
+        onSuccess: (result) => {
+          onDone(result.adjustment === null ? 'matched' : 'adjusted');
         },
         // The ledger moved since the comparison: compare again.
         onError: () => {
@@ -142,12 +150,24 @@ export function ReconcileFlow({
         else adjust();
       }}
     >
-      <p>{t('accounts.reconcileFlow.intro')}</p>
+      <p>
+        {mode === 'owed'
+          ? t('accounts.reconcileFlow.owedIntro')
+          : t('accounts.reconcileFlow.intro')}
+      </p>
       <FieldControl
-        label={t('accounts.reconcileFlow.balance', {
-          currency: account.currency,
-        })}
-        hint={t('accounts.reconcileFlow.balanceHint')}
+        label={
+          mode === 'owed'
+            ? t('accounts.reconcileFlow.owed', { currency: account.currency })
+            : t('accounts.reconcileFlow.balance', {
+                currency: account.currency,
+              })
+        }
+        hint={
+          mode === 'owed'
+            ? t('accounts.reconcileFlow.owedHint')
+            : t('accounts.reconcileFlow.balanceHint')
+        }
         error={errorText('balance')}
       >
         {(props) => (
@@ -189,6 +209,7 @@ export function ReconcileFlow({
         <Difference
           ref={summary}
           account={account}
+          mode={mode}
           result={found.result}
           locale={locale}
         />
@@ -223,11 +244,13 @@ export function ReconcileFlow({
 function Difference({
   ref,
   account,
+  mode,
   result,
   locale,
 }: {
   ref: Ref<HTMLDivElement>;
   account: AccountView;
+  mode: ReconcileMode;
   result: ReconcileResultView;
   locale: string;
 }) {
@@ -237,7 +260,17 @@ function Difference({
     money(Math.abs(difference.amountMinor), difference.currency),
     locale,
   );
+  // A lower balance than the ledger's is more owed on a debt.
   const less = difference.amountMinor < 0;
+  const owed = mode === 'owed';
+  const shown = (m: Money) => (owed ? money(-m.amountMinor, m.currency) : m);
+  const summary = owed
+    ? less
+      ? t('accounts.reconcileFlow.owedMore', { amount, date })
+      : t('accounts.reconcileFlow.owedLess', { amount, date })
+    : less
+      ? t('accounts.reconcileFlow.less', { amount, date })
+      : t('accounts.reconcileFlow.more', { amount, date });
   const figure = (label: string, value: string) => (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4">
       <dt className="text-muted-foreground">{label}</dt>
@@ -251,23 +284,25 @@ function Difference({
       data-testid="reconcile-difference"
       className="grid gap-3 rounded-md bg-plot p-4 focus-visible:outline-2 focus-visible:outline-ring"
     >
-      <p className="font-medium">
-        {less
-          ? t('accounts.reconcileFlow.less', { amount, date })
-          : t('accounts.reconcileFlow.more', { amount, date })}
-      </p>
+      <p className="font-medium">{summary}</p>
       <dl className="grid gap-1">
         {figure(
-          t('accounts.reconcileFlow.ledger'),
-          formatMoney(result.ledgerBalance, locale),
+          owed
+            ? t('accounts.reconcileFlow.ledgerOwed')
+            : t('accounts.reconcileFlow.ledger'),
+          formatMoney(shown(result.ledgerBalance), locale),
         )}
         {figure(
-          t('accounts.reconcileFlow.bank'),
-          formatMoney(result.stated, locale),
+          owed
+            ? t('accounts.reconcileFlow.bankOwed')
+            : t('accounts.reconcileFlow.bank'),
+          formatMoney(shown(result.stated), locale),
         )}
         {figure(
           t('accounts.reconcileFlow.difference'),
-          formatMoney(difference, locale, { signDisplay: 'exceptZero' }),
+          formatMoney(shown(difference), locale, {
+            signDisplay: 'exceptZero',
+          }),
         )}
       </dl>
       <p className="text-sm">

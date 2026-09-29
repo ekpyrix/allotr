@@ -1,6 +1,11 @@
-import { currencyCode, money } from '@allotr/shared';
+import { currencyCode, formatMoneyInput, money } from '@allotr/shared';
+import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { newReconcileDraft, toReconcileCheck } from './reconcile-draft.ts';
+import {
+  newReconcileDraft,
+  reconcileMode,
+  toReconcileCheck,
+} from './reconcile-draft.ts';
 
 const today = '2026-03-15';
 const draft = newReconcileDraft(today);
@@ -87,5 +92,89 @@ describe('toReconcileCheck', () => {
       ok: false,
       errors: { on: 'accounts.reconcileFlow.errors.dateFuture' },
     });
+  });
+});
+
+describe('reconcileMode', () => {
+  it('asks for the amount owed on a debt', () => {
+    expect(
+      reconcileMode({ kind: 'asset', balance: money(12_000, 'USD') }),
+    ).toBe('balance');
+    expect(reconcileMode({ kind: 'asset', balance: money(0, 'USD') })).toBe(
+      'balance',
+    );
+    expect(reconcileMode({ kind: 'asset', balance: money(-1, 'USD') })).toBe(
+      'owed',
+    );
+    expect(reconcileMode({ kind: 'liability', balance: money(0, 'USD') })).toBe(
+      'owed',
+    );
+    expect(reconcileMode({ kind: 'payable', balance: money(500, 'USD') })).toBe(
+      'owed',
+    );
+  });
+});
+
+describe('toReconcileCheck for a debt', () => {
+  it('sends the typed amount as the amount owed', () => {
+    expect(
+      toReconcileCheck(
+        { ...draft, balance: '210.00' },
+        { currency: currencyCode('USD') },
+        today,
+        'en-US',
+        'owed',
+      ),
+    ).toEqual({
+      ok: true,
+      check: { amountOwed: money(21_000, 'USD'), on: today },
+    });
+    expect(
+      toReconcileCheck(
+        draft,
+        { currency: currencyCode('USD') },
+        today,
+        'en-US',
+        'owed',
+      ),
+    ).toEqual({
+      ok: false,
+      errors: { balance: 'accounts.reconcileFlow.errors.owedRequired' },
+    });
+  });
+
+  it('reads any amount owed as typed, in 0-, 2- and 3-digit currencies', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom('JPY', 'USD', 'KWD'),
+        fc.integer({ min: -1e9, max: 1e9 }),
+        (currency, minor) => {
+          const owed = money(minor, currency);
+          const typed = `${minor < 0 ? '-' : ''}${formatMoneyInput(owed, 'en-US')}`;
+          const account = { currency: currencyCode(currency) };
+          const asOwed = toReconcileCheck(
+            { ...draft, balance: typed },
+            account,
+            today,
+            'en-US',
+            'owed',
+          );
+          const asBalance = toReconcileCheck(
+            { ...draft, balance: typed },
+            account,
+            today,
+            'en-US',
+          );
+          expect(asOwed).toEqual({
+            ok: true,
+            check: { amountOwed: owed, on: today },
+          });
+          expect(asBalance).toEqual({
+            ok: true,
+            check: { balance: owed, on: today },
+          });
+        },
+      ),
+    );
   });
 });

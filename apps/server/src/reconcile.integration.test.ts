@@ -216,6 +216,45 @@ describe('reconcile', () => {
     expect((await account(card)).balance).toEqual(usd(-21_000));
   });
 
+  it('takes an amount owed exactly as the negative balance', async () => {
+    const owed = await ok(card, { amountOwed: usd(21_500) });
+    const negative = await ok(card, { balance: usd(-21_500) });
+    expect(owed).toEqual(negative);
+    expect(owed).toMatchObject({
+      stated: usd(-21_500),
+      ledgerBalance: usd(-21_000),
+      difference: usd(-500),
+      reconciled: false,
+    });
+
+    const adjusted = await ok(card, {
+      amountOwed: usd(21_500),
+      adjust: true,
+      expectedDifference: usd(-500),
+    });
+    expect(adjusted.adjustment?.kind).toBe('expense');
+    expect((await account(card)).balance).toEqual(usd(-21_500));
+    // A credit on the statement is a negative amount owed.
+    expect((await ok(card, { amountOwed: usd(-100) })).difference).toEqual(
+      usd(21_600),
+    );
+  });
+
+  it('takes exactly one of balance and amountOwed, in the account currency', async () => {
+    const both = await reconcile(card, {
+      balance: usd(-21_500),
+      amountOwed: usd(21_500),
+    });
+    expect(both.status).toBe(400);
+    const neither = await reconcile(card, { adjust: true });
+    expect(neither.status).toBe(400);
+    const euro = await reconcile(card, {
+      amountOwed: { amountMinor: 1, currency: 'EUR' },
+    });
+    expect(euro.status).toBe(400);
+    expect(euro.body).toMatchObject({ code: 'currency_mismatch' });
+  });
+
   it('keeps using the categories after a rename and a merge', async () => {
     const first = await ok(everyday, {
       balance: usd(100_200),
@@ -256,6 +295,41 @@ describe('reconcile', () => {
     expect(response.status).toBe(409);
     expect(response.body).toMatchObject({ code: 'reconcile_stale' });
     expect(await entryCount()).toBe(before);
+  });
+
+  it('records a match when the difference dropped to zero meanwhile', async () => {
+    const { balance } = await account(everyday);
+    const stated = usd(balance.amountMinor - 800);
+    const seen = await ok(everyday, { balance: stated });
+    expect(seen).toMatchObject({ difference: usd(-800), reconciled: false });
+
+    // The missing entry is logged before the user adjusts.
+    const other = (await categories()).find(
+      (c) => c.name === 'Other' && c.kind === 'expense',
+    );
+    const logged = await h.alice.post('/v1/transactions', {
+      kind: 'expense',
+      accountId: everyday,
+      amount: usd(800),
+      categoryId: other?.id,
+    });
+    expect(logged.status, JSON.stringify(logged.body)).toBe(201);
+    const before = await entryCount();
+
+    const result = await ok(everyday, {
+      balance: stated,
+      adjust: true,
+      expectedDifference: seen.difference,
+    });
+    expect(result).toMatchObject({
+      on: '2026-03-15',
+      ledgerBalance: stated,
+      difference: usd(0),
+      reconciled: true,
+      adjustment: null,
+    });
+    expect(await entryCount()).toBe(before);
+    expect((await account(everyday)).lastReconciledOn).toBe('2026-03-15');
   });
 
   it('refuses a future date and another currency', async () => {
