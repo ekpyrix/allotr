@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import { formatMoney, type FormatMoneyOptions } from './format.ts';
+import {
+  formatMoney,
+  formatMoneyInput,
+  type FormatMoneyOptions,
+} from './format.ts';
 import { money } from './money.ts';
 
 it.each([
@@ -37,4 +41,13 @@ it('ignores options it does not declare', () => {
   expect(formatMoney(m, 'en-GB', { currencyDisplay: 'code' })).toBe(
     'CAD\u00a01,234,567.89',
   );
+});
+
+it.each([
+  [-123456, 'USD', 'en-US', '1234.56'],
+  [123456, 'EUR', 'de-DE', '1234,56'],
+  [1200, 'JPY', 'en-US', '1200'],
+  [5, 'BHD', 'en-US', '0.005'],
+])('writes %i %s in %s for an input', (amountMinor, currency, locale, text) => {
+  expect(formatMoneyInput(money(amountMinor, currency), locale)).toBe(text);
 });

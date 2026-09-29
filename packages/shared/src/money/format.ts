@@ -48,3 +48,26 @@ export function formatMoney(
 ): string {
   return formatterFor(locale, m, options).format(moneyToDecimal(m));
 }
+
+const inputFormatters = new Map<string, Intl.NumberFormat>();
+
+/**
+ * The amount without sign, symbol or grouping, as a person would type it
+ * into an amount field, for example "1234.56" or "1234,56". parseMoney
+ * reads it back to the same amount.
+ */
+export function formatMoneyInput(m: Money, locale: string): string {
+  const digits = minorUnit(m.currency);
+  const key = `${locale}|${String(digits)}`;
+  let formatter = inputFormatters.get(key);
+  if (formatter === undefined) {
+    formatter = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+      useGrouping: false,
+      signDisplay: 'never',
+    });
+    inputFormatters.set(key, formatter);
+  }
+  return formatter.format(moneyToDecimal(m));
+}
