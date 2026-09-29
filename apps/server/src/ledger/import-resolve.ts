@@ -32,6 +32,11 @@ export type ResolvedBundle = Readonly<{
   toCreate: readonly CategoryToCreate[];
   /** Bundle categories that reuse one the user already has. */
   matched: number;
+  /**
+   * Matched categories whose paycheck flag the bundle changes. The ledger
+   * is empty, so no figure depends on the flag yet.
+   */
+  paycheckFlags: ReadonlyMap<string, boolean>;
 }>;
 
 const maxErrors = 100;
@@ -60,6 +65,7 @@ type Categories = {
   kinds: Map<string, Kind>;
   toCreate: CategoryToCreate[];
   matched: number;
+  paycheckFlags: Map<string, boolean>;
 };
 
 function resolveCategories(
@@ -86,6 +92,7 @@ function resolveCategories(
   const parents: CategoryToCreate[] = [];
   const children: CategoryToCreate[] = [];
   let matched = 0;
+  const paycheckFlags = new Map<string, boolean>();
   // Top-level categories first, so a child may come before its parent.
   const ordered = bundle.categories
     .map((category, index) => ({ category, index }))
@@ -131,15 +138,18 @@ function resolveCategories(
       report([...at, 'kind'], `"${category.name}" is a ${kind} category.`);
       continue;
     }
+    if (category.isPaycheck === true && kind !== 'income') {
+      report(
+        [...at, 'isPaycheck'],
+        'Only an income category can be the paycheck category.',
+      );
+      continue;
+    }
     const existingId = existingIds.get(key);
     if (existingId !== undefined) {
       const flag = byId.get(existingId)?.isPaycheck;
       if (category.isPaycheck !== undefined && category.isPaycheck !== flag) {
-        report(
-          [...at, 'isPaycheck'],
-          `"${category.name}" already exists and is ${flag === true ? '' : 'not '}the paycheck category.`,
-        );
-        continue;
+        paycheckFlags.set(existingId, category.isPaycheck);
       }
       matched += 1;
       continue;
@@ -152,7 +162,13 @@ function resolveCategories(
       children.push({ index, key, parentKey, kind });
     }
   }
-  return { existingIds, kinds, toCreate: [...parents, ...children], matched };
+  return {
+    existingIds,
+    kinds,
+    toCreate: [...parents, ...children],
+    matched,
+    paycheckFlags,
+  };
 }
 
 // The path as the user wrote the names, for hints.
@@ -233,7 +249,9 @@ export function resolveBundle(
   const refs = new Set<string>();
   bundle.transactions.forEach((entry, index) => {
     const at = ['transactions', index] as const;
-    if (entry.kind === 'transfer') {
+    if (entry.kind === 'write_off') {
+      checkAccount([...at, 'account'], entry.account);
+    } else if (entry.kind === 'transfer') {
       checkAccount([...at, 'from'], entry.from);
       checkAccount([...at, 'to'], entry.to);
       if (entry.category !== undefined) {
@@ -276,9 +294,21 @@ export function resolveBundle(
     });
   });
 
+  bundle.reconciliations.forEach((item, index) => {
+    const at = ['reconciliations', index] as const;
+    checkAccount([...at, 'account'], item.account);
+    if (item.adjustment !== undefined && !refs.has(item.adjustment)) {
+      report(
+        [...at, 'adjustment'],
+        `No entry has the ref "${item.adjustment}".`,
+      );
+    }
+  });
+
   return {
     errors,
     existingIds: categories.existingIds,
+    paycheckFlags: categories.paycheckFlags,
     toCreate: categories.toCreate,
     matched: categories.matched,
   };

@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { localDateSchema } from './dates.ts';
-import { categoryKindSchema, createAccountBodySchema } from './ledger.ts';
+import {
+  budgetGroupSchema,
+  categoryKindSchema,
+  createAccountBodySchema,
+} from './ledger.ts';
 import {
   currencyCodeSchema,
   moneySchema,
@@ -40,7 +44,21 @@ const categorySchema = z.strictObject({
   isPaycheck: z.boolean().optional(),
 });
 
-const accountSchema = z.strictObject(createAccountBodySchema.shape);
+const accountSchema = z.strictObject({
+  ...createAccountBodySchema.shape,
+  /** Archived once everything else is in; the balance must then be zero. */
+  archived: z.boolean().optional(),
+  /**
+   * Later moves on or off budget, in order. `budgetGroup` above is the
+   * group the account started in.
+   */
+  switches: z
+    .array(
+      z.strictObject({ on: localDateSchema, budgetGroup: budgetGroupSchema }),
+    )
+    .max(bundleLimits.items)
+    .optional(),
+});
 
 const rateItemSchema = z
   .strictObject({
@@ -90,6 +108,15 @@ const oneCategorySideError = {
 };
 
 const transactionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('write_off'),
+    account: nameSchema,
+    /** The balance written off to Expenses; negative for a debt. */
+    balance: moneySchema.refine((m) => m.amountMinor !== 0, {
+      error: 'A write-off is not zero',
+    }),
+    ...entryFields,
+  }),
   z
     .strictObject({ kind: z.literal('expense'), ...spendFields })
     .refine(oneCategorySide, oneCategorySideError),
@@ -128,6 +155,17 @@ const billSchema = z.strictObject({
     .default([]),
 });
 
+const reconciliationSchema = z.strictObject({
+  account: nameSchema,
+  on: localDateSchema,
+  /** The bank's balance, in the account's currency. */
+  stated: moneySchema,
+  /** The ledger's balance at the end of `on` before any adjustment. */
+  computed: moneySchema,
+  /** The `ref` of the entry that adjusted the difference. */
+  adjustment: refSchema.optional(),
+});
+
 function list<T extends z.ZodType>(item: T, max: number = bundleLimits.items) {
   return z.array(item).max(max).default([]);
 }
@@ -141,9 +179,16 @@ export const bundleSchema = z.strictObject({
   rates: list(rateItemSchema),
   transactions: list(transactionSchema, bundleLimits.transactions),
   bills: list(billSchema),
+  reconciliations: list(reconciliationSchema, bundleLimits.transactions),
 });
 export type Bundle = z.infer<typeof bundleSchema>;
 export type BundleTransaction = Bundle['transactions'][number];
+
+export const exportFormatSchema = z.enum(['json', 'csv', 'beancount']);
+export type ExportFormat = z.infer<typeof exportFormatSchema>;
+export const exportQuerySchema = z.object({
+  format: exportFormatSchema.default('json'),
+});
 
 export const importResultSchema = z.object({
   accounts: z.int(),
@@ -155,5 +200,6 @@ export const importResultSchema = z.object({
   transactions: z.int(),
   bills: z.int(),
   billPayments: z.int(),
+  reconciliations: z.int(),
 });
 export type ImportResult = z.infer<typeof importResultSchema>;

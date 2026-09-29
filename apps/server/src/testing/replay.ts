@@ -207,6 +207,9 @@ function toCreateBody(
       ? {}
       : { tagIds: t.tags.map((tag) => lookup(names.tags, tag, 'tag')) }),
   };
+  if (t.kind === 'write_off') {
+    throw new Error('A replay step cannot post a write-off; archive instead.');
+  }
   if (t.kind === 'transfer') {
     return {
       kind: 'transfer',

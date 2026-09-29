@@ -7,11 +7,29 @@ describe('createSession', () => {
     const fake = fakeFetch({ 'POST /v1/import': () => json(201, { ok: 1 }) });
     const session = createSession('https://allotr.example.test', fake.fetch);
     const response = await session.post('/v1/import', { a: 1 });
-    expect(response).toEqual({ status: 201, body: { ok: 1 } });
+    expect(response).toMatchObject({ status: 201, body: { ok: 1 } });
     const [request] = fake.requests;
     expect(request?.headers.get('origin')).toBe('https://allotr.example.test');
     expect(request?.headers.get('content-type')).toBe('application/json');
     expect(request?.body).toEqual({ a: 1 });
+  });
+
+  it('gets a download as text, with its headers and cookies', async () => {
+    const fake = fakeFetch({
+      'POST /v1/auth/sign-in/email': () =>
+        json(200, {}, ['sid=s1; Path=/; HttpOnly']),
+      'GET /v1/export': () =>
+        new Response('a,b\r\n', {
+          headers: { 'content-disposition': 'attachment; filename="x.csv"' },
+        }),
+    });
+    const session = createSession('https://allotr.example.test', fake.fetch);
+    await session.post('/v1/auth/sign-in/email', {});
+    const response = await session.get('/v1/export?format=csv');
+    expect(response.text).toBe('a,b\r\n');
+    expect(response.headers.get('content-disposition')).toMatch(/x\.csv/);
+    expect(fake.requests[1]?.headers.get('cookie')).toBe('sid=s1');
+    expect(fake.requests[1]?.headers.get('content-type')).toBeNull();
   });
 
   it('sends an empty object when no body is given', async () => {
@@ -63,7 +81,7 @@ describe('createSession', () => {
       'https://allotr.example.test',
       fake.fetch,
     ).post('/v1/import', {});
-    expect(response).toEqual({ status: 502, body: undefined });
+    expect(response).toMatchObject({ status: 502, body: undefined });
     expect(problemOf(response)).toBeNull();
   });
 

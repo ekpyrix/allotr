@@ -524,7 +524,8 @@ async function build(
   return { transaction, chart, tagIds };
 }
 
-async function store(
+/** Stores a built entry and its tags inside the caller's transaction. */
+export async function storeTransaction(
   db: Db,
   userId: string,
   transaction: Transaction,
@@ -555,7 +556,7 @@ export async function recordTransaction(
   now: Date,
 ): Promise<string> {
   const { transaction, tagIds } = await build(db, userId, body, now);
-  await store(db, userId, transaction, tagIds, null, source);
+  await storeTransaction(db, userId, transaction, tagIds, null, source);
   return transaction.id;
 }
 
@@ -593,7 +594,7 @@ export async function createTransaction(
         if (earlier !== undefined) return null;
       }
       const { transaction, tagIds } = await build(trx, userId, body, now);
-      await store(trx, userId, transaction, tagIds, key, 'api');
+      await storeTransaction(trx, userId, transaction, tagIds, key, 'api');
       return transaction.id;
     });
     if (id !== null) {
@@ -628,7 +629,7 @@ export async function reverseTransaction(
       createdAt: now.toISOString(),
       note: note ?? null,
     });
-    await store(trx, userId, reversal, [], null, 'api');
+    await storeTransaction(trx, userId, reversal, [], null, 'api');
     return reversal.id;
   });
   return getTransaction(db, userId, reversalId);
@@ -654,8 +655,15 @@ export async function editTransaction(
         { id: newTransactionId(), createdAt: now.toISOString() },
         built.transaction,
       );
-      await store(trx, userId, reversal, [], null, 'api');
-      await store(trx, userId, replacement, built.tagIds, null, 'api');
+      await storeTransaction(trx, userId, reversal, [], null, 'api');
+      await storeTransaction(
+        trx,
+        userId,
+        replacement,
+        built.tagIds,
+        null,
+        'api',
+      );
       return [reversal.id, replacement.id] as const;
     });
   const [reversal, replacement] = await viewsByIds(db, userId, [

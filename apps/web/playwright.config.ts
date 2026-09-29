@@ -26,6 +26,7 @@ const specs = [
   'splits',
   'cycles',
   'setup',
+  'export',
 ];
 
 const projects = sizes.flatMap((size, i) =>

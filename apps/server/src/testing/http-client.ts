@@ -67,7 +67,13 @@ export function createClient(
     return {
       status: response.status,
       headers: response.headers,
-      body: text === '' ? undefined : (JSON.parse(text) as unknown),
+      // Text downloads (CSV, Beancount) stay text.
+      body:
+        text === ''
+          ? undefined
+          : /json/.test(response.headers.get('content-type') ?? 'json')
+            ? (JSON.parse(text) as unknown)
+            : text,
     };
   }
 

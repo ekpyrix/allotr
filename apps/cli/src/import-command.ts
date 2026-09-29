@@ -3,13 +3,9 @@ import {
   importResultSchema,
   type ImportResult,
 } from '@allotr/shared';
-import {
-  createSession,
-  problemOf,
-  type ApiResponse,
-  type Session,
-} from './http.ts';
+import { problemOf, type Session } from './http.ts';
 import { messageOf, type CliIo } from './io.ts';
+import { describe, twoFactorHint, withSignedIn } from './sign-in.ts';
 
 // `allotr import`: fill an empty ledger from a JSON bundle through
 // `POST /v1/import` (docs/architecture.md §5.1). The file is checked before
@@ -26,8 +22,7 @@ const MAX_LISTED = 20;
 const hints: Readonly<Record<string, string>> = {
   ledger_not_empty:
     'this user already has accounts, entries, bills or rates. Import fills an empty ledger only; sign in as a user without them.',
-  two_factor_enrollment_required:
-    'this instance requires two-factor authentication. Set it up in the web app, then run the import again.',
+  two_factor_enrollment_required: twoFactorHint,
 };
 
 export async function runImport(
@@ -37,17 +32,9 @@ export async function runImport(
   const bundle = await readBundle(options.file, io);
   if (bundle === null) return 2;
 
-  const session = createSession(options.server, io.fetch);
-  const email =
-    options.email ?? (await io.prompt('Email: ', { hidden: false }));
-  const password = await io.prompt('Password: ', { hidden: true });
-  if (!(await signIn(session, email, password, io))) return 1;
-  try {
-    return await postBundle(session, bundle.data, io);
-  } finally {
-    // The session is only for this import; a failed sign-out changes nothing.
-    await session.post('/v1/auth/sign-out').catch(() => undefined);
-  }
+  return withSignedIn(options, io, (session) =>
+    postBundle(session, bundle.data, io),
+  );
 }
 
 async function readBundle(
@@ -84,32 +71,6 @@ async function readBundle(
   return { data };
 }
 
-async function signIn(
-  session: Session,
-  email: string,
-  password: string,
-  io: CliIo,
-): Promise<boolean> {
-  const response = await session.post('/v1/auth/sign-in/email', {
-    email,
-    password,
-  });
-  if (response.status !== 200) {
-    io.stderr(`Sign-in failed: ${describe(response)}`);
-    return false;
-  }
-  if (!needsCode(response.body)) return true;
-  const code = await io.prompt('Authenticator code: ', { hidden: true });
-  const verified = await session.post('/v1/auth/two-factor/verify-totp', {
-    code,
-  });
-  if (verified.status !== 200) {
-    io.stderr(`Sign-in failed: ${describe(verified)}`);
-    return false;
-  }
-  return true;
-}
-
 async function postBundle(
   session: Session,
   bundle: unknown,
@@ -126,21 +87,6 @@ async function postBundle(
   io.stderr(`Import failed: ${hint ?? describe(response)}`);
   if (details?.errors !== undefined) printErrors(details.errors, io);
   return 1;
-}
-
-function needsCode(body: unknown): boolean {
-  return (
-    typeof body === 'object' &&
-    body !== null &&
-    'twoFactorRedirect' in body &&
-    body.twoFactorRedirect === true
-  );
-}
-
-function describe(response: ApiResponse): string {
-  const details = problemOf(response);
-  if (details !== null) return details.detail ?? details.title;
-  return `the server answered ${String(response.status)} without details.`;
 }
 
 function printErrors(
