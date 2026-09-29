@@ -31,7 +31,7 @@ export function createFirstAccount(body: SignUpBody) {
   return call(endpoints.createFirstAccount, { body });
 }
 
-/** Returns 'two-factor' when a TOTP code is needed next. */
+/** Returns 'two-factor' when a TOTP or backup code is needed next. */
 export async function signIn(email: string, password: string) {
   const result = await call(endpoints.signIn, { body: { email, password } });
   return 'twoFactorRedirect' in result
@@ -41,6 +41,20 @@ export async function signIn(email: string, password: string) {
 
 export async function verifyTotp(code: string) {
   await call(endpoints.verifyTotp, { body: { code } });
+}
+
+/** A six-digit code is a TOTP code; anything else is a backup code. */
+const totpCode = /^\d{6}$/;
+
+/**
+ * Finishes a two-factor sign-in with a TOTP or backup code. Whitespace is
+ * ignored; a backup code that matches is used up.
+ */
+export async function verifySignInCode(input: string) {
+  const code = input.replace(/\s/g, '');
+  await (totpCode.test(code)
+    ? verifyTotp(code)
+    : call(endpoints.verifyBackupCode, { body: { code } }));
 }
 
 export async function signOut(queryClient: QueryClient) {

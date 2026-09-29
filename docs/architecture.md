@@ -121,7 +121,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - Errors use RFC 9457 problem details, with a stable `code` member where a
   client may act on the error.
 - Authentication ([ADR 0006](adr/0006-auth.md)) is Better Auth under
-  `/v1/auth` (sign-in, TOTP 2FA, session list and revoke). Onboarding
+  `/v1/auth` (sign-in, TOTP 2FA, session list and revoke). The sign-in
+  code step takes a TOTP code or a single-use backup code; wrong codes of
+  either kind count toward one per-account 2FA lockout
+  (`account_temporarily_locked`), and five wrong codes end the challenge
+  (`too_many_attempts_request_new_code`). Onboarding
   (`/v1/onboarding`, first user becomes admin), single-use invites
   (`/v1/invites`), the current session (`/v1/session`) and instance settings
   (`/v1/admin/settings`: registration mode, required 2FA) are Allotr routes.

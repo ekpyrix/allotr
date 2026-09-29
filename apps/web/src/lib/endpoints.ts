@@ -102,6 +102,13 @@ export const endpoints = {
     response: z.unknown(),
     openapi: false,
   }),
+  verifyBackupCode: endpoint({
+    method: 'POST',
+    path: '/v1/auth/two-factor/verify-backup-code',
+    body: z.object({ code: z.string() }),
+    response: z.unknown(),
+    openapi: false,
+  }),
   enableTwoFactor: endpoint({
     method: 'POST',
     path: '/v1/auth/two-factor/enable',
