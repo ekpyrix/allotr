@@ -2,7 +2,7 @@ import {
   darkTheme,
   lightTheme,
   SHIPPED_THEMES,
-  THEME_PAIRS,
+  themePairs,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import { checkDraft, draftFrom, pickerValue, TOKEN_GROUPS } from './draft.ts';
@@ -14,7 +14,7 @@ describe('checkDraft', () => {
   it('saves a named draft whose pairs all pass', () => {
     const check = checkDraft(draftFrom(paper, ' Sand '));
     expect(check.failures).toEqual([]);
-    expect(check.pairs).toHaveLength(THEME_PAIRS.length);
+    expect(check.pairs).toHaveLength(themePairs('light').length);
     expect(check.body).toEqual({
       name: 'Sand',
       scheme: 'light',
@@ -40,6 +40,27 @@ describe('checkDraft', () => {
       ['muted-foreground', 'plot'],
       ['muted-foreground', 'muted'],
     ]);
+  });
+
+  it('checks the pairs of the draft scheme', () => {
+    const dark = SHIPPED_THEMES.find((theme) => theme.id === 'dark');
+    if (dark === undefined) throw new Error('dark theme missing');
+    const draft = draftFrom(dark, 'Ember');
+    const check = checkDraft({
+      ...draft,
+      tokens: { ...draft.tokens, destructive: '#d98270' },
+    });
+    expect(check.pairs).toHaveLength(themePairs('dark').length);
+    expect(check.failures).toEqual([
+      expect.objectContaining({
+        foreground: 'destructive',
+        tint: { token: 'input', alpha: 0.5 },
+      }),
+    ]);
+    expect(check.body).toBeNull();
+    expect(checkDraft({ ...draft, scheme: 'light' }).pairs).toHaveLength(
+      themePairs('light').length,
+    );
   });
 
   it('skips contrast while a colour is not valid', () => {

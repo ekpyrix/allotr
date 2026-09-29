@@ -4,16 +4,21 @@ import harbour from './community/harbour.json' with { type: 'json' };
 import highContrastDark from './community/high-contrast-dark.json' with { type: 'json' };
 import highContrastLight from './community/high-contrast-light.json' with { type: 'json' };
 import paper from './community/paper.json' with { type: 'json' };
-import { themeTokensSchema, type ThemeTokens } from './tokens.ts';
+import {
+  THEME_SCHEMES,
+  themeSchemeSchema,
+  themeTokensSchema,
+  type ThemePair,
+  type ThemeScheme,
+  type ThemeTokens,
+} from './tokens.ts';
 import { validateTheme, type ContrastFailure } from './validate.ts';
+
+export { THEME_SCHEMES, themeSchemeSchema, type ThemeScheme };
 
 // Named themes (FR-W5). Each is for one scheme, and a user picks one theme
 // for light and one for dark. Shipped themes have slug ids; custom themes
 // get server UUIDs, so the two never clash.
-
-export const THEME_SCHEMES = ['light', 'dark'] as const;
-export const themeSchemeSchema = z.enum(THEME_SCHEMES);
-export type ThemeScheme = z.infer<typeof themeSchemeSchema>;
 
 export const themeIdSchema = z.string().min(1).max(64);
 export const themeNameSchema = z.string().trim().min(1).max(40);
@@ -114,9 +119,18 @@ export function formatContrastRatio(value: number): string {
   return (Math.floor(value * 100) / 100).toFixed(2);
 }
 
+/** "plot", or "input 50% over background" for a tinted surface. */
+export function describeSurface(
+  pair: Pick<ThemePair, 'background' | 'tint'>,
+): string {
+  return pair.tint === undefined
+    ? pair.background
+    : `${pair.tint.token} ${String(Math.round(pair.tint.alpha * 100))}% over ${pair.background}`;
+}
+
 /** "ring on plot: 1.00:1, needs 3:1" */
 export function describeContrastFailure(failure: ContrastFailure): string {
-  return `${failure.foreground} on ${failure.background}: ${formatContrastRatio(failure.ratio)}:1, needs ${String(failure.required)}:1`;
+  return `${failure.foreground} on ${describeSurface(failure)}: ${formatContrastRatio(failure.ratio)}:1, needs ${String(failure.required)}:1`;
 }
 
 export type ThemeProblem = Readonly<{ path: string; message: string }>;
@@ -140,15 +154,18 @@ export function parseThemeFile(
       })),
     };
   }
-  const problems = contrastProblems(parsed.data.tokens);
+  const problems = contrastProblems(parsed.data.tokens, parsed.data.scheme);
   return problems.length === 0
     ? { ok: true, theme: parsed.data }
     : { ok: false, problems };
 }
 
 /** One problem per failing pair, pointing at its foreground token. */
-export function contrastProblems(tokens: ThemeTokens): ThemeProblem[] {
-  return validateTheme(tokens).map((failure) => ({
+export function contrastProblems(
+  tokens: ThemeTokens,
+  scheme: ThemeScheme,
+): ThemeProblem[] {
+  return validateTheme(tokens, scheme).map((failure) => ({
     path: `/tokens/${failure.foreground}`,
     message: describeContrastFailure(failure),
   }));

@@ -1,6 +1,11 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { contrastRatio, hexColorSchema, relativeLuminance } from './color.ts';
+import {
+  composite,
+  contrastRatio,
+  hexColorSchema,
+  relativeLuminance,
+} from './color.ts';
 import { hexArb } from './testing.ts';
 
 describe('hexColorSchema', () => {
@@ -45,6 +50,23 @@ describe('contrastRatio', () => {
         expect(ratio).toBe(contrastRatio(b, a));
         expect(ratio).toBeGreaterThanOrEqual(1);
         expect(ratio).toBeLessThanOrEqual(21 + 1e-9);
+      }),
+    );
+  });
+});
+
+describe('composite', () => {
+  it('blends per channel and rounds to 8 bits', () => {
+    expect(composite('#ffffff', 0.5, '#000000')).toBe('#808080');
+    expect(composite('#5f756b', 0.3, '#0f1a17')).toBe('#273530');
+    expect(composite('#abc', 0.5, '#abc')).toBe('#aabbcc');
+  });
+
+  it('gives the bottom at 0 and the top at 1', () => {
+    fc.assert(
+      fc.property(hexArb, hexArb, (top, bottom) => {
+        expect(composite(top, 0, bottom)).toBe(bottom);
+        expect(composite(top, 1, bottom)).toBe(top);
       }),
     );
   });

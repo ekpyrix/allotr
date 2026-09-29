@@ -30,7 +30,7 @@ import {
   type DraftCheck,
   type ThemeDraft,
 } from './draft.ts';
-import { pairText, tokenLabel } from './labels.ts';
+import { pairKey, pairText, surfaceLabel, tokenLabel } from './labels.ts';
 import { ThemePreview } from './preview.tsx';
 
 function TokenField({
@@ -109,9 +109,7 @@ function ContrastPanel({ check }: { check: DraftCheck }) {
           className="mt-2 list-disc pl-5 text-sm"
         >
           {check.failures.map((failure) => (
-            <li key={`${failure.foreground}/${failure.background}`}>
-              {pairText(failure)}
-            </li>
+            <li key={pairKey(failure)}>{pairText(failure)}</li>
           ))}
         </ul>
       ) : null}
@@ -122,12 +120,9 @@ function ContrastPanel({ check }: { check: DraftCheck }) {
           </summary>
           <ul className="mt-2 grid gap-1">
             {check.pairs.map((pair) => (
-              <li
-                key={`${pair.foreground}/${pair.background}`}
-                className="flex justify-between gap-4"
-              >
+              <li key={pairKey(pair)} className="flex justify-between gap-4">
                 <span>
-                  {tokenLabel(pair.foreground)} / {tokenLabel(pair.background)}
+                  {tokenLabel(pair.foreground)} / {surfaceLabel(pair)}
                 </span>
                 <span className="font-mono">
                   {formatContrastRatio(pair.ratio)}:1{' '}

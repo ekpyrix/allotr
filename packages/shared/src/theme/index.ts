@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { DEFAULT_THEME_ID, themeIdSchema } from './themes.ts';
 
-export { contrastRatio, hexColorSchema, relativeLuminance } from './color.ts';
+export {
+  composite,
+  contrastRatio,
+  hexColorSchema,
+  relativeLuminance,
+} from './color.ts';
 export {
   CONTRAST_MINIMUM,
   THEME_PAIRS,
@@ -9,10 +14,17 @@ export {
   themeTokensSchema,
   type ContrastKind,
   type ThemePair,
+  type ThemeTint,
   type ThemeToken,
   type ThemeTokens,
 } from './tokens.ts';
-export { validateTheme, type ContrastFailure } from './validate.ts';
+export {
+  pairRatio,
+  pairSurface,
+  themePairs,
+  validateTheme,
+  type ContrastFailure,
+} from './validate.ts';
 export { darkTheme, lightTheme } from './builtin.ts';
 export {
   contrastProblems,
@@ -21,6 +33,7 @@ export {
   customThemeSchema,
   DEFAULT_THEME_ID,
   describeContrastFailure,
+  describeSurface,
   findTheme,
   formatContrastRatio,
   parseThemeFile,

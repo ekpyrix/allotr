@@ -162,8 +162,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   scheme: a shipped theme (built-in or community, in
   `packages/shared/src/theme/`) or one of the user's custom themes.
   `/v1/settings/themes` keeps up to 20 custom themes per user; every save
-  runs the WCAG 2.2 AA contrast validator and a failing theme is refused
-  with each failing pair listed (`theme_contrast`). Deleting a theme in use,
+  runs the WCAG 2.2 AA contrast validator for the theme's scheme and a
+  failing theme is refused with each failing pair listed (`theme_contrast`).
+  Dark themes are also checked for destructive text on the translucent
+  fills that outline buttons get in the dark scheme, at rest and on hover. Deleting a theme in use,
   or changing its scheme, puts that slot back on the built-in theme. The web
   app caches the mode and any non-built-in colours in localStorage, so
   `theme-init.js` paints them before the app loads. `/v1/settings/setup`

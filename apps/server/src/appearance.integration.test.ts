@@ -167,6 +167,36 @@ describe('custom themes', () => {
     });
   });
 
+  it('holds only dark themes to the destructive button fills', async () => {
+    await clearAlice();
+    const tokens = { ...lightTheme, destructive: '#9c4a3c' };
+    const dark = await h.alice.post('/v1/settings/themes', {
+      ...theme('Ember', 'dark'),
+      tokens,
+    });
+    expect(dark.status).toBe(422);
+    expect(dark.body).toMatchObject({
+      code: 'theme_contrast',
+      errors: [
+        {
+          path: '/tokens/destructive',
+          message:
+            'destructive on input 30% over background: 4.10:1, needs 4.5:1',
+        },
+        {
+          path: '/tokens/destructive',
+          message:
+            'destructive on input 50% over background: 3.31:1, needs 4.5:1',
+        },
+      ],
+    });
+    const light = await h.alice.post('/v1/settings/themes', {
+      ...theme('Ember'),
+      tokens,
+    });
+    expect(light.status).toBe(201);
+  });
+
   it.each([
     { ...theme('Bad'), tokens: { ...lightTheme, ring: 'gold' } },
     { ...theme('Bad'), scheme: 'dim' },

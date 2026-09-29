@@ -1,9 +1,9 @@
 import {
-  contrastRatio,
   CONTRAST_MINIMUM,
   hexColorSchema,
-  THEME_PAIRS,
+  pairRatio,
   THEME_TOKENS,
+  themePairs,
   themeNameSchema,
   themeTokensSchema,
   validateTheme,
@@ -66,13 +66,10 @@ export function checkDraft(draft: ThemeDraft): DraftCheck {
       nameError: !name.success,
       body: null,
     };
-  const failures = validateTheme(tokens.data);
-  const pairs = THEME_PAIRS.map((pair) => ({
+  const failures = validateTheme(tokens.data, draft.scheme);
+  const pairs = themePairs(draft.scheme).map((pair) => ({
     ...pair,
-    ratio: contrastRatio(
-      tokens.data[pair.foreground],
-      tokens.data[pair.background],
-    ),
+    ratio: pairRatio(tokens.data, pair),
     required: CONTRAST_MINIMUM[pair.kind],
   }));
   return {

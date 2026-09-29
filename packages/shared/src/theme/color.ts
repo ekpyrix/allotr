@@ -31,3 +31,18 @@ export function contrastRatio(a: string, b: string): number {
   const lb = relativeLuminance(b);
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
+
+/**
+ * `top` at `alpha` (0 to 1) over opaque `bottom`, as a browser paints a
+ * translucent fill: blended per sRGB channel and rounded to 8 bits.
+ */
+export function composite(top: string, alpha: number, bottom: string): string {
+  const lower = channels(bottom);
+  const blended = channels(top).map((channel, at) => {
+    const value = channel * alpha + (lower[at] ?? 0) * (1 - alpha);
+    return Math.round(value * 255)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${blended.join('')}`;
+}

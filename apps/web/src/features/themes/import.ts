@@ -25,7 +25,7 @@ export function readThemeFile(text: string): ImportResult {
       ),
     };
   const { name, scheme, tokens } = parsed.data;
-  const failures = validateTheme(tokens);
+  const failures = validateTheme(tokens, scheme);
   return failures.length === 0
     ? { ok: true, theme: { name, scheme, tokens } }
     : { ok: false, problems: failures.map(pairText) };
