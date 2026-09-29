@@ -172,8 +172,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   [§5.1](#51-import-bundle)): validated as a whole, then applied in one
   database transaction through the same writes as the API. A ledger that
   already has accounts, entries, bills or rates is refused
-  (`ledger_not_empty`). The earliest imported day becomes the ledger's
-  start, so the first cycle covers the imported history.
+  (`ledger_not_empty`). When the imported history has a paycheck, its
+  earliest day becomes the ledger's start, so the first cycle covers it.
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`

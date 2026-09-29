@@ -77,6 +77,7 @@ describe('cycles', () => {
   let everyday: string;
   let groceries: string;
   let paycheck: string;
+  let aprilPay: string;
 
   const post = async (body: Record<string, unknown>) => {
     const response = await h.alice.post('/v1/transactions', body);
@@ -105,7 +106,7 @@ describe('cycles', () => {
     clock = new Date('2026-03-20T12:00:00Z');
     await spend(2000, '2026-03-20', 'Market');
     clock = new Date('2026-04-01T09:00:00Z');
-    await post({
+    aprilPay = await post({
       kind: 'income',
       accountId: everyday,
       amount: usd(300000),
@@ -177,6 +178,22 @@ describe('cycles', () => {
     ]);
   });
 
+  it('stays amended when the closing paycheck is edited later', async () => {
+    clock = new Date('2026-04-05T12:00:00Z');
+    const edited = await h.alice.post(`/v1/transactions/${aprilPay}/edit`, {
+      kind: 'income',
+      accountId: everyday,
+      amount: usd(310000),
+      categoryId: paycheck,
+      occurredOn: '2026-04-01',
+    });
+    expect(edited.status).toBe(201);
+    const [current, past] = await cycles(h.alice);
+    expect(current).toMatchObject({ openedOn: '2026-04-01', amended: false });
+    expect(past).toMatchObject({ openedOn: '2026-03-15', amended: true });
+    expect((await detail(h.alice, '2026-03-15')).amendments).toHaveLength(1);
+  });
+
   it('answers 404 for a day no cycle opened on', async () => {
     const response = await h.alice.get('/v1/cycles/2026-03-20');
     expect(response.status).toBe(404);
@@ -231,5 +248,41 @@ describe('cycles of an imported ledger', () => {
       spending: usd(1000),
       leftover: usd(49000),
     });
+  });
+});
+
+describe('cycles of an imported ledger without a paycheck', () => {
+  let fresh: TwoUsers;
+
+  beforeAll(async () => {
+    fresh = await startWithTwoUsers({ now: () => clock });
+    await fresh.db
+      .updateTable('users')
+      .set({ created_at: started.toISOString() })
+      .execute();
+  });
+
+  afterAll(async () => {
+    await fresh.close();
+  });
+
+  it('keep the join day, so payday is not long past', async () => {
+    const imported = await fresh.alice.post('/v1/import', {
+      format: 'allotr.bundle',
+      version: 1,
+      accounts: [
+        {
+          name: 'Main',
+          currency: 'USD',
+          openingBalance: usd(50000),
+          openedOn: '2026-01-10',
+        },
+      ],
+    });
+    expect(imported.status).toBe(201);
+    const list = await cycles(fresh.alice);
+    expect(list.map((c) => [c.openedOn, c.payday])).toEqual([
+      ['2026-03-15', '2026-04-01'],
+    ]);
   });
 });

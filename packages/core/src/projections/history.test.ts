@@ -204,4 +204,32 @@ describe('cycleReports', () => {
     expect(closed.closing.off).toEqual(usd(425000));
     expect(closed.savingsNetChange).toEqual(usd(0));
   });
+
+  it('stays amended when the closing paycheck is edited later', () => {
+    const late = spent('2026-03-10', 2500, '2026-04-03');
+    const april = ledger.at(-1);
+    if (april === undefined) throw new Error('no paycheck');
+    const undo = reverse(chart, ledger, april.id, {
+      id: meta().id,
+      createdAt: at('2026-04-05'),
+    });
+    const corrected = paid('2026-04-01', 310000, '2026-04-05');
+    const { closed, open } = reports([...ledger, late, undo, corrected]);
+    expect(open.cycle.openedBy).toBe(corrected.id);
+    expect(closed.amendments.map((a) => a.transactionId)).toEqual([late.id]);
+  });
+
+  it('reports only the cycle asked for', () => {
+    const only = cycleReports(
+      view(ledger),
+      today,
+      new Map(),
+      day('2026-03-01'),
+    );
+    expect(only.map((r) => r.cycle.openedOn)).toEqual(['2026-03-01']);
+    expect(only[0]).toEqual(reports().closed);
+    expect(
+      cycleReports(view(ledger), today, new Map(), day('2026-03-02')),
+    ).toEqual([]);
+  });
 });

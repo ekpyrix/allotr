@@ -83,12 +83,28 @@ export async function readLedgerStart(
   return parsed(localDateSchema, row?.value);
 }
 
-/** Records the start of imported history: its earliest dated entry. */
+/**
+ * Records the start of imported history: its earliest dated entry. Only a
+ * history with a paycheck has one, so Today still starts from the day the
+ * user joined when there is none (payday would be long past otherwise).
+ */
 export async function recordLedgerStart(
   db: Db,
   userId: string,
   now: Date,
 ): Promise<void> {
+  const paycheck = await db
+    .selectFrom('postings as p')
+    .innerJoin('categories as c', (join) =>
+      join
+        .onRef('c.id', '=', 'p.category_id')
+        .onRef('c.user_id', '=', 'p.user_id'),
+    )
+    .select('p.id')
+    .where('p.user_id', '=', userId)
+    .where('c.is_paycheck', '=', 1)
+    .executeTakeFirst();
+  if (paycheck === undefined) return;
   const earliest = await db
     .selectFrom('transactions')
     .select((eb) => eb.fn.min('occurred_on').as('day'))

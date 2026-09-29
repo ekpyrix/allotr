@@ -48,29 +48,37 @@ export type CycleReport = Readonly<{
   missingRates: readonly CurrencyCode[];
 }>;
 
-function recordedAfter(entry: Transaction, instant: string): boolean {
-  return Date.parse(entry.createdAt) > Date.parse(instant);
+function isPaycheck(view: LedgerView, entry: Transaction): boolean {
+  return (
+    entry.kind === 'income' &&
+    entry.postings.some(
+      (p) => p.categoryId !== null && view.paycheckCategories.has(p.categoryId),
+    )
+  );
 }
 
 /**
- * The entries dated in `cycle` that were recorded after `closedBy`, the
- * paycheck that opened the next cycle.
+ * The entries dated in `cycle` that were recorded after it closed: after
+ * the first paycheck dated the day it closed was recorded. Undone and
+ * edited paychecks count too, so correcting the paycheck later never
+ * hides an amendment; a paycheck undone and logged again counts from the
+ * first one.
  */
-export function amendmentsOf(
-  view: LedgerView,
-  cycle: Cycle,
-  closedBy: TransactionId | null,
-): Amendment[] {
-  if (cycle.closedOn === null || closedBy === null) return [];
-  const closer = view.ledger.find((t) => t.id === closedBy);
-  if (closer === undefined) return [];
+export function amendmentsOf(view: LedgerView, cycle: Cycle): Amendment[] {
   const { openedOn, closedOn } = cycle;
+  if (closedOn === null) return [];
+  const closedAt = Math.min(
+    ...view.ledger
+      .filter((t) => t.occurredOn === closedOn && isPaycheck(view, t))
+      .map((t) => Date.parse(t.createdAt)),
+  );
+  if (!Number.isFinite(closedAt)) return [];
   return view.ledger
     .filter(
       (t) =>
         t.occurredOn >= openedOn &&
         t.occurredOn < closedOn &&
-        recordedAfter(t, closer.createdAt),
+        Date.parse(t.createdAt) > closedAt,
     )
     .map((t) => ({
       transactionId: t.id,
@@ -90,10 +98,16 @@ export function cycleReports(
   today: LocalDate,
   /** Merged categories and the category each was merged into. */
   mergedInto: ReadonlyMap<CategoryId, CategoryId> = new Map(),
+  /** Only the cycle that opened on this day, when given. */
+  openedOn?: LocalDate,
 ): CycleReport[] {
   const cycles = cyclesOf(view, today);
   const target = view.settings.defaultCurrency;
-  return cycles.map((cycle, index) => {
+  const wanted =
+    openedOn === undefined
+      ? cycles
+      : cycles.filter((cycle) => cycle.openedOn === openedOn);
+  return wanted.map((cycle) => {
     const snapshot = cycleSnapshot(view, cycle, today, cycles);
     const { lastDay } = snapshot;
     const missing = new Set<CurrencyCode>();
@@ -139,11 +153,7 @@ export function cycleReports(
       spendingByCategory: byCategory(snapshot.spending),
       leftover: figure(snapshot.leftover.map((entry) => entry.leftover)),
       savingsNetChange: figure(snapshot.savingsNetChange),
-      amendments: amendmentsOf(
-        view,
-        cycle,
-        cycles[index + 1]?.openedBy ?? null,
-      ),
+      amendments: amendmentsOf(view, cycle),
       missingRates: [...missing].sort(),
     };
   });

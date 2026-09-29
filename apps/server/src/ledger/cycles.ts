@@ -52,6 +52,7 @@ async function reportsFor(
   db: Kysely<DB>,
   userId: string,
   now: Date,
+  openedOn?: LocalDate,
 ): Promise<{ view: LedgerView; reports: CycleReport[] }> {
   const { view, timeZone, merged } = await db
     .transaction()
@@ -60,7 +61,7 @@ async function reportsFor(
       merged: await mergeTargets(trx, userId),
     }));
   const today = localDateIn(now, timeZone);
-  return { view, reports: cycleReports(view, today, merged) };
+  return { view, reports: cycleReports(view, today, merged, openedOn) };
 }
 
 function summary(report: CycleReport): CycleSummaryView {
@@ -95,8 +96,8 @@ export async function cycleDetail(
   openedOn: LocalDate,
   now: Date,
 ): Promise<CycleDetailView> {
-  const { view, reports } = await reportsFor(db, userId, now);
-  const report = reports.find((r) => r.cycle.openedOn === openedOn);
+  const { view, reports } = await reportsFor(db, userId, now, openedOn);
+  const [report] = reports;
   if (report === undefined) {
     throw new RequestProblem(
       404,
