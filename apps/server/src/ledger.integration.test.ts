@@ -407,6 +407,53 @@ describe('categories', () => {
     expect(code(target)).toBe('category_in_use');
   });
 
+  it('keeps a parent whose merged subcategory still names entries', async () => {
+    const userId = await userIdOf(h.alice);
+    const parent = (
+      await h.alice.post('/v1/categories', { name: 'Hobbies', kind: 'expense' })
+    ).body as Category;
+    const child = (
+      await h.alice.post('/v1/categories', {
+        name: 'Paint',
+        parentId: parent.id,
+      })
+    ).body as Category;
+    const other = (await categories(h.alice)).find((c) => c.name === 'Other');
+    const card = await openAccount(h.alice, 'Hobby card', {
+      openingBalance: { amountMinor: 5000, currency: 'USD' },
+    });
+    const chart = await loadChart(h.db, userId);
+    await appendTransaction(
+      h.db,
+      userId,
+      expense(chart, newEntry(new Date(), localDate('2026-03-11')), {
+        accountId: accountId(card.id),
+        amount: money(900, 'USD'),
+        categoryId: categoryId(child.id),
+      }),
+      { source: 'api' },
+    );
+    expect(
+      (
+        await h.alice.delete(
+          `/v1/categories/${child.id}?mergeInto=${other?.id ?? ''}`,
+        )
+      ).status,
+    ).toBe(204);
+
+    // Its only subcategory is merged, so it no longer has children, but
+    // deleting it would delete the merged one with it.
+    const refused = await h.alice.delete(`/v1/categories/${parent.id}`);
+    expect(refused.status).toBe(409);
+    expect(code(refused)).toBe('category_in_use');
+    const merged = await h.alice.delete(
+      `/v1/categories/${parent.id}?mergeInto=${other?.id ?? ''}`,
+    );
+    expect(merged.status).toBe(204);
+    const kept = await categories(h.alice, '?includeMerged=true');
+    expect(kept.find((c) => c.id === child.id)?.mergedIntoId).toBe(other?.id);
+  });
+
   it('refuses a merge into another kind or a category with subcategories', async () => {
     const all = await categories(h.alice);
     const food = all.find((c) => c.name === 'Food');
