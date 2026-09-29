@@ -138,7 +138,7 @@ const reconcileRoute = createRoute({
   tags,
   summary: "Reconcile an account with the bank's balance",
   description:
-    "Compares the bank's balance with the ledger's at the end of `on` (today by default). A match is recorded as the account's last reconciled date. A difference is only reported (`reconciled: false`) unless `adjust` is set: the difference is then posted on `on` as an expense to the Unrecorded category, or an income to Unrecorded income, and recorded in the same database transaction. With `expectedDifference`, an adjustment is refused (`reconcile_stale`) if the difference moved since the user saw it. The adjustment is an ordinary entry: undoing it also takes back that reconciliation.",
+    "Compares the bank's balance with the ledger's at the end of `on` (today by default). Give either `balance` (negative for money owed) or, for a debt, `amountOwed` as the statement shows it (positive; compared as its negative). A match is recorded as the account's last reconciled date. A difference is only reported (`reconciled: false`) unless `adjust` is set: the difference is then posted on `on` as an expense to the Unrecorded category, or an income to Unrecorded income, and recorded in the same database transaction. With `expectedDifference`, an adjustment is refused (`reconcile_stale`) if the difference moved since the user saw it; if it dropped to zero, a match is recorded instead. The adjustment is an ordinary entry: undoing it also takes back that reconciliation.",
   request: {
     params: idParamSchema,
     body: {

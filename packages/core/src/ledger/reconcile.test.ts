@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { expense, opening } from './build.ts';
 import {
   adjustmentKind,
+  balanceFromOwed,
   reconciliation,
   unrecordedAdjustment,
 } from './reconcile.ts';
@@ -60,6 +61,16 @@ describe('reconciliation', () => {
         }),
       ),
     ).toBe('ledger.currency_mismatch');
+  });
+});
+
+describe('balanceFromOwed', () => {
+  it('holds an amount owed as a negative balance, and a credit as positive', () => {
+    expect(balanceFromOwed(money(21_000, 'USD'))).toEqual(
+      money(-21_000, 'USD'),
+    );
+    expect(balanceFromOwed(money(-500, 'JPY'))).toEqual(money(500, 'JPY'));
+    expect(balanceFromOwed(money(0, 'KWD'))).toEqual(money(0, 'KWD'));
   });
 });
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   accountId,
   adjustmentKind,
+  balanceFromOwed,
   categoryId,
   defaultPolicies,
   reconciliation,
@@ -31,12 +32,30 @@ import { getTransaction } from './transactions.ts';
 // which is recorded with it.
 
 export type Reconcile = Readonly<{
-  balance: Money;
+  /** Exactly one of `balance` and `amountOwed` (the request schema). */
+  balance?: Money | undefined;
+  /** A debt's statement amount, positive for money owed. */
+  amountOwed?: Money | undefined;
   on?: LocalDate | undefined;
   adjust?: boolean | undefined;
-  /** The difference the user saw; an adjustment is refused if it moved. */
+  /**
+   * The difference the user saw; an adjustment is refused if it moved,
+   * unless it moved to zero.
+   */
   expectedDifference?: Money | undefined;
 }>;
+
+// A statement's amount owed is the negative balance (docs/domain.md).
+function statedBalance(input: Reconcile): Money {
+  if (input.balance !== undefined) return input.balance;
+  if (input.amountOwed !== undefined) return balanceFromOwed(input.amountOwed);
+  throw new RequestProblem(
+    400,
+    'balance_required',
+    'Give the balance or the amount owed.',
+    [{ path: '/balance', message: 'Required' }],
+  );
+}
 
 // The categories adjustments are filed under, created on first use and
 // found again by ID so the user can rename or merge them.
@@ -152,16 +171,17 @@ export async function reconcileAccount(
         'This account is archived.',
       );
     }
-    const { balance, expectedDifference } = input;
+    const { expectedDifference } = input;
     for (const [path, amount] of [
-      ['/balance', balance],
+      ['/balance', input.balance],
+      ['/amountOwed', input.amountOwed],
       ['/expectedDifference', expectedDifference],
     ] as const) {
       if (amount !== undefined && amount.currency !== account.currency) {
         throw new RequestProblem(
           400,
           'currency_mismatch',
-          `Give the balance in ${account.currency}.`,
+          `Give the amounts in ${account.currency}.`,
           [{ path, message: `Expected ${account.currency}` }],
         );
       }
@@ -176,6 +196,7 @@ export async function reconcileAccount(
         [{ path: '/on', message: 'After today' }],
       );
     }
+    const balance = statedBalance(input);
     let chart = await loadChart(trx, userId);
     const ledger = await loadLedger(trx, userId, chart);
     const check = reconciliation(chart, ledger, {
@@ -185,8 +206,11 @@ export async function reconcileAccount(
     });
     const matched = check.difference.amountMinor === 0;
     const requested = input.adjust === true;
+    // A difference that dropped to zero since the user saw it (the missing
+    // entry was logged meanwhile) is a match, not a conflict.
     if (
       requested &&
+      !matched &&
       expectedDifference !== undefined &&
       expectedDifference.amountMinor !== check.difference.amountMinor
     ) {

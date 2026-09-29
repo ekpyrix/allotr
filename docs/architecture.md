@@ -139,9 +139,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   entry's own `categoryId` is null and each balancing posting carries its
   line's category.
   `POST /v1/accounts/{id}/reconcile` compares the bank's balance with the
-  ledger's on a day and records a match; with `adjust` it posts the
-  difference as an Unrecorded entry in the same database transaction,
-  refused as `reconcile_stale` when `expectedDifference` no longer holds.
+  ledger's on a day and records a match; a debt can be given as a
+  positive `amountOwed` instead of a negative `balance`. With `adjust` it
+  posts the difference as an Unrecorded entry in the same database
+  transaction, refused as `reconcile_stale` when `expectedDifference` no
+  longer holds, or recorded as a match when the difference is now zero.
   Accounts report `lastReconciledOn`.
   `GET /v1/transactions` pages newest first and filters by date range,
   account, category (with its subcategories, matching any line of a

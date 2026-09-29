@@ -29,6 +29,9 @@ code      := ISO 4217 alphabetic code, case-insensitive
 - `-` is spending, `+` is income.
 - Names (accounts, categories) resolve through the user's aliases,
   case-insensitively.
+- The number in `bal` is the bank's balance; for an account holding a debt
+  it is the amount owed as the statement shows it (see domain.md
+  "Reconciling a debt").
 
 ## Examples
 

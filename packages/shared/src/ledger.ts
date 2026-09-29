@@ -92,16 +92,32 @@ export const archiveAccountBodySchema = z.object({
     .optional(),
 });
 
-export const reconcileBodySchema = z.object({
-  /** The bank's balance at the end of `on`; negative for money owed. */
-  balance: moneySchema,
-  /** Today when omitted; never later. */
-  on: localDateSchema.optional(),
-  /** Post the difference as an Unrecorded expense or income. */
-  adjust: z.boolean().optional(),
-  /** The difference the user saw; the adjustment is refused if it moved. */
-  expectedDifference: moneySchema.optional(),
-});
+export const reconcileBodySchema = z
+  .object({
+    /** The bank's balance at the end of `on`; negative for money owed. */
+    balance: moneySchema.optional(),
+    /**
+     * Instead of `balance`: what a debt's statement shows as owed, a
+     * positive amount (negative for a credit). Compared as its negative.
+     */
+    amountOwed: moneySchema.optional(),
+    /** Today when omitted; never later. */
+    on: localDateSchema.optional(),
+    /** Post the difference as an Unrecorded expense or income. */
+    adjust: z.boolean().optional(),
+    /**
+     * The difference the user saw; the adjustment is refused if it moved,
+     * unless it moved to zero, which records a match.
+     */
+    expectedDifference: moneySchema.optional(),
+  })
+  .refine(
+    (body) => (body.balance === undefined) !== (body.amountOwed === undefined),
+    {
+      error: 'Give either balance or amountOwed',
+      path: ['balance'],
+    },
+  );
 export type ReconcileBody = z.input<typeof reconcileBodySchema>;
 
 export const categoryKindSchema = z.enum(['expense', 'income', 'transfer']);

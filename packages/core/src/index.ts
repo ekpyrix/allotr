@@ -43,6 +43,7 @@ export {
 export { edit, reverse, type ReversalMeta } from './ledger/reverse.ts';
 export {
   adjustmentKind,
+  balanceFromOwed,
   reconciliation,
   unrecordedAdjustment,
   type Reconciliation,

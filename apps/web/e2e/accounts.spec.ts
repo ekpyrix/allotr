@@ -328,3 +328,48 @@ test('reconciling an on-budget account records a match, then adjusts a differenc
     page.getByRole('link', { name: /^Unrecorded Everyday -\$12\.50/ }),
   ).toBeVisible();
 });
+
+test('reconciling a debt takes the amount owed the statement shows', async ({
+  page,
+}) => {
+  await page.goto('/accounts');
+  await createAccount(page, {
+    name: 'Travel card',
+    currency: 'USD',
+    balance: '-150.00',
+    off: true,
+  });
+  const card = row(page, 'Travel card');
+
+  // The statement shows $162.50 owed: $12.50 more than the ledger.
+  await card.getByRole('button', { name: 'Reconcile Travel card' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Reconcile Travel card' });
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  await expect(dialog.getByText('Enter the amount owed.')).toBeVisible();
+  await dialog.getByLabel('Amount owed in USD').fill('162.50');
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  const difference = dialog.getByTestId('reconcile-difference');
+  await expect(difference).toBeFocused();
+  await expect(difference).toContainText(
+    'The statement shows $12.50 more owed than the ledger',
+  );
+  await expect(difference).toContainText('Owed in the ledger$150.00');
+  await expect(difference).toContainText('Owed on the statement$162.50');
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: 'Adjust to match' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByText('Travel card now matches the bank.'),
+  ).toBeAttached();
+  await expect(card.getByTestId('account-row-balance')).toHaveText(
+    formatMoney(money(-16_250, 'USD'), 'en-US'),
+  );
+
+  // The same amount owed now matches.
+  await card.getByRole('button', { name: 'Reconcile Travel card' }).click();
+  await dialog.getByLabel('Amount owed in USD').fill('162.50');
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText('Travel card matches the bank.')).toBeAttached();
+  await expect(card).toContainText('Reconciled ');
+});
