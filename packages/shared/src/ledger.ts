@@ -402,6 +402,10 @@ export const todaySchema = z.object({
   daysLeft: z.int().min(1),
   /** On-budget money minus unpaid reserved bills, now. */
   available: moneySchema,
+  /** On-budget balances now. */
+  onBudget: moneySchema,
+  /** Unpaid reserved bills now; always exactly `onBudget − available`. */
+  reserved: moneySchema,
   /** Available before today's spending. */
   startOfDay: moneySchema,
   spentToday: moneySchema,
@@ -466,6 +470,8 @@ export const cycleSummarySchema = z.object({
   leftover: moneySchema,
   /** Change in the off-budget total over the cycle. */
   savingsNetChange: moneySchema,
+  /** The off-budget total at the end of `lastDay`. */
+  offBudgetClosing: moneySchema,
   /** An entry dated in it was recorded after it closed. */
   amended: z.boolean(),
   /** Currencies without a rate on `lastDay`, left out of the figures. */
@@ -505,6 +511,48 @@ export const cycleDetailSchema = cycleSummarySchema.extend({
   ),
 });
 export type CycleDetailView = z.infer<typeof cycleDetailSchema>;
+
+export const cycleDaySchema = z.object({
+  date: localDateSchema,
+  /** Pace spending dated that day; null after today. */
+  spent: moneySchema.nullable(),
+  /** Pace spending from the cycle's first day through `date`; null after today. */
+  cumulativeSpent: moneySchema.nullable(),
+  /** Even-pace cumulative spending by the end of `date`, rounded down. */
+  pace: moneySchema,
+  /** Available budget at the end of `date`; null after today. */
+  availableEnd: moneySchema.nullable(),
+  /** That day's allowance as of its start; null after today. */
+  allowance: moneySchema.nullable(),
+});
+export type CycleDayView = z.infer<typeof cycleDaySchema>;
+
+export const cycleDayListSchema = z.object({
+  /** From the day the cycle opened to the day before payday, or through today while payday is overdue. */
+  days: z.array(cycleDaySchema),
+  /** What the pace line spreads: pace spending so far plus what is available. */
+  budget: moneySchema,
+  /** Currencies without a rate to the default one, left out of the figures. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CycleDayListView = z.infer<typeof cycleDayListSchema>;
+
+export const accountHistoryQuerySchema = z.object({
+  /** How many days back, today included. */
+  days: z.coerce.number().int().min(7).max(365).default(30),
+});
+
+export const accountHistorySchema = z.object({
+  /** One point per day, oldest first, ending today. */
+  points: z.array(
+    z.object({
+      date: localDateSchema,
+      /** End-of-day balance in the account's currency. */
+      balance: moneySchema,
+    }),
+  ),
+});
+export type AccountHistoryView = z.infer<typeof accountHistorySchema>;
 
 export const exchangeRateSchema = z.object({
   id: idSchema,

@@ -1,10 +1,11 @@
 import {
+  cycleDayListSchema,
   cycleDetailSchema,
   cycleListSchema,
   cycleParamSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
-import { cycleDetail, listCycles } from '../../ledger/cycles.ts';
+import { cycleDayList, cycleDetail, listCycles } from '../../ledger/cycles.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {
@@ -47,6 +48,24 @@ const detailRoute = createRoute({
   },
 });
 
+const daysRoute = createRoute({
+  method: 'get',
+  path: '/v1/cycles/{openedOn}/days',
+  tags: ['Cycles'],
+  summary: "One cycle's figures day by day",
+  description:
+    "One row per day from the day the cycle opened to the day before payday (through today while payday is overdue, or to the day before it closed). Figures use the same projection as `/v1/today`, so today's row matches it. `spent` and `cumulativeSpent` leave out what pace leaves out; rows after today are null except `pace`, which spreads `budget` (pace spending so far plus what is available) evenly over the cycle, rounded down. Amounts are in the default currency at each day's rate.",
+  request: { params: cycleParamSchema },
+  responses: {
+    200: json(
+      cycleDayListSchema,
+      'The days of the cycle that opened on that day.',
+    ),
+    404: problemResponse('No cycle opened on that day (`cycle_not_found`).'),
+    ...signedIn,
+  },
+});
+
 export function registerCycleRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
@@ -57,6 +76,18 @@ export function registerCycleRoutes(
 
   app.openapi(listRoute, async (c) =>
     c.json(await listCycles(db, c.get('user').id, now()), 200),
+  );
+
+  app.openapi(daysRoute, async (c) =>
+    c.json(
+      await cycleDayList(
+        db,
+        c.get('user').id,
+        c.req.valid('param').openedOn,
+        now(),
+      ),
+      200,
+    ),
   );
 
   app.openapi(detailRoute, async (c) =>
