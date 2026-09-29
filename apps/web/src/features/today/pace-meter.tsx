@@ -18,10 +18,10 @@ export function PaceMeter({
   const heading = useId();
   const pace = paceOf(figures);
   if (pace === null) return null;
-  const { cycleSpent, available } = figures;
+  const { paceSpent, available } = figures;
   const budget = money(
-    Math.max(0, cycleSpent.amountMinor + available.amountMinor),
-    cycleSpent.currency,
+    Math.max(0, paceSpent.amountMinor + available.amountMinor),
+    paceSpent.currency,
   );
   const fill = Math.min(100, pace.spentPercent);
   const Icon = pace.ahead ? TriangleAlert : Gauge;
@@ -59,7 +59,7 @@ export function PaceMeter({
       <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         <span className="font-mono tabular-nums">
           {t('today.pace.spent', {
-            spent: formatMoney(cycleSpent, locale),
+            spent: formatMoney(paceSpent, locale),
             budget: formatMoney(budget, locale),
           })}
         </span>

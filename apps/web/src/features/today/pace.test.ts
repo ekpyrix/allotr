@@ -19,6 +19,7 @@ function figures(overrides: object): TodayView {
     leftToday: usd(0),
     liveDaily: usd(0),
     cycleSpent: usd(0),
+    paceSpent: usd(0),
     billsDue: [],
     cycleBills: [],
     missingRates: [],
@@ -29,7 +30,7 @@ function figures(overrides: object): TodayView {
 describe('paceOf', () => {
   it('sets the share spent against the days gone, today included', () => {
     expect(
-      paceOf(figures({ cycleSpent: usd(20000), available: usd(80000) })),
+      paceOf(figures({ paceSpent: usd(20000), available: usd(80000) })),
     ).toEqual({
       day: 11,
       days: 31,
@@ -41,16 +42,16 @@ describe('paceOf', () => {
 
   it('is ahead when spending outruns the days', () => {
     expect(
-      paceOf(figures({ cycleSpent: usd(60000), available: usd(40000) })),
+      paceOf(figures({ paceSpent: usd(60000), available: usd(40000) })),
     ).toMatchObject({ spentPercent: 60, ahead: true });
   });
 
   it('passes 100% when the budget is overspent', () => {
     expect(
-      paceOf(figures({ cycleSpent: usd(50000), available: usd(-10000) })),
+      paceOf(figures({ paceSpent: usd(50000), available: usd(-10000) })),
     ).toMatchObject({ spentPercent: 125, ahead: true });
     expect(
-      paceOf(figures({ cycleSpent: usd(5000), available: usd(-9000) })),
+      paceOf(figures({ paceSpent: usd(5000), available: usd(-9000) })),
     ).toMatchObject({ spentPercent: 100, ahead: true });
   });
 
@@ -66,7 +67,7 @@ describe('paceOf', () => {
           cycleEnd: '2026-04-04',
           overdue: true,
           daysLeft: 1,
-          cycleSpent: usd(90000),
+          paceSpent: usd(90000),
           available: usd(10000),
         }),
       ),

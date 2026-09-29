@@ -113,10 +113,16 @@ live_daily       = available(now) / days_left
 - A bill is *due* once a due date in the cycle is today or past and it is
   not paid; the Today view lists it until it is marked paid.
 - `cycle_spent` is `spent_today` summed from the day the cycle opened through
-  today, each entry by the budget groups of its own day. The Today view's
-  pace bar sets `cycle_spent / (cycle_spent + available)` against the share
-  of the cycle's days gone. Paying a bill counts as spending, because the
-  reserve is released at the same time.
+  today, each entry by the budget groups of its own day. Paying a bill
+  counts as spending, because the reserve is released at the same time.
+- `pace_spent` is `cycle_spent` without two kinds of entry, and without
+  their undos: a payment linked to a bill's payment mark (the bill was
+  already reserved) and a reconcile adjustment (it makes up for entries
+  never recorded, not new spending). Both still lower `available`. A bill
+  payment that is not linked to its mark still counts. The Today view's
+  pace bar sets `pace_spent / (pace_spent + available)` against the share
+  of the cycle's days gone, so paying a bill or reconciling never makes the
+  pace look worse.
 
 Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 

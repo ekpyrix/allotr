@@ -19,6 +19,8 @@ export type BillPayment = Readonly<{
   /** The due date this payment settles. */
   dueOn: LocalDate;
   paidOn: LocalDate;
+  /** The entry that paid it, when linked; pace leaves it out. */
+  transactionId?: TransactionId | null;
 }>;
 
 /** A bill reserved at payday until it is paid. */
@@ -57,6 +59,11 @@ export type LedgerView = Readonly<{
   settings: LedgerSettings;
   bills: readonly Bill[];
   rates: readonly ExchangeRate[];
+  /**
+   * Entries posted by reconciling to make up a difference; pace leaves
+   * them out. None when omitted.
+   */
+  reconcileAdjustments?: ReadonlySet<TransactionId>;
   /** Defaults to the default strategies (docs/domain.md "Policies"). */
   policies?: Partial<Policies>;
 }>;
@@ -114,6 +121,11 @@ export type DailyFigures = Readonly<{
   liveDaily: Money;
   /** Spending since the cycle opened, today included. */
   cycleSpent: Money;
+  /**
+   * `cycleSpent` without the entries pace leaves out: payments linked to a
+   * bill, reconcile adjustments, and their undos.
+   */
+  paceSpent: Money;
   /** Bills in the cycle due by today and not yet paid. */
   billsDue: readonly BillDue[];
   /** Every due date the cycle reserves, paid or not, earliest first. */

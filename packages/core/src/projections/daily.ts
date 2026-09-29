@@ -7,6 +7,7 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
+import type { TransactionId } from '../ledger/types.ts';
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
 import { defaultPolicies, dueDates, type Policies } from './policies.ts';
@@ -58,11 +59,41 @@ export function availableSums(
 }
 
 /**
+ * The entries pace leaves out (docs/domain.md "Daily usable"): payments
+ * linked to a bill, whose reserve already came out of the budget when
+ * the cycle opened, and reconcile adjustments, which make up for past
+ * entries rather than record new spending. Their undos go with them, so
+ * undoing one never moves pace.
+ */
+export function paceExclusions(view: LedgerView): Set<TransactionId> {
+  const excluded = new Set<TransactionId>(view.reconcileAdjustments ?? []);
+  for (const bill of view.bills) {
+    for (const payment of bill.payments) {
+      const paidBy = payment.transactionId ?? null;
+      if (paidBy !== null) excluded.add(paidBy);
+    }
+  }
+  // An undo cannot itself be undone, so one pass finds them all.
+  for (const t of view.ledger) {
+    if (t.reversesId !== null && excluded.has(t.reversesId)) {
+      excluded.add(t.id);
+    }
+  }
+  return excluded;
+}
+
+/**
  * What left the budget as spending from `from` through `to`, per currency:
  * the on-budget side of every entry that reaches an Expenses account, less
- * its undo. Each entry counts by the budget groups of its own day.
+ * its undo. Each entry counts by the budget groups of its own day. `kept`
+ * is the same without the `excluded` entries, found in the same pass.
  */
-function spentSums(view: LedgerView, from: LocalDate, to: LocalDate): Sums {
+function spentSums(
+  view: LedgerView,
+  from: LocalDate,
+  to: LocalDate,
+  excluded: ReadonlySet<TransactionId> = new Set(),
+): { spent: Sums; kept: Sums } {
   const groupsByDay = new Map<LocalDate, ReturnType<typeof budgetGroupsOn>>();
   const groupsOn = (date: LocalDate) => {
     let groups = groupsByDay.get(date);
@@ -77,18 +108,22 @@ function spentSums(view: LedgerView, from: LocalDate, to: LocalDate): Sums {
       .filter((a) => a.systemRole === 'expenses')
       .map((a) => a.id),
   );
-  const sums: Sums = new Map();
+  const spent: Sums = new Map();
+  const kept: Sums = new Map();
   for (const t of view.ledger) {
     if (t.occurredOn < from || t.occurredOn > to) continue;
     if (!t.postings.some((p) => expenseAccounts.has(p.accountId))) continue;
     const groups = groupsOn(t.occurredOn);
+    const keep = !excluded.has(t.id);
     for (const p of t.postings) {
       if (groups.get(p.accountId) === 'on') {
-        add(sums, p.amount.currency, -BigInt(p.amount.amountMinor));
+        const amount = -BigInt(p.amount.amountMinor);
+        add(spent, p.amount.currency, amount);
+        if (keep) add(kept, p.amount.currency, amount);
       }
     }
   }
-  return sums;
+  return { spent, kept };
 }
 
 /**
@@ -192,8 +227,13 @@ export function dailyFiguresOn(
   const daysLeft = Math.max(1, daysBetween(today, cycleEnd));
 
   const availableNative = availableSums(view, cycles, today);
-  const spentNative = spentSums(view, today, today);
-  const cycleSpentNative = spentSums(view, cycle.openedOn, today);
+  const spentNative = spentSums(view, today, today).spent;
+  const { spent: cycleSpentNative, kept: paceSpentNative } = spentSums(
+    view,
+    cycle.openedOn,
+    today,
+    paceExclusions(view),
+  );
   // The start of the day counts everything dated today except spending,
   // so a paycheck that lands today is in today's allowance.
   const startNative: Sums = new Map(availableNative);
@@ -205,6 +245,7 @@ export function dailyFiguresOn(
   const startOfDay = toFigure(view, startNative, today);
   const spentToday = toFigure(view, spentNative, today);
   const cycleSpent = toFigure(view, cycleSpentNative, today);
+  const paceSpent = toFigure(view, paceSpentNative, today);
   const todayAllowance = perDay(startOfDay.amount, daysLeft);
 
   return {
@@ -220,6 +261,7 @@ export function dailyFiguresOn(
     leftToday: minus(todayAllowance, spentToday.amount),
     liveDaily: perDay(available.amount, daysLeft),
     cycleSpent: cycleSpent.amount,
+    paceSpent: paceSpent.amount,
     billsDue: billsDueOn(view, cycle, today),
     cycleBills: billsInCycle(view, cycle),
     missingRates: [
@@ -228,6 +270,7 @@ export function dailyFiguresOn(
         ...startOfDay.missingRates,
         ...spentToday.missingRates,
         ...cycleSpent.missingRates,
+        ...paceSpent.missingRates,
       ]),
     ].sort(),
   };

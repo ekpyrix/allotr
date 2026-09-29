@@ -2,8 +2,10 @@ import { daysBetween, type TodayView } from '@allotr/shared';
 
 // The cycle's spending pace (docs/domain.md "Daily usable"): the share of
 // the cycle's money spent so far against the share of its days gone,
-// today included. Money is `cycleSpent + available`, so income during the
-// cycle raises it.
+// today included. Money is `paceSpent + available`, so income during the
+// cycle raises it. Pace spending leaves out payments linked to a bill and
+// reconcile adjustments, so paying a bill or reconciling never makes the
+// pace look worse.
 
 export interface Pace {
   /** Days gone through the end of today, and the cycle's length. */
@@ -25,7 +27,7 @@ export function paceOf(figures: TodayView): Pace | null {
     days,
     daysBetween(figures.cycle.openedOn, figures.today) + 1,
   );
-  const spent = figures.cycleSpent.amountMinor;
+  const spent = figures.paceSpent.amountMinor;
   const budget = spent + figures.available.amountMinor;
   // Nothing spent and nothing to spend: there is no pace to show.
   if (spent <= 0 && budget <= 0) return null;

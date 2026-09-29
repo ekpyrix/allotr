@@ -21,7 +21,12 @@ import { cyclesOf } from './cycles.ts';
 import { availableOn, dailyFiguresOn } from './daily.ts';
 import { cycleReports } from './history.ts';
 import { cycleSnapshot } from './snapshot.ts';
-import { billId, type ExchangeRate, type LedgerView } from './types.ts';
+import {
+  billId,
+  type Bill,
+  type ExchangeRate,
+  type LedgerView,
+} from './types.ts';
 
 // Invariants 5 and 8, FR-C6 and amended history over random ledgers spanning three months,
 // with paychecks, bills, other currencies and undos. fast-check prints the
@@ -329,6 +334,115 @@ describe('replay properties', () => {
               holds ? ['late'] : [],
             );
           }
+        },
+      ),
+    );
+  });
+});
+
+describe('pace properties', () => {
+  it('leaves out exactly the linked bill payments, adjustments and their undos', () => {
+    fc.assert(
+      fc.property(
+        viewArb,
+        todayArb,
+        fc.array(fc.boolean(), { maxLength: 40 }),
+        fc.array(fc.boolean(), { maxLength: 40 }),
+        (view, today, linkPicks, adjustPicks) => {
+          const expenses = view.ledger.filter((t) => t.kind === 'expense');
+          const linked = expenses.filter((_, i) => linkPicks[i] === true);
+          const adjustments = expenses.filter(
+            (_, i) => adjustPicks[i] === true,
+          );
+          const payer: Bill = {
+            id: billId('payer'),
+            amount: money(1, 'USD'),
+            dueDay: 1,
+            payments: linked.map((t) => ({
+              dueOn: t.occurredOn,
+              paidOn: t.occurredOn,
+              transactionId: t.id,
+            })),
+          };
+          const marked: LedgerView = {
+            ...view,
+            bills: [...view.bills, payer],
+            reconcileAdjustments: new Set(adjustments.map((t) => t.id)),
+          };
+          const left = new Set([...linked, ...adjustments].map((t) => t.id));
+          const without: LedgerView = {
+            ...view,
+            ledger: view.ledger.filter(
+              (t) =>
+                !left.has(t.id) &&
+                (t.reversesId === null || !left.has(t.reversesId)),
+            ),
+          };
+          const figures = dailyFiguresOn(marked, today);
+          // Marking entries never changes what is spent or available.
+          const unmarked = dailyFiguresOn(
+            { ...view, bills: marked.bills },
+            today,
+          );
+          expect(figures.cycleSpent).toEqual(unmarked.cycleSpent);
+          expect(figures.available).toEqual(unmarked.available);
+          // Pace spending is cycle spending without them.
+          expect(figures.paceSpent).toEqual(
+            dailyFiguresOn(without, today).cycleSpent,
+          );
+        },
+      ),
+    );
+  });
+
+  it('keeps pace spending when a bill is paid or a difference adjusted', () => {
+    fc.assert(
+      fc.property(
+        viewArb,
+        todayArb,
+        dayArb,
+        amountArb,
+        fc.boolean(),
+        (view, today, date, amount, isBill) => {
+          fc.pre(date <= today);
+          const paid = expense(
+            chart,
+            {
+              id: transactionId('paid'),
+              occurredOn: date,
+              createdAt: '2026-06-01T00:00:00.000Z',
+            },
+            { accountId: card, amount: money(amount, 'USD'), categoryId: food },
+          );
+          const after: LedgerView = isBill
+            ? {
+                ...view,
+                ledger: [...view.ledger, paid],
+                bills: [
+                  ...view.bills,
+                  {
+                    id: billId('phone'),
+                    amount: money(amount, 'USD'),
+                    dueDay: Number(date.slice(8)),
+                    payments: [
+                      { dueOn: date, paidOn: date, transactionId: paid.id },
+                    ],
+                  },
+                ],
+              }
+            : {
+                ...view,
+                ledger: [...view.ledger, paid],
+                reconcileAdjustments: new Set([paid.id]),
+              };
+          const was = dailyFiguresOn(view, today);
+          const now = dailyFiguresOn(after, today);
+          expect(now.cycle).toEqual(was.cycle);
+          expect(now.paceSpent).toEqual(was.paceSpent);
+          const inCycle = date >= now.cycle.openedOn;
+          expect(now.cycleSpent.amountMinor).toBe(
+            was.cycleSpent.amountMinor + (inCycle ? amount : 0),
+          );
         },
       ),
     );
