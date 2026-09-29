@@ -1,0 +1,185 @@
+import { readFileSync } from 'node:fs';
+import { formatMoney, money, type Money } from '@allotr/shared';
+import { expect, test, type Page } from '@playwright/test';
+import { expectAccessible } from './a11y.ts';
+import { account } from './account.ts';
+
+// Cycle, history and savings views (FR-W2, FR-C6), one instance per size.
+// The first hook onboards and imports the single-currency-month fixture,
+// so the 1–24 March cycle is closed whatever today's date is, and its
+// figures must match the replay's hand-worked checkpoint.
+test.describe.configure({ mode: 'serial' });
+
+const fixture = new URL(
+  '../../../testdata/synthetic/single-currency-month/',
+  import.meta.url,
+);
+const bundle: unknown = JSON.parse(
+  readFileSync(new URL('bundle.json', fixture), 'utf8'),
+);
+type ExpectedCycle = {
+  openedOn: string;
+  closedOn: string | null;
+  income: Money;
+  spending: Money;
+  leftover: Money;
+  savingsNetChange: Money;
+  amended: boolean;
+};
+const replay = JSON.parse(
+  readFileSync(new URL('replay.json', fixture), 'utf8'),
+) as { checkpoints: { cycles?: ExpectedCycle[] }[] };
+const march = replay.checkpoints
+  .flatMap((checkpoint) => checkpoint.cycles ?? [])
+  .find((cycle) => cycle.openedOn === '2026-03-01');
+if (march === undefined) throw new Error('the fixture has no March cycle');
+
+const eur = (amountMinor: number) => money(amountMinor, 'EUR');
+let locale = 'en-US';
+
+test.beforeAll(async ({ playwright }, testInfo) => {
+  const baseURL = testInfo.project.use.baseURL ?? '';
+  const api = await playwright.request.newContext({
+    baseURL,
+    extraHTTPHeaders: { origin: baseURL },
+  });
+  expect((await api.post('/v1/onboarding', { data: account })).ok()).toBe(true);
+  const imported = await api.post('/v1/import', { data: bundle });
+  expect(imported.status(), await imported.text()).toBe(201);
+  const settings = (await (await api.get('/v1/settings/ledger')).json()) as {
+    locale: string;
+  };
+  locale = settings.locale;
+  await api.dispose();
+});
+
+test.beforeEach(async ({ page, baseURL }) => {
+  const response = await page.request.post('/v1/auth/sign-in/email', {
+    data: { email: account.email, password: account.password },
+    headers: { origin: baseURL ?? '' },
+  });
+  expect(response.ok()).toBe(true);
+});
+
+const marchRow = (page: Page) => page.locator('[data-cycle="2026-03-01"]');
+
+test('history shows the past cycle as the replay worked it out', async ({
+  page,
+}) => {
+  await page.goto('/history');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Past cycles' }),
+  ).toBeVisible();
+  const row = marchRow(page);
+  await expect(row.getByRole('link')).toHaveText(/Mar 1\s–\s24, 2026/u);
+  for (const [key, amount] of [
+    ['income', march.income],
+    ['spending', march.spending],
+    ['leftover', march.leftover],
+    ['savings', march.savingsNetChange],
+  ] as const) {
+    await expect(row.getByTestId(`history-${key}`)).toHaveText(
+      formatMoney(amount, locale),
+    );
+  }
+  await expect(row.getByTestId('amended')).toHaveCount(0);
+  await expectAccessible(page);
+});
+
+test('a past cycle shows its categories and balances', async ({ page }) => {
+  await page.goto('/history');
+  await marchRow(page).getByRole('link').click();
+  await expect(page).toHaveURL(/\/cycle\?start=2026-03-01$/u);
+  await expect(
+    page.getByRole('heading', { level: 1, name: /^Cycle Mar 1/u }),
+  ).toBeVisible();
+  await expect(page.getByTestId('cycle-spending')).toHaveText(
+    formatMoney(march.spending, locale),
+  );
+  const spending = page.getByRole('region', { name: 'Spending by category' });
+  await expect(
+    spending.getByRole('listitem').filter({ hasText: 'Housing › Rent' }),
+  ).toContainText(formatMoney(eur(50000), locale));
+  await expectAccessible(page);
+});
+
+test('a back-dated entry marks the past cycle as amended', async ({
+  page,
+  baseURL,
+}) => {
+  const accounts = (await (await page.request.get('/v1/accounts')).json()) as {
+    accounts: { id: string; name: string }[];
+  };
+  const wallet = accounts.accounts.find((a) => a.name === 'Wallet')?.id ?? '';
+  const categories = (await (
+    await page.request.get('/v1/categories')
+  ).json()) as { categories: { id: string; name: string }[] };
+  const fun = categories.categories.find((c) => c.name === 'Fun')?.id ?? '';
+  const late = await page.request.post('/v1/transactions', {
+    data: {
+      kind: 'expense',
+      accountId: wallet,
+      amount: eur(1500),
+      categoryId: fun,
+      occurredOn: '2026-03-10',
+      note: 'Forgotten ticket',
+    },
+    headers: { origin: baseURL ?? '' },
+  });
+  expect(late.status(), await late.text()).toBe(201);
+
+  await page.goto('/history');
+  const row = marchRow(page);
+  await expect(row.getByTestId('amended')).toBeVisible();
+  await expect(row.getByTestId('history-spending')).toHaveText(
+    formatMoney(
+      money(march.spending.amountMinor + 1500, march.spending.currency),
+      locale,
+    ),
+  );
+  await expectAccessible(page);
+
+  await row.getByRole('link').click();
+  const amendments = page.getByTestId('amendments');
+  await expect(amendments).toContainText('Forgotten ticket');
+  await expectAccessible(page);
+  await amendments.getByRole('link', { name: /Show in the ledger/u }).click();
+  await expect(page).toHaveURL(/\/ledger\?entry=/u);
+});
+
+test('Today links to the current cycle', async ({ page }) => {
+  await page.goto('/today');
+  await page.getByRole('link', { name: 'See this cycle' }).click();
+  await expect(page).toHaveURL(/\/cycle$/u);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'This cycle' }),
+  ).toBeVisible();
+  // The fixture's last paycheck is long past, so payday is overdue.
+  await expect(page.locator('main')).toContainText(
+    'Payday has passed without a paycheck.',
+  );
+  await expect(page.getByTestId('cycle-income')).toHaveText(
+    formatMoney(eur(250000), locale),
+  );
+  await expectAccessible(page);
+});
+
+test('the savings view shows off-budget accounts and their total', async ({
+  page,
+}) => {
+  await page.goto('/accounts');
+  await page.getByRole('link', { name: 'See savings over time' }).click();
+  await expect(page).toHaveURL(/\/savings$/u);
+  const total = formatMoney(eur(310000), locale);
+  await expect(page.getByTestId('savings-total')).toHaveText(total);
+  await expect(
+    page
+      .getByRole('region', { name: 'Accounts' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Savings' }),
+  ).toContainText(total);
+  await expect(page.locator('[data-cycle="2026-03-01"]')).toContainText(
+    formatMoney(march.savingsNetChange, locale),
+  );
+  await expectAccessible(page);
+});

@@ -9,7 +9,11 @@ export const publicPaths = [
 ] as const;
 
 /** Signed-in routes that are not in the nav but still get axe checks. */
-export const extraShellPaths = [] as const satisfies readonly `/${string}`[];
+export const extraShellPaths = [
+  '/cycle',
+  '/history',
+  '/savings',
+] as const satisfies readonly `/${string}`[];
 
 /** Every signed-in route; the shell E2E test visits each with axe. */
 export const shellPaths = [

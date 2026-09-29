@@ -162,11 +162,18 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
   `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
   …/payments/{dueOn}` undoes the mark.
+- `GET /v1/cycles` lists every cycle's snapshot, newest first. Each one has
+  income, spending, leftover and savings change in the default currency at
+  the rate on the cycle's last day, plus the `amended` flag.
+  `GET /v1/cycles/{openedOn}` adds the opening and closing balances,
+  income and spending by category, and the entries that amended the cycle.
+  Both are computed on every request, like today's figures.
 - `POST /v1/import` fills an empty ledger from a JSON bundle (see
   [§5.1](#51-import-bundle)): validated as a whole, then applied in one
   database transaction through the same writes as the API. A ledger that
   already has accounts, entries, bills or rates is refused
-  (`ledger_not_empty`).
+  (`ledger_not_empty`). The earliest imported day becomes the ledger's
+  start, so the first cycle covers the imported history.
 - Cookie-authenticated writes must carry the instance's `Origin`. Password
   sign-ins lock an account for 15 minutes after 5 failures, and sign-in and
   2FA attempts are limited per client address. `ALLOTR_TRUSTED_PROXIES`

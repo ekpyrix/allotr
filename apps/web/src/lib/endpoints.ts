@@ -8,6 +8,8 @@ import {
   categoryListSchema,
   categorySchema,
   createCategoryBodySchema,
+  cycleDetailSchema,
+  cycleListSchema,
   createInviteBodySchema,
   createRateBodySchema,
   createAccountBodySchema,
@@ -315,6 +317,16 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/today',
     response: todaySchema,
+  }),
+  cycles: endpoint({
+    method: 'GET',
+    path: '/v1/cycles',
+    response: cycleListSchema,
+  }),
+  cycle: endpoint({
+    method: 'GET',
+    path: '/v1/cycles/{openedOn}',
+    response: cycleDetailSchema,
   }),
   transactions: endpoint({
     method: 'GET',

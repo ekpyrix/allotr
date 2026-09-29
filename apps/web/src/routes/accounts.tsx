@@ -195,6 +195,13 @@ function Group({
       <p className="mt-1 text-sm text-muted-foreground">
         {t(`accounts.groups.${group}Hint`)}
       </p>
+      {group === 'off' ? (
+        <p className="mt-1 text-sm">
+          <Link to="/savings" className={linkClass}>
+            {t('accounts.groups.savingsLink')}
+          </Link>
+        </p>
+      ) : null}
       <GroupTotal
         group={group}
         total={total}
