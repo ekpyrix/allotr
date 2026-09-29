@@ -22,6 +22,7 @@ const specs = [
   'today',
   'ledger',
   'accounts',
+  'settings',
 ];
 
 const projects = sizes.flatMap((size, i) =>

@@ -422,3 +422,12 @@ export const billPaymentParamSchema = z.object({
   id: idSchema,
   dueOn: localDateSchema,
 });
+
+export type UpdateLedgerSettingsBody = z.input<
+  typeof updateLedgerSettingsBodySchema
+>;
+export type CreateCategoryBody = z.input<typeof createCategoryBodySchema>;
+export type UpdateCategoryBody = z.input<typeof updateCategoryBodySchema>;
+export type CreateRateBody = z.input<typeof createRateBodySchema>;
+export type CreateBillBody = z.input<typeof createBillBodySchema>;
+export type UpdateBillBody = z.input<typeof updateBillBodySchema>;

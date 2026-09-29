@@ -156,7 +156,10 @@ const accountsRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
-  component: SettingsPage,
+  component: function Settings() {
+    const { session } = settingsRoute.useRouteContext();
+    return <SettingsPage session={session} />;
+  },
 });
 
 const routeTree = rootRoute.addChildren([

@@ -18,6 +18,7 @@ import {
   transactionListSchema,
   transactionSchema,
   updateAccountBodySchema,
+  updateLedgerSettingsBodySchema,
 } from '@allotr/shared';
 import { z } from 'zod';
 import { endpoint } from './api.ts';
@@ -115,6 +116,12 @@ export const endpoints = {
   ledgerSettings: endpoint({
     method: 'GET',
     path: '/v1/settings/ledger',
+    response: ledgerSettingsSchema,
+  }),
+  updateLedgerSettings: endpoint({
+    method: 'PATCH',
+    path: '/v1/settings/ledger',
+    body: updateLedgerSettingsBodySchema,
     response: ledgerSettingsSchema,
   }),
   today: endpoint({

@@ -1,5 +1,4 @@
 import {
-  currencies,
   isCurrencyCode,
   localDateSchema,
   MoneyError,
@@ -52,11 +51,6 @@ export function newAccountDraft(
     openedOn: today,
   };
 }
-
-/** Every currency code the server accepts, in code order. */
-export const currencyCodes: readonly string[] = currencies
-  .map((c) => c.code)
-  .sort((a, b) => a.localeCompare(b));
 
 export type AccountDraftResult =
   | { readonly ok: true; readonly body: CreateAccountBody }

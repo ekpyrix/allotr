@@ -1,17 +1,17 @@
 import type { AccountView } from '@allotr/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { amountExample } from '@/features/quick-entry/draft';
 import { ApiError } from '@/lib/api';
+import { useCurrencyOptions } from '@/lib/currency-options';
 import { createAccount, entryQueryKeys } from '@/lib/ledger';
 import { describeProblem } from '@/lib/problem';
 import { t } from '@/messages/t';
 import {
   ACCOUNT_FIELD_ORDER,
-  currencyCodes,
   newAccountDraft,
   toCreateBody,
   type AccountDraft,
@@ -32,25 +32,6 @@ function useCreateAccount() {
       );
     },
   });
-}
-
-/** "USD — US Dollar" in the user's language, or the code alone. */
-function useCurrencyOptions(locale: string) {
-  return useMemo(() => {
-    let names: Intl.DisplayNames | undefined;
-    try {
-      names = new Intl.DisplayNames([locale], { type: 'currency' });
-    } catch {
-      names = undefined;
-    }
-    return currencyCodes.map((code) => {
-      const name = names?.of(code);
-      return {
-        code,
-        label: name === undefined || name === code ? code : `${code} — ${name}`,
-      };
-    });
-  }, [locale]);
 }
 
 export function CreateAccountForm({

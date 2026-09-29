@@ -282,11 +282,43 @@ export const en = {
   },
   settings: {
     title: 'Settings',
-    placeholder: 'Ledger, security and appearance settings will be here.',
+    loading: 'Loading settings…',
+    save: 'Save',
+    saving: 'Saving…',
+    saved: 'Saved.',
     signOut: 'Sign out',
     shortcuts: 'Single-key shortcuts',
     shortcutsHint:
       'Press N to add an entry. Turn this off if you use speech input or a switch device.',
+    ledger: {
+      title: 'Ledger',
+      locale: 'Language and region',
+      localeSample: 'Amounts look like {sample}. Use a tag such as en-US.',
+      localeUnknown: 'Use a tag such as en-US or de-DE.',
+      timeZone: 'Time zone',
+      currency: 'Default currency',
+      currencyHint:
+        'Figures are shown in this currency. Accounts in other currencies need an exchange rate.',
+    },
+    payday: {
+      title: 'Payday',
+      next: {
+        one: 'Next payday: {date}, {count} day left in this cycle.',
+        other: 'Next payday: {date}, {count} days left in this cycle.',
+      },
+      day: 'Payday each month',
+      dayHint: 'Shorter months use their last day.',
+      override: 'This cycle’s payday',
+      overrideHint:
+        'Optional. Set it when the next paycheck comes on another day.',
+      clearOverride: 'Clear this cycle’s payday',
+      overrideCleared: 'Payday follows the monthly day again.',
+    },
+    appearance: { title: 'Appearance' },
+    security: {
+      title: 'Security',
+      signedInAs: 'Signed in as {email}.',
+    },
   },
   quickEntry: {
     add: 'Add',
