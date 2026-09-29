@@ -23,6 +23,8 @@ import {
   exchangeRateSchema,
   ledgerSettingsSchema,
   onboardingStatusSchema,
+  reconcileBodySchema,
+  reconcileResultSchema,
   reverseTransactionBodySchema,
   sessionSchema,
   sessionUserSchema,
@@ -203,6 +205,12 @@ export const endpoints = {
     path: '/v1/accounts/{id}/archive',
     body: archiveAccountBodySchema,
     response: accountSchema,
+  }),
+  reconcileAccount: endpoint({
+    method: 'POST',
+    path: '/v1/accounts/{id}/reconcile',
+    body: reconcileBodySchema,
+    response: reconcileResultSchema,
   }),
   categories: endpoint({
     method: 'GET',

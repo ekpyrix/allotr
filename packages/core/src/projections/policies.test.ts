@@ -4,6 +4,7 @@ import {
   carryDeficit,
   dueDates,
   leftoverStays,
+  offerAdjustment,
   reserveAtPayday,
 } from './policies.ts';
 import { day, usd } from './testing.ts';
@@ -87,5 +88,12 @@ describe('payday settlement', () => {
       carried: money(-900, 'USD'),
       swept: money(0, 'USD'),
     });
+  });
+});
+
+describe('offerAdjustment', () => {
+  it('reports a difference until the user asks for the adjustment', () => {
+    expect(offerAdjustment.onDifference(false)).toBe('report');
+    expect(offerAdjustment.onDifference(true)).toBe('adjust');
   });
 });

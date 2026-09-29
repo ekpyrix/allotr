@@ -1493,6 +1493,13 @@
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "lastReconciledOn": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           }
                         },
                         "required": [
@@ -1503,7 +1510,8 @@
                           "budgetGroup",
                           "balance",
                           "archived",
-                          "createdAt"
+                          "createdAt",
+                          "lastReconciledOn"
                         ]
                       }
                     },
@@ -1882,6 +1890,13 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "lastReconciledOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     }
                   },
                   "required": [
@@ -1892,7 +1907,8 @@
                     "budgetGroup",
                     "balance",
                     "archived",
-                    "createdAt"
+                    "createdAt",
+                    "lastReconciledOn"
                   ]
                 }
               }
@@ -2197,6 +2213,13 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "lastReconciledOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     }
                   },
                   "required": [
@@ -2207,7 +2230,8 @@
                     "budgetGroup",
                     "balance",
                     "archived",
-                    "createdAt"
+                    "createdAt",
+                    "lastReconciledOn"
                   ]
                 }
               }
@@ -2479,6 +2503,13 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "lastReconciledOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     }
                   },
                   "required": [
@@ -2489,7 +2520,8 @@
                     "budgetGroup",
                     "balance",
                     "archived",
-                    "createdAt"
+                    "createdAt",
+                    "lastReconciledOn"
                   ]
                 }
               }
@@ -2900,6 +2932,13 @@
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "lastReconciledOn": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     }
                   },
                   "required": [
@@ -2910,7 +2949,8 @@
                     "budgetGroup",
                     "balance",
                     "archived",
-                    "createdAt"
+                    "createdAt",
+                    "lastReconciledOn"
                   ]
                 }
               }
@@ -3138,6 +3178,614 @@
           },
           "409": {
             "description": "The account still holds money (code `account_not_empty`), or the transfer target is archived.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{id}/reconcile": {
+      "post": {
+        "tags": [
+          "Ledger accounts"
+        ],
+        "summary": "Reconcile an account with the bank's balance",
+        "description": "Compares the bank's balance with the ledger's at the end of `on` (today by default). A match is recorded as the account's last reconciled date. A difference is only reported (`reconciled: false`) unless `adjust` is set: the difference is then posted on `on` as an expense to the Unrecorded category, or an income to Unrecorded income, and recorded in the same database transaction. With `expectedDifference`, an adjustment is refused (`reconcile_stale`) if the difference moved since the user saw it. The adjustment is an ordinary entry: undoing it also takes back that reconciliation.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "balance": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "on": {
+                    "type": "string",
+                    "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                  },
+                  "adjust": {
+                    "type": "boolean"
+                  },
+                  "expectedDifference": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  }
+                },
+                "required": [
+                  "balance"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The comparison and what was recorded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "on": {
+                      "type": "string",
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
+                    "stated": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "ledgerBalance": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "difference": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reconciled": {
+                      "type": "boolean"
+                    },
+                    "adjustment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income",
+                            "transfer",
+                            "opening",
+                            "write_off",
+                            "budget_switch",
+                            "reversal"
+                          ]
+                        },
+                        "occurredOn": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "api",
+                            "import",
+                            "system"
+                          ]
+                        },
+                        "categoryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "postings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "systemRole": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "expenses",
+                                  "income",
+                                  "opening",
+                                  "conversion",
+                                  null
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "categoryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "systemRole",
+                              "amount",
+                              "categoryId"
+                            ]
+                          }
+                        },
+                        "reversesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "reversedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "impliedRate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 40,
+                          "pattern": "^\\d+(\\.\\d+)?$"
+                        },
+                        "budgetSwitch": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "accountId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "budgetGroup": {
+                              "type": "string",
+                              "enum": [
+                                "on",
+                                "off"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "accountId",
+                            "budgetGroup"
+                          ]
+                        },
+                        "tagIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "occurredOn",
+                        "createdAt",
+                        "source",
+                        "categoryId",
+                        "note",
+                        "postings",
+                        "reversesId",
+                        "reversedById",
+                        "impliedRate",
+                        "budgetSwitch",
+                        "tagIds"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "on",
+                    "stated",
+                    "ledgerBalance",
+                    "difference",
+                    "reconciled",
+                    "adjustment"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The account is archived (`account_archived`), the difference moved (`reconcile_stale`), or a category named Unrecorded has the other kind (`reconcile_category_conflict`).",
             "content": {
               "application/problem+json": {
                 "schema": {

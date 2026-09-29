@@ -17,6 +17,7 @@ function account(
     balance: money(0, currency),
     archived: false,
     createdAt: '2026-01-01T00:00:00.000Z',
+    lastReconciledOn: null,
     ...extra,
   } as AccountView;
 }

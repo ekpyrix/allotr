@@ -261,3 +261,70 @@ test('an account at zero balance archives after a plain confirm', async ({
   await expect(row(page, 'Old wallet')).toHaveCount(0);
   await expect(page.getByText('Archived (2 accounts)')).toBeVisible();
 });
+
+test('reconciling an on-budget account records a match, then adjusts a difference and changes Today', async ({
+  page,
+}) => {
+  await page.goto('/accounts');
+  const everyday = row(page, 'Everyday');
+  await expect(everyday).toContainText('Not reconciled yet');
+  const balance = (await accounts(page)).accounts.find(
+    (a) => a.name === 'Everyday',
+  )?.balance;
+  if (balance === undefined) throw new Error('no Everyday account');
+
+  // The bank agrees: recorded, nothing posted.
+  await everyday.getByRole('button', { name: 'Reconcile Everyday' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Reconcile Everyday' });
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  await expect(dialog.getByText('Enter the bank balance.')).toBeVisible();
+  await expect(dialog.getByLabel('Bank balance in USD')).toBeFocused();
+  await dialog
+    .getByLabel('Bank balance in USD')
+    .fill(formatMoney(balance, 'en-US').replace('$', ''));
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText('Everyday matches the bank.')).toBeAttached();
+  await expect(everyday).toContainText('Reconciled ');
+
+  // The bank shows $12.50 less: the difference is offered as one adjustment.
+  const before = await today(page);
+  await everyday.getByRole('button', { name: 'Reconcile Everyday' }).click();
+  const stated = money(balance.amountMinor - 1_250, 'USD');
+  await dialog
+    .getByLabel('Bank balance in USD')
+    .fill(formatMoney(stated, 'en-US').replace('$', ''));
+  await dialog.getByRole('button', { name: 'Compare' }).click();
+  const difference = dialog.getByTestId('reconcile-difference');
+  await expect(difference).toBeFocused();
+  await expect(difference).toContainText(
+    'The bank shows $12.50 less than the ledger',
+  );
+  await expect(difference).toContainText('This changes what you can spend.');
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: 'Adjust to match' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText('Everyday now matches the bank.')).toBeAttached();
+  await expect(everyday.getByTestId('account-row-balance')).toHaveText(
+    formatMoney(stated, 'en-US'),
+  );
+
+  const after = await today(page);
+  expect(after.available).toEqual(
+    money(before.available.amountMinor - 1_250, 'USD'),
+  );
+  await page.getByRole('link', { name: 'Today' }).first().click();
+  await expect(page.getByTestId('left-today')).toHaveText(
+    formatMoney(after.leftToday, 'en-US'),
+  );
+
+  // The adjustment is an ordinary entry in the ledger.
+  const id = (await accounts(page)).accounts.find(
+    (a) => a.name === 'Everyday',
+  )?.id;
+  await page.goto(`/ledger?account=${id ?? ''}`);
+  await expect(
+    page.getByRole('link', { name: /^Unrecorded Everyday -\$12\.50/ }),
+  ).toBeVisible();
+});

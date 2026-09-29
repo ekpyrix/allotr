@@ -3,6 +3,7 @@ import type {
   CreateAccountBody,
   CreateTransactionBody,
   LocalDate,
+  ReconcileBody,
 } from '@allotr/shared';
 import {
   infiniteQueryOptions,
@@ -154,4 +155,12 @@ export function archiveAccount(id: string, settle?: Settle) {
     params: { id },
     body: settle === undefined ? {} : { settle },
   });
+}
+
+/**
+ * Compares the bank's balance with the ledger's; a match is recorded. With
+ * `adjust`, the difference the user saw is posted as an Unrecorded entry.
+ */
+export function reconcileAccount(id: string, body: ReconcileBody) {
+  return call(endpoints.reconcileAccount, { params: { id }, body });
 }

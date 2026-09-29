@@ -41,10 +41,22 @@ export interface OverspendStrategy {
   atPayday(deficit: Money): Settlement;
 }
 
+/** Leave a reconcile difference reported only, or post it now. */
+export type ReconcileAction = 'report' | 'adjust';
+
+export interface ReconcileStrategy {
+  /**
+   * What happens to a difference between the bank's balance and the
+   * ledger's; `requested` is true when the user asked for the adjustment.
+   */
+  onDifference(requested: boolean): ReconcileAction;
+}
+
 export type Policies = Readonly<{
   bills: BillsStrategy;
   leftover: LeftoverStrategy;
   overspend: OverspendStrategy;
+  reconcile: ReconcileStrategy;
 }>;
 
 /** The days in a window that fall on a bill's due day. */
@@ -92,8 +104,17 @@ export const leftoverStays: LeftoverStrategy = { atPayday: carryAll };
 /** Default: the deficit carries into the next cycle and lowers it. */
 export const carryDeficit: OverspendStrategy = { atPayday: carryAll };
 
+/**
+ * Default: a difference is reported, with a one-tap "Unrecorded"
+ * adjustment posted only when the user asks for it.
+ */
+export const offerAdjustment: ReconcileStrategy = {
+  onDifference: (requested) => (requested ? 'adjust' : 'report'),
+};
+
 export const defaultPolicies: Policies = {
   bills: reserveAtPayday,
   leftover: leftoverStays,
   overspend: carryDeficit,
+  reconcile: offerAdjustment,
 };

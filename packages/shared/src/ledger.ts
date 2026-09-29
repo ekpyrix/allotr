@@ -30,6 +30,11 @@ export const accountSchema = z.object({
   balance: moneySchema,
   archived: z.boolean(),
   createdAt: z.iso.datetime(),
+  /**
+   * The latest day the bank's balance matched, directly or after an
+   * adjustment that was not undone since.
+   */
+  lastReconciledOn: localDateSchema.nullable(),
 });
 export type AccountView = z.infer<typeof accountSchema>;
 
@@ -86,6 +91,18 @@ export const archiveAccountBodySchema = z.object({
     ])
     .optional(),
 });
+
+export const reconcileBodySchema = z.object({
+  /** The bank's balance at the end of `on`; negative for money owed. */
+  balance: moneySchema,
+  /** Today when omitted; never later. */
+  on: localDateSchema.optional(),
+  /** Post the difference as an Unrecorded expense or income. */
+  adjust: z.boolean().optional(),
+  /** The difference the user saw; the adjustment is refused if it moved. */
+  expectedDifference: moneySchema.optional(),
+});
+export type ReconcileBody = z.input<typeof reconcileBodySchema>;
 
 export const categoryKindSchema = z.enum(['expense', 'income', 'transfer']);
 
@@ -468,3 +485,16 @@ export type UpdateCategoryBody = z.input<typeof updateCategoryBodySchema>;
 export type CreateRateBody = z.input<typeof createRateBodySchema>;
 export type CreateBillBody = z.input<typeof createBillBodySchema>;
 export type UpdateBillBody = z.input<typeof updateBillBodySchema>;
+
+export const reconcileResultSchema = z.object({
+  on: localDateSchema,
+  stated: moneySchema,
+  /** The ledger's balance at the end of `on`, before any adjustment. */
+  ledgerBalance: moneySchema,
+  /** stated − ledgerBalance. */
+  difference: moneySchema,
+  /** False while a difference is left unadjusted; nothing was recorded. */
+  reconciled: z.boolean(),
+  adjustment: transactionSchema.nullable(),
+});
+export type ReconcileResultView = z.infer<typeof reconcileResultSchema>;

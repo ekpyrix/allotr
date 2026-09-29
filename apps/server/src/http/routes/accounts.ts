@@ -5,6 +5,8 @@ import {
   createAccountBodySchema,
   idParamSchema,
   listAccountsQuerySchema,
+  reconcileBodySchema,
+  reconcileResultSchema,
   updateAccountBodySchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
@@ -15,6 +17,7 @@ import {
   listAccounts,
   updateAccount,
 } from '../../ledger/accounts.ts';
+import { reconcileAccount } from '../../ledger/reconcile.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {
@@ -129,6 +132,30 @@ const archiveRoute = createRoute({
   },
 });
 
+const reconcileRoute = createRoute({
+  method: 'post',
+  path: '/v1/accounts/{id}/reconcile',
+  tags,
+  summary: "Reconcile an account with the bank's balance",
+  description:
+    "Compares the bank's balance with the ledger's at the end of `on` (today by default). A match is recorded as the account's last reconciled date. A difference is only reported (`reconciled: false`) unless `adjust` is set: the difference is then posted on `on` as an expense to the Unrecorded category, or an income to Unrecorded income, and recorded in the same database transaction. With `expectedDifference`, an adjustment is refused (`reconcile_stale`) if the difference moved since the user saw it. The adjustment is an ordinary entry: undoing it also takes back that reconciliation.",
+  request: {
+    params: idParamSchema,
+    body: {
+      content: { 'application/json': { schema: reconcileBodySchema } },
+    },
+  },
+  responses: {
+    200: json(reconcileResultSchema, 'The comparison and what was recorded.'),
+    400: invalid,
+    ...signedIn,
+    404: notFound,
+    409: problemResponse(
+      'The account is archived (`account_archived`), the difference moved (`reconcile_stale`), or a category named Unrecorded has the other kind (`reconcile_category_conflict`).',
+    ),
+  },
+});
+
 export function registerLedgerAccountRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
@@ -172,6 +199,15 @@ export function registerLedgerAccountRoutes(
     const { settle } = c.req.valid('json');
     return c.json(
       await archiveAccount(db, c.get('user').id, id, settle, now()),
+      200,
+    );
+  });
+
+  app.openapi(reconcileRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const body = c.req.valid('json');
+    return c.json(
+      await reconcileAccount(db, c.get('user').id, id, body, now()),
       200,
     );
   });

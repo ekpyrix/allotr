@@ -7,8 +7,8 @@ import { repoMigrations } from '../testing/database.ts';
 import { migrate } from './migrate.ts';
 import { openSqlite } from './sqlite.ts';
 
-// Integration tests for migrations/0003_ledger.sql and
-// 0004_bill_payments.sql against real SQLite.
+// Integration tests for migrations/0003_ledger.sql,
+// 0004_bill_payments.sql and 0005_reconciliations.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -43,6 +43,7 @@ function migrationsUpTo(last: string): string {
     '0001_instance_settings.sql',
     '0002_auth.sql',
     '0003_ledger.sql',
+    '0004_bill_payments.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -362,7 +363,7 @@ describe('migration 0004_bill_payments', () => {
     insertAccount('card', 'u1', 'USD');
     insertBill('b1', 'u1', 'card');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0004_bill_payments']);
+    expect(migrateFrom(migrationsUpTo('0004'))).toEqual(['0004_bill_payments']);
 
     insertPayment('p1', 'u1', 'b1');
     expect(count('SELECT count(*) FROM bill_payments')).toBe(1);
@@ -397,6 +398,78 @@ describe('migration 0004_bill_payments', () => {
       insertPayment('p2', 'u1', 'b2');
       sqlite.exec("DELETE FROM users WHERE id = 'u1'");
       expect(count('SELECT count(*) FROM bill_payments')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0005_reconciliations', () => {
+  const insertReconciliation = (
+    id: string,
+    fields: {
+      userId?: string;
+      currency?: string;
+      stated?: number;
+      adjustment?: string | null;
+    } = {},
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO reconciliations
+           (id, user_id, account_id, currency, on_date, stated_minor,
+            computed_minor, adjustment_transaction_id, created_at)
+         VALUES (?, ?, 'card', ?, '2026-02-04', ?, 5000, ?, ?)`,
+      )
+      .run(
+        id,
+        fields.userId ?? 'u1',
+        fields.currency ?? 'USD',
+        fields.stated ?? 5000,
+        fields.adjustment ?? null,
+        at,
+      );
+
+  it('applies to a database at 0004', () => {
+    migrateFrom(migrationsUpTo('0004'));
+    insertUser('u1');
+    insertAccount('card', 'u1', 'USD');
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0005_reconciliations']);
+
+    insertReconciliation('r1');
+    expect(count('SELECT count(*) FROM reconciliations')).toBe(1);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertUser('u2');
+      insertAccount('card', 'u1', 'USD');
+      insertTransaction('t1', 'u1');
+    });
+
+    it("keeps a reconciliation in its account's user and currency", () => {
+      insertReconciliation('r1');
+      expect(() => insertReconciliation('r2', { userId: 'u2' })).toThrow(
+        /FOREIGN KEY/,
+      );
+      expect(() => insertReconciliation('r3', { currency: 'EUR' })).toThrow(
+        /FOREIGN KEY/,
+      );
+    });
+
+    it('has an adjustment only when the balances differ', () => {
+      insertReconciliation('r1', { stated: 4000, adjustment: 't1' });
+      insertReconciliation('r2', { stated: 4000 });
+      expect(() => insertReconciliation('r3', { adjustment: 't1' })).toThrow(
+        /CHECK/,
+      );
+    });
+
+    it('goes with its user', () => {
+      insertReconciliation('r1', { stated: 4000, adjustment: 't1' });
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM reconciliations')).toBe(0);
     });
   });
 });

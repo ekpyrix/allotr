@@ -138,6 +138,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split
   entry's own `categoryId` is null and each balancing posting carries its
   line's category.
+  `POST /v1/accounts/{id}/reconcile` compares the bank's balance with the
+  ledger's on a day and records a match; with `adjust` it posts the
+  difference as an Unrecorded entry in the same database transaction,
+  refused as `reconcile_stale` when `expectedDifference` no longer holds.
+  Accounts report `lastReconciledOn`.
   `GET /v1/transactions` pages newest first and filters by date range,
   account, category (with its subcategories, matching any line of a
   split), tag and note text; an undo
