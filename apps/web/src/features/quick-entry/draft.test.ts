@@ -44,6 +44,8 @@ const draft = (patch: Partial<QuickEntryDraft> = {}): QuickEntryDraft => ({
   accountId: 'usd',
   toAccountId: '',
   received: '',
+  foreign: '',
+  foreignCurrency: '',
   categoryId: 'food',
   tagIds: [],
   note: '',

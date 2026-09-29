@@ -179,9 +179,12 @@ test('a double click on Save records one entry', async ({ page }) => {
       posts.push(request.headers()['idempotency-key'] ?? '');
   });
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await page.getByLabel('Amount in USD').fill('7.77');
-  await page.getByLabel('Category').selectOption({ label: 'Transport' });
-  await page.getByRole('button', { name: 'Save' }).dblclick();
+  // The ledger has its own filters behind the dialog.
+  await dialog(page).getByLabel('Amount in USD').fill('7.77');
+  await dialog(page)
+    .getByLabel('Category')
+    .selectOption({ label: 'Transport' });
+  await dialog(page).getByRole('button', { name: 'Save' }).dblclick();
   await expect(page.getByRole('status')).toHaveText('Expense of $7.77 saved.');
 
   const response = await page.request.get('/v1/transactions?limit=200');
@@ -234,7 +237,7 @@ test('failed validation is announced, focused and described', async ({
   await expect(dialog(page).getByRole('alert')).toHaveText(
     '1 field needs attention.',
   );
-  const category = page.getByLabel('Category');
+  const category = dialog(page).getByLabel('Category');
   await expect(category).toBeFocused();
   await expect(category).toHaveAttribute('aria-invalid', 'true');
   await expectAccessible(page);
@@ -289,7 +292,9 @@ test('a server error clears when the user edits the form', async ({ page }) => {
   await page.goto('/ledger');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByLabel('Amount in USD').fill('3.21');
-  await page.getByLabel('Category').selectOption({ label: 'Transport' });
+  await dialog(page)
+    .getByLabel('Category')
+    .selectOption({ label: 'Transport' });
   await page.getByRole('button', { name: 'Save' }).click();
   const alert = dialog(page).getByRole('alert');
   await expect(alert).toHaveText(
@@ -326,7 +331,9 @@ test('a save in flight cannot be dismissed and still announces', async ({
   await page.goto('/ledger');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByLabel('Amount in USD').fill('8.88');
-  await page.getByLabel('Category').selectOption({ label: 'Transport' });
+  await dialog(page)
+    .getByLabel('Category')
+    .selectOption({ label: 'Transport' });
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByRole('button', { name: 'Saving…' })).toBeDisabled();
   await page.keyboard.press('Escape');

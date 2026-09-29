@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { formatMoney } from './format.ts';
+import { formatMoney, formatMoneyInput } from './format.ts';
 import { money } from './money.ts';
 import { parseMoney } from './parse.ts';
 import { errorCode, moneyArb } from './testing.ts';
@@ -33,6 +33,17 @@ describe('parseMoney', () => {
           expect(parseMoney(text, m.currency, locale)).toEqual(m);
         },
       ),
+    );
+  });
+
+  it('inverts formatMoneyInput for any positive amount and locale', () => {
+    fc.assert(
+      fc.property(moneyArb, fc.constantFrom(...LOCALES), (m, locale) => {
+        const abs = money(Math.abs(m.amountMinor), m.currency);
+        const text = formatMoneyInput(m, locale);
+        expect(text).toBe(formatMoneyInput(abs, locale));
+        expect(parseMoney(text, m.currency, locale)).toEqual(abs);
+      }),
     );
   });
 

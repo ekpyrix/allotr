@@ -73,14 +73,18 @@ export function QuickEntryForm({
   today,
   onSaved,
   onSavingChange,
+  edit,
 }: {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
   tags: readonly { id: string; name: string }[];
   locale: string;
   today: string;
-  onSaved: (message: string) => void;
+  /** Called with what to announce and the ID of the saved entry. */
+  onSaved: (message: string, entryId: string) => void;
   onSavingChange: (saving: boolean) => void;
+  /** Replace this entry instead of recording a new one. */
+  edit?: { id: string; draft: QuickEntryDraft } | undefined;
 }) {
   const [defaults] = useState<DraftDefaults>(() => ({
     accounts,
@@ -88,10 +92,11 @@ export function QuickEntryForm({
     today,
     lastUsed: readLastUsed(storage()),
   }));
-  const [typed, setDraft] = useState(() => newDraft(defaults));
+  const [typed, setDraft] = useState(() => edit?.draft ?? newDraft(defaults));
   // Until the user picks a date it follows `today`, which can be corrected
-  // by a refetch after the form opened on a cached value.
-  const [dateEdited, setDateEdited] = useState(false);
+  // by a refetch after the form opened on a cached value. An edit keeps the
+  // entry's own date.
+  const [dateEdited, setDateEdited] = useState(edit !== undefined);
   const draft = withToday(typed, today, dateEdited);
   const [errors, setErrors] = useState<DraftErrors>({});
   // Set after the failed field errors are on screen, so the alert changes
@@ -102,7 +107,7 @@ export function QuickEntryForm({
   } | null>(null);
   const [summary, setSummary] = useState('');
   const form = useRef<HTMLFormElement>(null);
-  const save = useSaveEntry();
+  const save = useSaveEntry(edit?.id);
   const saving = save.isPending;
   useEffect(() => {
     onSavingChange(saving);
@@ -185,10 +190,11 @@ export function QuickEntryForm({
     save.mutate(
       { body: result.body, idempotencyKey: key.current.key },
       {
-        onSuccess: () => {
+        onSuccess: (entryId) => {
           key.current = null;
-          rememberChoice(storage(), draft);
-          onSaved(savedMessage(result.body, locale));
+          // Last used is for new entries; an edit is a correction.
+          if (edit === undefined) rememberChoice(storage(), draft);
+          onSaved(savedMessage(result.body, locale), entryId);
         },
         onSettled: () => {
           inFlight.current = false;
@@ -326,6 +332,28 @@ export function QuickEntryForm({
         </FieldControl>
       ) : null}
 
+      {!transfer && draft.foreignCurrency !== '' ? (
+        <FieldControl
+          label={t('quickEntry.priceIn', { currency: draft.foreignCurrency })}
+          hint={t('quickEntry.priceHint')}
+          error={error('foreign', draft.foreignCurrency)}
+        >
+          {(props) => (
+            <Input
+              {...props}
+              name="foreign"
+              inputMode="decimal"
+              autoComplete="off"
+              className="h-11 text-base"
+              value={draft.foreign}
+              onChange={(e) => {
+                update({ foreign: e.currentTarget.value });
+              }}
+            />
+          )}
+        </FieldControl>
+      ) : null}
+
       <FieldControl
         label={
           transfer ? t('quickEntry.categoryOptional') : t('quickEntry.category')
@@ -441,7 +469,11 @@ export function QuickEntryForm({
         className="h-11 w-full"
         disabled={save.isPending}
       >
-        {save.isPending ? t('quickEntry.saving') : t('quickEntry.save')}
+        {save.isPending
+          ? t('quickEntry.saving')
+          : edit === undefined
+            ? t('quickEntry.save')
+            : t('quickEntry.saveChanges')}
       </Button>
     </form>
   );

@@ -31,7 +31,11 @@ export {
   moneyToDecimal,
   type Money,
 } from './money/money.ts';
-export { formatMoney, type FormatMoneyOptions } from './money/format.ts';
+export {
+  formatMoney,
+  formatMoneyInput,
+  type FormatMoneyOptions,
+} from './money/format.ts';
 export { parseMoney } from './money/parse.ts';
 export {
   convert,

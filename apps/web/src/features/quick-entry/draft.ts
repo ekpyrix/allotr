@@ -28,6 +28,13 @@ export interface QuickEntryDraft {
   readonly toAccountId: string;
   /** A transfer's arriving amount, needed when the currencies differ. */
   readonly received: string;
+  /**
+   * An expense's or income's price in another currency (FR-X3), in
+   * `foreignCurrency`. Only an edit of an entry that has one sets it.
+   */
+  readonly foreign: string;
+  /** Empty when the entry has no foreign price. */
+  readonly foreignCurrency: string;
   /** Required for expenses and income, optional for transfers. */
   readonly categoryId: string;
   readonly tagIds: readonly string[];
@@ -64,6 +71,7 @@ export const FIELD_ORDER: readonly DraftField[] = [
   'accountId',
   'toAccountId',
   'received',
+  'foreign',
   'categoryId',
   'occurredOn',
 ];
@@ -163,6 +171,12 @@ export function toBody(
 
   if (draft.categoryId === '')
     errors.categoryId = 'quickEntry.errors.categoryRequired';
+  // Cleared, it is left out: the entry then has no foreign price.
+  const foreign =
+    draft.foreignCurrency === '' || draft.foreign.trim() === ''
+      ? undefined
+      : parseAmount(draft.foreign, draft.foreignCurrency, context.locale);
+  if (typeof foreign === 'string') errors.foreign = foreign;
   if (
     Object.keys(errors).length > 0 ||
     account === undefined ||
@@ -176,6 +190,7 @@ export function toBody(
       accountId: account.id,
       amount,
       categoryId: draft.categoryId,
+      ...(typeof foreign === 'object' ? { foreignAmount: foreign } : {}),
       ...entry,
     },
   };
