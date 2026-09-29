@@ -10,6 +10,7 @@ import {
 import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { LoadError } from '@/components/load-error';
+import { UpdatePrompt } from '@/components/update-prompt';
 import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
@@ -35,7 +36,12 @@ async function destination(queryClient: QueryClient) {
 }
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
-  component: Outlet,
+  component: () => (
+    <>
+      <Outlet />
+      <UpdatePrompt />
+    </>
+  ),
   errorComponent: LoadError,
   notFoundComponent: () => (
     <AuthLayout title={t('notFound.title')} intro={t('notFound.intro')}>

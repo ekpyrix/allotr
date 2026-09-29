@@ -93,6 +93,8 @@ export const en = {
     save: 'Save',
     saving: 'Saving…',
     loading: 'Loading your accounts…',
+    offline:
+      'You are offline. Entries need a connection; the form opens when you are back online.',
     noAccounts: 'Add an account before you log entries.',
     goToAccounts: 'Go to Accounts',
     saved: {
@@ -112,6 +114,16 @@ export const en = {
       categoryRequired: 'Choose a category.',
       dateInvalid: 'Enter a date.',
     },
+  },
+  offline: {
+    title: 'You are offline',
+    intro:
+      'Allotr needs a connection to show your figures. This page loads again when you are back online.',
+  },
+  update: {
+    ready: 'A new version of Allotr is ready.',
+    reload: 'Reload',
+    later: 'Later',
   },
   errors: {
     pageTitle: 'This page could not load',

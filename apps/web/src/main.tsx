@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/theme-provider.tsx';
 import { createQueryClient } from './lib/query-client.ts';
+import { registerServiceWorker } from './lib/service-worker.ts';
 import { sessionQuery } from './lib/session.ts';
 import { createAppRouter } from './router.tsx';
 import './styles.css';
@@ -30,3 +31,6 @@ createRoot(root).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// Development and tests run without a worker, so edits show at once.
+if (import.meta.env.PROD) registerServiceWorker().catch(() => undefined);

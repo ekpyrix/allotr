@@ -12,6 +12,7 @@ import {
   tagsQuery,
   todayQuery,
 } from '@/lib/ledger';
+import { useOnline } from '@/lib/online';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { QuickEntryForm } from './quick-entry-form.tsx';
@@ -33,6 +34,7 @@ function QuickEntryLoader({
   const settings = useQuery(ledgerSettingsQuery);
   const today = useQuery(todayQuery);
   const all = [accounts, categories, tags, settings, today];
+  const online = useOnline();
 
   // A failed background refetch keeps the form (and what was typed) as long
   // as there is data to show.
@@ -61,7 +63,8 @@ function QuickEntryLoader({
   )
     return (
       <p role="status" className="mt-6 text-muted-foreground">
-        {t('quickEntry.loading')}
+        {/* Offline the queries wait for the connection instead of failing. */}
+        {online ? t('quickEntry.loading') : t('quickEntry.offline')}
       </p>
     );
   // Archived accounts stay in the ledger but cannot take new entries.

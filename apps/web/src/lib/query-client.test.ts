@@ -1,5 +1,5 @@
-import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, NetworkError } from './api.ts';
 import {
   createQueryClient,
@@ -56,6 +56,23 @@ describe('createQueryClient', () => {
     expect(mutationFn).toHaveBeenCalledTimes(1);
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
+
+  it('fails a write made offline instead of holding it for later', async () => {
+    const client = createQueryClient({ onUnauthorized: vi.fn() });
+    onlineManager.setOnline(false);
+    try {
+      const mutationFn = vi.fn(() => Promise.reject(new NetworkError(null)));
+      await expect(
+        client
+          .getMutationCache()
+          .build(client, { mutationFn })
+          .execute(undefined),
+      ).rejects.toBeInstanceOf(NetworkError);
+      expect(mutationFn).toHaveBeenCalledTimes(1);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
 });
 
 describe('queryOrCached', () => {
@@ -98,5 +115,27 @@ describe('queryOrCached', () => {
     await expect(
       queryOrCached(new QueryClient(), options),
     ).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  describe('offline', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('fails at once without asking the server', async () => {
+      vi.stubGlobal('navigator', { onLine: false });
+      const queryFn = vi.fn(() => Promise.resolve('fresh'));
+      await expect(
+        queryOrCached(new QueryClient(), { ...options, queryFn }),
+      ).rejects.toBeInstanceOf(NetworkError);
+      expect(queryFn).not.toHaveBeenCalled();
+    });
+
+    it('still answers from the cache', async () => {
+      vi.stubGlobal('navigator', { onLine: false });
+      const client = new QueryClient();
+      client.setQueryData(['thing'], 'cached', { updatedAt: 0 });
+      await expect(queryOrCached(client, options)).resolves.toBe('cached');
+    });
   });
 });
