@@ -3963,7 +3963,7 @@
           "Ledger accounts"
         ],
         "summary": "What archiving would do to today's figure",
-        "description": "For each way of clearing the balance before archiving, how much today's left-today figure would drop, from the same projection as `/v1/today` with the settling entry added. A write-off from an on-budget account counts as spending; a transfer to an off-budget account lowers the allowance. Nothing is recorded.",
+        "description": "For each way of clearing the balance before archiving, how much today's left-today figure would drop, from the same projection as `/v1/today` with the settling entry added. A write-off from an on-budget account counts as spending; a transfer to an off-budget account lowers the allowance. `leftToday` is the figure now and each option's `leftTodayAfter` the figure once it is recorded. Nothing is recorded.",
         "parameters": [
           {
             "schema": {
@@ -3984,6 +3984,22 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "leftToday": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "writeOff": {
                       "type": "object",
                       "properties": {
@@ -4002,10 +4018,27 @@
                             "amountMinor",
                             "currency"
                           ]
+                        },
+                        "leftTodayAfter": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
                         }
                       },
                       "required": [
-                        "leftTodayDrop"
+                        "leftTodayDrop",
+                        "leftTodayAfter"
                       ]
                     },
                     "transfers": {
@@ -4033,16 +4066,34 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "leftTodayAfter": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "toAccountId",
-                          "leftTodayDrop"
+                          "leftTodayDrop",
+                          "leftTodayAfter"
                         ]
                       }
                     }
                   },
                   "required": [
+                    "leftToday",
                     "writeOff",
                     "transfers"
                   ]

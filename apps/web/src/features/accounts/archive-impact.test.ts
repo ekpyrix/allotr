@@ -33,10 +33,19 @@ const savings = account('savings', 'off', 100_000);
 const accounts = [wallet, everyday, savings];
 
 const impact: ArchiveImpactView = {
-  writeOff: { leftTodayDrop: usd(25_000) },
+  leftToday: usd(21_470),
+  writeOff: { leftTodayDrop: usd(25_000), leftTodayAfter: usd(-3_530) },
   transfers: [
-    { toAccountId: 'everyday', leftTodayDrop: usd(0) },
-    { toAccountId: 'savings', leftTodayDrop: usd(1_470) },
+    {
+      toAccountId: 'everyday',
+      leftTodayDrop: usd(0),
+      leftTodayAfter: usd(21_470),
+    },
+    {
+      toAccountId: 'savings',
+      leftTodayDrop: usd(1_470),
+      leftTodayAfter: usd(20_000),
+    },
   ],
 };
 
@@ -44,7 +53,12 @@ describe('archiveWarning', () => {
   it('says a write-off from the budget lowers today’s figure', () => {
     expect(
       archiveWarning(impact, wallet, { method: 'write_off' }, accounts),
-    ).toEqual({ kind: 'write_off', drop: usd(25_000) });
+    ).toEqual({
+      kind: 'write_off',
+      drop: usd(25_000),
+      before: usd(21_470),
+      after: usd(-3_530),
+    });
   });
 
   it('says a transfer to savings lowers today’s figure, naming the target', () => {
@@ -55,7 +69,13 @@ describe('archiveWarning', () => {
         { method: 'transfer', toAccountId: 'savings' },
         accounts,
       ),
-    ).toEqual({ kind: 'savings', drop: usd(1_470), target: savings });
+    ).toEqual({
+      kind: 'savings',
+      drop: usd(1_470),
+      before: usd(21_470),
+      after: usd(20_000),
+      target: savings,
+    });
   });
 
   it('says nothing when today’s figure stays or rises', () => {
@@ -69,7 +89,7 @@ describe('archiveWarning', () => {
     ).toBeNull();
     const raises: ArchiveImpactView = {
       ...impact,
-      writeOff: { leftTodayDrop: usd(-500) },
+      writeOff: { leftTodayDrop: usd(-500), leftTodayAfter: usd(21_970) },
     };
     expect(
       archiveWarning(raises, wallet, { method: 'write_off' }, accounts),
@@ -81,8 +101,15 @@ describe('archiveWarning', () => {
     // Paying off an off-budget debt from the budget lowers today's figure.
     const loan = account('loan', 'off', -30_000);
     const fromBudget: ArchiveImpactView = {
-      writeOff: { leftTodayDrop: usd(0) },
-      transfers: [{ toAccountId: 'everyday', leftTodayDrop: usd(1_764) }],
+      leftToday: usd(20_000),
+      writeOff: { leftTodayDrop: usd(0), leftTodayAfter: usd(20_000) },
+      transfers: [
+        {
+          toAccountId: 'everyday',
+          leftTodayDrop: usd(1_764),
+          leftTodayAfter: usd(18_236),
+        },
+      ],
     };
     expect(
       archiveWarning(
@@ -91,6 +118,11 @@ describe('archiveWarning', () => {
         { method: 'transfer', toAccountId: 'everyday' },
         [...accounts, loan],
       ),
-    ).toEqual({ kind: 'transfer', drop: usd(1_764) });
+    ).toEqual({
+      kind: 'transfer',
+      drop: usd(1_764),
+      before: usd(20_000),
+      after: usd(18_236),
+    });
   });
 });

@@ -1,11 +1,21 @@
-import { formatMoney, type AccountView, type FigureView } from '@allotr/shared';
+import {
+  formatMoney,
+  type AccountView,
+  type FigureView,
+  type TodayView,
+} from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Plus, TriangleAlert } from 'lucide-react';
+import { CircleCheck, CircleDashed, Plus, TriangleAlert } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Segmented } from '@/components/ui/segmented';
+import { StatusChip } from '@/components/ui/status-chip';
+import { Burst } from '@/motion/burst';
+import { Sparkline } from '@/features/accounts/sparkline';
 import {
   ArchiveFlow,
   BudgetSwitch,
@@ -47,12 +57,12 @@ function GroupTotal({
   return (
     <div className="mt-3 grid gap-2">
       <p className="flex flex-wrap items-baseline justify-between gap-x-4">
-        <span className="text-muted-foreground">
+        <span className="text-body text-text-muted">
           {t('accounts.groups.total')}
         </span>
         <span
           data-testid={`total-${group}`}
-          className="font-mono text-2xl font-semibold tabular-nums wrap-anywhere"
+          className="font-mono text-title-lg tabular-nums wrap-anywhere"
         >
           {formatMoney(total.amount, locale)}
         </span>
@@ -62,12 +72,9 @@ function GroupTotal({
           {total.missingRates.map((currency) => (
             <li
               key={currency}
-              className="flex gap-3 rounded-md bg-plot p-3 text-sm"
+              className="flex gap-3 rounded-lg bg-warning-container p-3 text-body"
             >
-              <TriangleAlert
-                aria-hidden
-                className="mt-0.5 size-4 shrink-0 text-over"
-              />
+              <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
               <span className="grid gap-1">
                 <span>
                   {t('accounts.missingRate', { currency, defaultCurrency })}
@@ -94,38 +101,56 @@ function AccountRow({
   onOpen: (open: Open) => void;
 }) {
   const nameId = useId();
+  const off = account.budgetGroup === 'off';
   return (
     <li
       aria-labelledby={nameId}
       data-account-id={account.id}
-      className="grid gap-3 rounded-md bg-plot p-4"
+      className="grid gap-3 rounded-lg bg-card p-(--card-pad) medium:rounded-xl medium:p-5"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="min-w-0 wrap-anywhere">
-          <span id={nameId} className="font-medium">
-            {account.name}
-          </span>{' '}
-          <span className="text-sm text-muted-foreground">
-            {account.currency}
-          </span>
-        </p>
-        <p
-          data-testid="account-row-balance"
-          className="font-mono text-lg tabular-nums wrap-anywhere"
-        >
-          {formatMoney(account.balance, locale)}
-        </p>
-        <p
-          data-testid="account-row-reconciled"
-          className="basis-full text-sm text-muted-foreground"
-        >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="wrap-anywhere">
+            <span id={nameId} className="text-title">
+              {account.name}
+            </span>{' '}
+            <span className="text-body text-text-muted">
+              {account.currency}
+            </span>
+          </p>
+          {off ? (
+            <p className="text-body text-text-muted">
+              {t('accounts.notInToday')}
+            </p>
+          ) : null}
+          <p
+            data-testid="account-row-balance"
+            className="mt-1 font-mono text-title-lg tabular-nums wrap-anywhere"
+          >
+            {formatMoney(account.balance, locale)}
+          </p>
+        </div>
+        <Sparkline
+          accountId={account.id}
+          offBudget={off}
+          className="mt-1 shrink-0"
+        />
+      </div>
+      <StatusChip
+        tone={account.lastReconciledOn === null ? 'info' : 'success'}
+        icon={
+          account.lastReconciledOn === null ? <CircleDashed /> : <CircleCheck />
+        }
+        className="w-fit"
+      >
+        <span data-testid="account-row-reconciled">
           {account.lastReconciledOn === null
             ? t('accounts.neverReconciled')
             : t('accounts.lastReconciled', {
                 date: formatLongDay(account.lastReconciledOn, locale),
               })}
-        </p>
-      </div>
+        </span>
+      </StatusChip>
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="text" size="dense">
           <Link to="/ledger" search={{ account: account.id }}>
@@ -171,6 +196,84 @@ function AccountRow({
   );
 }
 
+// On-budget money and how it splits (spec §11.3): set aside for bills, and
+// free to spend, all from /v1/today. The bar is drawing only; the figures
+// beside it are the server's.
+function SummaryCard({
+  figures,
+  locale,
+}: {
+  figures: TodayView;
+  locale: string;
+}) {
+  const { onBudget, reserved, available } = figures;
+  const whole = Math.max(1, onBudget.amountMinor);
+  const share = (part: number) =>
+    `${String(Math.round((Math.max(0, part) / whole) * 1000) / 10)}%`;
+  return (
+    <Card className="mt-6 grid gap-3">
+      <p className="text-label text-text-muted">
+        {t('accounts.summary.title')}
+      </p>
+      <p
+        data-testid="summary-on-budget"
+        className="font-mono text-display tabular-nums wrap-anywhere"
+      >
+        {formatMoney(onBudget, locale)}
+      </p>
+      <p className="text-body text-text-muted">
+        {t('accounts.summary.caption')}
+      </p>
+      {onBudget.amountMinor > 0 ? (
+        <span
+          aria-hidden="true"
+          className="flex h-3 overflow-hidden rounded-full bg-card-raised"
+        >
+          <span
+            className="h-full bg-reserved"
+            style={{ width: share(reserved.amountMinor) }}
+          />
+          <span
+            className="h-full bg-primary"
+            style={{ width: share(available.amountMinor) }}
+          />
+        </span>
+      ) : null}
+      <dl
+        aria-label={t('accounts.summary.split')}
+        className="grid gap-1 text-body"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="size-2.5 rounded-full bg-reserved"
+            />
+            {t('accounts.summary.reserved')}
+          </dt>
+          <dd className="font-mono tabular-nums">
+            {formatMoney(reserved, locale)}
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="size-2.5 rounded-full bg-primary"
+            />
+            {t('accounts.summary.free')}
+          </dt>
+          <dd className="font-mono tabular-nums">
+            {formatMoney(available, locale)}
+          </dd>
+        </div>
+      </dl>
+    </Card>
+  );
+}
+
+type Show = 'on' | 'off' | 'all';
+
 function Group({
   group,
   accounts,
@@ -188,15 +291,15 @@ function Group({
 }) {
   const heading = useId();
   return (
-    <section aria-labelledby={heading} className="mt-10">
-      <h2 id={heading} className="text-xl font-semibold">
+    <section aria-labelledby={heading} className="mt-8">
+      <h2 id={heading} className="text-title-lg">
         {t(`accounts.groups.${group}`)}
       </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <p className="mt-1 text-body text-text-muted">
         {t(`accounts.groups.${group}Hint`)}
       </p>
       {group === 'off' ? (
-        <p className="mt-1 text-sm">
+        <p className="mt-1 text-body">
           <Link to="/savings" className={linkClass}>
             {t('accounts.groups.savingsLink')}
           </Link>
@@ -209,7 +312,7 @@ function Group({
         defaultCurrency={defaultCurrency}
       />
       {accounts.length === 0 ? (
-        <p className="mt-4 text-muted-foreground">
+        <p className="mt-4 text-body text-text-muted">
           {t('accounts.groups.none')}
         </p>
       ) : (
@@ -238,6 +341,9 @@ export function AccountsPage() {
   const [open, setOpen] = useState<Open>(null);
   const [busy, setBusy] = useState(false);
   const [announcement, setAnnouncement] = useState('');
+  const [show, setShow] = useState<Show>('all');
+  // A reconcile that matched is worth a moment (spec §9.4).
+  const [matched, setMatched] = useState(0);
   // Read after the dialog has closed, when `open` is already null.
   const lastAccount = useRef<string | undefined>(undefined);
   const all = [accounts, settings, today];
@@ -294,6 +400,7 @@ export function AccountsPage() {
     lastAccount.current =
       next?.kind === 'create' ? undefined : next?.account.id;
     setAnnouncement('');
+    setMatched(0);
     setOpen(next);
   };
 
@@ -312,26 +419,46 @@ export function AccountsPage() {
         {announcement}
       </p>
 
-      {list.length === 0 ? (
-        <p className="mt-6 max-w-prose text-muted-foreground">
-          {t('accounts.empty')}
+      {matched === 0 ? null : (
+        <p className="relative mt-6 flex items-center gap-3 rounded-lg bg-success-container p-4 text-body-lg">
+          <CircleCheck aria-hidden className="size-6 shrink-0 check-draw" />
+          {t('accounts.allMatched')}
+          <Burst play={matched} />
         </p>
+      )}
+
+      {list.length === 0 ? (
+        <p className="mt-6 max-w-prose text-body-lg">{t('accounts.empty')}</p>
       ) : (
         <>
-          {(['on', 'off'] as const).map((group) => (
-            <Group
-              key={group}
-              group={group}
-              accounts={groups[group]}
-              total={accounts.data.totals[group]}
-              locale={locale}
-              defaultCurrency={defaultCurrency}
-              onOpen={opening}
-            />
-          ))}
+          <SummaryCard figures={today.data} locale={locale} />
+          <Segmented
+            className="mt-6"
+            label={t('accounts.show.label')}
+            value={show}
+            onValueChange={setShow}
+            options={[
+              { value: 'on', label: t('accounts.show.on') },
+              { value: 'off', label: t('accounts.show.off') },
+              { value: 'all', label: t('accounts.show.all') },
+            ]}
+          />
+          {(['on', 'off'] as const)
+            .filter((group) => show === 'all' || show === group)
+            .map((group) => (
+              <Group
+                key={group}
+                group={group}
+                accounts={groups[group]}
+                total={accounts.data.totals[group]}
+                locale={locale}
+                defaultCurrency={defaultCurrency}
+                onOpen={opening}
+              />
+            ))}
           {groups.archived.length === 0 ? null : (
-            <details className="mt-10">
-              <summary className="cursor-pointer font-medium">
+            <details className="mt-8 rounded-lg bg-card p-4">
+              <summary className="cursor-pointer text-title">
                 {t('accounts.archived.title', {
                   count: groups.archived.length,
                 })}
@@ -405,6 +532,7 @@ export function AccountsPage() {
             onCancel={close}
             onDone={(outcome) => {
               close();
+              if (outcome === 'matched') setMatched((count) => count + 1);
               setAnnouncement(
                 outcome === 'matched'
                   ? t('accounts.announce.reconciled', { name: selected.name })

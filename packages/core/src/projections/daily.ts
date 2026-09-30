@@ -331,10 +331,19 @@ export function leftTodayDrop(
   today: LocalDate,
   entry: Transaction,
 ): Money {
+  return leftTodayChange(view, today, entry).drop;
+}
+
+/** Left today before and after recording `entry`, and the drop between. */
+export function leftTodayChange(
+  view: LedgerView,
+  today: LocalDate,
+  entry: Transaction,
+): { before: Money; after: Money; drop: Money } {
   const before = dailyFiguresOn(view, today).leftToday;
   const after = dailyFiguresOn(
     { ...view, ledger: [...view.ledger, entry] },
     today,
   ).leftToday;
-  return minus(before, after);
+  return { before, after, drop: minus(before, after) };
 }
