@@ -118,6 +118,8 @@ export interface LedgerFilter {
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
   q?: string | undefined;
+  /** Deleted (undone) entries and their undos: hidden unless shown. */
+  undone?: 'show' | 'hide' | undefined;
 }
 
 export const LEDGER_PAGE_SIZE = 50;
@@ -168,6 +170,11 @@ export function editTransaction(id: string, body: CreateTransactionBody) {
 /** Undo: posts a reversal; the same key set as a new entry goes stale. */
 export function reverseTransaction(id: string) {
   return call(endpoints.reverseTransaction, { params: { id }, body: {} });
+}
+
+/** Brings back a deleted (undone) entry as a copy of it. */
+export function restoreTransaction(id: string) {
+  return call(endpoints.restoreTransaction, { params: { id } });
 }
 
 /** Opens an account; its opening balance is an entry. */

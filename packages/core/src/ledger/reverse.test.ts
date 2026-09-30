@@ -2,7 +2,7 @@ import { localDate, money } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import { accountBalances, balanceOf, budgetGroupOn } from './balances.ts';
 import { budgetSwitch, expense, income, opening } from './build.ts';
-import { edit, reverse } from './reverse.ts';
+import { edit, reinstate, reverse } from './reverse.ts';
 import { errorCode, food, meta, salary, testChart } from './testing.ts';
 import { accountId, transactionId } from './types.ts';
 
@@ -107,5 +107,71 @@ describe('edit', () => {
         money(0, 'USD'),
       );
     }
+  });
+});
+
+describe('reinstate', () => {
+  const spend = expense(chart, meta('2026-03-10', { note: 'lunch' }), {
+    accountId: card,
+    amount: money(1250, 'USD'),
+    categoryId: food,
+  });
+  const undo = reverse(chart, [spend], spend.id, later);
+  const again = {
+    id: transactionId('again'),
+    createdAt: '2026-03-21T08:00:00Z',
+  };
+
+  it('copies an undone entry, keeping its date, note and postings', () => {
+    const copy = reinstate(chart, [spend, undo], spend.id, again);
+    expect(copy).toMatchObject({
+      id: 'again',
+      kind: 'expense',
+      occurredOn: '2026-03-10',
+      createdAt: again.createdAt,
+      categoryId: food,
+      note: 'lunch',
+      reversesId: null,
+    });
+    expect(copy.postings).toEqual(spend.postings);
+    expect(balanceOf(chart, [spend, undo, copy], card)).toEqual(
+      money(-1250, 'USD'),
+    );
+  });
+
+  it('brings back an opening balance', () => {
+    const start = opening(chart, meta('2026-03-01'), {
+      accountId: card,
+      amount: money(50000, 'USD'),
+    });
+    const gone = reverse(chart, [start], start.id, later);
+    const copy = reinstate(chart, [start, gone], start.id, again);
+    expect(copy.kind).toBe('opening');
+    expect(balanceOf(chart, [start, gone, copy], card)).toEqual(
+      money(50000, 'USD'),
+    );
+  });
+
+  it('refuses entries that are not undone, undos and unknown entries', () => {
+    expect(errorCode(() => reinstate(chart, [spend], spend.id, again))).toBe(
+      'ledger.not_undone',
+    );
+    expect(
+      errorCode(() => reinstate(chart, [spend, undo], undo.id, again)),
+    ).toBe('ledger.reversal_of_reversal');
+    expect(
+      errorCode(() => reinstate(chart, [], transactionId('nope'), again)),
+    ).toBe('ledger.not_found');
+  });
+
+  it('refuses a budget switch', () => {
+    const move = budgetSwitch(chart, [], meta('2026-03-12'), {
+      accountId: card,
+      budgetGroup: 'off',
+    });
+    const back = reverse(chart, [move], move.id, later);
+    expect(
+      errorCode(() => reinstate(chart, [move, back], move.id, again)),
+    ).toBe('ledger.invalid_transaction');
   });
 });

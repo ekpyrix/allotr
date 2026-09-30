@@ -21,6 +21,7 @@ type Entry = {
   postings: Posting[];
   reversesId: string | null;
   reversedById: string | null;
+  restoredById: string | null;
   impliedRate: string | null;
   tagIds: string[];
 };
@@ -411,6 +412,83 @@ describe('undo and edit', () => {
       ((await h.alice.get(`/v1/transactions/${id}`)).body as Entry)
         .reversedById,
     ).toBeNull();
+  });
+
+  it('restores an undone entry once, as a copy with its tags', async () => {
+    const tag = await h.alice.post('/v1/tags', { name: 'restore-test' });
+    expect(tag.status).toBe(201);
+    const tagId = (tag.body as { id: string }).id;
+    const original = await h.alice.post(
+      '/v1/transactions',
+      spend(1234, { note: 'oops', tagIds: [tagId] }),
+    );
+    const id = (original.body as Entry).id;
+    const before = await balance(h.alice, card);
+
+    const early = await h.alice.post(`/v1/transactions/${id}/restore`);
+    expect(early.status).toBe(409);
+    expect(code(early)).toBe('not_undone');
+
+    const undo = await h.alice.post(`/v1/transactions/${id}/reverse`);
+    expect(await balance(h.alice, card)).toBe(before + 1234);
+
+    const restored = await h.alice.post(`/v1/transactions/${id}/restore`);
+    expect(restored.status).toBe(201);
+    const copy = restored.body as Entry;
+    expect(copy.id).not.toBe(id);
+    expect(copy).toMatchObject({
+      kind: 'expense',
+      occurredOn: '2026-03-10',
+      categoryId: groceries,
+      note: 'oops',
+      reversesId: null,
+      reversedById: null,
+      restoredById: null,
+      tagIds: [tagId],
+    });
+    expect(copy.postings).toEqual((original.body as Entry).postings);
+    expect(await balance(h.alice, card)).toBe(before);
+    expect(
+      ((await h.alice.get(`/v1/transactions/${id}`)).body as Entry)
+        .restoredById,
+    ).toBe(copy.id);
+
+    const twice = await h.alice.post(`/v1/transactions/${id}/restore`);
+    expect(code(twice)).toBe('already_restored');
+    const ofUndo = await h.alice.post(
+      `/v1/transactions/${(undo.body as Entry).id}/restore`,
+    );
+    expect(code(ofUndo)).toBe('reversal_of_reversal');
+    const other = await h.bob.post(`/v1/transactions/${id}/restore`);
+    expect(other.status).toBe(404);
+  });
+
+  it('lists without undone entries and their undos on request', async () => {
+    const kept = await h.alice.post(
+      '/v1/transactions',
+      spend(111, { occurredOn: '2026-02-01' }),
+    );
+    const gone = await h.alice.post(
+      '/v1/transactions',
+      spend(222, { occurredOn: '2026-02-01' }),
+    );
+    await h.alice.post(`/v1/transactions/${(gone.body as Entry).id}/reverse`);
+    const list = async (undone: string) =>
+      (
+        await h.alice.get(
+          `/v1/transactions?from=2026-02-01&to=2026-02-01&undone=${undone}`,
+        )
+      ).body as {
+        transactions: Entry[];
+        dayTotals: { net: Money }[];
+      };
+    const shown = await list('show');
+    const hidden = await list('hide');
+    expect(shown.transactions).toHaveLength(3);
+    expect(hidden.transactions.map((t) => t.id)).toEqual([
+      (kept.body as Entry).id,
+    ]);
+    expect(hidden.dayTotals).toEqual(shown.dayTotals);
   });
 
   it('never updates or deletes a stored row', async () => {

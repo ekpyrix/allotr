@@ -174,7 +174,7 @@ test('with reduced motion the hero shows its value without rolling', async ({
   expect(parseFloat(duration)).toBeLessThan(0.001);
 });
 
-test('logging an expense lowers left today and undo restores it', async ({
+test('logging an expense lowers left today; delete and undo', async ({
   page,
 }) => {
   await page.goto('/today');
@@ -193,27 +193,39 @@ test('logging an expense lowers left today and undo restores it', async ({
   await expect(hero(page)).toHaveText(formatMoney(lowered, 'en-US'));
   expect((await today(page)).leftToday).toEqual(lowered);
 
-  const undo = entries(page).getByRole('button', {
-    name: 'Undo Transport, -$42.10',
-  });
-  await undo.click();
+  await entries(page)
+    .getByRole('button', { name: 'Delete Transport, -$42.10' })
+    .click();
   await expect(hero(page)).toHaveText(formatMoney(before.leftToday, 'en-US'));
   expect((await today(page)).leftToday).toEqual(before.leftToday);
   const row = entries(page).getByRole('listitem').filter({
     hasText: 'Transport',
   });
-  await expect(row).toContainText('Undone');
-  await expect(row.getByRole('button')).toHaveCount(0);
+  await expect(row).toHaveCount(0);
   await expect(
     entries(page).getByRole('heading', { name: 'Today’s entries' }),
   ).toBeFocused();
-  await expect(entries(page).locator('[aria-live="polite"]')).toHaveText(
-    'Undone: Transport, -$42.10.',
+  await expect(page.locator('[data-slot="snackbar-status"]')).toHaveText(
+    'Deleted Transport, -$42.10.',
   );
   await expectAccessible(page);
+
+  // Undo in the snackbar brings it back.
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.locator('[data-slot="snackbar-status"]')).toHaveText(
+    'Restored Transport, -$42.10.',
+  );
+  await expect(row).toHaveCount(1);
+  await expect(hero(page)).toHaveText(formatMoney(lowered, 'en-US'));
+  await entries(page)
+    .getByRole('button', { name: 'Delete Transport, -$42.10' })
+    .click();
+  await expect(row).toHaveCount(0);
 });
 
-test('Undo on the save snackbar reverses the entry', async ({ page }) => {
+test('Undo on the save snackbar removes the entry, and again brings it back', async ({
+  page,
+}) => {
   await page.goto('/today');
   const before = await today(page);
   await page.getByRole('button', { name: 'Add', exact: true }).click();
@@ -223,13 +235,18 @@ test('Undo on the save snackbar reverses the entry', async ({ page }) => {
   const undo = page.getByRole('button', { name: 'Undo', exact: true });
   await expect(undo).toBeVisible();
   await undo.click();
-  await expect(page.getByRole('status')).toHaveText(
-    'Undone. The entry was reversed.',
-  );
+  await expect(page.getByRole('status')).toHaveText('Entry removed.');
   await expect(hero(page)).toHaveText(formatMoney(before.leftToday, 'en-US'));
-  await expect(
-    entries(page).getByRole('listitem').filter({ hasText: '-$5.55' }).first(),
-  ).toContainText('Undone');
+  const row = entries(page).getByRole('listitem').filter({ hasText: '-$5.55' });
+  await expect(row).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Entry back.');
+  await expect(row).toHaveCount(1);
+  await entries(page)
+    .getByRole('button', { name: 'Delete Transport, -$5.55' })
+    .click();
+  await expect(row).toHaveCount(0);
 });
 
 test('a missing rate shows a needs-attention item that links to rates', async ({
@@ -281,7 +298,7 @@ test('a bill due today and not paid needs attention', async ({
   await expectAccessible(page);
 });
 
-test('undoing the paycheck that opened the cycle asks first', async ({
+test('deleting the paycheck that opened the cycle asks first', async ({
   page,
   baseURL,
 }) => {
@@ -297,7 +314,7 @@ test('undoing the paycheck that opened the cycle asks first', async ({
 
   await page.goto('/today');
   const undo = entries(page).getByRole('button', {
-    name: 'Undo Paycheck, +$3,200.00',
+    name: 'Delete Paycheck, +$3,200.00',
   });
   await undo.click();
   await expect(
@@ -306,7 +323,7 @@ test('undoing the paycheck that opened the cycle asks first', async ({
     }),
   ).toBeVisible();
   const confirm = entries(page).getByRole('button', {
-    name: 'Undo paycheck',
+    name: 'Delete it',
     exact: true,
   });
   await expect(confirm).toBeFocused();
@@ -320,6 +337,19 @@ test('undoing the paycheck that opened the cycle asks first', async ({
   await confirm.click();
   await expect(
     entries(page).getByRole('listitem').filter({ hasText: 'Paycheck' }),
-  ).toContainText('Undone');
+  ).toHaveCount(0);
   expect((await today(page)).cycle.openedBy).toBeNull();
+});
+
+test('deleting an opening balance asks first', async ({ page }) => {
+  await page.goto('/today');
+  const remove = entries(page)
+    .getByRole('button', { name: /^Delete Opening balance/ })
+    .first();
+  await remove.click();
+  await expect(
+    entries(page).getByText('This is an opening balance.', { exact: false }),
+  ).toBeVisible();
+  await entries(page).getByRole('button', { name: 'Keep it' }).click();
+  await expect(remove).toBeFocused();
 });

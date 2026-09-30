@@ -37,6 +37,7 @@ function entry(
     postings,
     reversesId: null,
     reversedById: null,
+    restoredById: null,
     impliedRate: impliedRate as Rate | null,
     budgetSwitch: null,
     tagIds: [],

@@ -105,7 +105,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-L1 | Record expenses, income and transfers in a double-entry, append-only ledger. | M | M1 |
 | FR-L2 | Accounts are **on-budget** (spendable) or **off-budget** (savings); any account can be switched, effective from that day. | M | M1 |
 | FR-L3 | Each account has one ISO 4217 currency, fixed at creation. | M | M1 |
-| FR-L4 | Correcting or undoing an entry posts a reversal (plus a new entry for edits); nothing is deleted. | M | M1 |
+| FR-L4 | Correcting or deleting an entry posts a reversal (plus a new entry for edits); nothing is removed from the ledger. A deleted entry is hidden from lists and can be restored as a copy. | M | M1 |
 | FR-L5 | Split one transaction across several categories. | M | M2 |
 | FR-L6 | Track money owed to or by a person (IOUs) without affecting the daily number. | S | M7 |
 | FR-L7 | Categories: editable starter set with two levels; free-form tags. | M | M1 |

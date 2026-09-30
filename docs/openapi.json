@@ -4930,6 +4930,14 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "restoredById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -4982,6 +4990,7 @@
                         "postings",
                         "reversesId",
                         "reversedById",
+                        "restoredById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -7636,6 +7645,19 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": [
+                "show",
+                "hide"
+              ],
+              "default": "show"
+            },
+            "required": false,
+            "name": "undone",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "integer",
               "minimum": 1,
               "maximum": 200,
@@ -7787,6 +7809,14 @@
                             "minLength": 1,
                             "maxLength": 64
                           },
+                          "restoredById": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
                           "impliedRate": {
                             "type": [
                               "string",
@@ -7839,6 +7869,7 @@
                           "postings",
                           "reversesId",
                           "reversedById",
+                          "restoredById",
                           "impliedRate",
                           "budgetSwitch",
                           "tagIds"
@@ -8582,6 +8613,14 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "restoredById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -8634,6 +8673,7 @@
                     "postings",
                     "reversesId",
                     "reversedById",
+                    "restoredById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -8768,6 +8808,14 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "restoredById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -8820,6 +8868,7 @@
                     "postings",
                     "reversesId",
                     "reversedById",
+                    "restoredById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -9251,6 +9300,14 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "restoredById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -9303,6 +9360,7 @@
                     "postings",
                     "reversesId",
                     "reversedById",
+                    "restoredById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -9641,6 +9699,14 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "restoredById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -9693,6 +9759,7 @@
                     "postings",
                     "reversesId",
                     "reversedById",
+                    "restoredById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -9923,6 +9990,444 @@
           },
           "409": {
             "description": "Already undone (`already_reversed`), an undo (`reversal_of_reversal`), or on an archived account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/{id}/restore": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Restore an undone entry",
+        "description": "Records a copy of an undone entry with its date, category, note, tags and postings. The entry and its undo stay as they are.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The restored copy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "expense",
+                        "income",
+                        "transfer",
+                        "opening",
+                        "write_off",
+                        "budget_switch",
+                        "reversal"
+                      ]
+                    },
+                    "occurredOn": {
+                      "type": "string",
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "api",
+                        "import",
+                        "system"
+                      ]
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "postings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "accountId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "systemRole": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "expenses",
+                              "income",
+                              "opening",
+                              "conversion",
+                              null
+                            ]
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "accountId",
+                          "systemRole",
+                          "amount",
+                          "categoryId"
+                        ]
+                      }
+                    },
+                    "reversesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "reversedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "restoredById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "impliedRate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 40,
+                      "pattern": "^\\d+(\\.\\d+)?$"
+                    },
+                    "budgetSwitch": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "accountId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "budgetGroup": {
+                          "type": "string",
+                          "enum": [
+                            "on",
+                            "off"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "accountId",
+                        "budgetGroup"
+                      ]
+                    },
+                    "tagIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "occurredOn",
+                    "createdAt",
+                    "source",
+                    "categoryId",
+                    "note",
+                    "postings",
+                    "reversesId",
+                    "reversedById",
+                    "restoredById",
+                    "impliedRate",
+                    "budgetSwitch",
+                    "tagIds"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such entry or account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not undone (`not_undone`), already restored (`already_restored`), an undo or budget switch, or on an archived account.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10442,6 +10947,14 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "restoredById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -10494,6 +11007,7 @@
                         "postings",
                         "reversesId",
                         "reversedById",
+                        "restoredById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -10621,6 +11135,14 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "restoredById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -10673,6 +11195,7 @@
                         "postings",
                         "reversesId",
                         "reversedById",
+                        "restoredById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"

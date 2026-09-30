@@ -1,11 +1,9 @@
 import { formatMoney } from '@allotr/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Undo2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useQuickEntry } from '@/features/quick-entry/quick-entry-provider';
-import { ApiError } from '@/lib/api';
-import { entryQueryKeys, reverseTransaction } from '@/lib/ledger';
+import { useDeleteEntry } from '@/features/ledger/use-delete-entry';
 import { errorMessage } from '@/lib/problem';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
@@ -28,59 +26,31 @@ function describe(row: EntryRow, locale: string): string {
   return amount === null ? entryTitle(row) : `${entryTitle(row)}, ${amount}`;
 }
 
-function useUndo(onUndone: () => void) {
-  const queryClient = useQueryClient();
-  const refresh = () =>
-    Promise.all(
-      entryQueryKeys.map((queryKey) =>
-        queryClient.invalidateQueries({ queryKey }),
-      ),
-    );
-  return useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        await reverseTransaction(id);
-      } catch (error) {
-        // Undone elsewhere in the meantime (another tab, the bot): the
-        // entry is undone, which is what was asked.
-        if (
-          error instanceof ApiError &&
-          error.problem.code === 'already_reversed'
-        )
-          return;
-        throw error;
-      }
-    },
-    // Awaited, so the row shows as undone before focus and the
-    // announcement move on.
-    onSuccess: async () => {
-      await refresh();
-      onUndone();
-    },
-  });
-}
+type Deletion = ReturnType<typeof useDeleteEntry>;
 
 function EntryItem({
   row,
   locale,
-  opensCycle,
-  onUndone,
+  confirm,
+  deletion,
 }: {
   row: EntryRow;
   locale: string;
-  /** The paycheck that opened the current cycle: undo asks first. */
-  opensCycle: boolean;
-  onUndone: (description: string) => void;
+  /** The paycheck that opened the cycle, or an opening balance: asks first. */
+  confirm: 'paycheck' | 'opening' | null;
+  deletion: Deletion;
 }) {
   const description = describe(row, locale);
-  const undo = useUndo(() => {
-    onUndone(description);
-  });
   const [confirming, setConfirming] = useState(false);
   const confirmId = useId();
   const confirmButton = useRef<HTMLButtonElement>(null);
-  const undoButton = useRef<HTMLButtonElement>(null);
+  const deleteButton = useRef<HTMLButtonElement>(null);
   const amount = amountText(row, locale);
+  const mine = deletion.variables?.id === row.id;
+  const pending = deletion.isPending && mine;
+  const remove = () => {
+    deletion.mutate({ id: row.id, description });
+  };
 
   useEffect(() => {
     if (confirming) confirmButton.current?.focus();
@@ -95,10 +65,8 @@ function EntryItem({
   return (
     <li className="grid gap-2 border-b border-outline-variant px-4 py-3 last:border-b-0">
       <div className="flex items-start gap-3">
-        <div className={cn('min-w-0 flex-1', row.undone && 'text-text-muted')}>
-          <p className={cn('font-medium', row.undone && 'line-through')}>
-            {title}
-          </p>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{title}</p>
           {details.length > 0 ? (
             <p className="truncate text-body text-text-muted">
               {details.join(' · ')}
@@ -109,66 +77,61 @@ function EntryItem({
           <p
             className={cn(
               'font-mono tabular-nums',
-              row.undone && 'text-text-muted line-through',
-              !row.undone && row.kind === 'income' && 'text-positive',
+              row.kind === 'income' && 'text-positive',
             )}
           >
             {amount}
           </p>
         )}
         <div className="flex w-24 shrink-0 justify-end">
-          {row.undone ? (
-            <span className="py-1.5 text-body text-text-muted">
-              {t('today.entries.undone')}
-            </span>
-          ) : (
-            <Button
-              ref={undoButton}
-              variant="outlined"
-              size="dense"
-              aria-label={t('today.entries.undoLabel', { entry: description })}
-              aria-expanded={opensCycle ? confirming : undefined}
-              aria-controls={opensCycle && confirming ? confirmId : undefined}
-              disabled={undo.isPending}
-              onClick={() => {
-                if (opensCycle) setConfirming(true);
-                else undo.mutate(row.id);
-              }}
-            >
-              <Undo2 aria-hidden />
-              {undo.isPending
-                ? t('today.entries.undoing')
-                : t('today.entries.undo')}
-            </Button>
-          )}
+          <Button
+            ref={deleteButton}
+            variant="outlined"
+            size="dense"
+            aria-label={t('today.entries.undoLabel', { entry: description })}
+            aria-expanded={confirm === null ? undefined : confirming}
+            aria-controls={
+              confirm !== null && confirming ? confirmId : undefined
+            }
+            disabled={pending}
+            onClick={() => {
+              if (confirm === null) remove();
+              else setConfirming(true);
+            }}
+          >
+            <Trash2 aria-hidden />
+            {pending ? t('today.entries.undoing') : t('today.entries.undo')}
+          </Button>
         </div>
       </div>
-      {confirming && !row.undone ? (
+      {confirming && confirm !== null ? (
         <div
           id={confirmId}
           className="grid gap-3 rounded-md bg-card-raised p-4 text-body"
         >
-          <p>{t('today.entries.confirmPaycheck')}</p>
+          <p>
+            {confirm === 'paycheck'
+              ? t('today.entries.confirmPaycheck')
+              : t('today.entries.confirmOpening')}
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button
               ref={confirmButton}
               size="dense"
-              disabled={undo.isPending}
-              onClick={() => {
-                undo.mutate(row.id);
-              }}
+              disabled={pending}
+              onClick={remove}
             >
-              {undo.isPending
+              {pending
                 ? t('today.entries.undoing')
                 : t('today.entries.confirmUndo')}
             </Button>
             <Button
               variant="outlined"
               size="dense"
-              disabled={undo.isPending}
+              disabled={pending}
               onClick={() => {
                 setConfirming(false);
-                undoButton.current?.focus();
+                deleteButton.current?.focus();
               }}
             >
               {t('today.entries.keep')}
@@ -176,18 +139,18 @@ function EntryItem({
           </div>
         </div>
       ) : null}
-      {undo.isError ? (
+      {deletion.isError && mine ? (
         <p role="alert" className="text-body font-medium text-negative">
-          {errorMessage(undo.error)}
+          {errorMessage(deletion.error)}
         </p>
       ) : null}
     </li>
   );
 }
 
-// Today's entries with undo (FR-L4): an undo posts a reversal, so the row
-// stays, marked undone. After an undo the button is gone, so focus goes to
-// the list's heading and a polite live region says what happened.
+// Today's entries with delete (FR-L4). A deleted row leaves the list, so
+// focus goes to the list's heading; the snackbar says what happened and
+// offers Undo, which restores the entry.
 export function TodaysEntries({
   rows,
   locale,
@@ -199,8 +162,11 @@ export function TodaysEntries({
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const headingId = useId();
-  const [announcement, setAnnouncement] = useState('');
   const quickEntry = useQuickEntry();
+  // Here rather than on each row, which is gone once its entry is.
+  const deletion = useDeleteEntry(() => {
+    heading.current?.focus();
+  });
 
   return (
     <section aria-labelledby={headingId}>
@@ -212,9 +178,6 @@ export function TodaysEntries({
       >
         {t('today.entries.title')}
       </h2>
-      <p aria-live="polite" className="sr-only">
-        {announcement}
-      </p>
       {rows.length === 0 ? (
         <div className="mt-3 grid justify-items-start gap-3 rounded-lg bg-card p-4">
           <p className="text-body-lg">{t('today.entries.empty')}</p>
@@ -235,13 +198,14 @@ export function TodaysEntries({
               key={row.id}
               row={row}
               locale={locale}
-              opensCycle={row.id === cycleOpenedBy}
-              onUndone={(description) => {
-                setAnnouncement(
-                  t('today.entries.undoneAnnounce', { entry: description }),
-                );
-                heading.current?.focus();
-              }}
+              confirm={
+                row.id === cycleOpenedBy
+                  ? 'paycheck'
+                  : row.kind === 'opening'
+                    ? 'opening'
+                    : null
+              }
+              deletion={deletion}
             />
           ))}
         </ul>

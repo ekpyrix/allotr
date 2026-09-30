@@ -5,6 +5,7 @@ import {
   edit,
   expense,
   income,
+  reinstate,
   reverse,
   transactionId,
   transfer,
@@ -38,7 +39,8 @@ import {
 // Recording, listing, undoing and editing entries (FR-L1, FR-L4, FR-X3).
 // Every write goes through core's builders inside one database
 // transaction, so a refused entry writes nothing. Nothing is updated or
-// deleted: undo is a reversal, edit is a reversal plus a new entry.
+// deleted: undo is a reversal, edit is a reversal plus a new entry, and
+// restoring an undone entry records a copy of it.
 
 type Kind = TransactionView['kind'];
 
@@ -88,7 +90,7 @@ async function views(
 ): Promise<TransactionView[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
-  const [postings, tags, reversals] = await Promise.all([
+  const [postings, tags, reversals, restores] = await Promise.all([
     db
       .selectFrom('postings')
       .innerJoin('accounts', 'accounts.id', 'postings.account_id')
@@ -118,6 +120,12 @@ async function views(
       .where('user_id', '=', userId)
       .where('reverses_id', 'in', ids)
       .execute(),
+    db
+      .selectFrom('transactions')
+      .select(['id', 'idempotency_key'])
+      .where('user_id', '=', userId)
+      .where('idempotency_key', 'in', ids.map(restoreKey))
+      .execute(),
   ]);
   const group = <T extends { transaction_id: string }>(items: T[]) => {
     const map = new Map<string, T[]>();
@@ -132,6 +140,7 @@ async function views(
   const legs = group(postings);
   const tagsOf = group(tags);
   const undoneBy = new Map(reversals.map((r) => [r.reverses_id, r.id]));
+  const restoredBy = new Map(restores.map((r) => [r.idempotency_key, r.id]));
 
   return rows.map((row) => ({
     id: row.id,
@@ -150,6 +159,7 @@ async function views(
     })) as TransactionView['postings'],
     reversesId: row.reverses_id,
     reversedById: undoneBy.get(row.id) ?? null,
+    restoredById: restoredBy.get(restoreKey(row.id)) ?? null,
     impliedRate: row.fx_rate_implied as TransactionView['impliedRate'],
     budgetSwitch:
       row.switch_account_id === null
@@ -194,6 +204,7 @@ export type ListFilter = Readonly<{
   categoryId?: string | undefined;
   tagId?: string | undefined;
   q?: string | undefined;
+  undone?: 'show' | 'hide' | undefined;
   limit: number;
   cursor?: string | undefined;
 }>;
@@ -344,6 +355,22 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
             ]),
           ),
       ),
+    );
+  }
+  if (filter.undone === 'hide') {
+    query = query.where((eb) =>
+      eb.and([
+        eb('kind', '!=', 'reversal'),
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom('transactions as undo')
+              .select('undo.id')
+              .where('undo.user_id', '=', userId)
+              .whereRef('undo.reverses_id', '=', 'transactions.id'),
+          ),
+        ),
+      ]),
     );
   }
   if (filter.q !== undefined) {
@@ -685,6 +712,57 @@ export async function reverseTransaction(
     return reversal.id;
   });
   return getTransaction(db, userId, reversalId);
+}
+
+// A restored copy is stored under this key, so each undone entry is
+// restored at most once and its view can point at the copy.
+function restoreKey(id: string): string {
+  return `restore:${id}`;
+}
+
+/**
+ * Brings back an undone entry as a copy with the same date, category,
+ * note, tags and postings.
+ */
+export async function restoreTransaction(
+  db: Kysely<DB>,
+  userId: string,
+  id: string,
+  now: Date,
+): Promise<TransactionView> {
+  const key = restoreKey(id);
+  const copyId = await db.transaction().execute(async (trx) => {
+    const earlier = await byIdempotencyKey(trx, userId, key);
+    if (earlier !== undefined) {
+      throw new RequestProblem(
+        409,
+        'already_restored',
+        'This entry has already been restored.',
+      );
+    }
+    const chart = await loadChart(trx, userId);
+    const ledger = await loadLedger(trx, userId, chart);
+    const copy = reinstate(chart, ledger, transactionId(id), {
+      id: newTransactionId(),
+      createdAt: now.toISOString(),
+    });
+    const tags = await trx
+      .selectFrom('transaction_tags')
+      .select('tag_id')
+      .where('user_id', '=', userId)
+      .where('transaction_id', '=', id)
+      .execute();
+    await storeTransaction(
+      trx,
+      userId,
+      copy,
+      tags.map((t) => t.tag_id),
+      key,
+      'api',
+    );
+    return copy.id;
+  });
+  return getTransaction(db, userId, copyId);
 }
 
 /** Replaces an entry: its reversal plus a new entry (FR-L4). */

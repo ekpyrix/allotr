@@ -14,6 +14,7 @@ import {
   editTransaction,
   getTransaction,
   listTransactions,
+  restoreTransaction,
   reverseTransaction,
 } from '../../ledger/transactions.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
@@ -111,6 +112,24 @@ const reverseRoute = createRoute({
   },
 });
 
+const restoreRoute = createRoute({
+  method: 'post',
+  path: '/v1/transactions/{id}/restore',
+  tags,
+  summary: 'Restore an undone entry',
+  description:
+    'Records a copy of an undone entry with its date, category, note, tags and postings. The entry and its undo stay as they are.',
+  request: { params: idParamSchema },
+  responses: {
+    201: json(transactionSchema, 'The restored copy.'),
+    ...signedIn,
+    404: notFound,
+    409: problemResponse(
+      'Not undone (`not_undone`), already restored (`already_restored`), an undo or budget switch, or on an archived account.',
+    ),
+  },
+});
+
 const editRoute = createRoute({
   method: 'post',
   path: '/v1/transactions/{id}/edit',
@@ -165,6 +184,14 @@ export function registerTransactionRoutes(
     const { note } = c.req.valid('json');
     return c.json(
       await reverseTransaction(db, c.get('user').id, id, note, now()),
+      201,
+    );
+  });
+
+  app.openapi(restoreRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(
+      await restoreTransaction(db, c.get('user').id, id, now()),
       201,
     );
   });

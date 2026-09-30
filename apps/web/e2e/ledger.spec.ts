@@ -156,20 +156,29 @@ test('editing an entry shows its undo and the new entry, and the balance matches
   const replacement = entryView(page, 'Transport');
   await expect(replacement).toContainText('-$9.25');
   await expect(replacement.locator('[aria-live="polite"]')).toHaveText(
-    'Entry changed. The old one is undone.',
+    'Entry changed.',
   );
   await replacement.getByRole('button', { name: 'Close' }).click();
   await expect(page).not.toHaveURL(/entry=/);
 
-  await expect(entry(page, 'Undo: Transport')).toContainText('$7.50');
+  // The old version and its undo are hidden until asked for.
+  await expect(entry(page, 'Transport')).toHaveCount(1);
+  await expect(entry(page, 'Transport')).toContainText('-$9.25');
+  await page.getByLabel('Show deleted entries').click();
+  await expect(page).toHaveURL(/deleted=show/);
+  await expect(entry(page, 'Deleted: Transport')).toContainText('$7.50');
   const transport = entry(page, 'Transport').filter({
-    hasNotText: 'Undo:',
+    hasNotText: 'Deleted:',
   });
   await expect(transport).toHaveCount(2);
-  await expect(transport.filter({ hasText: 'Undone' })).toContainText('-$7.50');
-  await expect(transport.filter({ hasNotText: 'Undone' })).toContainText(
+  await expect(transport.filter({ hasText: 'Deleted' })).toContainText(
+    '-$7.50',
+  );
+  await expect(transport.filter({ hasNotText: 'Deleted' })).toContainText(
     '-$9.25',
   );
+  await page.getByLabel('Show deleted entries').click();
+  await expect(page).not.toHaveURL(/deleted=/);
 
   const after = await everyday(page);
   expect(after.balance).toEqual(
@@ -238,7 +247,7 @@ test('closing an entry that the filters hide returns focus to the page', async (
   page,
 }) => {
   const list = (await (
-    await page.request.get('/v1/transactions?limit=1')
+    await page.request.get('/v1/transactions?limit=1&undone=hide')
   ).json()) as { transactions: TransactionView[] };
   const id = list.transactions[0]?.id ?? '';
   await page.goto(`/ledger?q=nothing-matches&entry=${id}`);
@@ -275,7 +284,7 @@ test('a deep link opens the entry beside the list or over it', async ({
   isMobile,
 }) => {
   const list = (await (
-    await page.request.get('/v1/transactions?limit=1')
+    await page.request.get('/v1/transactions?limit=1&undone=hide')
   ).json()) as { transactions: TransactionView[] };
   const id = list.transactions[0]?.id ?? '';
   await page.goto(`/ledger?entry=${id}`);
