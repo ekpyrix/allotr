@@ -26,6 +26,44 @@ export {
   type ContrastFailure,
 } from './validate.ts';
 export { darkTheme, lightTheme } from './builtin.ts';
+export { fromOklch, mixOklch, toOklch, type Oklch } from './oklch.ts';
+export {
+  ACCENT_LIMIT,
+  accentNameSchema,
+  CANONICAL_HUES,
+  completePalette,
+  NEUTRAL_SLOTS,
+  paletteSchema,
+  partialPaletteSchema,
+  slotColor,
+  type CanonicalHue,
+  type NeutralSlot,
+  type Palette,
+  type PartialPalette,
+} from './palette.ts';
+export {
+  DEFAULT_ROLE_MAP,
+  ROLE_SPECS,
+  roleEntrySchema,
+  ROLES,
+  SURFACE_ROLES,
+  themeRoleSchema,
+  type Role,
+  type RoleEntry,
+  type RoleKind,
+  type RoleMap,
+  type RoleSpec,
+  type SurfaceRole,
+} from './roles.ts';
+export {
+  describeRoleFailure,
+  FIT_STEP,
+  resolveTheme,
+  type ResolvedTheme,
+  type RoleFailure,
+  type RoleFit,
+  type ThemeInput,
+} from './resolve.ts';
 export {
   contrastProblems,
   CUSTOM_THEME_LIMIT,
