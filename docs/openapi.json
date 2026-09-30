@@ -17659,7 +17659,7 @@
           "Bills"
         ],
         "summary": "Change a bill",
-        "description": "An inactive bill is no longer reserved.",
+        "description": "An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount.",
         "parameters": [
           {
             "schema": {
@@ -17703,6 +17703,11 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 31
+                  },
+                  "accountId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                   },
                   "active": {
                     "type": "boolean"

@@ -668,6 +668,8 @@ export const updateBillBodySchema = z
       })
       .optional(),
     dueDay: z.int().min(1).max(31).optional(),
+    /** Moves the bill to another open account, in the amount's currency. */
+    accountId: idSchema.optional(),
     active: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {

@@ -303,6 +303,8 @@ test('a bill due this cycle is set aside until it is marked paid', async ({
 
   await bill.getByRole('button', { name: 'Edit Phone' }).click();
   const edit = page.getByRole('dialog', { name: 'Edit Phone' });
+  // The account can be changed on an existing bill too.
+  await expect(edit.getByLabel('Paid from')).toHaveValue(/.+/);
   await edit.getByLabel('Active').uncheck();
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(edit).toBeHidden();

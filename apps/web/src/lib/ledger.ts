@@ -186,6 +186,11 @@ export function switchBudgetGroup(
   });
 }
 
+/** Renames an account; no entry is written. */
+export function renameAccount(id: string, name: string) {
+  return call(endpoints.updateAccount, { params: { id }, body: { name } });
+}
+
 /** How a remaining balance is cleared before the account is archived. */
 export type Settle =
   { method: 'transfer'; toAccountId: string } | { method: 'write_off' };

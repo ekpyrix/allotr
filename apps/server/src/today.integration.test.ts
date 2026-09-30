@@ -305,6 +305,47 @@ describe('daily figures', () => {
       expect(code(response)).toBe('currency_mismatch');
     });
 
+    it('moves a bill to another account of the same currency', async () => {
+      const spare = await openAccount(h.alice, 'Spare card', usd(0));
+      const euros = await openAccount(h.alice, 'Euro card', eur(0));
+      const phone = (
+        await h.alice.post('/v1/bills', {
+          name: 'Phone',
+          amount: usd(1500),
+          accountId: everyday,
+          dueDay: 28,
+        })
+      ).body as Bill;
+
+      const moved = await h.alice.patch(`/v1/bills/${phone.id}`, {
+        accountId: spare,
+      });
+      expect(moved.status).toBe(200);
+      expect(moved.body).toMatchObject({ accountId: spare, amount: usd(1500) });
+
+      // The currency of the amount and the account must still agree.
+      const mismatch = await h.alice.patch(`/v1/bills/${phone.id}`, {
+        accountId: euros,
+      });
+      expect(mismatch.status).toBe(400);
+      expect(code(mismatch)).toBe('currency_mismatch');
+      const both = await h.alice.patch(`/v1/bills/${phone.id}`, {
+        accountId: euros,
+        amount: eur(1400),
+      });
+      expect(both.body).toMatchObject({ accountId: euros, amount: eur(1400) });
+
+      expect(
+        (await h.bob.patch(`/v1/bills/${phone.id}`, { accountId: spare }))
+          .status,
+      ).toBe(404);
+      const missing = await h.alice.patch(`/v1/bills/${phone.id}`, {
+        accountId: 'nope',
+      });
+      expect(code(missing)).toBe('account_not_found');
+      expect((await h.alice.delete(`/v1/bills/${phone.id}`)).status).toBe(204);
+    });
+
     it("keeps each user's bills to themselves", async () => {
       expect((await h.bob.get(`/v1/bills/${rent.id}`)).status).toBe(404);
       expect((await h.bob.delete(`/v1/bills/${rent.id}`)).status).toBe(404);

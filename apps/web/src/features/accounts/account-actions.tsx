@@ -2,14 +2,17 @@ import { formatMoney, type AccountView } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useState } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   archiveAccount,
   archiveImpactQuery,
   entryQueryKeys,
+  renameAccount,
   switchBudgetGroup,
   type Settle,
 } from '@/lib/ledger';
+import { ApiError } from '@/lib/api';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { DigitRoller } from '@/motion/digit-roller';
@@ -43,6 +46,87 @@ function useLedgerMutation<Input>(
     };
   }, [busy, onBusyChange]);
   return mutation;
+}
+
+// A name is the only thing on an account that can change without an
+// entry; the balance and currency stay as they are.
+export function RenameAccount({
+  account,
+  onDone,
+  onCancel,
+  onBusyChange,
+}: {
+  account: AccountView;
+  onDone: (name: string) => void;
+  onCancel: () => void;
+  onBusyChange: (busy: boolean) => void;
+}) {
+  const [name, setName] = useState(account.name);
+  const rename = useLedgerMutation(
+    (next: string) => renameAccount(account.id, next),
+    onBusyChange,
+  );
+  const taken =
+    rename.error instanceof ApiError &&
+    rename.error.problem.code === 'account_name_taken';
+  const trimmed = name.trim();
+  return (
+    <form
+      noValidate
+      className="mt-4 grid gap-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (trimmed === '') return;
+        if (trimmed === account.name) {
+          onCancel();
+          return;
+        }
+        rename.mutate(trimmed, {
+          onSuccess: () => {
+            onDone(trimmed);
+          },
+        });
+      }}
+    >
+      <FieldControl
+        label={t('accounts.create.name')}
+        error={taken ? t('accounts.create.errors.nameTaken') : undefined}
+      >
+        {(props) => (
+          <Input
+            {...props}
+            name="name"
+            maxLength={100}
+            autoComplete="off"
+            className="h-11 text-base"
+            value={name}
+            onChange={(e) => {
+              setName(e.currentTarget.value);
+              if (rename.isError) rename.reset();
+            }}
+          />
+        )}
+      </FieldControl>
+      {rename.isError && !taken ? (
+        <FormError message={errorMessage(rename.error)} />
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={rename.isPending || trimmed === ''}>
+          {rename.isPending
+            ? t('accounts.rename.saving')
+            : t('accounts.rename.save')}
+        </Button>
+        <Button
+          type="button"
+          variant="outlined"
+          disabled={rename.isPending}
+          onClick={onCancel}
+        >
+          {t('accounts.cancel')}
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 export function budgetTitle(account: AccountView): string {

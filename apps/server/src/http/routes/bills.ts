@@ -79,7 +79,8 @@ const updateRoute = createRoute({
   path: '/v1/bills/{id}',
   tags,
   summary: 'Change a bill',
-  description: 'An inactive bill is no longer reserved.',
+  description:
+    'An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount.',
   request: {
     params: idParamSchema,
     body: {
