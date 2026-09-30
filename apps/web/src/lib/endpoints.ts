@@ -18,8 +18,8 @@ import {
   createBillBodySchema,
   createBillPaymentBodySchema,
   createTransactionBodySchema,
-  customThemeListSchema,
-  customThemeSchema,
+  customThemeViewListSchema,
+  customThemeViewSchema,
   deleteUserBodySchema,
   editedTransactionSchema,
   instanceSettingsPatchSchema,
@@ -208,19 +208,19 @@ export const endpoints = {
   themes: endpoint({
     method: 'GET',
     path: '/v1/settings/themes',
-    response: customThemeListSchema,
+    response: customThemeViewListSchema,
   }),
   createTheme: endpoint({
     method: 'POST',
     path: '/v1/settings/themes',
     body: themeBodySchema,
-    response: customThemeSchema,
+    response: customThemeViewSchema,
   }),
   updateTheme: endpoint({
     method: 'PUT',
     path: '/v1/settings/themes/{id}',
     body: themeBodySchema,
-    response: customThemeSchema,
+    response: customThemeViewSchema,
   }),
   deleteTheme: endpoint({
     method: 'DELETE',

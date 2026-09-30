@@ -52,8 +52,21 @@ test('picks a community theme for the dark slot', async ({ page }) => {
   );
   await expectAccessible(page);
 
-  await dark.getByText('Allotr dark').click();
-  await expect.poll(() => rootProperty(page, '--background')).toBe('');
+  // theme-init.js paints it before the app runs: with the app's scripts
+  // blocked, the colours are already there.
+  await page.route('**/assets/*.js', (route) => route.abort());
+  await page.reload();
+  expect(await rootProperty(page, '--canvas')).toBe('#111823');
+  await page.unroute('**/assets/*.js');
+  await page.reload();
+
+  // Back on the default theme, the stylesheet paints it: no overrides.
+  await dark.getByText('Catppuccin Mocha').click();
+  await expect.poll(() => rootProperty(page, '--canvas')).toBe('');
+  await expect(page.locator('body')).toHaveCSS(
+    'background-color',
+    'rgb(30, 30, 46)',
+  );
 });
 
 test('creates a custom theme in the editor, applies it and keeps it after a reload', async ({
@@ -101,7 +114,7 @@ test('creates a custom theme in the editor, applies it and keeps it after a relo
     'background-color',
     'rgb(0, 0, 0)',
   );
-  expect(await rootProperty(page, '--background')).toBe('');
+  expect(await rootProperty(page, '--canvas')).toBe('');
 
   await page.getByRole('button', { name: 'Save and use' }).click();
   await expect(page).toHaveURL(/\/settings#appearance$/);
@@ -118,7 +131,7 @@ test('creates a custom theme in the editor, applies it and keeps it after a relo
 
   // theme-init.js paints it before the app loads.
   await page.reload();
-  expect(await rootProperty(page, '--background')).toBe('#000000');
+  expect(await rootProperty(page, '--canvas')).toBe('#000000');
   await expect(page.locator('body')).toHaveCSS(
     'background-color',
     'rgb(0, 0, 0)',
@@ -165,9 +178,7 @@ test('imports a theme file, refusing one with failing pairs', async ({
   await expect(page.getByRole('listitem', { name: 'Ember' })).toBeVisible();
 });
 
-test('deleting the theme in use goes back to the built-in', async ({
-  page,
-}) => {
+test('deleting the theme in use goes back to the default', async ({ page }) => {
   await page.goto('/settings#appearance');
   await expect(page.locator('body')).toHaveCSS(
     'background-color',
@@ -181,7 +192,7 @@ test('deleting the theme in use goes back to the built-in', async ({
   await expect(page.getByRole('listitem', { name: 'Midnight' })).toHaveCount(0);
   await expect(page.locator('body')).toHaveCSS(
     'background-color',
-    'rgb(15, 26, 23)',
+    'rgb(30, 30, 46)',
   );
-  await expect.poll(() => rootProperty(page, '--background')).toBe('');
+  await expect.poll(() => rootProperty(page, '--canvas')).toBe('');
 });

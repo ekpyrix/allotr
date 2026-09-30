@@ -9,3 +9,6 @@ apps/server/src/db/schema.ts
 
 # Generated from the API; checked by openapi:verify instead.
 docs/openapi.json
+
+# Generated from the resolver and springs; checked by tokens:check instead.
+apps/web/src/generated/

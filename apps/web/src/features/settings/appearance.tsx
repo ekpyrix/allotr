@@ -1,10 +1,10 @@
 import {
   CUSTOM_THEME_LIMIT,
-  SHIPPED_THEMES,
-  THEME_TOKENS,
+  PALETTE_THEMES,
   toThemeFile,
   type CustomTheme,
-  type NamedTheme,
+  type PaletteTheme,
+  type Role,
   type ThemeScheme,
 } from '@allotr/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,27 +29,31 @@ import { useBusy } from './use-busy.ts';
 
 // Mode, the theme for each scheme, and the user's own themes (FR-W5).
 
-const swatchTokens = [
-  'background',
-  'foreground',
-  'today',
+const swatchRoles = [
+  'canvas',
+  'text',
+  'hero-ok',
   'positive',
   'negative',
   'primary',
-] as const satisfies readonly (typeof THEME_TOKENS)[number][];
+] as const satisfies readonly Role[];
 
-function Swatches({ theme }: { theme: NamedTheme }) {
+function Swatches({ colors }: { colors: readonly string[] }) {
   return (
-    <span aria-hidden="true" className="flex overflow-hidden rounded-sm border">
-      {swatchTokens.map((token) => (
+    <span aria-hidden="true" className="flex overflow-hidden rounded-xs border">
+      {colors.map((color, at) => (
         <span
-          key={token}
+          key={String(at)}
           className="size-5"
-          style={{ backgroundColor: theme.tokens[token] }}
+          style={{ backgroundColor: color }}
         />
       ))}
     </span>
   );
+}
+
+function roleSwatches(theme: PaletteTheme): string[] {
+  return swatchRoles.map((role) => theme.resolved.roles[role]);
 }
 
 function SlotPicker({
@@ -57,12 +61,12 @@ function SlotPicker({
   custom,
 }: {
   scheme: ThemeScheme;
-  custom: readonly CustomTheme[];
+  custom: readonly PaletteTheme[];
 }) {
   const { appearance, setSlot } = useTheme();
   const name = useId();
   const hintId = `${name}-hint`;
-  const themes = [...SHIPPED_THEMES, ...custom].filter(
+  const themes = [...PALETTE_THEMES, ...custom].filter(
     (theme) => theme.scheme === scheme,
   );
   const schemeName = t(`themes.schemes.${scheme}`).toLowerCase();
@@ -92,10 +96,10 @@ function SlotPicker({
               }}
               className="size-4 accent-primary"
             />
-            <Swatches theme={theme} />
+            <Swatches colors={roleSwatches(theme)} />
             <span className="min-w-0 wrap-anywhere">
               {theme.name}
-              {SHIPPED_THEMES.includes(theme) ? null : (
+              {PALETTE_THEMES.includes(theme) ? null : (
                 <span className="text-muted-foreground">
                   {' '}
                   · {t('settings.appearance.custom')}
@@ -222,7 +226,16 @@ function CustomThemeItem({
       className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2"
     >
       <span className="flex min-w-0 items-center gap-3">
-        <Swatches theme={theme} />
+        <Swatches
+          colors={[
+            theme.tokens.background,
+            theme.tokens.foreground,
+            theme.tokens.today,
+            theme.tokens.positive,
+            theme.tokens.negative,
+            theme.tokens.primary,
+          ]}
+        />
         <span id={nameId} className="font-medium wrap-anywhere">
           {theme.name}
         </span>
@@ -327,7 +340,7 @@ function DeleteTheme({
 }
 
 export function AppearanceSection({ userId }: { userId: string }) {
-  const { customThemes } = useTheme();
+  const { customThemes, customPalettes } = useTheme();
   const custom = customThemes ?? [];
   const [deleting, setDeleting] = useState<CustomTheme | null>(null);
   const [busy, setBusy] = useState(false);
@@ -340,8 +353,8 @@ export function AppearanceSection({ userId }: { userId: string }) {
   return (
     <Section id="appearance" title={t('settings.appearance.title')}>
       <ThemeModeSwitch className="mt-4" />
-      <SlotPicker scheme="light" custom={custom} />
-      <SlotPicker scheme="dark" custom={custom} />
+      <SlotPicker scheme="light" custom={customPalettes} />
+      <SlotPicker scheme="dark" custom={customPalettes} />
       <h3 className="mt-8 font-medium">
         {t('settings.appearance.yourThemes')}
       </h3>

@@ -1,28 +1,34 @@
 import {
-  DEFAULT_THEME_ID,
-  darkTheme,
-  lightTheme,
-  slotTheme,
+  DEFAULT_PALETTE_THEME_ID,
+  findPaletteTheme,
+  hexColorSchema,
+  paletteTheme,
+  ROLES,
+  slotPaletteTheme,
   THEME_SCHEMES,
-  THEME_TOKENS,
   themeModeSchema,
-  themeTokensSchema,
+  toThemeFileV2,
   type Appearance,
-  type NamedTheme,
+  type CustomThemeView,
+  type PaletteTheme,
+  type Role,
   type ThemeMode,
-  type ThemeTokens,
 } from '@allotr/shared';
 import { z } from 'zod';
 
-// The theme mode, and the colours of any slot not on its built-in theme,
-// are cached in localStorage so public/theme-init.js can apply them before
-// first paint; the account's copy wins once signed in. That script repeats
-// the keys and the resolution rule: change both together.
+// The theme mode, and the resolved role colours of any slot not on its
+// default theme, are cached in localStorage so public/theme-init.js can
+// apply them before first paint; the account's copy wins once signed in.
+// That script repeats the keys and the resolution rule: change both
+// together.
 
 export const THEME_MODE_KEY = 'allotr.theme-mode';
-export const THEME_TOKENS_KEY = 'allotr.theme-tokens';
+export const THEME_ROLES_KEY = 'allotr.theme-roles';
+/** The v1 cache of 16 tokens; dropped on the next write. */
+export const LEGACY_TOKENS_KEY = 'allotr.theme-tokens';
 
 export type ColorScheme = 'light' | 'dark';
+export type RoleColors = Readonly<Record<Role, string>>;
 
 export function resolveScheme(
   mode: ThemeMode,
@@ -54,80 +60,103 @@ export function cacheMode(
   }
 }
 
-/** Colours per scheme, only for slots not on their built-in theme. */
-export type SlotTokens = Partial<Record<ColorScheme, ThemeTokens>>;
-
-const slotTokensSchema = z.object({
-  light: themeTokensSchema.optional(),
-  dark: themeTokensSchema.optional(),
-});
-
-/** The colours for each slot of the appearance. */
-export function slotTokens(
-  appearance: Appearance,
-  custom: readonly NamedTheme[],
-): SlotTokens {
-  const tokens: SlotTokens = {};
-  for (const scheme of THEME_SCHEMES) {
-    const theme = slotTheme(appearance[scheme], scheme, custom);
-    if (theme.id !== DEFAULT_THEME_ID[scheme]) tokens[scheme] = theme.tokens;
-  }
-  return tokens;
+/** A user's custom themes as palette themes, for painting and picking. */
+export function customPaletteThemes(
+  views: readonly CustomThemeView[],
+): PaletteTheme[] {
+  return views.map((view) => paletteTheme(view.id, toThemeFileV2(view)));
 }
 
-export function readCachedTokens(
+/** Role colours per scheme, only for slots not on their default theme. */
+export type SlotRoles = Partial<Record<ColorScheme, RoleColors>>;
+
+const roleColorsSchema = z.strictObject(
+  Object.fromEntries(ROLES.map((role) => [role, hexColorSchema])) as Record<
+    Role,
+    typeof hexColorSchema
+  >,
+);
+const slotRolesSchema = z.object({
+  light: roleColorsSchema.optional(),
+  dark: roleColorsSchema.optional(),
+});
+
+/** The role colours for each slot of the appearance. */
+export function slotRoles(
+  appearance: Appearance,
+  custom: readonly PaletteTheme[],
+): SlotRoles {
+  const roles: SlotRoles = {};
+  for (const scheme of THEME_SCHEMES) {
+    const theme = slotPaletteTheme(appearance[scheme], scheme, custom);
+    if (theme.id !== DEFAULT_PALETTE_THEME_ID[scheme])
+      roles[scheme] = theme.resolved.roles;
+  }
+  return roles;
+}
+
+export function readCachedRoles(
   storage: Pick<Storage, 'getItem'> | undefined,
-): SlotTokens {
+): SlotRoles {
   try {
-    const raw = storage?.getItem(THEME_TOKENS_KEY);
+    const raw = storage?.getItem(THEME_ROLES_KEY);
     if (raw === null || raw === undefined) return {};
-    const parsed = slotTokensSchema.safeParse(JSON.parse(raw));
+    const parsed = slotRolesSchema.safeParse(JSON.parse(raw));
     if (!parsed.success) return {};
-    const tokens: SlotTokens = {};
+    const roles: SlotRoles = {};
     for (const scheme of THEME_SCHEMES) {
       const value = parsed.data[scheme];
-      if (value !== undefined) tokens[scheme] = value;
+      if (value !== undefined) roles[scheme] = value;
     }
-    return tokens;
+    return roles;
   } catch {
     return {};
   }
 }
 
-export function cacheTokens(
+export function cacheRoles(
   storage: Pick<Storage, 'setItem' | 'removeItem'> | undefined,
-  tokens: SlotTokens,
+  roles: SlotRoles,
 ): void {
   try {
-    if (Object.keys(tokens).length === 0) storage?.removeItem(THEME_TOKENS_KEY);
-    else storage?.setItem(THEME_TOKENS_KEY, JSON.stringify(tokens));
+    storage?.removeItem(LEGACY_TOKENS_KEY);
+    if (Object.keys(roles).length === 0) storage?.removeItem(THEME_ROLES_KEY);
+    else storage?.setItem(THEME_ROLES_KEY, JSON.stringify(roles));
   } catch {
     // As for the mode: the colours last for this page.
   }
 }
 
-/** CSS custom properties that override the stylesheet's built-in values. */
-export function tokenProperties(tokens: ThemeTokens): [string, string][] {
-  return THEME_TOKENS.map((token) => [`--${token}`, tokens[token]]);
+/** CSS custom properties that override the stylesheet's default roles. */
+export function roleProperties(roles: RoleColors): [string, string][] {
+  return ROLES.map((role) => [`--${role}`, roles[role]]);
+}
+
+function defaultCanvas(scheme: ColorScheme): string {
+  return (
+    findPaletteTheme(DEFAULT_PALETTE_THEME_ID[scheme], [])?.resolved.roles
+      .canvas ?? '#ffffff'
+  );
 }
 
 /**
- * Sets data-theme, the slot's colours (none for a built-in theme) and the
- * browser's UI colour.
+ * Sets data-theme, the slot's role colours (none for the default theme)
+ * and the browser's UI colour.
  */
 export function applyScheme(
   doc: Document,
   scheme: ColorScheme,
-  tokens?: ThemeTokens,
+  roles?: RoleColors,
 ): void {
   const root = doc.documentElement;
   root.dataset.theme = scheme;
-  for (const [name, value] of tokenProperties(tokens ?? lightTheme)) {
-    if (tokens === undefined) root.style.removeProperty(name);
-    else root.style.setProperty(name, value);
+  for (const role of ROLES) {
+    const name = `--${role}`;
+    if (roles === undefined) root.style.removeProperty(name);
+    else root.style.setProperty(name, roles[role]);
   }
-  const { background } = tokens ?? (scheme === 'dark' ? darkTheme : lightTheme);
+  const canvas = roles?.canvas ?? defaultCanvas(scheme);
   for (const meta of doc.querySelectorAll('meta[name="theme-color"]')) {
-    meta.setAttribute('content', background);
+    meta.setAttribute('content', canvas);
   }
 }

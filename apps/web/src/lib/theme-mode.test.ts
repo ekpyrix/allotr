@@ -1,21 +1,24 @@
 import {
   DEFAULT_APPEARANCE,
-  darkTheme,
-  lightTheme,
-  SHIPPED_THEMES,
-  type NamedTheme,
+  findPaletteTheme,
+  paletteTheme,
+  ROLES,
+  toThemeFileV2,
+  type CustomThemeView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
   cacheMode,
-  cacheTokens,
+  cacheRoles,
+  customPaletteThemes,
+  LEGACY_TOKENS_KEY,
   readCachedMode,
-  readCachedTokens,
+  readCachedRoles,
   resolveScheme,
-  slotTokens,
+  roleProperties,
+  slotRoles,
   THEME_MODE_KEY,
-  THEME_TOKENS_KEY,
-  tokenProperties,
+  THEME_ROLES_KEY,
 } from './theme-mode.ts';
 
 function storage(value: string | null) {
@@ -86,29 +89,56 @@ describe('cacheMode', () => {
   });
 });
 
-const paper = SHIPPED_THEMES.find((theme) => theme.id === 'paper');
-const mine: NamedTheme = {
-  id: 'c1',
-  name: 'Mine',
-  scheme: 'dark',
-  tokens: { ...darkTheme, background: '#000000' },
-};
+const paper = findPaletteTheme('paper', []);
+const mocha = findPaletteTheme('catppuccin-mocha', []);
+if (mocha === undefined) throw new Error('No Catppuccin Mocha');
+const mine = paletteTheme(
+  'c1',
+  toThemeFileV2({
+    name: 'Mine',
+    scheme: 'dark',
+    palette: mocha.palette,
+    roles: { canvas: { slot: 'crust' } },
+  }),
+);
 
-describe('slotTokens', () => {
-  it('leaves built-in slots to the stylesheet', () => {
-    expect(slotTokens(DEFAULT_APPEARANCE, [])).toEqual({});
+describe('slotRoles', () => {
+  it('leaves default slots to the stylesheet', () => {
+    expect(slotRoles(DEFAULT_APPEARANCE, [])).toEqual({});
   });
 
-  it('gives the colours of shipped and custom themes', () => {
+  it('gives the roles of shipped and custom themes', () => {
     expect(
-      slotTokens({ ...DEFAULT_APPEARANCE, light: 'paper', dark: 'c1' }, [mine]),
-    ).toEqual({ light: paper?.tokens, dark: mine.tokens });
+      slotRoles({ ...DEFAULT_APPEARANCE, light: 'paper', dark: 'c1' }, [mine]),
+    ).toEqual({ light: paper?.resolved.roles, dark: mine.resolved.roles });
+    expect(mine.resolved.roles.canvas).toBe(mocha.palette.neutrals.crust);
+  });
+
+  it('reads the earlier built-in ids as Allotr Classic', () => {
+    const roles = slotRoles({ ...DEFAULT_APPEARANCE, light: 'light' }, []);
+    expect(roles.light?.canvas).toBe('#f3f5f2');
   });
 
   it('ignores a theme that is gone or of the other scheme', () => {
     expect(
-      slotTokens({ ...DEFAULT_APPEARANCE, light: 'c1', dark: 'gone' }, [mine]),
+      slotRoles({ ...DEFAULT_APPEARANCE, light: 'c1', dark: 'gone' }, [mine]),
     ).toEqual({});
+  });
+});
+
+describe('customPaletteThemes', () => {
+  it('reads the API view of a custom theme', () => {
+    const view: CustomThemeView = {
+      id: 'c2',
+      version: 2,
+      name: 'Two',
+      scheme: 'dark',
+      palette: mine.palette,
+      roles: mine.roles,
+      tokens: {} as CustomThemeView['tokens'],
+    };
+    const [theme] = customPaletteThemes([view]);
+    expect(theme?.resolved.roles).toEqual(mine.resolved.roles);
   });
 });
 
@@ -126,41 +156,45 @@ function memory(initial: Record<string, string> = {}) {
   };
 }
 
-describe('cached tokens', () => {
+describe('cached roles', () => {
   it('round-trips the slot colours', () => {
     const storage = memory();
-    cacheTokens(storage, { dark: mine.tokens });
-    expect(readCachedTokens(storage)).toEqual({ dark: mine.tokens });
+    cacheRoles(storage, { dark: mine.resolved.roles });
+    expect(readCachedRoles(storage)).toEqual({ dark: mine.resolved.roles });
   });
 
-  it('removes the key when every slot is built-in', () => {
-    const storage = memory({ [THEME_TOKENS_KEY]: '{}' });
-    cacheTokens(storage, {});
-    expect(storage.items.has(THEME_TOKENS_KEY)).toBe(false);
+  it('removes the key when every slot is on its default, and the v1 cache', () => {
+    const storage = memory({
+      [THEME_ROLES_KEY]: '{}',
+      [LEGACY_TOKENS_KEY]: '{"light":{}}',
+    });
+    cacheRoles(storage, {});
+    expect(storage.items.has(THEME_ROLES_KEY)).toBe(false);
+    expect(storage.items.has(LEGACY_TOKENS_KEY)).toBe(false);
   });
 
   it.each([
     'not json',
     '"light"',
-    JSON.stringify({ light: { ...lightTheme, ring: 'url(x)' } }),
-    JSON.stringify({ light: { background: '#fff' } }),
+    JSON.stringify({ light: { ...mine.resolved.roles, ring: 'url(x)' } }),
+    JSON.stringify({ light: { canvas: '#fff' } }),
   ])('reads nothing from %j', (value) => {
-    expect(readCachedTokens(memory({ [THEME_TOKENS_KEY]: value }))).toEqual({});
+    expect(readCachedRoles(memory({ [THEME_ROLES_KEY]: value }))).toEqual({});
   });
 
   it('ignores storage that is missing or blocked', () => {
-    expect(readCachedTokens(undefined)).toEqual({});
-    expect(readCachedTokens(blocked)).toEqual({});
+    expect(readCachedRoles(undefined)).toEqual({});
+    expect(readCachedRoles(blocked)).toEqual({});
     expect(() => {
-      cacheTokens({ ...blocked, removeItem: blocked.setItem }, {});
+      cacheRoles({ ...blocked, removeItem: blocked.setItem }, {});
     }).not.toThrow();
   });
 });
 
-describe('tokenProperties', () => {
-  it('names every token as a custom property', () => {
-    const properties = tokenProperties(lightTheme);
-    expect(properties).toContainEqual(['--muted-foreground', '#55655e']);
-    expect(properties).toHaveLength(Object.keys(lightTheme).length);
+describe('roleProperties', () => {
+  it('names every role as a custom property', () => {
+    const properties = roleProperties(mine.resolved.roles);
+    expect(properties).toContainEqual(['--canvas', mine.resolved.roles.canvas]);
+    expect(properties).toHaveLength(ROLES.length);
   });
 });

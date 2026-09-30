@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { DEFAULT_THEME_ID, themeIdSchema } from './themes.ts';
+import { DEFAULT_PALETTE_THEME_ID } from './palette-themes.ts';
+import { themeIdSchema } from './themes.ts';
 
 export {
   composite,
@@ -143,7 +144,8 @@ export const appearanceBodySchema = appearanceSchema.partial({
 });
 export type AppearanceBody = z.infer<typeof appearanceBodySchema>;
 
+/** What a user gets before choosing: Catppuccin Latte and Mocha. */
 export const DEFAULT_APPEARANCE: Appearance = {
   mode: 'system',
-  ...DEFAULT_THEME_ID,
+  ...DEFAULT_PALETTE_THEME_ID,
 };

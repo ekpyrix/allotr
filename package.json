@@ -12,7 +12,7 @@
     "build": "turbo run build",
     "test": "turbo run test && vitest run --dir scripts",
     "typecheck": "turbo run typecheck && tsc -p scripts && tsc -p deploy",
-    "lint": "eslint . && prettier --check . && node scripts/check-workspace-deps.ts && pnpm --filter @allotr/server db:verify && pnpm --filter @allotr/server openapi:verify && pnpm run typecheck",
+    "lint": "eslint . && prettier --check . && node scripts/check-workspace-deps.ts && pnpm --filter @allotr/server db:verify && pnpm --filter @allotr/server openapi:verify && pnpm --filter @allotr/web tokens:check && pnpm run typecheck",
     "format": "prettier --write .",
     "iso4217:refresh": "node scripts/refresh-iso4217.ts"
   },
