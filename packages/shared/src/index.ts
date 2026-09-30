@@ -33,6 +33,7 @@ export {
 } from './money/money.ts';
 export {
   formatMoney,
+  formatMoneyCompact,
   formatMoneyInput,
   type FormatMoneyOptions,
 } from './money/format.ts';

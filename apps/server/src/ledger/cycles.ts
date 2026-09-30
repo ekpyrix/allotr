@@ -3,6 +3,7 @@ import {
   cycleDays,
   cycleReports,
   cyclesOf,
+  rankTotals,
   type CategoryId,
   type CycleReport,
   type LedgerView,
@@ -23,6 +24,9 @@ import { loadView } from './today.ts';
 
 // The cycle and history views (FR-W2): every cycle's snapshot, computed
 // from the ledger on each read like today's figures (FR-C1, FR-C6).
+
+/** Spending categories a chart shows before folding the rest into one. */
+const TOP_CATEGORIES = 6;
 
 /** Each merged category and the live category it ended up in. */
 async function mergeTargets(
@@ -129,12 +133,14 @@ export async function cycleDetail(
   const [report] = reports;
   if (report === undefined) throw cycleNotFound(openedOn);
   const entries = new Map(view.ledger.map((t) => [t.id, t]));
+  const { top, other } = rankTotals(report.spendingByCategory, TOP_CATEGORIES);
   return {
     ...summary(report),
     opening: report.opening,
     closing: report.closing,
     incomeByCategory: [...report.incomeByCategory],
     spendingByCategory: [...report.spendingByCategory],
+    spendingTop: { top: [...top], other },
     amendments: report.amendments.flatMap((amendment) => {
       const entry = entries.get(amendment.transactionId);
       return entry === undefined

@@ -195,8 +195,8 @@ const cycleRoute = createRoute({
   path: '/cycle',
   validateSearch: validateCycleSearch,
   component: function Cycle() {
-    const { start } = cycleRoute.useSearch();
-    return <CyclePage start={start} />;
+    const { start, tab } = cycleRoute.useSearch();
+    return <CyclePage start={start} tab={tab} />;
   },
 });
 

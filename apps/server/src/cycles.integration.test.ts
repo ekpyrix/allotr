@@ -152,6 +152,10 @@ describe('cycles', () => {
       closing: { on: usd(98000), off: usd(0) },
       incomeByCategory: [],
       spendingByCategory: [{ categoryId: groceries, amount: usd(2000) }],
+      spendingTop: {
+        top: [{ categoryId: groceries, amount: usd(2000) }],
+        other: null,
+      },
       amendments: [],
     });
     expect(await detail(h.alice, '2026-04-01')).toMatchObject({

@@ -206,7 +206,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   the rate on the cycle's last day, plus the `amended` flag.
   `GET /v1/cycles/{openedOn}` adds the opening and closing balances,
   income and spending by category, and the entries that amended the cycle.
-  Each summary also has `offBudgetClosing`, the off-budget total at the end
+  Its `spendingTop` is what the category chart draws: the six largest
+  spending categories and the rest summed into one `other` (count and
+  amount), so the client adds nothing up. Each summary also has `offBudgetClosing`, the off-budget total at the end
   of its last day. `GET /v1/cycles/{openedOn}/days` gives the cycle day by
   day for charts: pace spending, cumulative pace spending, an even pace
   line, available at the end of the day and that day's allowance, from the

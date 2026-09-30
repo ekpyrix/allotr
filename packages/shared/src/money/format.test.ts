@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import {
   formatMoney,
+  formatMoneyCompact,
   formatMoneyInput,
   type FormatMoneyOptions,
 } from './format.ts';
@@ -51,3 +52,18 @@ it.each([
 ])('writes %i %s in %s for an input', (amountMinor, currency, locale, text) => {
   expect(formatMoneyInput(money(amountMinor, currency), locale)).toBe(text);
 });
+
+it.each([
+  [0, 'USD', 'en-US', '$0'],
+  [95_000, 'USD', 'en-US', '$950'],
+  [123_456, 'USD', 'en-US', '$1.2K'],
+  [-250_000_000, 'USD', 'en-US', '-$2.5M'],
+  [1_200, 'JPY', 'en-US', '¥1.2K'],
+])(
+  'formats %i %s compactly in %s',
+  (amountMinor, currency, locale, expected) => {
+    expect(formatMoneyCompact(money(amountMinor, currency), locale)).toBe(
+      expected,
+    );
+  },
+);
