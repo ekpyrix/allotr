@@ -255,6 +255,8 @@ describe('replay properties', () => {
     );
   });
 
+  // A hundred random ledgers, each checked for every later day: under the
+  // parallel test run this can pass the 5 s default timeout.
   it('applies a back-dated expense to that day and every day after', () => {
     fc.assert(
       fc.property(
@@ -301,7 +303,7 @@ describe('replay properties', () => {
         },
       ),
     );
-  });
+  }, 30_000);
 
   it('marks only the closed cycle a later entry is dated in as amended', () => {
     fc.assert(
