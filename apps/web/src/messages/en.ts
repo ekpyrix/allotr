@@ -967,8 +967,27 @@ export const en = {
     none: 'No off-budget accounts yet. Move an account off budget, or add one, on the Accounts page.',
     manage: 'Manage accounts',
     byCycle: 'Change per cycle',
-    byCycleHint: 'How much the savings total went up or down in each cycle.',
     thisCycle: 'This cycle',
+    neverCounted: 'Never counted in what you can spend.',
+    cycle: 'Cycle',
+    chart: { total: 'Total', change: 'Change' },
+    growth: {
+      title: 'Savings over time',
+      caption: 'The savings total at the end of each cycle',
+      summary: 'Savings were {start} at the end of {from} and are {end} now.',
+      single: 'Savings are {end} now.',
+    },
+    change: {
+      caption: 'How much savings went up or down in each cycle',
+      summary: {
+        one: '{count} of the last {total} cycles added to savings.',
+        other: '{count} of the last {total} cycles added to savings.',
+      },
+      none: {
+        one: 'The last cycle added nothing to savings.',
+        other: 'None of the last {total} cycles added to savings.',
+      },
+    },
   },
   themes: {
     newTitle: 'New theme',

@@ -116,7 +116,11 @@ export function ChartTable({
       </thead>
       <tbody>
         {rows.map(([key, head, ...cells]) => (
-          <tr key={key} className="border-t border-outline-variant">
+          <tr
+            key={key}
+            data-key={key}
+            className="border-t border-outline-variant"
+          >
             <th scope="row" className="py-2 pr-3 font-normal">
               {head}
             </th>
