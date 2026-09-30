@@ -162,6 +162,31 @@ describe('archived accounts', () => {
 });
 
 describe('switchKind', () => {
+  const pay = { ...category('Pay', 'income', null, 2), isPaycheck: true };
+
+  it('starts income in the paycheck category when none was used before', () => {
+    const withPay = defaults({ categories: [...categories, pay] });
+    expect(switchKind(newDraft(withPay), 'income', withPay).categoryId).toBe(
+      'Pay',
+    );
+  });
+
+  it('prefers the income category used last over the paycheck category', () => {
+    const withPay = defaults({
+      categories: [...categories, pay],
+      lastUsed: { income: { accountId: 'Everyday', categoryId: 'Salary' } },
+    });
+    expect(switchKind(newDraft(withPay), 'income', withPay).categoryId).toBe(
+      'Salary',
+    );
+  });
+
+  it('leaves income without a category when there is no paycheck category', () => {
+    expect(
+      switchKind(newDraft(defaults()), 'income', defaults()).categoryId,
+    ).toBe('');
+  });
+
   it('keeps what was typed and picks a different target for a transfer', () => {
     const typed = {
       ...newDraft(defaults()),

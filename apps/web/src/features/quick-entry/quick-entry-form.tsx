@@ -87,6 +87,7 @@ export function QuickEntryForm({
   onSavingChange,
   edit,
   preset,
+  stickyActions = false,
 }: {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
@@ -100,6 +101,11 @@ export function QuickEntryForm({
   edit?: { id: string; draft: QuickEntryDraft } | undefined;
   /** Start from an income entry in the paycheck category. */
   preset?: 'paycheck' | undefined;
+  /**
+   * Keep the error summary and Save pinned to the bottom of a scrolling
+   * sheet (the quick entry dialog, whose padding the bar spans).
+   */
+  stickyActions?: boolean | undefined;
 }) {
   const [defaults] = useState<DraftDefaults>(() => ({
     accounts,
@@ -546,27 +552,30 @@ export function QuickEntryForm({
         </fieldset>
       )}
 
-      <FormError
-        message={
-          summary === ''
-            ? save.isError
-              ? describeProblem(save.error).message
-              : null
-            : summary
+      <div
+        className={
+          stickyActions
+            ? 'sticky bottom-0 z-[1] -mx-6 grid gap-3 border-t border-outline-variant bg-card-raised px-6 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]'
+            : 'grid gap-5'
         }
-      />
-      <Button
-        type="submit"
-
-        className="h-11 w-full"
-        disabled={save.isPending}
       >
-        {save.isPending
-          ? t('quickEntry.saving')
-          : edit === undefined
-            ? t('quickEntry.save')
-            : t('quickEntry.saveChanges')}
-      </Button>
+        <FormError
+          message={
+            summary === ''
+              ? save.isError
+                ? describeProblem(save.error).message
+                : null
+              : summary
+          }
+        />
+        <Button type="submit" className="h-11 w-full" disabled={save.isPending}>
+          {save.isPending
+            ? t('quickEntry.saving')
+            : edit === undefined
+              ? t('quickEntry.save')
+              : t('quickEntry.saveChanges')}
+        </Button>
+      </div>
     </form>
   );
 }

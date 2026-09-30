@@ -256,6 +256,20 @@ test('failed validation is announced, focused and described', async ({
   await expect(category).toBeFocused();
   await expect(category).toHaveAttribute('aria-invalid', 'true');
   await expectAccessible(page);
+
+  // The summary and Save stay on screen however far the sheet scrolls.
+  await expect(dialog(page).getByRole('alert')).toBeInViewport();
+  await expect(
+    dialog(page).getByRole('button', { name: 'Save', exact: true }),
+  ).toBeInViewport();
+
+  // Income starts in the paycheck category until another one is used.
+  await dialog(page).getByText('Income', { exact: true }).click();
+  await expect(
+    dialog(page)
+      .getByLabel('Category', { exact: true })
+      .locator('option:checked'),
+  ).toHaveText('Paycheck');
 });
 
 test('the date follows a corrected today until the user edits it', async ({
