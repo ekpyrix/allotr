@@ -40,7 +40,12 @@ describe('filterOf', () => {
       from: undefined,
       to: undefined,
       q: undefined,
+      undone: 'hide',
     });
+    expect(filterOf(validateLedgerSearch({ deleted: 'show' })).undone).toBe(
+      'show',
+    );
+    expect(validateLedgerSearch({ deleted: 'yes' }).deleted).toBeUndefined();
     expect(isFiltered(search)).toBe(true);
     expect(isFiltered(validateLedgerSearch({ entry: 'e-1' }))).toBe(false);
   });

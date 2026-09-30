@@ -17,7 +17,8 @@ export type LedgerErrorCode =
   | 'ledger.budget_group_unchanged'
   | 'ledger.not_found'
   | 'ledger.already_reversed'
-  | 'ledger.reversal_of_reversal';
+  | 'ledger.reversal_of_reversal'
+  | 'ledger.not_undone';
 
 export class LedgerError extends Error {
   override readonly name = 'LedgerError';

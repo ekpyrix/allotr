@@ -4,23 +4,20 @@ import {
   type CategoryView,
   type TransactionView,
 } from '@allotr/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Pencil, Undo2, X } from 'lucide-react';
+import { Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import { FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { QuickEntryForm } from '@/features/quick-entry/quick-entry-form';
-import { ApiError } from '@/lib/api';
 import { entryCategoryIds } from '@/lib/entry-categories';
 import {
   allAccountsQuery,
   allCategoriesQuery,
   entryQuery,
-  entryQueryKeys,
   ledgerSettingsQuery,
-  reverseTransaction,
   tagsQuery,
   todayQuery,
 } from '@/lib/ledger';
@@ -36,33 +33,7 @@ import {
 } from './format.ts';
 import { ledgerRows } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
-
-function useUndo(onUndone: () => void) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        await reverseTransaction(id);
-      } catch (error) {
-        // Undone elsewhere in the meantime: what was asked is done.
-        if (
-          error instanceof ApiError &&
-          error.problem.code === 'already_reversed'
-        )
-          return;
-        throw error;
-      }
-    },
-    onSuccess: async () => {
-      await Promise.all(
-        entryQueryKeys.map((queryKey) =>
-          queryClient.invalidateQueries({ queryKey }),
-        ),
-      );
-      onUndone();
-    },
-  });
-}
+import { useDeleteEntry, useRestoreEntry } from './use-delete-entry.ts';
 
 type Confirm = 'paycheck' | 'opening' | null;
 
@@ -77,6 +48,7 @@ function EntryDetail({
   search,
   onEdit,
   onUndone,
+  onRestored,
 }: {
   entry: TransactionView;
   accounts: readonly AccountView[];
@@ -88,8 +60,10 @@ function EntryDetail({
   search: LedgerSearch;
   onEdit: () => void;
   onUndone: () => void;
+  onRestored: (copyId: string) => void;
 }) {
-  const undo = useUndo(onUndone);
+  const undo = useDeleteEntry(onUndone);
+  const restore = useRestoreEntry();
   const [confirming, setConfirming] = useState(false);
   const confirmId = useId();
   const confirmButton = useRef<HTMLButtonElement>(null);
@@ -117,6 +91,12 @@ function EntryDetail({
     .filter((path) => path !== null)
     .join(', ');
   const [row] = ledgerRows([entry], accounts, categories);
+  const description =
+    row === undefined
+      ? t(`ledger.kinds.${entry.kind}`)
+      : [rowTitle(row), rowAmount(row, locale)]
+          .filter((part) => part !== null)
+          .join(', ');
   const tagNames = entry.tagIds
     .map((id) => tags.find((tag) => tag.id === id)?.name)
     .filter((name) => name !== undefined);
@@ -128,6 +108,12 @@ function EntryDetail({
   const canUndo =
     open && entry.kind !== 'reversal' && entry.kind !== 'budget_switch';
   const canEdit = open && isEditable(entry);
+  const canRestore =
+    entry.reversedById !== null &&
+    entry.restoredById === null &&
+    !touchesArchived &&
+    entry.kind !== 'reversal' &&
+    entry.kind !== 'budget_switch';
   const confirm: Confirm =
     entry.id === cycleOpenedBy
       ? 'paycheck'
@@ -238,6 +224,41 @@ function EntryDetail({
           </Link>
         </p>
       )}
+      {entry.restoredById === null ? null : (
+        <p>
+          {t('ledger.entry.restoredBy')}{' '}
+          <Link
+            to="/ledger"
+            search={{ ...search, entry: entry.restoredById }}
+            replace
+            className="font-medium underline underline-offset-4"
+          >
+            {t('ledger.entry.showRestored')}
+          </Link>
+        </p>
+      )}
+      {canRestore ? (
+        <Button
+          variant="tonal"
+          className="w-fit"
+          disabled={restore.isPending}
+          onClick={() => {
+            restore.mutate(
+              { id: entry.id, description },
+              {
+                onSuccess: (copyId) => {
+                  onRestored(copyId);
+                },
+              },
+            );
+          }}
+        >
+          <RotateCcw aria-hidden />
+          {restore.isPending
+            ? t('ledger.entry.restoring')
+            : t('ledger.entry.restore')}
+        </Button>
+      ) : null}
       {entry.reversesId === null ? null : (
         <p>
           {t('ledger.entry.undoes')}{' '}
@@ -273,11 +294,12 @@ function EntryDetail({
               }
               disabled={undo.isPending}
               onClick={() => {
-                if (confirm === null) undo.mutate(entry.id);
+                if (confirm === null)
+                  undo.mutate({ id: entry.id, description });
                 else setConfirming(true);
               }}
             >
-              <Undo2 aria-hidden />
+              <Trash2 aria-hidden />
               {undo.isPending
                 ? t('ledger.entry.undoing')
                 : t('ledger.entry.undo')}
@@ -298,7 +320,7 @@ function EntryDetail({
               size="dense"
               disabled={undo.isPending}
               onClick={() => {
-                undo.mutate(entry.id);
+                undo.mutate({ id: entry.id, description });
               }}
             >
               {undo.isPending
@@ -332,7 +354,8 @@ function EntryLoader({
   onEditingChange,
   onSavingChange,
   onEdited,
-  onAnnounce,
+  onRestored,
+  onFocusTitle,
 }: {
   id: string;
   search: LedgerSearch;
@@ -341,7 +364,9 @@ function EntryLoader({
   onEditingChange: (editing: boolean) => void;
   onSavingChange: (saving: boolean) => void;
   onEdited: (replacementId: string) => void;
-  onAnnounce: (message: string) => void;
+  onRestored: (copyId: string) => void;
+  /** After a delete, which the snackbar announces. */
+  onFocusTitle: () => void;
 }) {
   const entry = useQuery(entryQuery(id));
   const accounts = useQuery(allAccountsQuery);
@@ -443,9 +468,8 @@ function EntryLoader({
       onEdit={() => {
         onEditingChange(true);
       }}
-      onUndone={() => {
-        onAnnounce(t('ledger.entry.undoneAnnounce'));
-      }}
+      onUndone={onFocusTitle}
+      onRestored={onRestored}
     />
   );
 }
@@ -590,8 +614,11 @@ export function EntryDialog({
             onShow(replacementId);
             requestAnimationFrame(() => title.current?.focus());
           }}
-          onAnnounce={(message) => {
-            setAnnouncement(message);
+          onRestored={(copyId) => {
+            onShow(copyId);
+            requestAnimationFrame(() => title.current?.focus());
+          }}
+          onFocusTitle={() => {
             title.current?.focus();
           }}
         />

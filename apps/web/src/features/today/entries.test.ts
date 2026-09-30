@@ -28,6 +28,7 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     postings: [],
     reversesId: null,
     reversedById: null,
+    restoredById: null,
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],
@@ -69,7 +70,6 @@ describe('entryRows', () => {
         note: 'Lunch',
         accounts: ['Everyday'],
         amount: usd(-1250),
-        undone: false,
       },
     ]);
   });
@@ -95,13 +95,17 @@ describe('entryRows', () => {
     });
   });
 
-  it('marks an undone entry and leaves out the undo itself', () => {
+  it('leaves out a deleted entry, its undo and budget switches', () => {
     const rows = entryRows(
       [
         entry({ id: 'e-2', kind: 'reversal', reversesId: 'e-1' }),
         entry({
           reversedById: 'e-2',
           postings: [posting('a-everyday', -500), balancing(500)],
+        }),
+        entry({
+          id: 'e-4',
+          postings: [posting('a-everyday', -700), balancing(700)],
         }),
         entry({
           id: 'e-3',
@@ -112,6 +116,6 @@ describe('entryRows', () => {
       accounts,
       categories,
     );
-    expect(rows.map((r) => [r.id, r.undone])).toEqual([['e-1', true]]);
+    expect(rows.map((r) => r.id)).toEqual(['e-4']);
   });
 });

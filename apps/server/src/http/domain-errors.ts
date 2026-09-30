@@ -25,6 +25,7 @@ const ledgerStatus: Record<LedgerErrorCode, ProblemStatus> = {
   'ledger.not_found': 404,
   'ledger.already_reversed': 409,
   'ledger.reversal_of_reversal': 409,
+  'ledger.not_undone': 409,
 };
 
 export type PathError = Readonly<{ path: string; message: string }>;

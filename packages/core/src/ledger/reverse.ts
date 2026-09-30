@@ -70,3 +70,52 @@ export function edit(
   }
   return [reverse(chart, ledger, originalId, meta), replacement];
 }
+
+export type ReinstateMeta = Omit<EntryMeta, 'occurredOn' | 'note'>;
+
+/**
+ * Brings back an undone entry as a new copy of it: same kind, date,
+ * category, note and postings. The original and its undo stay as they
+ * are, so nothing committed changes.
+ */
+export function reinstate(
+  chart: Chart,
+  ledger: readonly Transaction[],
+  originalId: TransactionId,
+  meta: ReinstateMeta,
+): Transaction {
+  const original = ledger.find((t) => t.id === originalId);
+  if (original === undefined) {
+    throw new LedgerError(
+      'ledger.not_found',
+      `Transaction ${originalId} does not exist.`,
+    );
+  }
+  if (original.kind === 'reversal') {
+    throw new LedgerError(
+      'ledger.reversal_of_reversal',
+      'An undo cannot be restored. Restore the entry it undid instead.',
+    );
+  }
+  // Switching a group back is a new switch, checked against the group the
+  // account is in now.
+  if (original.kind === 'budget_switch') {
+    throw new LedgerError(
+      'ledger.invalid_transaction',
+      'A budget switch cannot be restored. Switch the account again instead.',
+    );
+  }
+  if (!ledger.some((t) => t.reversesId === originalId)) {
+    throw new LedgerError(
+      'ledger.not_undone',
+      'Only a deleted entry can be restored.',
+    );
+  }
+  return commit(chart, {
+    meta: { ...meta, occurredOn: original.occurredOn, note: original.note },
+    kind: original.kind,
+    categoryId: original.categoryId,
+    impliedRate: original.impliedRate,
+    postings: original.postings,
+  });
+}

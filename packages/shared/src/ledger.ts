@@ -234,6 +234,8 @@ export const transactionSchema = z.object({
   reversesId: idSchema.nullable(),
   /** The undo of this entry, if it was undone. */
   reversedById: idSchema.nullable(),
+  /** The copy that brought this entry back after it was undone. */
+  restoredById: idSchema.nullable(),
   /** Units received per unit sent, for cross-currency entries. */
   impliedRate: rateSchema.nullable(),
   budgetSwitch: z
@@ -328,6 +330,11 @@ export const listTransactionsQuerySchema = z.object({
    * A–Z only. Undos match through the entry they undo, as with tags.
    */
   q: z.string().trim().min(1).max(100).optional(),
+  /**
+   * `hide` leaves out undone entries and their undos, as if deleted; the
+   * pair nets to zero, so day totals are the same either way.
+   */
+  undone: z.enum(['show', 'hide']).default('show'),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   cursor: z.string().max(500).optional(),
 });

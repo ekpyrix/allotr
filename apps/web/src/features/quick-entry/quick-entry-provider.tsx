@@ -15,6 +15,7 @@ import { ApiError } from '@/lib/api';
 import {
   entryQueryKeys,
   ledgerSettingsQuery,
+  restoreTransaction,
   reverseTransaction,
   todayQuery,
 } from '@/lib/ledger';
@@ -127,8 +128,45 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
     };
   }, [saved]);
 
-  // An undo posts a reversal (spec §9.3): the entry stays in the ledger,
-  // marked undone, and the figures follow.
+  const failed = useCallback(
+    (error: unknown) => {
+      const message = errorMessage(error);
+      setSaved(message);
+      snack({ message, tone: 'error', silent: true });
+      haptic('error');
+    },
+    [snack],
+  );
+  const refresh = useCallback(
+    () =>
+      Promise.all(
+        entryQueryKeys.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      ),
+    [queryClient],
+  );
+
+  // Undo on a new entry deletes it: a reversal is posted (spec §9.3) and
+  // the entry leaves every list. Undo again brings it back as a copy.
+  const restore = useCallback(
+    async (id: string) => {
+      try {
+        await restoreTransaction(id);
+      } catch (error) {
+        if (!(
+          error instanceof ApiError && error.problem.code === 'already_restored'
+        )) {
+          failed(error);
+          return;
+        }
+      }
+      await refresh();
+      setSaved(t('quickEntry.restored'));
+      snack({ message: t('quickEntry.restored'), silent: true });
+    },
+    [failed, refresh, snack],
+  );
   const undo = useCallback(
     async (id: string) => {
       try {
@@ -137,22 +175,24 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
         if (!(
           error instanceof ApiError && error.problem.code === 'already_reversed'
         )) {
-          const message = errorMessage(error);
-          setSaved(message);
-          snack({ message, tone: 'error', silent: true });
-          haptic('error');
+          failed(error);
           return;
         }
       }
-      await Promise.all(
-        entryQueryKeys.map((queryKey) =>
-          queryClient.invalidateQueries({ queryKey }),
-        ),
-      );
+      await refresh();
       setSaved(t('quickEntry.undone'));
-      snack({ message: t('quickEntry.undone'), silent: true });
+      snack({
+        message: t('quickEntry.undone'),
+        silent: true,
+        action: {
+          label: t('quickEntry.undo'),
+          onAction: () => {
+            void restore(id);
+          },
+        },
+      });
     },
-    [queryClient, snack],
+    [failed, refresh, restore, snack],
   );
 
   // Says what was saved and what is left today, from the refreshed

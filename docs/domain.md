@@ -203,6 +203,8 @@ open.
 | Switching an account on/off-budget | Effective today, recorded as a dated system transaction. |
 | Deleting a category in use | Must be merged into another category. |
 | Editing any past entry | Reversal plus a new entry. |
+| Deleting an entry | A reversal. The app calls it delete and hides the entry and its reversal from lists unless the user asks to see deleted entries. |
+| Restoring a deleted entry | A new copy of it: same kind, date, category, note, tags and postings. The copy is stored with idempotency key `restore:<original id>`, so an entry is restored at most once. A reversal or budget switch cannot be restored. |
 | Offline entries arriving late | Treated as back-dated entries; idempotency keys prevent duplicates. |
 | Reconciling with a difference | The bank's balance is compared with the ledger's at the end of the chosen day. A match is recorded. A difference is only recorded once adjusted: an expense (bank lower) or income (bank higher) dated that day, in the "Unrecorded" or "Unrecorded income" category, created on first use and found again by ID. Undoing the adjustment also takes back that reconciliation. If the difference has dropped to zero by the time the adjustment is asked for (the missing entry was logged meanwhile), a match is recorded and nothing is posted. |
 | Reconciling a debt | Statements show a debt as a positive amount owed, so that is what is asked for; it is compared as the negative balance, and a credit is a negative amount owed. An account holds a debt when it is a liability or payable, or its balance is below zero. |

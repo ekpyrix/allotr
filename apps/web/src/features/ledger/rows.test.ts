@@ -32,6 +32,7 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     postings: [],
     reversesId: null,
     reversedById: null,
+    restoredById: null,
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],

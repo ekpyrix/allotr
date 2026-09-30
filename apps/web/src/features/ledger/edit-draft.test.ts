@@ -55,6 +55,7 @@ function entryFor(body: CreateTransactionBody): TransactionView {
     note: body.note ?? null,
     reversesId: null,
     reversedById: null,
+    restoredById: null,
     impliedRate: null,
     budgetSwitch: null,
     tagIds: body.tagIds ?? [],

@@ -1,6 +1,6 @@
 import type { AccountView, CategoryView } from '@allotr/shared';
 import { Search, X } from 'lucide-react';
-import { useState, type SubmitEvent } from 'react';
+import { useId, useState, type SubmitEvent } from 'react';
 import { FieldControl, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ export function LedgerFilters({
 }) {
   // Keyed on the applied search by the caller, so back and forward reset it.
   const [q, setQ] = useState(search.q ?? '');
+  const deletedId = useId();
   const set =
     (key: keyof LedgerSearch) =>
     (event: { currentTarget: { value: string } }) => {
@@ -171,6 +172,20 @@ export function LedgerFilters({
             />
           )}
         </FieldControl>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <input
+          id={deletedId}
+          type="checkbox"
+          name="deleted"
+          checked={search.deleted === 'show'}
+          onChange={(e) => {
+            onChange({ deleted: e.currentTarget.checked ? 'show' : undefined });
+          }}
+          className="size-4 accent-primary"
+        />
+        <label htmlFor={deletedId}>{t('ledger.filters.showDeleted')}</label>
       </div>
 
       {isFiltered(search) ? (

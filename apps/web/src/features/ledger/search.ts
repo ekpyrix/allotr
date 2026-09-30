@@ -12,6 +12,8 @@ export interface LedgerSearch {
   from?: string | undefined;
   to?: string | undefined;
   q?: string | undefined;
+  /** Also list deleted entries and their undos. */
+  deleted?: 'show' | undefined;
   /** The entry shown in the detail dialog. */
   entry?: string | undefined;
 }
@@ -42,6 +44,7 @@ export function validateLedgerSearch(
     from: day(search.from),
     to: day(search.to),
     q: text(search.q),
+    deleted: search.deleted === 'show' ? 'show' : undefined,
     entry: id(search.entry),
   };
 }
@@ -54,9 +57,13 @@ export function filterOf(search: LedgerSearch): LedgerFilter {
     from: day(search.from),
     to: day(search.to),
     q: search.q,
+    undone: search.deleted === 'show' ? 'show' : 'hide',
   };
 }
 
+// Showing deleted entries is a view choice, not a filter to clear.
 export function isFiltered(search: LedgerSearch): boolean {
-  return Object.values(filterOf(search)).some((v) => v !== undefined);
+  return Object.entries(filterOf(search)).some(
+    ([key, value]) => key !== 'undone' && value !== undefined,
+  );
 }

@@ -40,7 +40,13 @@ export {
   type TransactionDraft,
   type TransferInput,
 } from './ledger/build.ts';
-export { edit, reverse, type ReversalMeta } from './ledger/reverse.ts';
+export {
+  edit,
+  reinstate,
+  reverse,
+  type ReinstateMeta,
+  type ReversalMeta,
+} from './ledger/reverse.ts';
 export {
   adjustmentKind,
   balanceFromOwed,

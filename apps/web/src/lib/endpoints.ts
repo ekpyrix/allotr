@@ -434,4 +434,9 @@ export const endpoints = {
     body: reverseTransactionBodySchema,
     response: transactionSchema,
   }),
+  restoreTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions/{id}/restore',
+    response: transactionSchema,
+  }),
 };

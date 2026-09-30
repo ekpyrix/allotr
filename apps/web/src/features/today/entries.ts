@@ -7,9 +7,9 @@ import {
 } from '@allotr/shared';
 import { categoryTitle } from '@/lib/entry-categories';
 
-// Today's entries as rows: what was logged today, with undo. Undos carry
-// the original's date, so they are in the same list; they show as the
-// original marked undone instead of rows of their own.
+// Today's entries as rows: what was logged today, with delete. A deleted
+// entry and its undo (which carries the original's date) are left out, as
+// if the entry had never been logged.
 
 type HiddenKind = 'reversal' | 'budget_switch';
 export type EntryKind = Exclude<TransactionView['kind'], HiddenKind>;
@@ -24,14 +24,17 @@ export interface EntryRow {
   accounts: string[];
   /** Signed from the user's side: money out is negative. */
   amount: Money | null;
-  undone: boolean;
 }
 
-// Budget switches have no amount to show or undo from here.
+// Budget switches have no amount to show or delete from here.
 function shown(
   entry: TransactionView,
 ): entry is TransactionView & { kind: EntryKind } {
-  return entry.kind !== 'reversal' && entry.kind !== 'budget_switch';
+  return (
+    entry.kind !== 'reversal' &&
+    entry.kind !== 'budget_switch' &&
+    entry.reversedById === null
+  );
 }
 
 export function entryRows(
@@ -61,7 +64,6 @@ export function entryRows(
             ? null
             : money(-out.amount.amountMinor, out.amount.currency)
           : (ordered[0]?.amount ?? null),
-      undone: entry.reversedById !== null,
     };
   });
 }
