@@ -93,6 +93,21 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
   await addAccount(page, 'Everyday', '420');
   await expectAccessible(page);
 
+  // Back keeps what was saved: no Back on the first step, and the account
+  // just added is still there after a round trip.
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(stepHeading(page, 2, 'Payday')).toBeFocused();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(stepHeading(page, 1, 'Currency and region')).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(stepHeading(page, 2, 'Payday')).toBeFocused();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(stepHeading(page, 3, 'Spending accounts')).toBeFocused();
+  await expect(
+    page.getByRole('listitem').filter({ hasText: 'Everyday' }),
+  ).toBeVisible();
+
   // A new device: nothing is kept in the browser.
   const context = await browser.newContext();
   const again = await context.newPage();

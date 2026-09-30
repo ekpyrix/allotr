@@ -24,7 +24,14 @@ import {
 import { accountsQuery, ledgerSettingsQuery, todayQuery } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { billsQuery } from '@/lib/settings';
-import { afterStep, nextStep, saveSetup, setupQuery } from '@/lib/setup';
+import {
+  afterStep,
+  followingStep,
+  nextStep,
+  previousStep,
+  saveSetup,
+  setupQuery,
+} from '@/lib/setup';
 import { t } from '@/messages/t';
 import { DigitRoller } from '@/motion/digit-roller';
 
@@ -108,7 +115,10 @@ export function SetupPage() {
   const navigate = useNavigate();
   const heading = useRef<HTMLHeadingElement>(null);
   const [announcement, setAnnouncement] = useState('');
-  const step = setup.data === undefined ? null : nextStep(setup.data);
+  // A step the user went Back to; otherwise the first one not handled.
+  const [viewing, setViewing] = useState<SetupStep | null>(null);
+  const step =
+    setup.data === undefined ? null : (viewing ?? nextStep(setup.data));
   const shown = useRef<SetupStep | null>(null);
   // The first step shown is simply there; later ones slide in.
   const [first, setFirst] = useState<SetupStep | null>(null);
@@ -162,7 +172,11 @@ export function SetupPage() {
   const go = (next: SetupState, reveal: boolean) => {
     save.mutate(next, {
       onSuccess: (saved) => {
-        if (!saved.finished) return;
+        if (!saved.finished) {
+          // Moving on from a step reached with Back shows the one after it.
+          if (viewing !== null) setViewing(followingStep(step));
+          return;
+        }
         if (!reveal) {
           void navigate({ to: '/today' });
           return;
@@ -185,6 +199,7 @@ export function SetupPage() {
     onSkip: handled,
   };
   const number = setupSteps.indexOf(step) + 1;
+  const before = previousStep(step);
 
   return (
     <Page title={t('setup.title')} intro={t('setup.intro')}>
@@ -215,7 +230,11 @@ export function SetupPage() {
               {announcement}
             </p>
             {step === 'region' ? (
-              <RegionStep settings={settings.data} {...props} />
+              <RegionStep
+                settings={settings.data}
+                detect={!state.handled.includes('region')}
+                {...props}
+              />
             ) : step === 'payday' ? (
               <PaydayStep settings={settings.data} {...props} />
             ) : step === 'spending' || step === 'savings' ? (
@@ -240,6 +259,21 @@ export function SetupPage() {
             <FormError
               message={save.isError ? errorMessage(save.error) : null}
             />
+            {before === null ? null : (
+              <Button
+                type="button"
+                variant="link"
+                className="mt-2 h-11 px-0"
+                disabled={save.isPending}
+                onClick={() => {
+                  setAnnouncement('');
+                  save.reset();
+                  setViewing(before);
+                }}
+              >
+                {t('setup.back')}
+              </Button>
+            )}
           </section>
         </Card>
 
