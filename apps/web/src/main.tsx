@@ -5,6 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './components/theme-provider.tsx';
 import { SnackbarProvider } from './components/ui/snackbar.tsx';
 import { TooltipProvider } from './components/ui/tooltip.tsx';
+import { MotionProvider } from './motion/provider.tsx';
 import { createQueryClient } from './lib/query-client.ts';
 import { registerServiceWorker } from './lib/service-worker.ts';
 import { sessionQuery } from './lib/session.ts';
@@ -30,7 +31,9 @@ createRoot(root).render(
       <ThemeProvider>
         <TooltipProvider delayDuration={400}>
           <SnackbarProvider>
-            <RouterProvider router={router} />
+            <MotionProvider>
+              <RouterProvider router={router} />
+            </MotionProvider>
           </SnackbarProvider>
         </TooltipProvider>
       </ThemeProvider>

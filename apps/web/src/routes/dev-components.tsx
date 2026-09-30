@@ -7,6 +7,9 @@ import {
 import {
   CircleAlert,
   CircleCheck,
+  Copy,
+  Pencil,
+  Undo2,
   Info,
   Plus,
   ReceiptText,
@@ -47,6 +50,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsPanel } from '@/components/ui/tabs';
 import { Tooltip } from '@/components/ui/tooltip';
 import { roleProperties } from '@/lib/theme-mode';
+import { Burst } from '@/motion/burst';
+import { DigitRoller } from '@/motion/digit-roller';
+import { Sheet } from '@/motion/sheet';
+import { SwipeRow } from '@/motion/swipe-row';
 
 // A development-only gallery of every primitive (registered only when
 // import.meta.env.DEV), in both schemes and several palette families, each
@@ -70,6 +77,9 @@ function Panel({ theme }: { theme: PaletteTheme }) {
   const [range, setRange] = useState<'week' | 'cycle' | 'year'>('cycle');
   const [on, setOn] = useState(true);
   const [tab, setTab] = useState<'overview' | 'days'>('overview');
+  const [sheet, setSheet] = useState(false);
+  const [left, setLeft] = useState(3840);
+  const [burst, setBurst] = useState(0);
   const style = Object.fromEntries(
     roleProperties(theme.resolved.roles),
   ) as CSSProperties;
@@ -287,6 +297,87 @@ function Panel({ theme }: { theme: PaletteTheme }) {
           <Skeleton className="h-6 w-1/2" />
         </div>
       </div>
+
+      <h3 className="text-title-lg">Motion</h3>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="outlined"
+          onClick={() => {
+            setSheet(true);
+          }}
+        >
+          Open sheet
+        </Button>
+        <Sheet
+          open={sheet}
+          onOpenChange={setSheet}
+          title="Lunch"
+          description="Groceries · Everyday · today"
+        >
+          <p className="text-body">A made-up entry in a sheet.</p>
+        </Sheet>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            setLeft((value) => (value === 3840 ? 123_456 : 3840));
+          }}
+        >
+          Change amount
+        </Button>
+        <span data-testid="roller" className="text-display">
+          <DigitRoller value={usd(left)} />
+        </span>
+        <span className="relative inline-flex">
+          <Button
+            variant="tonal"
+            onClick={() => {
+              setBurst((count) => count + 1);
+            }}
+          >
+            Celebrate
+          </Button>
+          <Burst play={burst} />
+        </span>
+      </div>
+      <List>
+        <li>
+          <SwipeRow
+            label="Lunch"
+            leading={[
+              {
+                label: 'Duplicate',
+                icon: <Copy aria-hidden="true" />,
+                onAction: () => {
+                  show({ message: 'Duplicated Lunch' });
+                },
+                commitOnFullSwipe: true,
+              },
+            ]}
+            trailing={[
+              {
+                label: 'Edit',
+                icon: <Pencil aria-hidden="true" />,
+                onAction: () => {
+                  show({ message: 'Editing Lunch' });
+                },
+              },
+              {
+                label: 'Reverse',
+                icon: <Undo2 aria-hidden="true" />,
+                tone: 'danger',
+                onAction: () => {
+                  show({ message: 'Reversed Lunch' });
+                },
+              },
+            ]}
+          >
+            <div className="flex min-h-(--row-h) items-center gap-4 px-4">
+              <span className="flex-1 text-body-lg">Lunch</span>
+              <span className="font-mono text-body-lg">{usd(-1250)}</span>
+            </div>
+          </SwipeRow>
+        </li>
+      </List>
 
       <Card>
         <EmptyState

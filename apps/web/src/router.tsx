@@ -34,6 +34,7 @@ import { SetupPage } from './routes/setup.tsx';
 import { EditThemePage, NewThemePage } from './routes/theme-editor.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
+import { viewTransitions } from './motion/view-transitions.ts';
 import { t } from '@/messages/t';
 
 interface RouterContext {
@@ -298,6 +299,7 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: false,
+    defaultViewTransition: viewTransitions,
   });
 }
 
