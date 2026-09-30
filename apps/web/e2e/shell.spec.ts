@@ -121,8 +121,8 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: t('nav.skip') })).toBeFocused();
 
-  // The Add button is in the rail first from md, and in the bottom bar after
-  // the second item below it.
+  // The Add button comes first in the rail and drawer (from 600 px), and
+  // after the second item in the bottom bar below that.
   const nav = page.getByRole('navigation', { name: t('nav.label') });
   const links = navItems.map((item) => ({
     stop: nav.getByRole('link', { name: t(item.label) }),
@@ -132,7 +132,7 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
     stop: nav.getByRole('button', { name: t('quickEntry.add'), exact: true }),
     to: 'add',
   };
-  const wide = (page.viewportSize()?.width ?? 0) >= 768;
+  const wide = (page.viewportSize()?.width ?? 0) >= 600;
   const stops = wide
     ? [add, ...links]
     : [...links.slice(0, 2), add, ...links.slice(2)];
@@ -153,4 +153,43 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
   await page.keyboard.press('Enter');
   const last = navItems[navItems.length - 1];
   await expect(page).toHaveURL(new RegExp(`${last?.to ?? ''}$`));
+});
+
+test('each window size class gets its navigation, without sideways scroll', async ({
+  page,
+  baseURL,
+}) => {
+  // Five sizes, each with an axe run on the settings page.
+  test.setTimeout(90_000);
+  await apiSignIn(page, baseURL);
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const nav = page.getByRole('navigation', { name: t('nav.label') });
+  const savings = nav.getByRole('link', { name: t('nav.savings') });
+  for (const [width, form] of [
+    [390, 'bar'],
+    [700, 'rail'],
+    [1000, 'rail'],
+    [1400, 'drawer'],
+    [1700, 'drawer'],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(nav).toHaveCount(1);
+    const box = await nav.boundingBox();
+    expect(box, `${String(width)} nav`).not.toBeNull();
+    if (box === null) continue;
+    if (form === 'bar') {
+      expect(box.width).toBe(width);
+      expect(box.y).toBeGreaterThan(700);
+      await expect(savings).toBeHidden();
+    } else {
+      expect(box.width).toBe(form === 'rail' ? 80 : 280);
+      await expect(savings).toBeVisible();
+    }
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow, `${String(width)} sideways scroll`).toBeLessThanOrEqual(0);
+    await expectAccessible(page);
+  }
 });

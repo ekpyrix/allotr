@@ -11,7 +11,8 @@ import { OfflineNotice } from './offline-notice.tsx';
 // The frame around every signed-in view. The skip link comes first so a
 // keyboard user can pass the nav; after a route change focus moves to
 // <main> so screen readers start at the new page (not on first load).
-// Offline, the view gives way to a notice so no stale figures show.
+// Offline, the view gives way to a banner and a notice so no stale
+// figures show (decision Q6).
 export function AppShell({
   twoFactorRequired: initial,
 }: {
@@ -33,10 +34,10 @@ export function AppShell({
 
   return (
     <QuickEntryProvider>
-      <div className="min-h-dvh md:grid md:grid-cols-[auto_1fr]">
+      <div className="min-h-dvh medium:grid medium:grid-cols-[5rem_1fr] large:grid-cols-[17.5rem_1fr]">
         <a
           href="#content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-20 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:outline-2 focus:outline-ring"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-30 focus:rounded-md focus:bg-card-raised focus:px-4 focus:py-2 focus:outline-2 focus:outline-ring"
         >
           {t('nav.skip')}
         </a>
@@ -45,12 +46,12 @@ export function AppShell({
           id="content"
           ref={main}
           tabIndex={-1}
-          className="mx-auto w-full max-w-3xl px-6 pt-8 pb-28 outline-none sm:pt-12 md:pb-12"
+          className="mx-auto w-full max-w-3xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] outline-none medium:px-6 medium:pb-12 large:px-8"
         >
           {twoFactorRequired ? (
             <p
               role="status"
-              className="mb-8 max-w-prose rounded-md bg-plot p-4"
+              className="mt-4 mb-4 max-w-prose rounded-lg bg-warning-container p-4 text-body"
             >
               {t('shell.twoFactorRequired')}{' '}
               <Link
