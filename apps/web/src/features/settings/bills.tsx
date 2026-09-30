@@ -121,6 +121,10 @@ export function BillForm({
   onBusyChange: (busy: boolean) => void;
 }) {
   const open = accounts.filter((a) => !a.archived);
+  // A bill keeps its account when that has since been archived.
+  const choices = accounts.filter(
+    (a) => !a.archived || a.id === bill?.accountId,
+  );
   const [name, setName] = useState(bill?.name ?? '');
   const [accountId, setAccountId] = useState(
     bill?.accountId ?? open.find((a) => a.budgetGroup === 'on')?.id ?? '',
@@ -143,6 +147,7 @@ export function BillForm({
           amount: parsed,
           dueDay,
           active,
+          ...(accountId === bill.accountId ? {} : { accountId }),
         }),
   );
   useBusy(save.isPending, onBusyChange);
@@ -190,40 +195,34 @@ export function BillForm({
           />
         )}
       </FieldControl>
-      {bill === undefined ? (
-        <FieldControl
-          label={t('settings.bills.account')}
-          error={
-            accountMissing
-              ? t('settings.bills.errors.accountRequired')
-              : undefined
-          }
-        >
-          {(props) => (
-            <select
-              {...props}
-              name="accountId"
-              value={accountId}
-              className={selectClass}
-              onChange={(e) => {
-                setAccountId(e.currentTarget.value);
-                setAccountMissing(false);
-              }}
-            >
-              <option value="">{t('settings.bills.chooseAccount')}</option>
-              {open.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.currency})
-                </option>
-              ))}
-            </select>
-          )}
-        </FieldControl>
-      ) : (
-        <p className="text-sm text-text-muted">
-          {t('settings.bills.paidFrom', { account: account?.name ?? '' })}
-        </p>
-      )}
+      <FieldControl
+        label={t('settings.bills.account')}
+        error={
+          accountMissing
+            ? t('settings.bills.errors.accountRequired')
+            : undefined
+        }
+      >
+        {(props) => (
+          <select
+            {...props}
+            name="accountId"
+            value={accountId}
+            className={selectClass}
+            onChange={(e) => {
+              setAccountId(e.currentTarget.value);
+              setAccountMissing(false);
+            }}
+          >
+            <option value="">{t('settings.bills.chooseAccount')}</option>
+            {choices.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.currency})
+              </option>
+            ))}
+          </select>
+        )}
+      </FieldControl>
       <FieldControl
         label={
           currency === ''

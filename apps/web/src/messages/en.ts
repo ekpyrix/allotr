@@ -363,6 +363,12 @@ export const en = {
     moveOff: 'Move off budget',
     moveOn: 'Move on budget',
     archive: 'Archive',
+    rename: {
+      action: 'Rename',
+      title: 'Rename {name}',
+      save: 'Save name',
+      saving: 'Saving…',
+    },
     reconcile: 'Reconcile',
     lastReconciled: 'Reconciled {date}',
     neverReconciled: 'Not reconciled yet',
@@ -374,6 +380,7 @@ export const en = {
     },
     announce: {
       created: '{name} added.',
+      renamed: 'Renamed to {name}.',
       movedOn: '{name} moved on budget.',
       movedOff: '{name} moved off budget.',
       archived: '{name} archived.',
@@ -603,7 +610,6 @@ export const en = {
       name: 'Name',
       account: 'Paid from',
       chooseAccount: 'Choose an account',
-      paidFrom: 'Paid from {account}. To change the account, add a new bill.',
       amount: 'Amount',
       amountIn: 'Amount in {currency}',
       dueDay: 'Due each month on day',

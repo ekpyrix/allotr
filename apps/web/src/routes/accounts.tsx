@@ -20,6 +20,7 @@ import {
   ArchiveFlow,
   BudgetSwitch,
   budgetTitle,
+  RenameAccount,
 } from '@/features/accounts/account-actions';
 import { CreateAccountForm } from '@/features/accounts/create-account-form';
 import { groupAccounts } from '@/features/accounts/groups';
@@ -38,7 +39,10 @@ import { t } from '@/messages/t';
 // the dialog closes, and an archived account drops out of it.
 type Open =
   | { kind: 'create' }
-  | { kind: 'budget' | 'archive' | 'reconcile'; account: AccountView }
+  | {
+      kind: 'budget' | 'archive' | 'reconcile' | 'rename';
+      account: AccountView;
+    }
   | null;
 
 const linkClass = 'font-medium underline underline-offset-4';
@@ -169,6 +173,16 @@ function AccountRow({
           {account.budgetGroup === 'on'
             ? t('accounts.moveOff')
             : t('accounts.moveOn')}
+          <span className="sr-only"> {account.name}</span>
+        </Button>
+        <Button
+          variant="outlined"
+          size="dense"
+          onClick={() => {
+            onOpen({ kind: 'rename', account });
+          }}
+        >
+          {t('accounts.rename.action')}
           <span className="sr-only"> {account.name}</span>
         </Button>
         <Button
@@ -393,9 +407,11 @@ export function AccountsPage() {
         ? ''
         : open?.kind === 'budget'
           ? budgetTitle(selected)
-          : open?.kind === 'reconcile'
-            ? t('accounts.reconcileFlow.title', { name: selected.name })
-            : t('accounts.archiveFlow.title', { name: selected.name });
+          : open?.kind === 'rename'
+            ? t('accounts.rename.title', { name: selected.name })
+            : open?.kind === 'reconcile'
+              ? t('accounts.reconcileFlow.title', { name: selected.name })
+              : t('accounts.archiveFlow.title', { name: selected.name });
   const opening = (next: Open) => {
     lastAccount.current =
       next?.kind === 'create' ? undefined : next?.account.id;
@@ -521,6 +537,16 @@ export function AccountsPage() {
                   ? t('accounts.announce.movedOff', { name: selected.name })
                   : t('accounts.announce.movedOn', { name: selected.name }),
               );
+            }}
+          />
+        ) : open?.kind === 'rename' ? (
+          <RenameAccount
+            account={selected}
+            onBusyChange={setBusy}
+            onCancel={close}
+            onDone={(name) => {
+              close();
+              setAnnouncement(t('accounts.announce.renamed', { name }));
             }}
           />
         ) : open?.kind === 'reconcile' ? (

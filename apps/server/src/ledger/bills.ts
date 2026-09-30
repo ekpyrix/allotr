@@ -225,6 +225,7 @@ export type UpdateBill = Readonly<{
   name?: string | undefined;
   amount?: Money | undefined;
   dueDay?: number | undefined;
+  accountId?: string | undefined;
   active?: boolean | undefined;
 }>;
 
@@ -238,13 +239,20 @@ export async function updateBill(
   await db.transaction().execute(async (trx) => {
     const bill = await trx
       .selectFrom('bills')
-      .select('account_id')
+      .select(['account_id', 'amount_minor', 'currency'])
       .where('user_id', '=', userId)
       .where('id', '=', id)
       .executeTakeFirst();
     if (bill === undefined) throw notFound();
-    if (patch.amount !== undefined) {
-      await checkAccount(trx, userId, bill.account_id, patch.amount);
+    // The amount and the account must agree on the currency, whichever of
+    // the two changes.
+    if (patch.amount !== undefined || patch.accountId !== undefined) {
+      await checkAccount(
+        trx,
+        userId,
+        patch.accountId ?? bill.account_id,
+        patch.amount ?? money(bill.amount_minor, bill.currency),
+      );
     }
     await trx
       .updateTable('bills')
@@ -257,6 +265,9 @@ export async function updateBill(
               currency: patch.amount.currency,
             }),
         ...(patch.dueDay === undefined ? {} : { due_day: patch.dueDay }),
+        ...(patch.accountId === undefined
+          ? {}
+          : { account_id: patch.accountId }),
         ...(patch.active === undefined ? {} : { active: patch.active ? 1 : 0 }),
         updated_at: now.toISOString(),
       })

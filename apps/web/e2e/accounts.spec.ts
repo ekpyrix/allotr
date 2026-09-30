@@ -485,3 +485,38 @@ test('the summary splits on-budget money as today does, and the filter shows one
     page.getByRole('heading', { name: 'On budget', level: 2 }),
   ).toBeVisible();
 });
+
+test('an account can be renamed, and a name in use is refused', async ({
+  page,
+}) => {
+  await page.goto('/accounts');
+  await createAccount(page, {
+    name: 'Temporary',
+    currency: 'USD',
+    balance: '',
+  });
+  const before = await accounts(page);
+  const original = before.accounts.find((a) => a.name === 'Temporary');
+
+  await row(page, 'Temporary').getByRole('button', { name: 'Rename' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Rename Temporary' });
+  await expectAccessible(page);
+  await dialog.getByLabel('Name').fill('Everyday');
+  await dialog.getByRole('button', { name: 'Save name' }).click();
+  await expect(
+    dialog.getByText('Another open account has this name.'),
+  ).toBeVisible();
+
+  await dialog.getByLabel('Name').fill('Petty cash');
+  await dialog.getByRole('button', { name: 'Save name' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(row(page, 'Petty cash')).toBeVisible();
+  await expect(page.getByText('Renamed to Petty cash.')).toBeAttached();
+
+  // Only the name changed: same account, same balance.
+  const renamed = (await accounts(page)).accounts.find(
+    (a) => a.name === 'Petty cash',
+  );
+  expect(renamed?.id).toBe(original?.id);
+  expect(renamed?.balance).toEqual(original?.balance);
+});
