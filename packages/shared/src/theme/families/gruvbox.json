@@ -1,0 +1,91 @@
+[
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Gruvbox Light",
+    "family": "gruvbox",
+    "scheme": "light",
+    "credit": {
+      "author": "Pavel Pertsev",
+      "licence": "MIT",
+      "url": "https://github.com/morhetz/gruvbox"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#fbf1c7",
+        "surface0": "#ebdbb2",
+        "surface1": "#d5c4a1",
+        "surface2": "#bdae93",
+        "overlay0": "#a89984",
+        "overlay1": "#928374",
+        "subtext0": "#7c6f64",
+        "subtext1": "#665c54",
+        "text": "#3c3836"
+      },
+      "accents": {
+        "red": "#9d0006",
+        "green": "#79740e",
+        "yellow": "#b57614",
+        "blue": "#076678",
+        "purple": "#8f3f71",
+        "aqua": "#427b58",
+        "orange": "#af3a03"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "aqua",
+        "blue": "blue",
+        "purple": "purple",
+        "pink": "purple"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Gruvbox Dark",
+    "family": "gruvbox",
+    "scheme": "dark",
+    "credit": {
+      "author": "Pavel Pertsev",
+      "licence": "MIT",
+      "url": "https://github.com/morhetz/gruvbox"
+    },
+    "palette": {
+      "neutrals": {
+        "mantle": "#1d2021",
+        "base": "#282828",
+        "surface0": "#3c3836",
+        "surface1": "#504945",
+        "surface2": "#665c54",
+        "overlay0": "#7c6f64",
+        "overlay1": "#928374",
+        "subtext0": "#a89984",
+        "subtext1": "#bdae93",
+        "text": "#ebdbb2"
+      },
+      "accents": {
+        "red": "#fb4934",
+        "green": "#b8bb26",
+        "yellow": "#fabd2f",
+        "blue": "#83a598",
+        "purple": "#d3869b",
+        "aqua": "#8ec07c",
+        "orange": "#fe8019"
+      },
+      "hues": {
+        "red": "red",
+        "orange": "orange",
+        "yellow": "yellow",
+        "green": "green",
+        "cyan": "aqua",
+        "blue": "blue",
+        "purple": "purple",
+        "pink": "purple"
+      }
+    }
+  }
+]

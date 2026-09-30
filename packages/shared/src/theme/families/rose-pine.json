@@ -1,0 +1,118 @@
+[
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Rosé Pine Dawn",
+    "family": "rose-pine",
+    "scheme": "light",
+    "credit": {
+      "author": "Rosé Pine",
+      "licence": "MIT",
+      "url": "https://github.com/rose-pine/palette"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#faf4ed",
+        "surface0": "#f2e9e1",
+        "overlay1": "#9893a5",
+        "subtext0": "#797593",
+        "text": "#464261"
+      },
+      "accents": {
+        "love": "#b4637a",
+        "gold": "#ea9d34",
+        "rose": "#d7827e",
+        "pine": "#286983",
+        "foam": "#56949f",
+        "iris": "#907aa9"
+      },
+      "hues": {
+        "red": "love",
+        "orange": "gold",
+        "yellow": "gold",
+        "cyan": "foam",
+        "blue": "pine",
+        "purple": "iris",
+        "pink": "rose"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Rosé Pine",
+    "family": "rose-pine",
+    "scheme": "dark",
+    "credit": {
+      "author": "Rosé Pine",
+      "licence": "MIT",
+      "url": "https://github.com/rose-pine/palette"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#191724",
+        "surface0": "#1f1d2e",
+        "surface1": "#26233a",
+        "overlay1": "#6e6a86",
+        "subtext0": "#908caa",
+        "text": "#e0def4"
+      },
+      "accents": {
+        "love": "#eb6f92",
+        "gold": "#f6c177",
+        "rose": "#ebbcba",
+        "pine": "#31748f",
+        "foam": "#9ccfd8",
+        "iris": "#c4a7e7"
+      },
+      "hues": {
+        "red": "love",
+        "orange": "gold",
+        "yellow": "gold",
+        "cyan": "foam",
+        "blue": "pine",
+        "purple": "iris",
+        "pink": "rose"
+      }
+    }
+  },
+  {
+    "format": "allotr-theme",
+    "version": 2,
+    "name": "Rosé Pine Moon",
+    "family": "rose-pine",
+    "scheme": "dark",
+    "credit": {
+      "author": "Rosé Pine",
+      "licence": "MIT",
+      "url": "https://github.com/rose-pine/palette"
+    },
+    "palette": {
+      "neutrals": {
+        "base": "#232136",
+        "surface0": "#2a273f",
+        "surface1": "#393552",
+        "overlay1": "#6e6a86",
+        "subtext0": "#908caa",
+        "text": "#e0def4"
+      },
+      "accents": {
+        "love": "#eb6f92",
+        "gold": "#f6c177",
+        "rose": "#ea9a97",
+        "pine": "#3e8fb0",
+        "foam": "#9ccfd8",
+        "iris": "#c4a7e7"
+      },
+      "hues": {
+        "red": "love",
+        "orange": "gold",
+        "yellow": "gold",
+        "cyan": "foam",
+        "blue": "pine",
+        "purple": "iris",
+        "pink": "rose"
+      }
+    }
+  }
+]
