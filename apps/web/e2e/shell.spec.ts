@@ -159,6 +159,8 @@ test('each window size class gets its navigation, without sideways scroll', asyn
   page,
   baseURL,
 }) => {
+  // Five sizes, each with an axe run on the settings page.
+  test.setTimeout(90_000);
   await apiSignIn(page, baseURL);
   await page.goto('/settings');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
