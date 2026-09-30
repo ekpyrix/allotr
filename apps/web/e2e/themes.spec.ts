@@ -9,7 +9,7 @@ import { account, setupSkipped } from './account.ts';
 test.describe.configure({ mode: 'serial' });
 
 const fixtures = new URL(
-  '../src/features/themes/importers/fixtures/',
+  '../../../packages/shared/src/theme/import/fixtures/',
   import.meta.url,
 );
 
@@ -286,4 +286,38 @@ test('device settings: motion, density and celebrations', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
   await motion.getByRole('radio', { name: 'System' }).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-motion');
+});
+
+test('imports from a URL only when an admin allows it, and never from a private address', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('/settings#appearance');
+  await expect(page.getByLabel('Import theme file')).toBeVisible();
+  await expect(page.getByLabel('Or import from an address')).toHaveCount(0);
+
+  // This account is the admin: the instance section turns it on.
+  const instance = page.getByRole('region', { name: 'Instance' });
+  await instance.getByLabel('Allow theme import from a URL').check();
+  await instance.getByRole('button', { name: 'Save' }).click();
+  await expect(instance.getByRole('status')).toHaveText('Saved.');
+
+  const field = page.getByLabel('Or import from an address');
+  const problems = page.getByTestId('import-problems');
+  await field.fill('http://themes.example.test/meadow.toml');
+  await page.getByRole('button', { name: 'Fetch' }).click();
+  await expect(problems).toContainText('Use an https:// address.');
+
+  await field.fill('https://127.0.0.1/meadow.toml');
+  await page.getByRole('button', { name: 'Fetch' }).click();
+  await expect(problems).toContainText(
+    'The address points at a private or local network',
+  );
+  await expectAccessible(page);
+
+  const off = await page.request.patch('/v1/admin/settings', {
+    data: { themeUrlImport: false },
+    headers: { origin: baseURL ?? '' },
+  });
+  expect(off.ok()).toBe(true);
 });

@@ -5,6 +5,8 @@ import {
   customThemeViewListSchema,
   customThemeViewSchema,
   idParamSchema,
+  themeUrlImportBodySchema,
+  themeUrlImportSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
@@ -15,6 +17,11 @@ import {
   saveAppearance,
   updateTheme,
 } from '../../appearance.ts';
+import { fetchThemeText } from '../../theme-url.ts';
+import {
+  createImportLimiter,
+  importThemeFromUrl,
+} from '../../theme-url-import.ts';
 import type { Context } from 'hono';
 import type { AppDeps, AppEnv } from '../env.ts';
 import {
@@ -51,6 +58,34 @@ const refusedTheme = problemResponse(
 const themeConflict = problemResponse(
   'The name is taken (`theme_name_taken`) or the limit of custom themes is reached (`theme_limit`).',
 );
+
+const importUrlRoute = createRoute({
+  method: 'post',
+  path: '/v1/settings/themes/import-url',
+  tags: ['Settings'],
+  summary: 'Read a theme from a URL',
+  description:
+    'Only while an admin allows it (`themeUrlImport`). The server fetches the https address, which must resolve only to public addresses, with no redirects, a 5 s timeout and a 64 KB cap, and reads it as a theme file, palette file or terminal colour config. The answer is the parsed themes as v2 files; nothing is saved. At most 10 a user an hour.',
+  request: {
+    body: {
+      content: { 'application/json': { schema: themeUrlImportBodySchema } },
+    },
+  },
+  responses: {
+    200: json(themeUrlImportSchema, 'The themes the address holds.'),
+    400: problemResponse(
+      'The address is refused before fetching (`theme_url_refused`): not https, credentials in it, or it resolves to a non-public address; `errors` gives the reason at `/url`.',
+    ),
+    ...signedIn,
+    422: problemResponse(
+      'What the address holds is not a theme (`theme_unreadable`).',
+    ),
+    429: problemResponse('Too many imports from a URL (`rate_limited`).'),
+    502: problemResponse(
+      'The fetch failed (`theme_url_fetch_failed`): a redirect, an error status, too large, or too slow.',
+    ),
+  },
+});
 
 const getAppearanceRoute = createRoute({
   method: 'get',
@@ -179,6 +214,22 @@ export function registerAppearanceRoutes(
     markV1Body(c, body);
     return c.json(theme, 200);
   });
+
+  const allowed = createImportLimiter(now);
+  const fetchText =
+    deps.fetchThemeUrl ?? ((url: string) => fetchThemeText(url));
+  app.openapi(importUrlRoute, async (c) =>
+    c.json(
+      await importThemeFromUrl(
+        db,
+        c.get('user').id,
+        c.req.valid('json').url,
+        fetchText,
+        allowed,
+      ),
+      200,
+    ),
+  );
 
   app.openapi(deleteThemeRoute, async (c) => {
     const { id } = c.req.valid('param');

@@ -15,6 +15,8 @@ export interface AppDeps {
   readonly now: () => Date;
   /** Built web app to serve; omitted in API-only tests. */
   readonly webDir?: string;
+  /** Fetches a theme file from a URL; tests replace the network. */
+  readonly fetchThemeUrl?: (url: string) => Promise<string>;
 }
 
 export interface AppEnv {

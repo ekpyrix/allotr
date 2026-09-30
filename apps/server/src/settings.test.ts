@@ -13,10 +13,11 @@ afterEach(async () => {
 });
 
 describe('instance settings', () => {
-  it('defaults to invite-only registration without required 2FA', async () => {
+  it('defaults to invite-only registration, no required 2FA and no URL imports', async () => {
     expect(await readSettings(db)).toEqual({
       registrationMode: 'invite_only',
       requireTwoFactor: false,
+      themeUrlImport: false,
     });
   });
 
@@ -24,10 +25,12 @@ describe('instance settings', () => {
     const now = new Date(Date.UTC(2026, 0, 1));
     await updateSettings(db, { registrationMode: 'closed' }, now);
     await updateSettings(db, { requireTwoFactor: true }, now);
+    await updateSettings(db, { themeUrlImport: true }, now);
 
     expect(await readSettings(db)).toEqual({
       registrationMode: 'closed',
       requireTwoFactor: true,
+      themeUrlImport: true,
     });
   });
 });

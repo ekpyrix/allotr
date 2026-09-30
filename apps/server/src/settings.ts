@@ -8,11 +8,13 @@ import type { DB } from './db/schema.ts';
 const defaults: InstanceSettings = {
   registrationMode: 'invite_only',
   requireTwoFactor: false,
+  themeUrlImport: false,
 };
 
 const columns = {
   registrationMode: 'registration_mode',
   requireTwoFactor: 'require_two_factor',
+  themeUrlImport: 'theme_url_import',
 } as const satisfies Record<keyof InstanceSettings, string>;
 
 type SettingName = keyof InstanceSettings;

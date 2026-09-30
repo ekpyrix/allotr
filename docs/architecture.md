@@ -128,7 +128,7 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`too_many_attempts_request_new_code`). Onboarding
   (`/v1/onboarding`, first user becomes admin), single-use invites
   (`/v1/invites`), the current session (`/v1/session`) and instance settings
-  (`/v1/admin/settings`: registration mode, required 2FA) are Allotr routes.
+  (`/v1/admin/settings`: registration mode, required 2FA, theme import from a URL) are Allotr routes.
   While 2FA is required, turning it off is refused (`two_factor_required`)
   and `/v1/session` reports `twoFactorEnforced`. Invite links open the web
   app's public `/invite/<token>` page.
@@ -195,7 +195,16 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   terminal colour configs (TOML, key-value lines, JSON or an XML property
   list of ANSI colours) in the browser; the shape of the text picks the
   parser. One theme opens in the editor; a family's flavours are saved at
-  once. The default themes'
+  once. The importers live in `packages/shared/src/theme/import/`, so the
+  server reads the same shapes: when an admin allows it (`themeUrlImport`,
+  off by default, also on `/v1/session`),
+  `POST /v1/settings/themes/import-url` fetches an https address and
+  answers with the parsed themes, saving nothing. The fetch
+  (`apps/server/src/theme-url.ts`) refuses credentials in the URL and any
+  name that resolves to a loopback, private, link-local, carrier-grade
+  NAT, multicast, reserved or documentation address (IPv4, IPv6 and
+  IPv4-mapped), connects to the address it checked, follows no
+  redirects, and stops after 5 s or 64 KB; each user gets 10 an hour. The default themes'
   roles and the spring easings are generated into
   `apps/web/src/generated/tokens.css` (`pnpm --filter @allotr/web tokens`;
   lint fails when it drifts). `/v1/settings/setup`
@@ -391,8 +400,8 @@ on a job running, because figures are derived from the ledger.
 See [SECURITY.md](../SECURITY.md) for the threat model. Architectural rules:
 
 - All user-supplied URLs go through one SSRF-safe HTTP client.
-- No telemetry; every outbound call is opt-in and listed
-  ([ADR 0011](adr/0011-no-telemetry.md)).
+- No telemetry; every outbound call is opt-in and listed in
+  [privacy.md](privacy.md) ([ADR 0011](adr/0011-no-telemetry.md)).
 - AI output is untrusted input: schema-validated and never committed without
   the rules in [domain.md](domain.md#ai-boundaries).
 

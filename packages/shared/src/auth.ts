@@ -11,6 +11,11 @@ export type RegistrationMode = z.infer<typeof registrationModeSchema>;
 export const instanceSettingsSchema = z.object({
   registrationMode: registrationModeSchema,
   requireTwoFactor: z.boolean(),
+  /**
+   * Users may import a theme from a URL, which the server then fetches.
+   * Off unless an admin turns it on (ADR 0011).
+   */
+  themeUrlImport: z.boolean(),
 });
 export type InstanceSettings = z.infer<typeof instanceSettingsSchema>;
 
@@ -40,6 +45,8 @@ export const sessionSchema = z.object({
   twoFactorRequired: z.boolean(),
   /** The instance requires 2FA, so enrolled users cannot turn it off. */
   twoFactorEnforced: z.boolean(),
+  /** An admin allows importing themes from a URL. */
+  themeUrlImport: z.boolean(),
 });
 export type SessionView = z.infer<typeof sessionSchema>;
 

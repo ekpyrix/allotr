@@ -1,4 +1,5 @@
-import { toOklch, type ThemeFileV2 } from '@allotr/shared';
+import { toOklch } from '../oklch.ts';
+import type { ThemeFileV2 } from '../palette-themes.ts';
 import { schemeOf, themeFileOf } from './colors.ts';
 
 // Terminal colour configs give sixteen ANSI colours plus a foreground and a

@@ -64,12 +64,13 @@ export function registerSessionRoutes(
   app.use('/v1/session', requireUser(deps, { allowUnenrolled: true }));
   app.openapi(sessionRoute, async (c) => {
     const user = c.get('user');
-    const { requireTwoFactor } = await readSettings(deps.db);
+    const { requireTwoFactor, themeUrlImport } = await readSettings(deps.db);
     return c.json(
       {
         user,
         twoFactorRequired: requireTwoFactor && !user.twoFactorEnabled,
         twoFactorEnforced: requireTwoFactor,
+        themeUrlImport,
       },
       200,
     );

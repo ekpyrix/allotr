@@ -415,6 +415,78 @@
           "hues"
         ],
         "additionalProperties": false
+      },
+      "ThemeFileV2": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "allotr-theme"
+            ]
+          },
+          "version": {
+            "type": "number",
+            "enum": [
+              2
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "family": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,31}$"
+          },
+          "scheme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          },
+          "credit": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "licence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "author",
+              "licence",
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          "palette": {
+            "$ref": "#/components/schemas/PartialPalette"
+          },
+          "roles": {
+            "$ref": "#/components/schemas/ThemeRoles"
+          }
+        },
+        "required": [
+          "format",
+          "version",
+          "name",
+          "scheme",
+          "palette"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -1386,12 +1458,16 @@
                     },
                     "twoFactorEnforced": {
                       "type": "boolean"
+                    },
+                    "themeUrlImport": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "user",
                     "twoFactorRequired",
-                    "twoFactorEnforced"
+                    "twoFactorEnforced",
+                    "themeUrlImport"
                   ]
                 }
               }
@@ -1479,11 +1555,15 @@
                     },
                     "requireTwoFactor": {
                       "type": "boolean"
+                    },
+                    "themeUrlImport": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "registrationMode",
-                    "requireTwoFactor"
+                    "requireTwoFactor",
+                    "themeUrlImport"
                   ]
                 }
               }
@@ -1622,6 +1702,9 @@
                   },
                   "requireTwoFactor": {
                     "type": "boolean"
+                  },
+                  "themeUrlImport": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -1646,11 +1729,15 @@
                     },
                     "requireTwoFactor": {
                       "type": "boolean"
+                    },
+                    "themeUrlImport": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "registrationMode",
-                    "requireTwoFactor"
+                    "requireTwoFactor",
+                    "themeUrlImport"
                   ]
                 }
               }
@@ -15050,6 +15137,397 @@
           },
           "404": {
             "description": "There is no such theme.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings/themes/import-url": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Read a theme from a URL",
+        "description": "Only while an admin allows it (`themeUrlImport`). The server fetches the https address, which must resolve only to public addresses, with no redirects, a 5 s timeout and a 64 KB cap, and reads it as a theme file, palette file or terminal colour config. The answer is the parsed themes as v2 files; nothing is saved. At most 10 a user an hour.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The themes the address holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "theme",
+                        "palette",
+                        "family",
+                        "terminal"
+                      ]
+                    },
+                    "themes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ThemeFileV2"
+                      }
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "themes"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The address is refused before fetching (`theme_url_refused`): not https, credentials in it, or it resolves to a non-public address; `errors` gives the reason at `/url`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "What the address holds is not a theme (`theme_unreadable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many imports from a URL (`rate_limited`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The fetch failed (`theme_url_fetch_failed`): a redirect, an error status, too large, or too slow.",
             "content": {
               "application/problem+json": {
                 "schema": {

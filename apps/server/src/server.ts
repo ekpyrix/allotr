@@ -19,6 +19,8 @@ export interface StartOptions {
   readonly now?: () => Date;
   readonly authLimits?: AuthLimits;
   readonly webDir?: string;
+  /** Replaces the network for theme URL imports in tests. */
+  readonly fetchThemeUrl?: (url: string) => Promise<string>;
 }
 
 export interface RunningServer {
@@ -67,6 +69,9 @@ export async function startServer(
     logger,
     now,
     webDir: options.webDir ?? repoWebDir,
+    ...(options.fetchThemeUrl === undefined
+      ? {}
+      : { fetchThemeUrl: options.fetchThemeUrl }),
   });
   const { server, address } = await listen(app.fetch, config.host, config.port);
 

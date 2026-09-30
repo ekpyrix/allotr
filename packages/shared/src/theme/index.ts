@@ -19,6 +19,12 @@ export {
   type ThemeTokens,
 } from './tokens.ts';
 export { darkTheme, lightTheme } from './builtin.ts';
+export {
+  importThemeText,
+  type ThemeImportKind,
+  type ThemeImportRefusal,
+  type ThemeImportResult,
+} from './import/index.ts';
 export { fromOklch, mixOklch, toOklch, type Oklch } from './oklch.ts';
 export {
   ACCENT_LIMIT,
@@ -64,6 +70,10 @@ export {
   THEME_ID_ALIASES,
   themeCreditSchema,
   themeFileV2Schema,
+  themeUrlImportBodySchema,
+  themeUrlImportSchema,
+  type ThemeUrlImportBody,
+  type ThemeUrlImportView,
   themeBodyV2Schema,
   themeRolesSchema,
   tokensFromRoles,
