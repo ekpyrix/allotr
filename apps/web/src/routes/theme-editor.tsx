@@ -1,21 +1,27 @@
-import { SHIPPED_THEMES, type SessionView } from '@allotr/shared';
+import {
+  DEFAULT_PALETTE_THEME_ID,
+  PALETTE_THEMES,
+  type SessionView,
+} from '@allotr/shared';
 import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Page } from '@/components/page';
 import { useTheme } from '@/components/theme-provider';
 import { draftFrom } from '@/features/themes/draft';
 import { ThemeEditor } from '@/features/themes/editor';
+import { takeDraft } from '@/features/themes/import-handoff';
 import { t } from '@/messages/t';
 
 function Loading() {
   return (
-    <p role="status" className="mt-6 text-muted-foreground">
+    <p role="status" className="mt-6 text-text-muted">
       {t('settings.loading')}
     </p>
   );
 }
 
-// A new theme starts from a shipped or custom theme (`?from=`), by default
-// the one in use for the light slot.
+// A new theme starts from an imported palette, a shipped or custom theme
+// (`?from=`), or by default the one in use for the light slot.
 export function NewThemePage({
   session,
   from,
@@ -23,13 +29,13 @@ export function NewThemePage({
   session: SessionView;
   from: string | undefined;
 }) {
-  const { customThemes, appearance } = useTheme();
-  const starts =
-    customThemes === undefined ? [] : [...SHIPPED_THEMES, ...customThemes];
+  const { customPalettes, customThemes, appearance } = useTheme();
+  const [imported] = useState(takeDraft);
+  const starts = [...PALETTE_THEMES, ...customPalettes];
   const start =
     starts.find((theme) => theme.id === from) ??
     starts.find((theme) => theme.id === appearance.light) ??
-    SHIPPED_THEMES[0];
+    starts.find((theme) => theme.id === DEFAULT_PALETTE_THEME_ID.light);
   return (
     <Page title={t('themes.newTitle')} intro={t('themes.intro')}>
       {customThemes === undefined || start === undefined ? (
@@ -37,9 +43,9 @@ export function NewThemePage({
       ) : (
         <ThemeEditor
           userId={session.user.id}
-          initial={draftFrom(start)}
+          initial={imported ?? draftFrom(start)}
           starts={starts}
-          startId={start.id}
+          startId={imported === undefined ? start.id : undefined}
         />
       )}
     </Page>

@@ -188,7 +188,14 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   app caches the mode and the resolved role colours of any slot not on its
   default theme in localStorage (`allotr.theme-roles`), with the per-device
   motion, haptics, celebrations and density settings beside them, so
-  `theme-init.js` paints them before the app loads. The default themes'
+  `theme-init.js` paints them before the app loads. The web app sends v2
+  bodies. Its importers (`apps/web/src/features/themes/importers/`) read
+  a theme file (v1 or v2), a palette file (one palette, or several
+  flavours of a family in one JSON file), base16 or base24 YAML, and
+  terminal colour configs (TOML, key-value lines, JSON or an XML property
+  list of ANSI colours) in the browser; the shape of the text picks the
+  parser. One theme opens in the editor; a family's flavours are saved at
+  once. The default themes'
   roles and the spring easings are generated into
   `apps/web/src/generated/tokens.css` (`pnpm --filter @allotr/web tokens`;
   lint fails when it drifts). `/v1/settings/setup`

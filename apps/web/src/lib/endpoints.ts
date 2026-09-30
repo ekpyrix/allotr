@@ -42,7 +42,7 @@ import {
   tagBodySchema,
   tagListSchema,
   tagSchema,
-  themeBodySchema,
+  anyThemeBodySchema,
   todaySchema,
   transactionListSchema,
   transactionSchema,
@@ -215,13 +215,13 @@ export const endpoints = {
   createTheme: endpoint({
     method: 'POST',
     path: '/v1/settings/themes',
-    body: themeBodySchema,
+    body: anyThemeBodySchema,
     response: customThemeViewSchema,
   }),
   updateTheme: endpoint({
     method: 'PUT',
     path: '/v1/settings/themes/{id}',
-    body: themeBodySchema,
+    body: anyThemeBodySchema,
     response: customThemeViewSchema,
   }),
   deleteTheme: endpoint({

@@ -42,6 +42,8 @@ type ThemeState = Readonly<{
   appearance: Appearance;
   /** Picks the theme for a scheme; ignored while signed out. */
   setSlot: (scheme: ThemeScheme, id: string) => void;
+  /** Picks both slots in one save, as a theme family does. */
+  setSlots: (slots: Partial<Record<ThemeScheme, string>>) => void;
   /** Undefined until loaded, or while signed out. */
   customThemes: readonly CustomThemeView[] | undefined;
   /** The same themes, resolved for painting and picking. */
@@ -142,6 +144,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     save({ mode, [scheme]: id });
   }
 
+  function setSlots(slots: Partial<Record<ThemeScheme, string>>) {
+    save({ mode, ...slots });
+  }
+
   function setMode(next: ThemeMode) {
     save({ mode: next });
   }
@@ -153,6 +159,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setMode,
         appearance,
         setSlot,
+        setSlots,
         customThemes: signedIn ? customThemes : undefined,
         customPalettes: signedIn ? customPalettes : [],
         saveError,

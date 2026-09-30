@@ -1,0 +1,23 @@
+{
+  "name": "Meadow Night",
+  "background": "#1d2421",
+  "foreground": "#d8e2da",
+  "black": "#2a332f",
+  "red": "#e0736b",
+  "green": "#8fcf8a",
+  "yellow": "#e4c56d",
+  "blue": "#74a8e0",
+  "purple": "#c792d8",
+  "cyan": "#6fc9c1",
+  "white": "#c4cec6",
+  "brightBlack": "#5d6a64",
+  "brightRed": "#ec8d85",
+  "brightGreen": "#a8dca3",
+  "brightYellow": "#eed48a",
+  "brightBlue": "#91bdea",
+  "brightPurple": "#d6aae3",
+  "brightCyan": "#8ed8d1",
+  "brightWhite": "#eef4ef",
+  "cursorColor": "#d8e2da",
+  "selectionBackground": "#3a4640"
+}
