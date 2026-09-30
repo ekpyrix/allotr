@@ -185,7 +185,9 @@ test('logging an expense lowers left today and undo restores it', async ({
   await page.getByLabel('Amount in USD').fill('42.10');
   await page.getByLabel('Category').selectOption({ label: 'Transport' });
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('status')).toHaveText('Expense of $42.10 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Expense of \$42\.10 saved\. \S+ left today\.$/,
+  );
 
   const lowered = money(before.leftToday.amountMinor - 4_210, 'USD');
   await expect(hero(page)).toHaveText(formatMoney(lowered, 'en-US'));
@@ -209,6 +211,25 @@ test('logging an expense lowers left today and undo restores it', async ({
     'Undone: Transport, -$42.10.',
   );
   await expectAccessible(page);
+});
+
+test('Undo on the save snackbar reverses the entry', async ({ page }) => {
+  await page.goto('/today');
+  const before = await today(page);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.getByLabel('Amount in USD').fill('5.55');
+  await page.getByLabel('Category').selectOption({ label: 'Transport' });
+  await page.getByRole('button', { name: 'Save' }).click();
+  const undo = page.getByRole('button', { name: 'Undo', exact: true });
+  await expect(undo).toBeVisible();
+  await undo.click();
+  await expect(page.getByRole('status')).toHaveText(
+    'Undone. The entry was reversed.',
+  );
+  await expect(hero(page)).toHaveText(formatMoney(before.leftToday, 'en-US'));
+  await expect(
+    entries(page).getByRole('listitem').filter({ hasText: '-$5.55' }).first(),
+  ).toContainText('Undone');
 });
 
 test('a missing rate shows a needs-attention item that links to rates', async ({

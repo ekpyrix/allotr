@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isPaletteShortcut,
   isQuickEntryShortcut,
   SHORTCUTS_KEY,
   readShortcutsEnabled,
@@ -90,5 +91,43 @@ describe('shortcut preference', () => {
     expect(() => {
       saveShortcutsEnabled(blocked, false);
     }).not.toThrow();
+  });
+});
+
+describe('isPaletteShortcut', () => {
+  const base = {
+    key: 'k',
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    repeat: false,
+    isComposing: false,
+    target: null,
+  };
+  const input = { tagName: 'INPUT', isContentEditable: false };
+
+  it('opens on ⌘K and Ctrl+K, even while typing', () => {
+    expect(isPaletteShortcut({ ...base, metaKey: true }, true)).toBe(true);
+    expect(
+      isPaletteShortcut({ ...base, ctrlKey: true, target: input }, true),
+    ).toBe(true);
+  });
+
+  it('opens on / only outside text fields', () => {
+    expect(isPaletteShortcut({ ...base, key: '/' }, true)).toBe(true);
+    expect(isPaletteShortcut({ ...base, key: '/', target: input }, true)).toBe(
+      false,
+    );
+  });
+
+  it('does nothing when shortcuts are off, repeated or with Alt', () => {
+    expect(isPaletteShortcut({ ...base, metaKey: true }, false)).toBe(false);
+    expect(
+      isPaletteShortcut({ ...base, metaKey: true, repeat: true }, true),
+    ).toBe(false);
+    expect(
+      isPaletteShortcut({ ...base, metaKey: true, altKey: true }, true),
+    ).toBe(false);
+    expect(isPaletteShortcut({ ...base, key: 'k' }, true)).toBe(false);
   });
 });

@@ -202,7 +202,9 @@ test('splits from the keyboard only, keeping focus as lines come and go', async 
   await expectAccessible(page);
 
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('status')).toHaveText('Expense of $30.00 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Expense of \$30\.00 saved\. \S+ left today\.$/,
+  );
   expect(lines(await latest(page))).toEqual([
     [ids.transport, 1000],
     [ids.fun, 2000],

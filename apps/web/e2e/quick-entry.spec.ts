@@ -98,7 +98,9 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
   await page.keyboard.type('Fun');
   await expect(selected(page, 'Category')).toHaveText('Fun');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('status')).toHaveText('Expense of $12.50 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Expense of \$12\.50 saved\. \S+ left today\.$/,
+  );
   await expect(dialog(page)).toBeHidden();
   const expense = await latest(page);
   expect(expense.kind).toBe('expense');
@@ -125,7 +127,9 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
   await page.keyboard.press('Tab');
   await page.keyboard.type('Other i');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('status')).toHaveText('Income of $200.00 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Income of \$200\.00 saved\. \S+ left today\.$/,
+  );
   expect((await latest(page)).kind).toBe('income');
   const afterIncome = await today(page);
   expect(
@@ -157,7 +161,7 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
   await expect(tag).toBeChecked();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText(
-    'Transfer of $300.00 saved.',
+    /^Transfer of \$300\.00 saved\. \S+ left today\.$/,
   );
   const transfer = await latest(page);
   expect(transfer.kind).toBe('transfer');
@@ -185,7 +189,9 @@ test('a double click on Save records one entry', async ({ page }) => {
     .getByLabel('Category')
     .selectOption({ label: 'Transport' });
   await dialog(page).getByRole('button', { name: 'Save' }).dblclick();
-  await expect(page.getByRole('status')).toHaveText('Expense of $7.77 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Expense of \$7\.77 saved\. \S+ left today\.$/,
+  );
 
   const response = await page.request.get('/v1/transactions?limit=200');
   const { transactions } = (await response.json()) as {
@@ -346,7 +352,9 @@ test('a save in flight cannot be dismissed and still announces', async ({
   await expect(page.getByRole('button', { name: 'Saving…' })).toBeDisabled();
   await page.keyboard.press('Escape');
   await expect(dialog(page)).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('Expense of $8.88 saved.');
+  await expect(page.getByRole('status')).toHaveText(
+    /^Expense of \$8\.88 saved\. \S+ left today\.$/,
+  );
   await expect(dialog(page)).toBeHidden();
 });
 

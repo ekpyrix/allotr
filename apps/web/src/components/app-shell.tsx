@@ -6,6 +6,7 @@ import { sessionQuery } from '@/lib/session';
 import { QuickEntryProvider } from '@/features/quick-entry/quick-entry-provider';
 import { t } from '@/messages/t';
 import { AppNav } from './app-nav.tsx';
+import { CommandPalette } from './command-palette.tsx';
 import { OfflineNotice } from './offline-notice.tsx';
 
 // The frame around every signed-in view. The skip link comes first so a
@@ -42,6 +43,7 @@ export function AppShell({
           {t('nav.skip')}
         </a>
         <AppNav />
+        <CommandPalette />
         <main
           id="content"
           ref={main}

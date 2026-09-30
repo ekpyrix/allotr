@@ -23,7 +23,7 @@ function QuickEntryLoader({
   onNavigate,
   onSavingChange,
 }: {
-  onSaved: (message: string) => void;
+  onSaved: (message: string, entryId: string) => void;
   onClose: () => void;
   onNavigate: () => void;
   onSavingChange: (saving: boolean) => void;
@@ -62,7 +62,7 @@ function QuickEntryLoader({
     today.data === undefined
   )
     return (
-      <p role="status" className="mt-6 text-muted-foreground">
+      <p role="status" className="mt-6 text-body text-text-muted">
         {/* Offline the queries wait for the connection instead of failing. */}
         {online ? t('quickEntry.loading') : t('quickEntry.offline')}
       </p>
@@ -98,7 +98,8 @@ function QuickEntryLoader({
   );
 }
 
-// Centred on wider screens, a bottom sheet on phones. Radix traps focus and
+// A bottom sheet that rises in on phones, a centred dialog from the
+// expanded size class. Radix traps focus and
 // closes on Escape; the provider gives focus back to whatever opened it. A
 // pending save cannot be dismissed, so its result is never lost and a retry
 // cannot duplicate the entry.
@@ -111,7 +112,7 @@ export function QuickEntryDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: (message: string) => void;
+  onSaved: (message: string, entryId: string) => void;
   /** The dialog closes because a link in it is taking the user elsewhere. */
   onNavigate: () => void;
   onCloseAutoFocus: () => void;
@@ -127,7 +128,7 @@ export function QuickEntryDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-30 bg-black/50" />
+        <Dialog.Overlay className="fixed inset-0 z-30 bg-black/40 data-[state=open]:scrim-in dark:bg-black/60" />
         <Dialog.Content
           ref={content}
           aria-describedby={undefined}
@@ -142,10 +143,10 @@ export function QuickEntryDialog({
             if (!content.current?.contains(document.activeElement))
               content.current?.focus();
           }}
-          className="fixed inset-x-0 bottom-0 z-40 max-h-[90dvh] overflow-y-auto rounded-t-lg border bg-background p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg"
+          className="fixed inset-x-0 bottom-0 z-40 max-h-[92dvh] overflow-y-auto rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-text outline-none data-[state=open]:rise-in expanded:inset-x-auto expanded:top-1/2 expanded:bottom-auto expanded:left-1/2 expanded:w-full expanded:max-w-[560px] expanded:-translate-x-1/2 expanded:-translate-y-1/2 expanded:rounded-2xl expanded:border-b expanded:data-[state=open]:overlay-in"
         >
           <div className="flex items-center justify-between gap-4">
-            <Dialog.Title className="text-xl font-semibold">
+            <Dialog.Title className="text-title">
               {t('quickEntry.title')}
             </Dialog.Title>
             <Dialog.Close asChild>
@@ -159,8 +160,8 @@ export function QuickEntryDialog({
             </Dialog.Close>
           </div>
           <QuickEntryLoader
-            onSaved={(message) => {
-              onSaved(message);
+            onSaved={(message, entryId) => {
+              onSaved(message, entryId);
               onOpenChange(false);
             }}
             onClose={() => {
