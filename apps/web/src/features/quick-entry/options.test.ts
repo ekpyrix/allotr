@@ -4,6 +4,7 @@ import { readLastUsed, rememberChoice } from './last-used.ts';
 import {
   categoryOptions,
   newDraft,
+  paycheckDraft,
   switchKind,
   withToday,
   type DraftDefaults,
@@ -274,5 +275,39 @@ describe('withToday', () => {
 
   it('returns the same draft when nothing changes', () => {
     expect(withToday(draft, '2026-03-14', false)).toBe(draft);
+  });
+});
+
+describe('paycheckDraft', () => {
+  const defaults = (list: CategoryView[]): DraftDefaults => ({
+    accounts: [account('Savings', 'off'), account('Everyday', 'on')],
+    categories: list,
+    today: '2026-03-15',
+    lastUsed: {},
+  });
+
+  it('is an income entry in the paycheck category, from an on-budget account', () => {
+    const pay = { ...category('Pay', 'income', null, 1), isPaycheck: true };
+    const draft = paycheckDraft(
+      defaults([category('Gift', 'income', null, 0), pay]),
+    );
+    expect(draft).toMatchObject({
+      kind: 'income',
+      categoryId: 'Pay',
+      accountId: 'Everyday',
+      occurredOn: '2026-03-15',
+      amount: '',
+    });
+  });
+
+  it('skips a merged paycheck category and falls back to plain income', () => {
+    const merged = {
+      ...category('Old', 'income', null, 1, 'Pay'),
+      isPaycheck: true,
+    };
+    expect(paycheckDraft(defaults([merged]))).toMatchObject({
+      kind: 'income',
+      categoryId: '',
+    });
   });
 });

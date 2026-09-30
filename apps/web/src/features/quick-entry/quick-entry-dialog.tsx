@@ -17,16 +17,21 @@ import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { QuickEntryForm } from './quick-entry-form.tsx';
 
+/** How the form starts: as a paycheck, for the first cycle. */
+export type QuickEntryPreset = 'paycheck';
+
 function QuickEntryLoader({
   onSaved,
   onClose,
   onNavigate,
   onSavingChange,
+  preset,
 }: {
   onSaved: (message: string, entryId: string) => void;
   onClose: () => void;
   onNavigate: () => void;
   onSavingChange: (saving: boolean) => void;
+  preset: QuickEntryPreset | undefined;
 }) {
   const accounts = useQuery(accountsQuery);
   const categories = useQuery(categoriesQuery);
@@ -94,6 +99,7 @@ function QuickEntryLoader({
       today={today.data.today}
       onSaved={onSaved}
       onSavingChange={onSavingChange}
+      preset={preset}
     />
   );
 }
@@ -109,7 +115,9 @@ export function QuickEntryDialog({
   onSaved,
   onNavigate,
   onCloseAutoFocus,
+  preset,
 }: {
+  preset?: QuickEntryPreset | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: (message: string, entryId: string) => void;
@@ -169,6 +177,7 @@ export function QuickEntryDialog({
             }}
             onNavigate={onNavigate}
             onSavingChange={setSaving}
+            preset={preset}
           />
         </Dialog.Content>
       </Dialog.Portal>

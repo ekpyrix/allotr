@@ -205,6 +205,28 @@ test('a new user reaches a first daily number in about three minutes', async ({
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByTestId('left-today')).toHaveText(number);
   await expectAccessible(page);
+
+  // No paycheck yet: Today offers to record the first one, as an income
+  // entry in the paycheck category, and stops asking once it opens the cycle.
+  const prompt = page.getByRole('region', {
+    name: 'Start your first pay cycle',
+  });
+  await expect(prompt).toBeVisible();
+  await prompt.getByRole('button', { name: 'Record a paycheck' }).click();
+  const entry = page.getByRole('dialog', { name: 'Add an entry' });
+  await expect(entry.getByRole('radio', { name: 'Income' })).toBeChecked();
+  await expect(
+    entry.getByLabel('Category', { exact: true }).locator('option:checked'),
+  ).toHaveText('Paycheck');
+  await entry.getByLabel('Amount in EUR').fill('1,800.00');
+  await entry.getByRole('button', { name: 'Save' }).click();
+  await expect(entry).toBeHidden();
+  await expect(prompt).toBeHidden();
+  const opened = (await (
+    await page.request.get('/v1/today')
+  ).json()) as TodayView;
+  expect(opened.cycle.openedBy).not.toBeNull();
+
   test.info().annotations.push({
     type: 'setup time',
     description: `${String(Math.round(elapsed / 1000))} s`,
