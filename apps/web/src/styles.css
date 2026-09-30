@@ -297,6 +297,19 @@ html {
   }
 }
 
+/*
+ * An open dialog locks page scroll (src/lib/vendor/remove-scroll-bar.ts).
+ * The gutter stays reserved, so the page does not shift when the
+ * scrollbar goes.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+body[data-scroll-locked] {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
 /* The top app bar fills in as content scrolls under it. */
 .top-app-bar {
   background-color: var(--chrome);
