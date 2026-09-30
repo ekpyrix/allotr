@@ -12651,6 +12651,83 @@
                         ]
                       }
                     },
+                    "spendingTop": {
+                      "type": "object",
+                      "properties": {
+                        "top": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "categoryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "categoryId",
+                              "amount"
+                            ]
+                          }
+                        },
+                        "other": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "count": {
+                              "type": "integer",
+                              "minimum": 2
+                            },
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "amount"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "top",
+                        "other"
+                      ]
+                    },
                     "amendments": {
                       "type": "array",
                       "items": {
@@ -12715,6 +12792,7 @@
                     "closing",
                     "incomeByCategory",
                     "spendingByCategory",
+                    "spendingTop",
                     "amendments"
                   ]
                 }

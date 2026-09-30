@@ -216,6 +216,19 @@
 @utility check-draw {
   animation: check-draw var(--dur-gentle) var(--ease-gentle) both;
 }
+/* A chart is one tab stop (Recharts' accessibility layer): the theme ring. */
+.recharts-surface:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/*
+ * A chart drawing in from its start, once as it mounts (ADR 0020). It
+ * keeps no clip once drawn, so focus rings and tooltips are never cut.
+ */
+@utility chart-draw {
+  animation: check-draw var(--dur-gentle) var(--ease-gentle) backwards;
+}
 @utility rise-in {
   animation: rise-in var(--dur-smooth) var(--ease-smooth);
 }

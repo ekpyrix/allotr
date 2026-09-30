@@ -1,5 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { formatMoney, money, type Money } from '@allotr/shared';
+import {
+  formatMoney,
+  money,
+  type CycleDayListView,
+  type CycleDetailView,
+  type Money,
+} from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
@@ -96,10 +102,102 @@ test('a past cycle shows its categories and balances', async ({ page }) => {
   await expect(page.getByTestId('cycle-spending')).toHaveText(
     formatMoney(march.spending, locale),
   );
+  await expectAccessible(page);
+
+  await page.getByRole('tab', { name: 'Categories' }).click();
+  await expect(page).toHaveURL(/tab=categories/u);
   const spending = page.getByRole('region', { name: 'Spending by category' });
+  await expect(spending.getByRole('application')).toBeVisible();
+  await expectAccessible(page);
+  await spending.getByRole('button', { name: 'Show as table' }).click();
   await expect(
-    spending.getByRole('listitem').filter({ hasText: 'Housing › Rent' }),
+    spending.getByRole('row').filter({ hasText: 'Housing › Rent' }),
   ).toContainText(formatMoney(eur(50000), locale));
+  const detail = (await (
+    await page.request.get('/v1/cycles/2026-03-01')
+  ).json()) as CycleDetailView;
+  // One row per bar, each with the server's amount.
+  await expect(spending.getByRole('row')).toHaveCount(
+    detail.spendingTop.top.length + (detail.spendingTop.other ? 1 : 0) + 1,
+  );
+  for (const { amount } of detail.spendingTop.top)
+    await expect(spending.getByRole('table')).toContainText(
+      formatMoney(amount, locale),
+    );
+  await expect(
+    page.getByRole('region', { name: 'Income by category' }),
+  ).toBeVisible();
+  await expectAccessible(page);
+});
+
+test('every cycle chart has a table of the server’s figures', async ({
+  page,
+}) => {
+  const series = (await (
+    await page.request.get('/v1/cycles/2026-03-01/days')
+  ).json()) as CycleDayListView;
+  await page.goto('/cycle?start=2026-03-01');
+
+  const chart = page.getByRole('region', { name: 'Spending against pace' });
+  await chart.getByRole('button', { name: 'Show as table' }).click();
+  const rows = chart.getByRole('row');
+  await expect(rows).toHaveCount(series.days.length + 1);
+  for (const [at, day] of series.days.entries()) {
+    const cells = rows.nth(at + 1).getByRole('cell');
+    await expect(cells.nth(0)).toHaveText(
+      day.cumulativeSpent === null
+        ? '—'
+        : formatMoney(day.cumulativeSpent, locale),
+    );
+    await expect(cells.nth(1)).toHaveText(formatMoney(day.pace, locale));
+  }
+  await expectAccessible(page);
+  await chart.getByRole('button', { name: 'Show as chart' }).click();
+  await expect(chart.getByRole('application')).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Days' }).click();
+  const daily = page.getByRole('region', { name: 'Spending each day' });
+  await daily.getByRole('button', { name: 'Show as table' }).click();
+  const past = series.days.filter((day) => day.spent !== null);
+  await expect(daily.getByRole('row')).toHaveCount(past.length + 1);
+  for (const [at, day] of past.entries()) {
+    const cells = daily
+      .getByRole('row')
+      .nth(at + 1)
+      .getByRole('cell');
+    await expect(cells.nth(0)).toHaveText(
+      formatMoney(day.spent ?? eur(0), locale),
+    );
+    await expect(cells.nth(1)).toHaveText(
+      formatMoney(day.allowance ?? eur(0), locale),
+    );
+  }
+  await expectAccessible(page);
+});
+
+test('arrow keys move between a chart’s points', async ({ page }) => {
+  const series = (await (
+    await page.request.get('/v1/cycles/2026-03-01/days')
+  ).json()) as CycleDayListView;
+  const [first, second] = series.days;
+  if (first === undefined || second === undefined)
+    throw new Error('the March cycle has fewer than two days');
+  await page.goto('/cycle?start=2026-03-01');
+  const chart = page.getByRole('region', { name: 'Spending against pace' });
+  const surface = chart.getByRole('application');
+  await surface.focus();
+  await expect(surface).toBeFocused();
+  const tooltip = chart.locator('.recharts-tooltip-wrapper');
+  // Focus pins the tooltip on the first day; the arrows move it.
+  await expect(tooltip).toContainText('Sunday, March 1');
+  await expect(tooltip).toContainText(
+    formatMoney(first.cumulativeSpent ?? eur(0), locale),
+  );
+  await page.keyboard.press('ArrowRight');
+  await expect(tooltip).toContainText('Monday, March 2');
+  await expect(tooltip).toContainText(formatMoney(second.pace, locale));
+  await page.keyboard.press('ArrowLeft');
+  await expect(tooltip).toContainText('Sunday, March 1');
   await expectAccessible(page);
 });
 
@@ -162,6 +260,26 @@ test('Today links to the current cycle', async ({ page }) => {
     formatMoney(eur(250000), locale),
   );
   await expectAccessible(page);
+
+  // Only the open cycle has bills, from /v1/today.
+  const today = (await (await page.request.get('/v1/today')).json()) as {
+    cycleBills: { dueOn: string; paidOn: string | null }[];
+  };
+  await page.getByRole('tab', { name: 'Bills' }).click();
+  const bills = page.getByRole('region', { name: 'Bills this cycle' });
+  await expect(bills.getByRole('listitem')).toHaveCount(
+    today.cycleBills.length,
+  );
+  await expect(bills.getByRole('link', { name: 'Manage bills' })).toBeVisible();
+  await expectAccessible(page);
+
+  await page.getByRole('link', { name: /^Previous cycle/u }).click();
+  await expect(page).toHaveURL(/\/cycle\?start=/u);
+  await expect(page.getByRole('tab', { name: 'Bills' })).toHaveCount(0);
+  await page.getByRole('link', { name: /^Next cycle/u }).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'This cycle' }),
+  ).toBeVisible();
 });
 
 test('the savings view shows off-budget accounts and their total', async ({

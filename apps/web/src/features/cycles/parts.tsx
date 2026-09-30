@@ -5,6 +5,7 @@ import { useId, type ReactNode } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
+import { List, ListRow } from '@/components/ui/list';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { categoryName } from './format.ts';
@@ -105,28 +106,22 @@ export function CategoryTotals({
 }) {
   const heading = useId();
   return (
-    <section aria-labelledby={heading} className="mt-10">
-      <h2 id={heading} className="text-xl font-semibold">
+    <section aria-labelledby={heading} className="grid gap-3">
+      <h2 id={heading} className="text-title">
         {title}
       </h2>
       {totals.length === 0 ? (
-        <p className="mt-3 text-muted-foreground">{empty}</p>
+        <p className="text-text-muted">{empty}</p>
       ) : (
-        <ul className="mt-3 grid gap-2">
+        <List>
           {totals.map(({ categoryId, amount }) => (
-            <li
+            <ListRow
               key={categoryId ?? ''}
-              className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-md bg-plot px-4 py-3"
-            >
-              <span className="min-w-0 wrap-anywhere">
-                {categoryName(names, categoryId)}
-              </span>
-              <span className="font-mono tabular-nums wrap-anywhere">
-                {formatMoney(amount, locale)}
-              </span>
-            </li>
+              title={categoryName(names, categoryId)}
+              trailing={formatMoney(amount, locale)}
+            />
           ))}
-        </ul>
+        </List>
       )}
     </section>
   );

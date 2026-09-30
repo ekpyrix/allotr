@@ -525,6 +525,16 @@ export const cycleDetailSchema = cycleSummarySchema.extend({
   /** Largest first. */
   incomeByCategory: z.array(categoryTotalSchema),
   spendingByCategory: z.array(categoryTotalSchema),
+  /**
+   * For charts: the six largest spending categories, and the rest summed
+   * into one (null when at most one was left, which is then in `top`).
+   */
+  spendingTop: z.object({
+    top: z.array(categoryTotalSchema),
+    other: z
+      .object({ count: z.number().int().min(2), amount: moneySchema })
+      .nullable(),
+  }),
   /** Entries dated in the cycle that were recorded after it closed. */
   amendments: z.array(
     z.object({

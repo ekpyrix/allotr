@@ -879,6 +879,73 @@ export const en = {
       show: 'Show in the ledger',
     },
     history: 'Past cycles',
+    previous: 'Previous cycle',
+    next: 'Next cycle',
+    nav: 'Other cycles',
+    tabs: {
+      label: 'Cycle details',
+      overview: 'Overview',
+      days: 'Days',
+      categories: 'Categories',
+      bills: 'Bills',
+    },
+    spendingChart: {
+      title: 'Spending against pace',
+      caption: 'Spending so far and the even pace, day by day',
+      ahead:
+        'By {date}, {spent} was spent: more than the {pace} an even pace allows.',
+      within:
+        'By {date}, {spent} was spent: within the {pace} an even pace allows.',
+      bills: 'Dotted lines mark the days bills are due.',
+      noDays: 'No spending to show yet.',
+    },
+    dailyChart: {
+      title: 'Spending each day',
+      caption: 'Spending and allowance for each day so far',
+      over: {
+        one: '{count} of {total} days so far went over that day’s allowance.',
+        other: '{count} of {total} days so far went over that day’s allowance.',
+      },
+      none: {
+        one: 'The {total} day so far stayed within its allowance.',
+        other: 'All {total} days so far stayed within their allowance.',
+      },
+    },
+    categoryChart: {
+      title: 'Spending by category',
+      caption: 'Spending by category, largest first',
+      summary: 'Most went to {name}: {amount}.',
+      every: 'Every spending category',
+    },
+    bills: {
+      title: 'Bills this cycle',
+      intro:
+        'Bills due this cycle are set aside from what you can spend until they are marked paid.',
+      empty: 'No bills fall in this cycle.',
+      due: 'Due {date}',
+      paid: 'Paid {date}',
+      reserved: 'Set aside',
+      unknown: 'A deleted bill',
+      manage: 'Manage bills',
+    },
+  },
+  charts: {
+    showTable: 'Show as table',
+    showChart: 'Show as chart',
+    none: '—',
+    day: 'Day',
+    category: 'Category',
+    spent: 'Spent',
+    spentSoFar: 'Spent so far',
+    pace: 'Even pace',
+    allowance: 'Allowance',
+    overAllowance: 'Over the allowance',
+    overShort: 'Over',
+    status: 'Status',
+    other: {
+      one: 'Other ({count} category)',
+      other: 'Other ({count} categories)',
+    },
   },
   history: {
     title: 'Past cycles',

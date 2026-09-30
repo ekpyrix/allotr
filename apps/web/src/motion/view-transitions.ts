@@ -11,8 +11,21 @@ export type TransitionType = 'tab' | 'push' | 'pop';
 
 const tabs: readonly string[] = navItems.map((item) => item.to);
 
+// Views that hang off a destination rather than the nav move as if they
+// sat under it, so Today's hero card can grow into the cycle's header.
+const subViews: Readonly<Record<string, string>> = {
+  '/cycle': '/today',
+  '/history': '/today',
+  '/savings': '/accounts',
+};
+
 function topLevel(path: string): string {
   return `/${path.split('/')[1] ?? ''}`;
+}
+
+function placed(path: string): string {
+  const parent = subViews[topLevel(path)];
+  return parent === undefined ? path : `${parent}${path}`;
 }
 
 /** The kind of move between two paths, or null for none. */
@@ -21,6 +34,8 @@ export function transitionType(
   to: string,
 ): TransitionType | null {
   if (from === undefined || from === to) return null;
+  from = placed(from);
+  to = placed(to);
   if (to.startsWith(`${from}/`)) return 'push';
   if (from.startsWith(`${to}/`)) return 'pop';
   if (tabs.includes(topLevel(from)) && tabs.includes(topLevel(to)))

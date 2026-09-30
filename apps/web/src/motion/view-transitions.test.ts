@@ -18,6 +18,14 @@ describe('transitionType', () => {
     );
   });
 
+  it('treats the views under a destination as deeper pages', () => {
+    expect(transitionType('/today', '/cycle')).toBe('push');
+    expect(transitionType('/cycle', '/today')).toBe('pop');
+    expect(transitionType('/history', '/cycle')).toBe('push');
+    expect(transitionType('/accounts', '/savings')).toBe('push');
+    expect(transitionType('/today', '/savings')).toBe('tab');
+  });
+
   it('does nothing without a move or outside the app', () => {
     expect(transitionType(undefined, '/today')).toBeNull();
     expect(transitionType('/today', '/today')).toBeNull();

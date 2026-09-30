@@ -71,3 +71,25 @@ export function formatMoneyInput(m: Money, locale: string): string {
   }
   return formatter.format(moneyToDecimal(m));
 }
+
+const compactFormatters = new Map<string, Intl.NumberFormat>();
+
+/**
+ * A short label for a chart axis, for example "$1.2K" or "1,2 Tsd. €".
+ * It rounds, so it is never the only place an amount is shown.
+ */
+export function formatMoneyCompact(m: Money, locale: string): string {
+  const key = `${locale}|${m.currency}`;
+  let formatter = compactFormatters.get(key);
+  if (formatter === undefined) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: m.currency,
+      currencyDisplay: 'narrowSymbol',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    });
+    compactFormatters.set(key, formatter);
+  }
+  return formatter.format(moneyToDecimal(m));
+}
