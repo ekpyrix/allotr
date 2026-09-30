@@ -220,7 +220,7 @@ export function BillForm({
           )}
         </FieldControl>
       ) : (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-text-muted">
           {t('settings.bills.paidFrom', { account: account?.name ?? '' })}
         </p>
       )}
@@ -265,10 +265,7 @@ export function BillForm({
             <label htmlFor={activeId} className="font-medium">
               {t('settings.bills.active')}
             </label>
-            <p
-              id={`${activeId}-hint`}
-              className="text-sm text-muted-foreground"
-            >
+            <p id={`${activeId}-hint`} className="text-sm text-text-muted">
               {t('settings.bills.activeHint')}
             </p>
           </div>
@@ -367,7 +364,7 @@ function DueLine({
       </span>
       <span className="flex flex-wrap items-center gap-2">
         {mark.isError ? (
-          <span role="alert" className="text-sm font-medium text-over">
+          <span role="alert" className="text-sm font-medium text-negative">
             {errorMessage(mark.error)}
           </span>
         ) : null}
@@ -425,14 +422,14 @@ function BillItem({
     <li
       aria-labelledby={nameId}
       data-bill-id={bill.id}
-      className="grid gap-3 rounded-md bg-plot p-4"
+      className="grid gap-3 rounded-md bg-card p-4"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="min-w-0 wrap-anywhere">
           <span id={nameId} className="font-medium">
             {bill.name}
           </span>{' '}
-          <span className="text-sm text-muted-foreground">
+          <span className="text-sm text-text-muted">
             {t('settings.bills.summary', {
               day: bill.dueDay,
               account: account?.name ?? '',
@@ -446,7 +443,7 @@ function BillItem({
       </div>
       {bill.active ? (
         due.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-muted">
             {t('settings.bills.notThisCycle')}
           </p>
         ) : (
@@ -541,10 +538,7 @@ export function BillsSection({
         {t('settings.bills.add')}
       </Button>
       {hasAccounts ? null : (
-        <p
-          id="bills-no-accounts"
-          className="mt-2 text-sm text-muted-foreground"
-        >
+        <p id="bills-no-accounts" className="mt-2 text-sm text-text-muted">
           {t('settings.bills.noAccounts')}
         </p>
       )}
@@ -552,7 +546,7 @@ export function BillsSection({
         {announcement}
       </p>
       {bills.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-4 text-sm text-text-muted">
           {t('settings.bills.none')}
         </p>
       ) : (

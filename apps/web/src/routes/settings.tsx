@@ -107,7 +107,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
     accounts.data === undefined
   )
     ledger = (
-      <p role="status" className="mt-6 text-muted-foreground">
+      <p role="status" className="mt-6 text-text-muted">
         {t('settings.loading')}
       </p>
     );

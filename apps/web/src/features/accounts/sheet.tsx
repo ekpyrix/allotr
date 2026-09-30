@@ -54,7 +54,7 @@ export function Sheet({
               : (fallback?.() ?? document.querySelector<HTMLElement>('main'))
             )?.focus();
           }}
-          className="fixed inset-x-0 bottom-0 z-40 max-h-[90dvh] overflow-y-auto rounded-t-lg border bg-background p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg"
+          className="fixed inset-x-0 bottom-0 z-40 max-h-[90dvh] overflow-y-auto rounded-t-lg border bg-canvas p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] outline-none medium:inset-x-auto medium:top-1/2 medium:bottom-auto medium:left-1/2 medium:w-full medium:max-w-lg medium:-translate-x-1/2 medium:-translate-y-1/2 medium:rounded-lg"
         >
           <div className="flex items-center justify-between gap-4">
             <Dialog.Title

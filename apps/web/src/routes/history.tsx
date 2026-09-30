@@ -25,7 +25,7 @@ function PastCycle({
   return (
     <li
       data-cycle={cycle.openedOn}
-      className="grid gap-3 rounded-md bg-plot p-4"
+      className="grid gap-3 rounded-md bg-card p-4"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="font-medium">
@@ -50,10 +50,10 @@ function PastCycle({
           </span>
         ) : null}
       </div>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 medium:grid-cols-4">
         {figures.map(([term, amount, key]) => (
           <div key={key}>
-            <dt className="text-sm text-muted-foreground">{term}</dt>
+            <dt className="text-sm text-text-muted">{term}</dt>
             <dd
               data-testid={`history-${key}`}
               className="font-mono tabular-nums wrap-anywhere"
@@ -93,9 +93,7 @@ export function HistoryPage() {
         </Link>
       </p>
       {past.length === 0 ? (
-        <p className="mt-6 max-w-prose text-muted-foreground">
-          {t('history.empty')}
-        </p>
+        <p className="mt-6 max-w-prose text-text-muted">{t('history.empty')}</p>
       ) : (
         <ul className="mt-6 grid gap-3">
           {past.map((cycle) => (

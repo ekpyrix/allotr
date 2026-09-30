@@ -203,13 +203,13 @@ function RateItem({
         <span id={labelId} className="font-mono tabular-nums">
           {label}
         </span>{' '}
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-text-muted">
           {t('settings.rates.from', { day })}
         </span>
       </span>
       <span className="flex flex-wrap items-center gap-2">
         {remove.isError ? (
-          <span role="alert" className="text-sm font-medium text-over">
+          <span role="alert" className="text-sm font-medium text-negative">
             {errorMessage(remove.error)}
           </span>
         ) : null}
@@ -261,10 +261,10 @@ export function RatesSection({
       intro={t('settings.rates.intro', { currency: defaultCurrency })}
     >
       {today.missingRates.length === 0 ? null : (
-        <p className="mt-4 flex gap-3 rounded-md bg-plot p-3 text-sm">
+        <p className="mt-4 flex gap-3 rounded-md bg-card p-3 text-sm">
           <TriangleAlert
             aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-over"
+            className="mt-0.5 size-4 shrink-0 text-negative"
           />
           {t('settings.rates.missing', {
             currencies: today.missingRates.join(', '),
@@ -283,13 +283,13 @@ export function RatesSection({
         {announcement}
       </p>
       {rates.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-text-muted">
           {t('settings.rates.none')}
         </p>
       ) : (
         <ul
           aria-label={t('settings.rates.listLabel')}
-          className="mt-6 divide-y rounded-md bg-plot px-4"
+          className="mt-6 divide-y rounded-md bg-card px-4"
         >
           {rates.map((rate) => (
             <RateItem

@@ -89,7 +89,7 @@ export function ThemePreview({
               {t('themes.previewPrimary')}
             </span>
             <span className="inline-flex h-9 items-center rounded-full border border-outline px-4 text-label text-negative">
-              {t('themes.previewDestructive')}
+              {t('themes.previewDanger')}
             </span>
             <span className="rounded-md bg-inverse px-2 py-1 text-caption text-on-inverse">
               {amount(1200)}

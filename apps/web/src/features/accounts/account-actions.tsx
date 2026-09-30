@@ -223,7 +223,7 @@ export function ArchiveFlow({
             {t('accounts.archiveFlow.how')}
           </legend>
           {targets.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-muted">
               {t('accounts.archiveFlow.noTargets', {
                 currency: account.currency,
               })}
@@ -282,7 +282,7 @@ export function ArchiveFlow({
             />
             <span className="grid gap-0.5">
               <span>{t('accounts.archiveFlow.writeOff')}</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-text-muted">
                 {t('accounts.archiveFlow.writeOffHint', { amount })}
               </span>
             </span>

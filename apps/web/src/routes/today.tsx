@@ -24,7 +24,7 @@ import {
 } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
-import { Sheet } from '@/motion/sheet';
+import { LazySheet } from '@/motion/lazy-sheet';
 
 // The Today view (FR-W1, spec §11.1): one number first, then what backs it,
 // what needs a look and what was logged today. Every figure comes from the
@@ -145,7 +145,7 @@ export function TodayPage({ user }: { user: SessionUser }) {
           </Card>
         </div>
       </div>
-      <Sheet
+      <LazySheet
         open={explaining}
         onOpenChange={setExplaining}
         title={t('today.waterfall.title')}
@@ -153,7 +153,7 @@ export function TodayPage({ user }: { user: SessionUser }) {
         defaultDetent="large"
       >
         <Waterfall figures={figures} savings={savings} locale={locale} />
-      </Sheet>
+      </LazySheet>
     </Page>
   );
 }

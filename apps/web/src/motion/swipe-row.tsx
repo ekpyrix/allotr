@@ -1,3 +1,4 @@
+import { MotionProvider } from './provider.tsx';
 import { animate, m, useMotionValue, type PanInfo } from 'motion/react';
 import { MoreHorizontal } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -12,7 +13,7 @@ import { springConfig } from './springs.ts';
 // A row with swipe actions (spec §9.2). Swiping left reveals the trailing
 // actions, swiping right the leading ones, from 64 px; a haptic tick marks
 // each threshold. A full swipe (past half the row) runs an action only if
-// it says so, and destructive actions never do. Every action is also in
+// it says so, and irreversible actions never do. Every action is also in
 // the row's "More actions" menu, which is how keyboards and screen readers
 // reach them: the revealed buttons are a pointer shortcut and are hidden
 // from assistive technology. Swiping is off when motion is off.
@@ -22,7 +23,7 @@ export type SwipeAction = Readonly<{
   icon: ReactNode;
   onAction: () => void;
   tone?: 'tonal' | 'danger';
-  /** Runs on a full swipe; never set it for a destructive action. */
+  /** Runs on a full swipe; never set it for an irreversible action. */
   commitOnFullSwipe?: boolean;
 }>;
 
@@ -85,7 +86,7 @@ function ActionButtons({
   );
 }
 
-export function SwipeRow({
+function SwipeRowBody({
   label,
   leading = [],
   trailing = [],
@@ -215,5 +216,21 @@ export function SwipeRow({
         )}
       </m.div>
     </div>
+  );
+}
+
+/** The row, with Motion set up around it (ADR 0019). */
+export function SwipeRow(props: {
+  /** Names the row in its menu button: "More actions for Lunch". */
+  label: string;
+  leading?: readonly SwipeAction[];
+  trailing?: readonly SwipeAction[];
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <MotionProvider>
+      <SwipeRowBody {...props} />
+    </MotionProvider>
   );
 }

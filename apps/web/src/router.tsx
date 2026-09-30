@@ -22,20 +22,67 @@ import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
 import { saveSetup, setupQuery } from '@/lib/setup';
-import { AccountsPage } from './routes/accounts.tsx';
-import { CyclePage } from './routes/cycle.tsx';
-import { HistoryPage } from './routes/history.tsx';
-import { InvitePage } from './routes/invite.tsx';
-import { LedgerPage } from './routes/ledger.tsx';
-import { OnboardingPage } from './routes/onboarding.tsx';
-import { SavingsPage } from './routes/savings.tsx';
-import { SettingsPage } from './routes/settings.tsx';
-import { SetupPage } from './routes/setup.tsx';
-import { EditThemePage, NewThemePage } from './routes/theme-editor.tsx';
 import { SignInPage } from './routes/sign-in.tsx';
 import { TodayPage } from './routes/today.tsx';
 import { viewTransitions } from './motion/view-transitions.ts';
 import { t } from '@/messages/t';
+
+// Every page but Today and sign-in loads when first visited; the router
+// preloads it before rendering, so a visit never flashes empty.
+const AccountsPage = lazyRouteComponent(
+  () => import('./routes/accounts.tsx'),
+  'AccountsPage',
+);
+const CyclePage = lazyRouteComponent(
+  () => import('./routes/cycle.tsx'),
+  'CyclePage',
+);
+const HistoryPage = lazyRouteComponent(
+  () => import('./routes/history.tsx'),
+  'HistoryPage',
+);
+const InvitePage = lazyRouteComponent(
+  () => import('./routes/invite.tsx'),
+  'InvitePage',
+);
+const LedgerPage = lazyRouteComponent(
+  () => import('./routes/ledger.tsx'),
+  'LedgerPage',
+);
+const OnboardingPage = lazyRouteComponent(
+  () => import('./routes/onboarding.tsx'),
+  'OnboardingPage',
+);
+const SavingsPage = lazyRouteComponent(
+  () => import('./routes/savings.tsx'),
+  'SavingsPage',
+);
+const SettingsPage = lazyRouteComponent(
+  () => import('./routes/settings.tsx'),
+  'SettingsPage',
+);
+const SetupPage = lazyRouteComponent(
+  () => import('./routes/setup.tsx'),
+  'SetupPage',
+);
+const NewThemePage = lazyRouteComponent(
+  () => import('./routes/theme-editor.tsx'),
+  'NewThemePage',
+);
+const EditThemePage = lazyRouteComponent(
+  () => import('./routes/theme-editor.tsx'),
+  'EditThemePage',
+);
+
+/** A route component that renders a lazy page, preloaded like the page. */
+function preloading<C extends object>(
+  component: C,
+  page: { preload?: () => Promise<void> | undefined },
+): C {
+  if (page.preload !== undefined)
+    Object.assign(component, { preload: page.preload });
+  return component;
+}
 
 interface RouterContext {
   queryClient: QueryClient;
@@ -117,10 +164,10 @@ const inviteRoute = createRoute({
     const target = await destination(context.queryClient);
     if (target !== '/sign-in') throw redirect({ to: target });
   },
-  component: function Invite() {
+  component: preloading(function Invite() {
     const { token } = inviteRoute.useParams();
     return <InvitePage token={token} />;
-  },
+  }, InvitePage),
 });
 
 // Every signed-in route lives under this pathless layout, so the session is
@@ -169,7 +216,7 @@ const ledgerRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/ledger',
   validateSearch: validateLedgerSearch,
-  component: function Ledger() {
+  component: preloading(function Ledger() {
     const search = ledgerRoute.useSearch();
     const navigate = ledgerRoute.useNavigate();
     const go = useCallback(
@@ -179,7 +226,7 @@ const ledgerRoute = createRoute({
       [navigate],
     );
     return <LedgerPage search={search} navigate={go} />;
-  },
+  }, LedgerPage),
 });
 
 const accountsRoute = createRoute({
@@ -194,10 +241,10 @@ const cycleRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/cycle',
   validateSearch: validateCycleSearch,
-  component: function Cycle() {
+  component: preloading(function Cycle() {
     const { start, tab } = cycleRoute.useSearch();
     return <CyclePage start={start} tab={tab} />;
-  },
+  }, CyclePage),
 });
 
 const historyRoute = createRoute({
@@ -231,10 +278,10 @@ const setupRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
-  component: function Settings() {
+  component: preloading(function Settings() {
     const { session } = settingsRoute.useRouteContext();
     return <SettingsPage session={session} />;
-  },
+  }, SettingsPage),
 });
 
 const newThemeRoute = createRoute({
@@ -242,21 +289,21 @@ const newThemeRoute = createRoute({
   path: '/settings/themes/new',
   validateSearch: (search: Record<string, unknown>): { from?: string } =>
     typeof search.from === 'string' ? { from: search.from } : {},
-  component: function NewTheme() {
+  component: preloading(function NewTheme() {
     const { session } = newThemeRoute.useRouteContext();
     const { from } = newThemeRoute.useSearch();
     return <NewThemePage session={session} from={from} />;
-  },
+  }, NewThemePage),
 });
 
 const editThemeRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings/themes/$id',
-  component: function EditTheme() {
+  component: preloading(function EditTheme() {
     const { session } = editThemeRoute.useRouteContext();
     const { id } = editThemeRoute.useParams();
     return <EditThemePage session={session} id={id} />;
-  },
+  }, EditThemePage),
 });
 
 // The component gallery, in development only; the dynamic import keeps it

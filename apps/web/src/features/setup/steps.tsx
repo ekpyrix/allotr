@@ -279,14 +279,14 @@ function AddedList({ items }: { items: readonly [string, ReactNode][] }) {
   if (items.length === 0) return null;
   return (
     <section aria-label={t('setup.added')} className="mt-6">
-      <h3 className="text-sm font-medium text-muted-foreground">
+      <h3 className="text-sm font-medium text-text-muted">
         {t('setup.added')}
       </h3>
       <ul className="mt-2 grid gap-2">
         {items.map(([key, content]) => (
           <li
             key={key}
-            className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-md bg-plot p-3"
+            className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-md bg-card p-3"
           >
             {content}
           </li>
@@ -426,7 +426,7 @@ export function BillsStep({
           />
         </div>
       ) : (
-        <p className="mt-6 max-w-prose text-muted-foreground">
+        <p className="mt-6 max-w-prose text-text-muted">
           {t('setup.bills.noAccounts')}
         </p>
       )}

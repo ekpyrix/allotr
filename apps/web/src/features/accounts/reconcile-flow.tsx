@@ -273,7 +273,7 @@ function Difference({
       : t('accounts.reconcileFlow.more', { amount, date });
   const figure = (label: string, value: string) => (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-      <dt className="text-muted-foreground">{label}</dt>
+      <dt className="text-text-muted">{label}</dt>
       <dd className="font-mono tabular-nums wrap-anywhere">{value}</dd>
     </div>
   );
@@ -282,7 +282,7 @@ function Difference({
       ref={ref}
       tabIndex={-1}
       data-testid="reconcile-difference"
-      className="grid gap-3 rounded-md bg-plot p-4 focus-visible:outline-2 focus-visible:outline-ring"
+      className="grid gap-3 rounded-md bg-card p-4 focus-visible:outline-2 focus-visible:outline-ring"
     >
       <p className="font-medium">{summary}</p>
       <dl className="grid gap-1">

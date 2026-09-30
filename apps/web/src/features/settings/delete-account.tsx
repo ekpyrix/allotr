@@ -14,7 +14,7 @@ import { Section } from './section.tsx';
 
 // Deleting the account (FR-U3): a hard delete, confirmed with the password
 // and, with 2FA on, a TOTP or backup code. The dialog offers a backup
-// first. Destructive actions use the danger-tonal button, whose label the
+// first. Irreversible actions use the danger-tonal button, whose label the
 // resolver fits on its container.
 
 function DeleteForm({
@@ -57,7 +57,7 @@ function DeleteForm({
       {/* Held to 2FA enrolment, the user cannot export yet. */}
       {session.twoFactorRequired ? null : (
         <div className="grid justify-items-start gap-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-text-muted">
             {t('settings.deleteAccount.exportFirst')}
           </p>
           <Button asChild variant="outlined" className="h-11">

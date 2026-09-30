@@ -1137,7 +1137,7 @@ export const en = {
     previewOver: 'Over by {amount}',
     previewMuted: 'Updated just now',
     previewPrimary: 'Save',
-    previewDestructive: 'Delete',
+    previewDanger: 'Delete',
     contrast: 'Contrast',
     allPass: 'Every role meets WCAG 2.2 AA.',
     adjusted: {

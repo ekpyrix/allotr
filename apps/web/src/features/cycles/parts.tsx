@@ -55,7 +55,7 @@ export function PageState({
     );
   return (
     <Page title={title}>
-      <p role="status" className="mt-6 text-muted-foreground">
+      <p role="status" className="mt-6 text-text-muted">
         {loading}
       </p>
     </Page>
@@ -74,11 +74,11 @@ export function Figures({
   return (
     <dl
       aria-label={label}
-      className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
+      className="mt-6 grid grid-cols-2 gap-3 medium:grid-cols-4"
     >
       {items.map(([term, amount, testId]) => (
-        <div key={term} className="rounded-md bg-plot p-4">
-          <dt className="text-sm text-muted-foreground">{term}</dt>
+        <div key={term} className="rounded-md bg-card p-4">
+          <dt className="text-sm text-text-muted">{term}</dt>
           <dd
             data-testid={testId}
             className="mt-1 font-mono text-lg tabular-nums wrap-anywhere"
@@ -143,11 +143,11 @@ export function MissingRates({
       {currencies.map((currency) => (
         <li
           key={currency}
-          className="flex gap-3 rounded-md bg-plot p-3 text-sm"
+          className="flex gap-3 rounded-md bg-card p-3 text-sm"
         >
           <TriangleAlert
             aria-hidden
-            className="mt-0.5 size-4 shrink-0 text-over"
+            className="mt-0.5 size-4 shrink-0 text-negative"
           />
           <span className="grid gap-1">
             <span>

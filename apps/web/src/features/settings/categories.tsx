@@ -66,7 +66,7 @@ function PaycheckBox({
         <label htmlFor={id} className="font-medium">
           {t('settings.categories.paycheck')}
         </label>
-        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+        <p id={`${id}-hint`} className="text-sm text-text-muted">
           {t('settings.categories.paycheckHint')}
         </p>
       </div>
@@ -448,7 +448,7 @@ function CategoryItem({
             {category.name}
           </span>
           {category.isPaycheck ? (
-            <span className="ml-2 text-sm text-muted-foreground">
+            <span className="ml-2 text-sm text-text-muted">
               {t('settings.categories.paycheckBadge')}
             </span>
           ) : null}
@@ -551,11 +551,11 @@ export function CategoriesSection({
             {t(`settings.categories.groups.${kind}`)}
           </h3>
           {tree[kind].length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-text-muted">
               {t('settings.categories.none')}
             </p>
           ) : (
-            <ul className="mt-2 divide-y rounded-md bg-plot px-4">
+            <ul className="mt-2 divide-y rounded-md bg-card px-4">
               {tree[kind].map(({ category, children }) => (
                 <CategoryItem
                   key={category.id}

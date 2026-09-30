@@ -68,23 +68,21 @@ describe('styles.css', () => {
     }
   });
 
-  it('keeps the legacy names until every screen uses roles', () => {
-    // Small text in `over` and `destructive` takes `negative`, the role
-    // fitted to 4.5:1; the hero and danger fills only reach 3:1.
-    for (const [name, role] of [
-      ['background', 'canvas'],
-      ['foreground', 'text'],
-      ['muted-foreground', 'text-muted'],
-      ['plot', 'card'],
-      ['today', 'hero-ok'],
-      ['over', 'negative'],
-      ['border', 'outline-variant'],
-      ['input', 'outline'],
-      ['destructive', 'negative'],
-      ['primary-foreground', 'on-primary'],
-    ] as const) {
-      expect(css).toContain(`--color-${name}: var(--${name}, var(--${role}));`);
-    }
+  it('has no colour names from before the roles', () => {
+    for (const name of [
+      'background',
+      'foreground',
+      'muted',
+      'muted-foreground',
+      'plot',
+      'today',
+      'over',
+      'border',
+      'input',
+      'destructive',
+      'primary-foreground',
+    ])
+      expect(css).not.toContain(`--color-${name}:`);
   });
 
   it('never uses a box shadow for depth', () => {

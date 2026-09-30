@@ -80,10 +80,10 @@ export const THEME_PAIRS: readonly ThemePair[] = [
   ),
   { foreground: 'primary-foreground', background: 'primary', kind: 'text' },
   { foreground: 'destructive', background: 'background', kind: 'text' },
-  // Destructive buttons are outline buttons with destructive text. In the
-  // dark scheme the outline variant fills them with `input` at 30%, and at
-  // 50% on hover (`dark:bg-input/30`, `dark:hover:bg-input/50` in
-  // apps/web/src/components/ui/button.tsx; a web test checks they match).
+  // v1 destructive buttons were outline buttons with destructive text,
+  // filled in the dark scheme with `input` at 30%, and at 50% on hover.
+  // The web app has since moved to roles; v1 bodies are still checked
+  // against the buttons they were made for.
   ...[0.3, 0.5].map((alpha): ThemePair => ({
     foreground: 'destructive',
     background: 'background',

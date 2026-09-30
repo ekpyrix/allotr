@@ -160,7 +160,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-W2 | Views for ledger, accounts, cycle, savings and goals, history and settings. | M | M2 |
 | FR-W3 | Responsive layouts for phone, foldable, tablet and desktop; installable PWA. | M | M2 |
 | FR-W4 | Entries made offline are queued and synced later. | S | M7 |
-| FR-W5 | Light, dark and community themes; custom themes by import or editor, validated for contrast. | S | M2 |
+| FR-W5 | Palette themes with a role map, fitted to WCAG 2.2 AA contrast; shipped palette families; custom themes by editor or import from common palette and terminal colour formats. | S | M2 |
 | FR-W6 | Read-only kiosk view and a small embeddable card, accessed with a summary-only token. | S | M6 |
 | FR-W7 | Onboarding reaches a first daily number in about three minutes. | M | M2 |
 

@@ -372,7 +372,7 @@ export function AccountsPage() {
   )
     return (
       <Page title={t('accounts.title')}>
-        <p role="status" className="mt-6 text-muted-foreground">
+        <p role="status" className="mt-6 text-text-muted">
           {t('accounts.loading')}
         </p>
       </Page>

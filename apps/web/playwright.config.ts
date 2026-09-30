@@ -32,6 +32,7 @@ const specs = [
   'themes',
   'command-palette',
   'savings',
+  'audit',
 ];
 
 const projects = sizes.flatMap((size, i) =>
