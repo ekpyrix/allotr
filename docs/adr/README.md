@@ -28,3 +28,8 @@ kept in `docs/drafts/`, which git ignores.
 - [0013 API versioning and deprecation policy](0013-api-versioning.md)
 - [0014 Project name and trademark check](0014-name-and-trademark.md)
 - [0015 Database encryption at rest](0015-encryption-at-rest.md)
+- [0016 Themes are terminal palettes with a role map (theme file v2)](0016-palette-themes.md)
+- [0017 Shipping third-party palettes under their names, with credit](0017-third-party-palettes.md)
+- [0018 Visual language: tonal surfaces, large radii, mono accents](0018-visual-language.md)
+- [0019 Motion system: spring tokens across CSS, View Transitions and Motion](0019-motion-system.md)
+- [0020 UI foundation: owned shadcn primitives, custom sheets, charts from server series](0020-ui-foundation.md)
