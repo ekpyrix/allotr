@@ -185,16 +185,25 @@ test('a new user reaches a first daily number in about three minutes', async ({
   await check();
   await page.getByRole('button', { name: 'Finish' }).click();
 
-  await expect(page).toHaveURL(/\/today$/);
-  const hero = page.getByTestId('left-today');
-  await expect(hero).toBeVisible();
+  // Setup ends on the first daily number, rolled up from zero.
+  const first = page.getByTestId('first-number');
+  await expect(first).toBeAttached();
+  await expect(
+    page.getByRole('heading', { name: 'Your first daily number' }),
+  ).toBeFocused();
   const elapsed = clock.elapsed();
 
   const figures = (await (
     await page.request.get('/v1/today')
   ).json()) as TodayView;
   expect(figures.leftToday.currency).toBe('EUR');
-  await expect(hero).toHaveText(formatMoney(figures.leftToday, 'en-US'));
+  const number = formatMoney(figures.leftToday, 'en-US');
+  await expect(first).toHaveText(number);
+  await expectAccessible(page);
+
+  await page.getByRole('button', { name: 'Go to Today' }).click();
+  await expect(page).toHaveURL(/\/today$/);
+  await expect(page.getByTestId('left-today')).toHaveText(number);
   await expectAccessible(page);
   test.info().annotations.push({
     type: 'setup time',

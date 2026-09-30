@@ -78,7 +78,11 @@ export function SignInPage({
   // button are not reused (and transitioned) as the code step's elements.
   if (step === 'code') {
     return (
-      <AuthLayout title={t('signIn.codeTitle')} intro={t('signIn.codeIntro')}>
+      <AuthLayout
+        title={t('signIn.codeTitle')}
+        intro={t('signIn.codeIntro')}
+        step="code"
+      >
         <form key="code" className="grid gap-5" onSubmit={submitCode}>
           {/* A TOTP code (6 digits) or a backup code (letters and digits
               around a hyphen), so no numeric keypad and no autocorrect. */}
@@ -118,6 +122,7 @@ export function SignInPage({
   return (
     <AuthLayout
       title={t('signIn.title')}
+      step="password"
       {...(deleted ? { intro: t('signIn.deleted') } : {})}
     >
       <form key="password" className="grid gap-5" onSubmit={submitPassword}>

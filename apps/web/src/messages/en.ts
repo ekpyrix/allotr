@@ -39,6 +39,12 @@ export const en = {
     skip: 'Skip this step',
     finish: 'Finish',
     saving: 'Saving…',
+    reveal: {
+      title: 'Your first daily number',
+      intro:
+        'What you can spend today: your on-budget money, less bills set aside, spread over the days to payday.',
+      go: 'Go to Today',
+    },
     skipRest: 'Skip the rest of setup',
     skipRestHint: 'You can set everything later in Settings and Accounts.',
     importHint:
