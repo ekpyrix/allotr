@@ -160,6 +160,7 @@ const ledgerArb = fc
 const viewArb = fc
   .record({
     ledger: ledgerArb,
+    paydayRule: fc.constantFrom('fixed', 'last-working-day', 'manual' as const),
     paydayDay: fc.integer({ min: 1, max: 31 }),
     billDay: fc.integer({ min: 1, max: 31 }),
     billAmount: amountArb,
@@ -169,6 +170,7 @@ const viewArb = fc
   .map(
     ({
       ledger,
+      paydayRule,
       paydayDay,
       billDay,
       billAmount,
@@ -181,6 +183,7 @@ const viewArb = fc
       settings: {
         defaultCurrency: usd,
         startedOn,
+        paydayRule,
         paydayDay,
         paydayOverride: null,
       },
@@ -591,6 +594,7 @@ describe('chart series performance', () => {
       settings: {
         defaultCurrency: usd,
         startedOn: start,
+        paydayRule: 'fixed',
         paydayDay: 1,
         paydayOverride: null,
       },

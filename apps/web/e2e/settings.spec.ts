@@ -53,7 +53,7 @@ function addDays(day: string, days: number): string {
 const section = (page: Page, name: string) =>
   page.getByRole('region', { name, exact: true });
 
-test('changing the payday override updates Today’s days left', async ({
+test('changing the payday override and rule updates Today’s figures', async ({
   page,
 }) => {
   await page.goto('/settings#payday');
@@ -92,6 +92,24 @@ test('changing the payday override updates Today’s days left', async ({
   ).toBeVisible();
   await expect(region.getByLabel('This cycle’s payday')).toHaveValue('');
   expect((await ledgerSettings(page)).paydayOverride).toBeNull();
+
+  // The rule can be the last working day, and back. (Part of this test:
+  // every test signs in, and sign-ins are rate limited per minute.)
+  await region.getByLabel('How payday is set').selectOption('last-working-day');
+  // The day of the month is not used by this rule.
+  await expect(region.getByLabel('Payday each month')).toHaveCount(0);
+  await region.getByRole('button', { name: 'Save' }).click();
+  await expect(region.getByText('Saved.')).toBeVisible();
+  expect((await ledgerSettings(page)).paydayRule).toBe('last-working-day');
+  const lastWorking = (await today(page)).cycle.payday;
+  const weekday = new Date(`${lastWorking}T00:00:00Z`).getUTCDay();
+  expect(weekday).toBeGreaterThanOrEqual(1);
+  expect(weekday).toBeLessThanOrEqual(5);
+
+  await region.getByLabel('How payday is set').selectOption('fixed');
+  await region.getByRole('button', { name: 'Save' }).click();
+  await expect(region.getByText('Saved.')).toBeVisible();
+  expect((await ledgerSettings(page)).paydayRule).toBe('fixed');
 });
 
 test('the locale shows a sample and is saved in canonical form', async ({

@@ -1,4 +1,10 @@
-import type { CurrencyCode, LocalDate, Money, Rate } from '@allotr/shared';
+import type {
+  CurrencyCode,
+  LocalDate,
+  Money,
+  PaydayRule,
+  Rate,
+} from '@allotr/shared';
 import type { Chart } from '../ledger/chart.ts';
 import type {
   CategoryId,
@@ -44,6 +50,8 @@ export type LedgerSettings = Readonly<{
   defaultCurrency: CurrencyCode;
   /** The day the user started: the first cycle opens then, from opening balances. */
   startedOn: LocalDate;
+  /** How the next payday is predicted (docs/domain.md "Policies"). */
+  paydayRule: PaydayRule;
   /** Day of the month that payday falls on (FR-C2). */
   paydayDay: number;
   /** The next payday, when it differs from the predicted one. */

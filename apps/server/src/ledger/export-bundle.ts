@@ -285,6 +285,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
       locale: settings.locale,
       timeZone: settings.timeZone,
       defaultCurrency: settings.defaultCurrency,
+      paydayRule: settings.paydayRule,
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
     },

@@ -510,7 +510,21 @@ export const en = {
         one: 'Next payday: {date}, {count} day left in this cycle.',
         other: 'Next payday: {date}, {count} days left in this cycle.',
       },
+      rule: 'How payday is set',
+      rules: {
+        fixed: 'A fixed day of the month',
+        'last-working-day': 'The last working day of the month',
+        manual: 'I set it each cycle',
+      },
+      ruleHint: {
+        fixed: 'Payday falls on the same day every month.',
+        'last-working-day':
+          'The last Monday to Friday of the month. Public holidays are not taken into account.',
+        manual:
+          'Enter the date of your next payday after each paycheck. Until you do, the day below stands in.',
+      },
       day: 'Payday each month',
+      dayManual: 'Stand-in day of the month',
       dayHint: 'Shorter months use their last day.',
       override: 'This cycle’s payday',
       overrideHint:

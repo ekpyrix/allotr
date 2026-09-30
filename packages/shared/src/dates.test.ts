@@ -3,6 +3,8 @@ import {
   addDays,
   DateError,
   daysBetween,
+  isoWeekday,
+  lastDayOfMonth,
   localDate,
   localDateIn,
   localDateSchema,
@@ -103,5 +105,24 @@ describe('localDateIn', () => {
     expect(errorCode(() => localDateIn(instant, 'Mars/Olympus'))).toBe(
       'date.invalid',
     );
+  });
+});
+
+describe('isoWeekday and lastDayOfMonth', () => {
+  it('numbers Monday 1 to Sunday 7', () => {
+    // 2026-03-09 is a Monday.
+    expect(
+      ['09', '10', '11', '12', '13', '14', '15'].map((d) =>
+        isoWeekday(localDate(`2026-03-${d}`)),
+      ),
+    ).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(isoWeekday(localDate('1969-12-31'))).toBe(3);
+  });
+
+  it('finds the last day of any month, leap years included', () => {
+    expect(lastDayOfMonth(localDate('2026-02-03'))).toBe('2026-02-28');
+    expect(lastDayOfMonth(localDate('2028-02-03'))).toBe('2028-02-29');
+    expect(lastDayOfMonth(localDate('2026-04-30'))).toBe('2026-04-30');
+    expect(lastDayOfMonth(localDate('2026-12-01'))).toBe('2026-12-31');
   });
 });

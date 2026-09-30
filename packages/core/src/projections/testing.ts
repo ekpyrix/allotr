@@ -19,6 +19,7 @@ export function settings(
   return {
     defaultCurrency: usd,
     startedOn: localDate('2026-02-18'),
+    paydayRule: 'fixed',
     paydayDay: 1,
     paydayOverride: null,
     ...overrides,

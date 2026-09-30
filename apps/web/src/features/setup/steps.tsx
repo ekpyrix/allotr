@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CreateAccountForm } from '@/features/accounts/create-account-form';
 import { BillForm } from '@/features/settings/bills';
+import { PaydayRuleFields } from '@/features/settings/payday-rule';
 import {
   browserRegion,
   localeSample,
@@ -29,8 +30,6 @@ import { t } from '@/messages/t';
 // The steps of setup (FR-W7). Each saves through the same endpoints as
 // Settings and Accounts, then calls `onNext`; `onSkip` moves on without
 // saving.
-
-const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
 interface StepProps {
   busy: boolean;
@@ -230,45 +229,39 @@ export function PaydayStep({
   onNext,
   onSkip,
 }: StepProps & { settings: LedgerSettingsView }) {
+  const [rule, setRule] = useState(settings.paydayRule);
   const [day, setDay] = useState(settings.paydayDay);
   const save = useSaveSettings();
   const problem = save.isError ? describeProblem(save.error) : null;
 
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (day === settings.paydayDay) {
+    const body: UpdateLedgerSettingsBody = {
+      ...(rule === settings.paydayRule ? {} : { paydayRule: rule }),
+      ...(day === settings.paydayDay ? {} : { paydayDay: day }),
+    };
+    if (Object.keys(body).length === 0) {
       onNext();
       return;
     }
-    save.mutate({ paydayDay: day }, { onSuccess: onNext });
+    save.mutate(body, { onSuccess: onNext });
   }
 
   return (
     <form className="mt-6 grid max-w-md gap-5" onSubmit={submit} noValidate>
-      <FieldControl
-        label={t('settings.payday.day')}
-        hint={t('settings.payday.dayHint')}
+      <PaydayRuleFields
+        rule={rule}
+        day={day}
         error={problem?.fields.paydayDay}
-      >
-        {(props) => (
-          <select
-            {...props}
-            name="paydayDay"
-            value={day}
-            className={selectClass}
-            onChange={(e) => {
-              setDay(Number(e.currentTarget.value));
-              if (save.isError) save.reset();
-            }}
-          >
-            {days.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        )}
-      </FieldControl>
+        onRule={(next) => {
+          setRule(next);
+          if (save.isError) save.reset();
+        }}
+        onDay={(next) => {
+          setDay(next);
+          if (save.isError) save.reset();
+        }}
+      />
       <FormError message={problem?.message ?? null} />
       <Actions
         busy={busy || save.isPending}

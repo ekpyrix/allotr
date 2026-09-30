@@ -356,6 +356,15 @@ export type TransactionListView = z.infer<typeof transactionListSchema>;
 // Ledger settings, today's figures, exchange rates and bills (FR-C2,
 // FR-C4, FR-C5, FR-X2). Bills are only what the reserve needs until M4.
 
+/**
+ * How the next payday is predicted (docs/domain.md "Policies"): a fixed day
+ * of the month, the last Monday-to-Friday of the month, or a date the user
+ * sets each cycle.
+ */
+export const paydayRules = ['fixed', 'last-working-day', 'manual'] as const;
+export const paydayRuleSchema = z.enum(paydayRules);
+export type PaydayRule = z.infer<typeof paydayRuleSchema>;
+
 export const ledgerSettingsSchema = z.object({
   /** BCP 47 locale for formatting, such as `en-US`. */
   locale: z.string(),
@@ -363,7 +372,12 @@ export const ledgerSettingsSchema = z.object({
   timeZone: z.string(),
   /** Figures are reported in it; the ledger is never rewritten. */
   defaultCurrency: currencyCodeSchema,
-  /** Day of the month that payday falls on; shorter months use their last day. */
+  /** How the next payday is predicted; `fixed` until the user picks another. */
+  paydayRule: paydayRuleSchema,
+  /**
+   * Day of the month that payday falls on; shorter months use their last
+   * day. Used by `fixed`, and by `manual` until the date is set.
+   */
   paydayDay: z.int().min(1).max(31),
   /** The next payday, when it differs from the predicted one. */
   paydayOverride: localDateSchema.nullable(),
@@ -375,6 +389,7 @@ export const updateLedgerSettingsBodySchema = z
     locale: z.string().trim().min(2).max(35).optional(),
     timeZone: z.string().trim().min(1).max(64).optional(),
     defaultCurrency: currencyCodeSchema.optional(),
+    paydayRule: paydayRuleSchema.optional(),
     paydayDay: z.int().min(1).max(31).optional(),
     /** null clears the override. */
     paydayOverride: localDateSchema.nullable().optional(),

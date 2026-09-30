@@ -1,8 +1,10 @@
 import {
   currencyCode,
   localDateSchema,
+  paydayRuleSchema,
   type LedgerSettingsView,
   type LocalDate,
+  type PaydayRule,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
@@ -16,7 +18,9 @@ import type { Db } from './store.ts';
 
 /** Payday before the user sets one (docs/domain.md "Policies"). */
 export const defaultPaydayDay = 1;
+export const defaultPaydayRule: PaydayRule = 'fixed';
 
+const paydayRuleKey = 'payday_rule';
 const paydayDayKey = 'payday_day';
 const paydayOverrideKey = 'payday_override';
 
@@ -49,7 +53,7 @@ export async function readLedgerSettings(
       .selectFrom('user_settings')
       .select(['key', 'value'])
       .where('user_id', '=', userId)
-      .where('key', 'in', [paydayDayKey, paydayOverrideKey])
+      .where('key', 'in', [paydayRuleKey, paydayDayKey, paydayOverrideKey])
       .execute(),
   ]);
   const stored = new Map(rows.map((row) => [row.key, row.value]));
@@ -57,6 +61,8 @@ export async function readLedgerSettings(
     locale: user.locale,
     timeZone: user.tz,
     defaultCurrency: currencyCode(user.default_currency),
+    paydayRule:
+      parsed(paydayRuleSchema, stored.get(paydayRuleKey)) ?? defaultPaydayRule,
     paydayDay:
       parsed(paydayDaySchema, stored.get(paydayDayKey)) ?? defaultPaydayDay,
     paydayOverride: parsed(paydayOverrideSchema, stored.get(paydayOverrideKey)),
@@ -127,6 +133,7 @@ export type LedgerSettingsPatch = Readonly<{
   locale?: string | undefined;
   timeZone?: string | undefined;
   defaultCurrency?: string | undefined;
+  paydayRule?: PaydayRule | undefined;
   paydayDay?: number | undefined;
   paydayOverride?: LocalDate | null | undefined;
 }>;
@@ -178,6 +185,9 @@ export async function applyLedgerSettings(
   };
   const at = now.toISOString();
   const settings = [
+    ...(patch.paydayRule === undefined
+      ? []
+      : [{ key: paydayRuleKey, value: JSON.stringify(patch.paydayRule) }]),
     ...(patch.paydayDay === undefined
       ? []
       : [{ key: paydayDayKey, value: JSON.stringify(patch.paydayDay) }]),

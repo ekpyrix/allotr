@@ -1,5 +1,6 @@
-import { addDays, nextDayOfMonth, type LocalDate } from '@allotr/shared';
+import { addDays, type LocalDate } from '@allotr/shared';
 import type { Transaction } from '../ledger/types.ts';
+import { nextPayday } from './payday.ts';
 import type { DateWindow } from './policies.ts';
 import type { Cycle, LedgerView } from './types.ts';
 
@@ -46,7 +47,7 @@ function paychecks(view: LedgerView, today: LocalDate): Transaction[] {
  * (invariant 5), and each closes on the day the next one opens.
  */
 export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
-  const { paydayDay, paydayOverride, startedOn } = view.settings;
+  const { paydayRule, paydayDay, paydayOverride, startedOn } = view.settings;
   const found = paychecks(view, today);
   // Only a paycheck moves the start, so a back-dated expense never
   // reshapes the cycles.
@@ -56,7 +57,7 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
   let open: Cycle = {
     openedOn: first,
     openedBy: null,
-    payday: nextDayOfMonth(first, paydayDay),
+    payday: nextPayday(paydayRule, paydayDay, first),
     closedOn: null,
   };
   for (const paycheck of found) {
@@ -72,7 +73,7 @@ export function cyclesOf(view: LedgerView, today: LocalDate): Cycle[] {
       open = {
         openedOn: date,
         openedBy: paycheck.id,
-        payday: nextDayOfMonth(date, paydayDay),
+        payday: nextPayday(paydayRule, paydayDay, date),
         closedOn: null,
       };
     }

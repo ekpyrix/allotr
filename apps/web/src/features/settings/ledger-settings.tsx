@@ -18,9 +18,8 @@ import {
 } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { localeSample, timeZoneOptions } from './region.ts';
+import { PaydayRuleFields } from './payday-rule.tsx';
 import { Section } from './section.tsx';
-
-const dueDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
 function useSaveLedgerSettings() {
   const queryClient = useQueryClient();
@@ -163,6 +162,7 @@ function PaydayForm({
   settings: LedgerSettingsView;
   today: TodayView;
 }) {
+  const [rule, setRule] = useState(settings.paydayRule);
   const [day, setDay] = useState(settings.paydayDay);
   const [override, setOverride] = useState(settings.paydayOverride ?? '');
   const [status, setStatus] = useState('');
@@ -186,6 +186,7 @@ function PaydayForm({
     event.preventDefault();
     send(
       {
+        paydayRule: rule,
         paydayDay: day,
         paydayOverride: override === '' ? null : override,
       },
@@ -213,29 +214,18 @@ function PaydayForm({
         })}
       </p>
       <form className="mt-4 grid max-w-md gap-5" onSubmit={submit} noValidate>
-        <FieldControl
-          label={t('settings.payday.day')}
-          hint={t('settings.payday.dayHint')}
-        >
-          {(props) => (
-            <select
-              {...props}
-              name="paydayDay"
-              value={day}
-              className={selectClass}
-              onChange={(e) => {
-                setDay(Number(e.currentTarget.value));
-                changed();
-              }}
-            >
-              {dueDays.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          )}
-        </FieldControl>
+        <PaydayRuleFields
+          rule={rule}
+          day={day}
+          onRule={(next) => {
+            setRule(next);
+            changed();
+          }}
+          onDay={(next) => {
+            setDay(next);
+            changed();
+          }}
+        />
         <FieldControl
           label={t('settings.payday.override')}
           hint={t('settings.payday.overrideHint')}

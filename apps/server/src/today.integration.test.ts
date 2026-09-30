@@ -394,6 +394,37 @@ describe('ledger settings', () => {
       locale: 'en-US',
       timeZone: 'UTC',
       defaultCurrency: 'USD',
+      paydayRule: 'fixed',
+      paydayDay: 1,
+      paydayOverride: null,
+    });
+  });
+
+  it('predicts payday by rule and keeps the rule per user', async () => {
+    expect(
+      (await patchSettings(h.alice, { paydayRule: 'last-working-day' })).body,
+    ).toMatchObject({ paydayRule: 'last-working-day', paydayDay: 1 });
+    // 31 March 2026 is a Tuesday.
+    expect(await today(h.alice)).toMatchObject({
+      cycleEnd: '2026-03-31',
+      daysLeft: 16,
+    });
+    expect((await h.bob.get('/v1/settings/ledger')).body).toMatchObject({
+      paydayRule: 'fixed',
+    });
+
+    // Manual: the day is only a stand-in until a date is set.
+    await patchSettings(h.alice, { paydayRule: 'manual', paydayDay: 20 });
+    expect(await today(h.alice)).toMatchObject({ cycleEnd: '2026-03-20' });
+    await patchSettings(h.alice, { paydayOverride: '2026-03-27' });
+    expect(await today(h.alice)).toMatchObject({ cycleEnd: '2026-03-27' });
+
+    const invalid = await patchSettings(h.alice, { paydayRule: 'sometimes' });
+    expect(invalid.status).toBe(400);
+
+    // The users share one database across tests: put the defaults back.
+    await patchSettings(h.alice, {
+      paydayRule: 'fixed',
       paydayDay: 1,
       paydayOverride: null,
     });
