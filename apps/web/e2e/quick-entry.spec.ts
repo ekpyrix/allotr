@@ -80,6 +80,11 @@ const selected = (page: Page, label: string) =>
 test('logs an expense, an income and a transfer from the keyboard only', async ({
   page,
 }) => {
+  const blocked: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('Content Security Policy'))
+      blocked.push(message.text());
+  });
   await page.goto('/today');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const start = await today(page);
@@ -87,6 +92,10 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
   // Expense: n, amount, then Enter from the category select.
   await page.keyboard.press('n');
   await expect(dialog(page)).toBeVisible();
+  // The open dialog locks page scroll without an inline style the CSP
+  // would block.
+  await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+  expect(blocked).toEqual([]);
   await expect(page.getByLabel('Amount in USD')).toBeFocused();
   await expectAccessible(page);
   await page.keyboard.type('12.50');

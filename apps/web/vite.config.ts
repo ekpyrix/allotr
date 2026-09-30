@@ -11,7 +11,20 @@ const apiTarget = process.env.ALLOTR_DEV_API ?? 'http://127.0.0.1:8080';
 export default defineConfig({
   plugins: [react(), tailwindcss(), serviceWorker()],
   resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: [
+      {
+        find: '@',
+        replacement: fileURLToPath(new URL('./src', import.meta.url)),
+      },
+      // Radix's scroll lock injects a <style> element the CSP blocks; the
+      // stand-in locks through styles.css instead.
+      {
+        find: /^react-remove-scroll-bar(\/constants)?$/,
+        replacement: fileURLToPath(
+          new URL('./src/lib/vendor/remove-scroll-bar.ts', import.meta.url),
+        ),
+      },
+    ],
   },
   // The component gallery is a lazy dev-only route; scanning it up front
   // keeps a cold dev server from reloading mid-visit to pre-bundle its
@@ -26,7 +39,7 @@ export default defineConfig({
           groups: [
             {
               name: 'vendor',
-              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|@radix-ui|radix-ui|zod|tailwind-merge|clsx|class-variance-authority|lucide-react|cmdk|@floating-ui|aria-hidden|react-remove-scroll|react-remove-scroll-bar|react-style-singleton|use-callback-ref|use-sidecar|use-sync-external-store|detect-node-es|get-nonce|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
+              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|@radix-ui|radix-ui|zod|tailwind-merge|clsx|class-variance-authority|lucide-react|cmdk|@floating-ui|aria-hidden|react-remove-scroll|react-style-singleton|use-callback-ref|use-sidecar|use-sync-external-store|detect-node-es|get-nonce|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
             },
           ],
         },

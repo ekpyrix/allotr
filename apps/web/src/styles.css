@@ -297,6 +297,16 @@ html {
   }
 }
 
+/*
+ * An open dialog locks page scroll (src/lib/vendor/remove-scroll-bar.ts).
+ * A margin the width of the hidden scrollbar keeps the page from shifting.
+ */
+body[data-scroll-locked] {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  margin-right: var(--removed-body-scroll-bar-size, 0px);
+}
+
 /* The top app bar fills in as content scrolls under it. */
 .top-app-bar {
   background-color: var(--chrome);
