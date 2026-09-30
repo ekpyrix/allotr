@@ -1,7 +1,7 @@
 import type {
   AppearanceBody,
   CustomThemeView,
-  ThemeBody,
+  ThemeBodyV2,
 } from '@allotr/shared';
 import { queryOptions } from '@tanstack/react-query';
 import { call } from './api.ts';
@@ -27,13 +27,13 @@ export function themesQuery(userId: string) {
   });
 }
 
-export function createTheme(body: ThemeBody): Promise<CustomThemeView> {
+export function createTheme(body: ThemeBodyV2): Promise<CustomThemeView> {
   return call(endpoints.createTheme, { body });
 }
 
 export function updateTheme(
   id: string,
-  body: ThemeBody,
+  body: ThemeBodyV2,
 ): Promise<CustomThemeView> {
   return call(endpoints.updateTheme, { params: { id }, body });
 }

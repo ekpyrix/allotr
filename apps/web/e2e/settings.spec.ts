@@ -468,6 +468,8 @@ test('two-factor authentication turns on with a code and stays on while required
   browser,
   baseURL,
 }) => {
+  // Two browser contexts and several sign-ins: slow under a full run.
+  test.setTimeout(60_000);
   await page.goto('/settings#security');
   const region = section(page, 'Security');
   await region

@@ -1,0 +1,25 @@
+# Meadow Night: made-up colours for tests
+
+[colors.primary]
+background = '#1d2421'
+foreground = '#d8e2da'
+
+[colors.normal]
+black = "#2a332f"
+red = "#e0736b"
+green = "#8fcf8a"
+yellow = "#e4c56d"
+blue = "#74a8e0"
+magenta = "#c792d8"
+cyan = "#6fc9c1"
+white = "#c4cec6"
+
+[colors.bright]
+black = "#5d6a64"
+red = "#ec8d85"
+green = "#a8dca3"
+yellow = "#eed48a"
+blue = "#91bdea"
+magenta = "#d6aae3"
+cyan = "#8ed8d1"
+white = "#eef4ef"

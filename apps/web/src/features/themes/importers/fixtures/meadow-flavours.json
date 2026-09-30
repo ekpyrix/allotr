@@ -1,0 +1,206 @@
+{
+  "dawn": {
+    "name": "Meadow Dawn",
+    "dark": false,
+    "colors": {
+      "crust": {
+        "hex": "#dfe6dc"
+      },
+      "mantle": {
+        "hex": "#e9eee7"
+      },
+      "base": {
+        "hex": "#f4f7f2"
+      },
+      "surface0": {
+        "hex": "#d3dbd0"
+      },
+      "overlay1": {
+        "hex": "#8b978c"
+      },
+      "subtext0": {
+        "hex": "#4f5b53"
+      },
+      "text": {
+        "hex": "#27302b"
+      },
+      "red": {
+        "hex": "#b3413a"
+      },
+      "peach": {
+        "hex": "#b0612a"
+      },
+      "yellow": {
+        "hex": "#8a6d12"
+      },
+      "green": {
+        "hex": "#3f7d3a"
+      },
+      "teal": {
+        "hex": "#2e7d78"
+      },
+      "blue": {
+        "hex": "#3563a8"
+      },
+      "mauve": {
+        "hex": "#7c4f99"
+      },
+      "pink": {
+        "hex": "#a64b7d"
+      }
+    }
+  },
+  "day": {
+    "name": "Meadow Day",
+    "dark": false,
+    "colors": {
+      "crust": {
+        "hex": "#e6ebe3"
+      },
+      "mantle": {
+        "hex": "#f0f3ee"
+      },
+      "base": {
+        "hex": "#fbfcfa"
+      },
+      "surface0": {
+        "hex": "#dbe2d7"
+      },
+      "overlay1": {
+        "hex": "#8e9a8f"
+      },
+      "subtext0": {
+        "hex": "#4c5850"
+      },
+      "text": {
+        "hex": "#1f2823"
+      },
+      "red": {
+        "hex": "#b3413a"
+      },
+      "peach": {
+        "hex": "#b0612a"
+      },
+      "yellow": {
+        "hex": "#8a6d12"
+      },
+      "green": {
+        "hex": "#3f7d3a"
+      },
+      "teal": {
+        "hex": "#2e7d78"
+      },
+      "blue": {
+        "hex": "#3563a8"
+      },
+      "mauve": {
+        "hex": "#7c4f99"
+      },
+      "pink": {
+        "hex": "#a64b7d"
+      }
+    }
+  },
+  "dusk": {
+    "name": "Meadow Dusk",
+    "dark": true,
+    "colors": {
+      "crust": {
+        "hex": "#191f1c"
+      },
+      "mantle": {
+        "hex": "#1f2623"
+      },
+      "base": {
+        "hex": "#262e2a"
+      },
+      "surface0": {
+        "hex": "#323c37"
+      },
+      "overlay1": {
+        "hex": "#6d7a73"
+      },
+      "subtext0": {
+        "hex": "#b3beb6"
+      },
+      "text": {
+        "hex": "#dde6df"
+      },
+      "red": {
+        "hex": "#e0736b"
+      },
+      "peach": {
+        "hex": "#e39a64"
+      },
+      "yellow": {
+        "hex": "#e4c56d"
+      },
+      "green": {
+        "hex": "#8fcf8a"
+      },
+      "teal": {
+        "hex": "#6fc9c1"
+      },
+      "blue": {
+        "hex": "#74a8e0"
+      },
+      "mauve": {
+        "hex": "#c792d8"
+      },
+      "pink": {
+        "hex": "#e59bc4"
+      }
+    }
+  },
+  "night": {
+    "name": "Meadow Night",
+    "dark": true,
+    "colors": {
+      "crust": {
+        "hex": "#111613"
+      },
+      "mantle": {
+        "hex": "#171d1a"
+      },
+      "base": {
+        "hex": "#1d2421"
+      },
+      "surface0": {
+        "hex": "#2a332f"
+      },
+      "overlay1": {
+        "hex": "#5d6a64"
+      },
+      "subtext0": {
+        "hex": "#a3aea6"
+      },
+      "text": {
+        "hex": "#d8e2da"
+      },
+      "red": {
+        "hex": "#e0736b"
+      },
+      "peach": {
+        "hex": "#e39a64"
+      },
+      "yellow": {
+        "hex": "#e4c56d"
+      },
+      "green": {
+        "hex": "#8fcf8a"
+      },
+      "teal": {
+        "hex": "#6fc9c1"
+      },
+      "blue": {
+        "hex": "#74a8e0"
+      },
+      "mauve": {
+        "hex": "#c792d8"
+      },
+      "pink": {
+        "hex": "#e59bc4"
+      }
+    }
+  }
+}
