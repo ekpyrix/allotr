@@ -2,11 +2,12 @@ import {
   formatMoney,
   type CycleDayView,
   type CycleDetailView,
+  type CycleSummaryView,
   type Money,
 } from '@allotr/shared';
-import { formatLongDay } from '@/features/today/format';
+import { formatDay, formatLongDay } from '@/features/today/format';
 import { t } from '@/messages/t';
-import { categoryName } from './format.ts';
+import { categoryName, formatRange } from './format.ts';
 
 // What the cycle's charts and their tables show, from server figures as
 // they are. Nothing here adds money up: rows are looked up, compared and
@@ -99,4 +100,52 @@ export function lastRow(
   days: readonly CycleDayView[],
 ): CycleDayView | undefined {
   return days.filter((day) => day.cumulativeSpent !== null).at(-1);
+}
+
+/** A cycle on the savings charts. */
+export type SavingsCycle = Readonly<{
+  openedOn: string;
+  /** The cycle's dates, for the tooltip and the table. */
+  label: string;
+  /** Its first day, for the axis. */
+  short: string;
+  /** The off-budget total at the end of the cycle. */
+  total: Money;
+  /** How much that total moved over the cycle. */
+  change: Money;
+}>;
+
+/** How many cycles the savings charts show. */
+export const SAVINGS_CYCLES = 12;
+
+/** The newest cycles, oldest first, as the server summed them. */
+export function savingsCycles(
+  cycles: readonly CycleSummaryView[],
+  locale: string,
+): SavingsCycle[] {
+  return cycles
+    .slice(0, SAVINGS_CYCLES)
+    .reverse()
+    .map((cycle) => ({
+      openedOn: cycle.openedOn,
+      label:
+        cycle.closedOn === null
+          ? t('savings.thisCycle')
+          : formatRange(cycle.openedOn, cycle.lastDay, locale),
+      short: formatDay(cycle.openedOn, locale),
+      total: cycle.offBudgetClosing,
+      change: cycle.savingsNetChange,
+    }));
+}
+
+export function savingsRows(
+  cycles: readonly SavingsCycle[],
+  locale: string,
+): Row[] {
+  return cycles.map((cycle) => [
+    cycle.openedOn,
+    cycle.label,
+    formatMoney(cycle.total, locale),
+    formatMoney(cycle.change, locale, { signDisplay: 'exceptZero' }),
+  ]);
 }

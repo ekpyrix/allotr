@@ -1,4 +1,9 @@
-import { money, type CycleDayView } from '@allotr/shared';
+import {
+  money,
+  type CycleDayView,
+  cycleSummarySchema,
+  type CycleSummaryView,
+} from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
   categoryBars,
@@ -6,6 +11,8 @@ import {
   dailyRows,
   isOver,
   lastRow,
+  savingsCycles,
+  savingsRows,
   spendingRows,
 } from './chart-data.ts';
 
@@ -103,5 +110,67 @@ describe('categoryBars', () => {
         names,
       ).map((bar) => bar.name),
     ).toEqual(['No category']);
+  });
+});
+
+describe('savingsCycles', () => {
+  function cycle(
+    openedOn: string,
+    closedOn: string | null,
+    total: number,
+  ): CycleSummaryView {
+    return cycleSummarySchema.parse({
+      openedOn,
+      openedBy: null,
+      closedOn,
+      lastDay: closedOn ?? '2026-05-10',
+      payday: '2026-06-01',
+      income: usd(0),
+      spending: usd(0),
+      leftover: usd(0),
+      savingsNetChange: usd(total - 100_000),
+      offBudgetClosing: usd(total),
+      amended: false,
+      missingRates: [],
+    });
+  }
+
+  it('shows the newest twelve cycles, oldest first', () => {
+    // Newest first, as /v1/cycles sends them: this cycle, then the 12
+    // months of 2025 and December 2024.
+    const past = [
+      ...Array.from({ length: 12 }, (_, at) => {
+        const month = String(12 - at).padStart(2, '0');
+        return cycle(`2025-${month}-01`, `2025-${month}-28`, 100_000 + at);
+      }),
+      cycle('2024-12-01', '2024-12-28', 100_012),
+    ];
+    const all = [cycle('2026-05-01', null, 130_000), ...past];
+    const shown = savingsCycles(all, 'en-US');
+    expect(shown).toHaveLength(12);
+    expect(shown.at(-1)).toMatchObject({
+      openedOn: '2026-05-01',
+      label: 'This cycle',
+      total: usd(130_000),
+      change: usd(30_000),
+    });
+    expect(shown[0]?.openedOn).toBe('2025-02-01');
+  });
+
+  it('gives each cycle a table row with a signed change', () => {
+    const rows = savingsRows(
+      savingsCycles(
+        [
+          cycle('2026-05-01', null, 90_000),
+          cycle('2026-04-01', '2026-04-30', 100_000),
+        ],
+        'en-US',
+      ),
+      'en-US',
+    );
+    expect(rows).toEqual([
+      ['2026-04-01', 'Apr 1\u2009–\u200930, 2026', '$1,000.00', '$0.00'],
+      ['2026-05-01', 'This cycle', '$900.00', '-$100.00'],
+    ]);
   });
 });

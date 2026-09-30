@@ -8,12 +8,15 @@ import { formatDay } from '@/features/today/format';
 
 // Chart colours are theme roles (ADR 0020), so every palette theme draws
 // its charts without chart-specific colours: the series in primary, the
-// even pace in the neutral pace role, bills in the reserved role and
-// days over their allowance in negative. Gridlines are outline-variant,
-// the baseline outline, and the tooltip sits on the inverse surface.
+// even pace in the neutral pace role, savings in info (never a hero
+// colour), bills in the reserved role and days over their allowance in
+// negative. Gridlines are outline-variant, the baseline outline, and the
+// tooltip sits on the inverse surface.
 
 export const chartColors = {
   series: 'var(--primary)',
+  savings: 'var(--info)',
+  savingsFill: 'var(--info-container)',
   seriesFill: 'var(--primary-container)',
   pace: 'var(--pace)',
   bill: 'var(--reserved)',

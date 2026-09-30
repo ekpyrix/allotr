@@ -10,7 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
 
-// Cycle, history and savings views (FR-W2, FR-C6), one instance per size.
+// Cycle and history views (FR-W2, FR-C6), one instance per size.
 // The first hook onboards and imports the single-currency-month fixture,
 // so the 1–24 March cycle is closed whatever today's date is, and its
 // figures must match the replay's hand-worked checkpoint.
@@ -280,24 +280,4 @@ test('Today links to the current cycle', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 1, name: 'This cycle' }),
   ).toBeVisible();
-});
-
-test('the savings view shows off-budget accounts and their total', async ({
-  page,
-}) => {
-  await page.goto('/accounts');
-  await page.getByRole('link', { name: 'See savings over time' }).click();
-  await expect(page).toHaveURL(/\/savings$/u);
-  const total = formatMoney(eur(310000), locale);
-  await expect(page.getByTestId('savings-total')).toHaveText(total);
-  await expect(
-    page
-      .getByRole('region', { name: 'Accounts' })
-      .getByRole('listitem')
-      .filter({ hasText: 'Savings' }),
-  ).toContainText(total);
-  await expect(page.locator('[data-cycle="2026-03-01"]')).toContainText(
-    formatMoney(march.savingsNetChange, locale),
-  );
-  await expectAccessible(page);
 });
