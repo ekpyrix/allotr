@@ -1,4 +1,6 @@
 import {
+  themeUrlImportBodySchema,
+  themeUrlImportSchema,
   accountListSchema,
   accountSchema,
   appearanceBodySchema,
@@ -211,6 +213,12 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/settings/themes',
     response: customThemeViewListSchema,
+  }),
+  importThemeUrl: endpoint({
+    method: 'POST',
+    path: '/v1/settings/themes/import-url',
+    body: themeUrlImportBodySchema,
+    response: themeUrlImportSchema,
   }),
   createTheme: endpoint({
     method: 'POST',

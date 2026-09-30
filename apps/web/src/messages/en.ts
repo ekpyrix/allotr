@@ -659,6 +659,9 @@ export const en = {
       requireTwoFactor: 'Require two-factor authentication',
       requireTwoFactorHint:
         'Everyone without it must set it up before they can use the app, and nobody can turn it off.',
+      themeUrlImport: 'Allow theme import from a URL',
+      themeUrlImportHint:
+        'People can give the address of a theme file, and this server fetches it from the internet for them. Only public https addresses are fetched, at most 64 KB, 10 an hour per person. Off by default.',
       inviteTitle: 'Invite someone',
       inviteIntro: 'Each link creates one account.',
       expiresIn: 'Link works for',
@@ -709,6 +712,23 @@ export const en = {
         other: 'Imported {count} themes.',
       },
       importFailed: '“{file}” was not imported:',
+      importUrl: 'Or import from an address',
+      importUrlHint:
+        'This server fetches the file for you. Only public https addresses work.',
+      fetch: 'Fetch',
+      fetching: 'Fetching…',
+      urlReasons: {
+        not_https: 'Use an https:// address.',
+        credentials: 'Leave the user name and password out of the address.',
+        not_public:
+          'The address points at a private or local network, which the server may not fetch from.',
+        unresolved: 'The address could not be found.',
+        redirect: 'The address redirects elsewhere; give the final address.',
+        status: 'The address did not return a file.',
+        too_large: 'The file is larger than 64 KB.',
+        timeout: 'The address took more than 5 seconds to answer.',
+        network: 'The address could not be reached.',
+      },
       noRoom: {
         one: 'It has {count} theme, but there is room for {room} more.',
         other: 'It has {count} themes, but there is room for {room} more.',
@@ -1170,6 +1190,10 @@ export const en = {
     tooMany: 'Too many attempts. Wait a minute and try again.',
     unexpected: 'The server answered {status} {title}.',
     codes: {
+      theme_url_import_off:
+        'Importing themes from a URL is turned off on this server.',
+      theme_unreadable:
+        'The address does not hold a theme file, palette file or terminal colour config Allotr can read.',
       unauthenticated: 'You are signed out. Sign in again to continue.',
       two_factor_enrollment_required:
         'Set up two-factor authentication before you continue.',

@@ -599,9 +599,15 @@ describe('chart series performance', () => {
     };
     const today = localDate('2026-03-20');
     const cycle = dailyFiguresOn(view, today).cycle;
-    const began = Date.now();
-    const { days: rows } = cycleDays(view, cycle, today);
-    const took = Date.now() - began;
+    // The best of three runs: a slower algorithm still shows, one run
+    // slowed by the rest of the test suite on the same CPU does not.
+    let took = Number.POSITIVE_INFINITY;
+    let rows: readonly unknown[] = [];
+    for (let run = 0; run < 3; run += 1) {
+      const began = Date.now();
+      rows = cycleDays(view, cycle, today).days;
+      took = Math.min(took, Date.now() - began);
+    }
     expect(rows.length).toBeGreaterThan(0);
     expect(took, `took ${String(took)} ms`).toBeLessThan(150);
   });

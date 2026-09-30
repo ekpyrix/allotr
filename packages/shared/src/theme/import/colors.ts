@@ -1,16 +1,16 @@
+import { toOklch } from '../oklch.ts';
 import {
   ACCENT_LIMIT,
   accentNameSchema,
   CANONICAL_HUES,
   NEUTRAL_SLOTS,
-  THEME_FILE_FORMAT,
-  toOklch,
   type CanonicalHue,
   type NeutralSlot,
   type PartialPalette,
-  type ThemeFileV2,
-  type ThemeScheme,
-} from '@allotr/shared';
+} from '../palette.ts';
+import type { ThemeFileV2 } from '../palette-themes.ts';
+import { THEME_FILE_FORMAT } from '../themes.ts';
+import type { ThemeScheme } from '../tokens.ts';
 
 // Shared by the importers: colour spellings, a scheme guess and turning a
 // set of named colours into a v2 theme file. The palette may leave slots

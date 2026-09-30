@@ -1,8 +1,5 @@
-import {
-  NEUTRAL_SLOTS,
-  type NeutralSlot,
-  type ThemeFileV2,
-} from '@allotr/shared';
+import { NEUTRAL_SLOTS, type NeutralSlot } from '../palette.ts';
+import type { ThemeFileV2 } from '../palette-themes.ts';
 import { ansiIndex, ansiTheme } from './ansi.ts';
 import { accentName, hexOf, themeFileOf, themeName } from './colors.ts';
 

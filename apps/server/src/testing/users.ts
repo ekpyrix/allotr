@@ -32,7 +32,10 @@ function signUp(name: string) {
 
 /** `now` fixes the server's clock, for tests of the user's calendar day. */
 export async function startWithTwoUsers(
-  options: { now?: () => Date } = {},
+  options: {
+    now?: () => Date;
+    fetchThemeUrl?: (url: string) => Promise<string>;
+  } = {},
 ): Promise<TwoUsers> {
   const dir = mkdtempSync(join(tmpdir(), 'allotr-api-'));
   const server = await startServer({
@@ -48,6 +51,9 @@ export async function startWithTwoUsers(
     logger: createLogger('silent'),
     authLimits: { ...defaultAuthLimits, signInRequestsPerMinute: 1000 },
     ...(options.now === undefined ? {} : { now: options.now }),
+    ...(options.fetchThemeUrl === undefined
+      ? {}
+      : { fetchThemeUrl: options.fetchThemeUrl }),
   });
   const alice = createClient(server.url, baseUrl);
   expect((await alice.post('/v1/onboarding', signUp('alice'))).status).toBe(

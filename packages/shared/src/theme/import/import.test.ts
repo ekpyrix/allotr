@@ -1,18 +1,36 @@
-import { readFileSync } from 'node:fs';
-import {
-  completePalette,
-  darkTheme,
-  paletteTheme,
-  toThemeFile,
-  type ThemeFileV2,
-} from '@allotr/shared';
+import { darkTheme } from '../builtin.ts';
+import { completePalette } from '../palette.ts';
+import { paletteTheme, type ThemeFileV2 } from '../palette-themes.ts';
+import { toThemeFile } from '../themes.ts';
 import { describe, expect, it } from 'vitest';
 import { hexOf } from './colors.ts';
 import { importThemeText } from './index.ts';
 
+import base16 from './fixtures/meadow-base16.yaml?raw';
+import base24 from './fixtures/meadow-base24.yaml?raw';
+import keyValue from './fixtures/meadow.conf?raw';
+import flavours from './fixtures/meadow-flavours.json?raw';
+import palette from './fixtures/meadow-palette.json?raw';
+import plist from './fixtures/meadow.plist?raw';
+import terminalJson from './fixtures/meadow-terminal.json?raw';
+import toml from './fixtures/meadow.toml?raw';
+
 // Every fixture is made-up colours in a real file shape.
+const fixtures: Readonly<Record<string, string>> = {
+  'meadow-base16.yaml': base16,
+  'meadow-base24.yaml': base24,
+  'meadow.conf': keyValue,
+  'meadow-flavours.json': flavours,
+  'meadow-palette.json': palette,
+  'meadow.plist': plist,
+  'meadow-terminal.json': terminalJson,
+  'meadow.toml': toml,
+};
+
 function fixture(name: string): string {
-  return readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+  const text = fixtures[name];
+  if (text === undefined) throw new Error(`no fixture ${name}`);
+  return text;
 }
 
 function only(result: ReturnType<typeof importThemeText>): ThemeFileV2 {
@@ -202,19 +220,26 @@ describe('importThemeText', () => {
   it('says what it could not read', () => {
     expect(importThemeText('{ "hello": "world" }')).toEqual({
       ok: false,
-      problems: [
-        'This JSON is not a theme file, a palette or a terminal colour scheme: it needs a page and a text colour.',
-      ],
+      reason: 'unknown-json',
+      problems: [],
     });
     expect(importThemeText('just some words')).toEqual({
       ok: false,
-      problems: [
-        'This file is not a theme file, palette file or terminal colour config Allotr can read.',
-      ],
+      reason: 'unknown',
+      problems: [],
     });
-    const broken = importThemeText(
-      JSON.stringify({ format: 'allotr-theme', version: 3 }),
+    expect(
+      importThemeText(JSON.stringify({ format: 'allotr-theme', version: 3 })),
+    ).toMatchObject({ ok: false, reason: 'invalid' });
+  });
+
+  it('names a theme from the file, or the given fallback', () => {
+    const text = fixture('meadow.toml');
+    expect(only(importThemeText(text, 'dir/Night Meadow.toml')).name).toBe(
+      'Night Meadow',
     );
-    expect(broken).toMatchObject({ ok: false });
+    expect(only(importThemeText(text, undefined, 'From a link')).name).toBe(
+      'From a link',
+    );
   });
 });

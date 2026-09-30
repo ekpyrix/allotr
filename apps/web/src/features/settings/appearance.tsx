@@ -11,15 +11,16 @@ import {
   type ThemeFamily,
   type ThemeScheme,
 } from '@allotr/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Upload } from 'lucide-react';
-import { useId, useState, type ChangeEvent } from 'react';
+import { useId, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { selectClass } from '@/components/field';
 import { ShortcutsSwitch } from '@/components/shortcuts-switch';
 import { ThemeModeSwitch } from '@/components/theme-mode-switch';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Segmented } from '@/components/ui/segmented';
 import { Switch } from '@/components/ui/switch';
@@ -27,22 +28,41 @@ import { Sheet } from '@/features/accounts/sheet';
 import { checkDraft, draftFromFile } from '@/features/themes/draft';
 import { familyPair } from '@/features/themes/families';
 import { handOffDraft } from '@/features/themes/import-handoff';
-import { importThemeText } from '@/features/themes/importers';
+import {
+  importThemeText,
+  type ImportResult,
+} from '@/features/themes/importers';
 import { failureText } from '@/features/themes/labels';
 import { ThemePreview } from '@/features/themes/preview';
 import {
   appearanceQuery,
   createTheme,
   deleteTheme,
+  importThemeUrl,
   themesQuery,
 } from '@/lib/appearance';
+import { textField } from '@/lib/form';
+import { sessionQuery } from '@/lib/session';
 import { effectiveMotion, useDevicePref } from '@/lib/device-prefs';
 import { useMediaQuery } from '@/lib/media';
+import { ApiError } from '@/lib/api';
 import { describeProblem } from '@/lib/problem';
 import { resolveScheme } from '@/lib/theme-mode';
 import { t } from '@/messages/t';
 import { Section } from './section.tsx';
 import { useBusy } from './use-busy.ts';
+
+const urlReasons = {
+  not_https: t('settings.appearance.urlReasons.not_https'),
+  credentials: t('settings.appearance.urlReasons.credentials'),
+  not_public: t('settings.appearance.urlReasons.not_public'),
+  unresolved: t('settings.appearance.urlReasons.unresolved'),
+  redirect: t('settings.appearance.urlReasons.redirect'),
+  status: t('settings.appearance.urlReasons.status'),
+  too_large: t('settings.appearance.urlReasons.too_large'),
+  timeout: t('settings.appearance.urlReasons.timeout'),
+  network: t('settings.appearance.urlReasons.network'),
+} as const;
 
 // Appearance (FR-W5, spec §11.6): the mode, a theme family for both slots
 // (or a flavour per slot), how the app moves and feels on this device, and
@@ -389,16 +409,12 @@ function ImportTheme({
     problems: readonly string[];
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  const { data: session } = useQuery(sessionQuery);
 
   // A family is saved flavour by flavour; one theme opens in the editor.
-  async function read(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = '';
-    setRefused(null);
-    if (file === undefined) return;
-    const result = importThemeText(await file.text(), file.name);
+  async function accept(source: string, result: ImportResult) {
     if (!result.ok) {
-      setRefused({ file: file.name, problems: result.problems });
+      setRefused({ file: source, problems: result.problems });
       return;
     }
     const [single] = result.themes;
@@ -421,7 +437,7 @@ function ImportTheme({
     );
     if (problems.length > 0 || bodies.length > room) {
       setRefused({
-        file: file.name,
+        file: source,
         problems:
           problems.length > 0
             ? problems
@@ -429,7 +445,6 @@ function ImportTheme({
       });
       return;
     }
-    setBusy(true);
     try {
       for (const body of bodies) await createTheme(body);
       onImported(
@@ -437,15 +452,53 @@ function ImportTheme({
       );
     } catch (error) {
       setRefused({
-        file: file.name,
+        file: source,
         problems: [describeProblem(error).message],
       });
     } finally {
-      setBusy(false);
       await queryClient.invalidateQueries({
         queryKey: themesQuery(userId).queryKey,
       });
     }
+  }
+
+  // A refused or failed fetch says why in words; the server gives the
+  // reason at /url.
+  function urlProblem(error: unknown): string {
+    const [first] =
+      error instanceof ApiError ? (error.problem.errors ?? []) : [];
+    const reason = first?.path === '/url' ? first.message : undefined;
+    return reason !== undefined && Object.hasOwn(urlReasons, reason)
+      ? urlReasons[reason as keyof typeof urlReasons]
+      : describeProblem(error).message;
+  }
+
+  async function run(source: string, read: () => Promise<ImportResult>) {
+    setRefused(null);
+    setBusy(true);
+    try {
+      await accept(source, await read());
+    } catch (error) {
+      setRefused({ file: source, problems: [urlProblem(error)] });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function readFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file === undefined) return;
+    void run(file.name, async () =>
+      importThemeText(await file.text(), file.name),
+    );
+  }
+
+  function readUrl(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const url = textField(new FormData(event.currentTarget), 'url');
+    if (url === '') return;
+    void run(url, async () => ({ ok: true, ...(await importThemeUrl(url)) }));
   }
 
   return (
@@ -462,14 +515,44 @@ function ImportTheme({
           aria-describedby={`${inputId}-hint`}
           className="sr-only"
           disabled={busy}
-          onChange={(event) => {
-            void read(event);
-          }}
+          onChange={readFile}
         />
       </label>
       <p id={`${inputId}-hint`} className="text-label text-text-muted">
         {t('settings.appearance.importHint')}
       </p>
+      {session?.themeUrlImport === true ? (
+        <form
+          className="mt-2 grid max-w-md gap-2"
+          onSubmit={readUrl}
+          noValidate
+        >
+          <Label htmlFor={`${inputId}-url`}>
+            {t('settings.appearance.importUrl')}
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id={`${inputId}-url`}
+              name="url"
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="https://"
+              aria-describedby={`${inputId}-url-hint`}
+              className="h-11"
+            />
+            <Button type="submit" variant="tonal" disabled={busy}>
+              {busy
+                ? t('settings.appearance.fetching')
+                : t('settings.appearance.fetch')}
+            </Button>
+          </div>
+          <p id={`${inputId}-url-hint`} className="text-label text-text-muted">
+            {t('settings.appearance.importUrlHint')}
+          </p>
+        </form>
+      ) : null}
       <div role="alert" data-testid="import-problems">
         {refused === null ? null : (
           <>

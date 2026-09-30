@@ -28,14 +28,17 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
   const [requireTwoFactor, setRequireTwoFactor] = useState(
     settings.requireTwoFactor,
   );
+  const [themeUrlImport, setThemeUrlImport] = useState(settings.themeUrlImport);
   const [saved, setSaved] = useState(false);
   const modeName = useId();
   const twoFactorId = useId();
+  const themeUrlId = useId();
   const save = useMutation({
     mutationFn: updateInstanceSettings,
     onSuccess: async (next) => {
       queryClient.setQueryData(instanceSettingsQuery.queryKey, next);
-      // The admin's own session says whether 2FA is enforced.
+      // The admin's own session says whether 2FA is enforced and whether
+      // themes may be imported from a URL.
       await queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey });
     },
   });
@@ -43,7 +46,7 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     save.mutate(
-      { registrationMode: mode, requireTwoFactor },
+      { registrationMode: mode, requireTwoFactor, themeUrlImport },
       {
         onSuccess: () => {
           setSaved(true);
@@ -107,6 +110,27 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
           </label>
           <p id={`${twoFactorId}-hint`} className="text-sm text-text-muted">
             {t('settings.instance.requireTwoFactorHint')}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-start gap-3">
+        <input
+          id={themeUrlId}
+          type="checkbox"
+          checked={themeUrlImport}
+          aria-describedby={`${themeUrlId}-hint`}
+          onChange={(e) => {
+            setThemeUrlImport(e.currentTarget.checked);
+            changed();
+          }}
+          className="mt-1 size-4 accent-primary"
+        />
+        <div>
+          <label htmlFor={themeUrlId} className="font-medium">
+            {t('settings.instance.themeUrlImport')}
+          </label>
+          <p id={`${themeUrlId}-hint`} className="text-sm text-text-muted">
+            {t('settings.instance.themeUrlImportHint')}
           </p>
         </div>
       </div>

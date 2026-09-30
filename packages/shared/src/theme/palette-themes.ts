@@ -61,16 +61,18 @@ export const themeRolesSchema = z
 export type ThemeRoles = Readonly<Partial<Record<Role, RoleEntry>>>;
 
 /** A v2 file. Its palette may leave out slots; reading completes it. */
-export const themeFileV2Schema = z.strictObject({
-  format: z.literal(THEME_FILE_FORMAT),
-  version: z.literal(2),
-  name: themeNameSchema,
-  family: familyIdSchema.optional(),
-  scheme: themeSchemeSchema,
-  credit: themeCreditSchema.optional(),
-  palette: partialPaletteSchema,
-  roles: themeRolesSchema.optional(),
-});
+export const themeFileV2Schema = z
+  .strictObject({
+    format: z.literal(THEME_FILE_FORMAT),
+    version: z.literal(2),
+    name: themeNameSchema,
+    family: familyIdSchema.optional(),
+    scheme: themeSchemeSchema,
+    credit: themeCreditSchema.optional(),
+    palette: partialPaletteSchema,
+    roles: themeRolesSchema.optional(),
+  })
+  .meta({ id: 'ThemeFileV2' });
 export type ThemeFileV2 = z.infer<typeof themeFileV2Schema>;
 
 export type PaletteTheme = Readonly<{
@@ -385,6 +387,19 @@ export const themeBodyV2Schema = z.object({
   roles: themeRolesSchema.optional(),
 });
 export type ThemeBodyV2 = z.infer<typeof themeBodyV2Schema>;
+
+/** A theme file's address for the server to fetch (admin opt-in). */
+export const themeUrlImportBodySchema = z.object({
+  url: z.string().trim().min(1).max(2048),
+});
+export type ThemeUrlImportBody = z.infer<typeof themeUrlImportBodySchema>;
+
+/** What an address held: drafts for the editor, none of them saved. */
+export const themeUrlImportSchema = z.object({
+  kind: z.enum(['theme', 'palette', 'family', 'terminal']),
+  themes: z.array(themeFileV2Schema),
+});
+export type ThemeUrlImportView = z.infer<typeof themeUrlImportSchema>;
 
 /** A v1 body (16 tokens, deprecated) or a v2 body (a palette). */
 export const anyThemeBodySchema = z.union([themeBodySchema, themeBodyV2Schema]);

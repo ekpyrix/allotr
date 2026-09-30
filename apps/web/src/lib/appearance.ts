@@ -27,6 +27,11 @@ export function themesQuery(userId: string) {
   });
 }
 
+/** Asks the server to fetch and read a theme file; nothing is saved. */
+export function importThemeUrl(url: string) {
+  return call(endpoints.importThemeUrl, { body: { url } });
+}
+
 export function createTheme(body: ThemeBodyV2): Promise<CustomThemeView> {
   return call(endpoints.createTheme, { body });
 }
