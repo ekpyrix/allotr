@@ -73,6 +73,17 @@ export function cycleQuery(openedOn: LocalDate | undefined) {
   });
 }
 
+/** A cycle day by day, for charts; waits while the day it opened is unknown. */
+export function cycleDaysQuery(openedOn: LocalDate | undefined) {
+  return queryOptions({
+    queryKey: ['today', 'cycles', openedOn, 'days'],
+    queryFn:
+      openedOn === undefined
+        ? skipToken
+        : () => call(endpoints.cycleDays, { params: { openedOn } }),
+  });
+}
+
 /**
  * Entries dated `day`, newest first; a day rarely has more than a page.
  * Waits while the day is not known yet.

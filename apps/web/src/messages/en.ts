@@ -113,7 +113,40 @@ export const en = {
     split: 'Split: {names}',
   },
   today: {
+    heading: 'Today',
     title: 'Left today',
+    status: {
+      ok: 'On pace',
+      tight: 'Tight',
+    },
+    howWorkedOut: 'How is this worked out?',
+    waterfall: {
+      title: 'Where today’s number comes from',
+      intro:
+        'Only on-budget money counts. Bills are set aside first, and savings are never part of it.',
+      onBudget: 'On-budget money now',
+      reserved: 'Set aside for bills',
+      available: 'Available now',
+      spentBack: 'Spent today, added back',
+      startOfDay: 'Available at the start of today',
+      split: {
+        one: 'Split over {count} day left',
+        other: 'Split over {count} days left',
+      },
+      allowance: 'Today’s allowance',
+      spentToday: 'Spent today',
+      leftToday: 'Left today',
+      savings: 'Savings, never counted',
+      step: 'Step',
+      amount: 'Amount',
+      showTable: 'Show as table',
+    },
+    tiles: {
+      allowance: 'How today’s allowance is worked out',
+      spentToday: 'See today’s entries in the ledger',
+      daysLeft: 'See this cycle',
+      payday: 'Change payday',
+    },
     loading: 'Loading today’s figures',
     over: 'Over by {amount}',
     overHint:

@@ -12,15 +12,22 @@ const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export function DigitRoller({
   value,
+  label = value,
+  testId,
   className,
 }: {
   /** The formatted amount, e.g. from formatMoney. */
   value: string;
+  /** What assistive technology reads; the value by default. */
+  label?: string;
+  testId?: string;
   className?: string;
 }) {
   return (
     <span className={cn('inline-flex font-mono tabular-nums', className)}>
-      <span className="sr-only">{value}</span>
+      <span data-testid={testId} className="sr-only">
+        {label}
+      </span>
       <span aria-hidden="true" className="inline-flex leading-none">
         {rollerCells(value).map((cell) =>
           cell.kind === 'digit' ? (

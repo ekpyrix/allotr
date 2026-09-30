@@ -122,6 +122,58 @@ test('the hero number and figures match /v1/today', async ({ page }) => {
   await expectAccessible(page);
 });
 
+test('the waterfall explains the figure with the same numbers', async ({
+  page,
+}) => {
+  await page.goto('/today');
+  const figures = await today(page);
+  await page
+    .getByRole('button', { name: 'How today’s allowance is worked out' })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: 'Where today’s number comes from',
+  });
+  await expect(sheet).toBeVisible();
+  await expectAccessible(page);
+  await sheet.getByRole('button', { name: 'Show as table' }).click();
+  const amount = (step: string) =>
+    sheet.getByRole('row', { name: new RegExp(`^${step}`) }).getByRole('cell');
+  await expect(amount('On-budget money now')).toHaveText(
+    formatMoney(figures.onBudget, 'en-US'),
+  );
+  await expect(amount('Available now')).toHaveText(
+    formatMoney(figures.available, 'en-US'),
+  );
+  await expect(amount('Today’s allowance')).toHaveText(
+    formatMoney(figures.todayAllowance, 'en-US'),
+  );
+  await expect(amount('Left today')).toHaveText(
+    formatMoney(figures.leftToday, 'en-US'),
+  );
+  await expect(
+    sheet.getByRole('row', { name: /^Savings, never counted/ }),
+  ).toBeVisible();
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+});
+
+test('with reduced motion the hero shows its value without rolling', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/today');
+  const figures = await today(page);
+  await expect(hero(page)).toHaveText(formatMoney(figures.leftToday, 'en-US'));
+  const strip = page
+    .locator('[data-testid="left-today"] + [aria-hidden="true"] span span')
+    .first();
+  const duration = await strip.evaluate(
+    (el) => getComputedStyle(el).transitionDuration,
+  );
+  expect(parseFloat(duration)).toBeLessThan(0.001);
+});
+
 test('logging an expense lowers left today and undo restores it', async ({
   page,
 }) => {

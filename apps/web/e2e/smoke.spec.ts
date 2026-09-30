@@ -52,6 +52,8 @@ test('onboarding, sign-in with two-factor and Today', async ({
   page,
   baseURL,
 }) => {
+  // Onboarding, several axe runs and a 2FA sign-in in one test.
+  test.setTimeout(60_000);
   const consoleErrors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') consoleErrors.push(message.text());

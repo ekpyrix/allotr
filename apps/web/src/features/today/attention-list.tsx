@@ -15,9 +15,14 @@ function Item({
   action: ReactNode;
 }) {
   return (
-    <li className="flex gap-3 rounded-md bg-plot p-4">
-      <TriangleAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-over" />
-      <div className="grid gap-1">
+    <li className="flex gap-4 border-b border-outline-variant px-4 py-3 last:border-b-0">
+      <span
+        aria-hidden
+        className="flex size-10 shrink-0 items-center justify-center rounded-md bg-warning-container text-text"
+      >
+        <TriangleAlert className="size-5 stroke-[1.75]" />
+      </span>
+      <div className="grid gap-1 text-body">
         <p>{children}</p>
         {action}
       </div>
@@ -40,11 +45,11 @@ export function AttentionList({
     return null;
 
   return (
-    <section aria-labelledby={heading} className="mt-10">
-      <h2 id={heading} className="font-medium">
+    <section aria-labelledby={heading}>
+      <h2 id={heading} className="text-title">
         {t('today.attention.title')}
       </h2>
-      <ul className="mt-3 grid gap-3">
+      <ul className="mt-3 overflow-hidden rounded-lg bg-card">
         {overdue ? (
           <Item
             action={
