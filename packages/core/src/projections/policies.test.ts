@@ -1,6 +1,7 @@
 import { money } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  billAmount,
   carryDeficit,
   dueDates,
   leftoverStays,
@@ -11,6 +12,7 @@ import { day, usd } from './testing.ts';
 import { billId, type Bill } from './types.ts';
 
 const cycle = { from: day('2026-03-01'), to: day('2026-04-01') };
+const usdOf = (amountMinor: number) => money(amountMinor, 'USD');
 
 function bill(
   amountMinor: number,
@@ -45,7 +47,87 @@ describe('dueDates', () => {
   });
 });
 
+describe('billAmount', () => {
+  const thb = (amountMinor: number) => money(amountMinor, 'THB');
+  // A subscription priced in another currency, paid from a THB account:
+  // each month takes a slightly different amount.
+  const subscription = (payments: Bill['payments']): Bill => ({
+    ...bill(45000, 5, payments, 'THB'),
+    variable: true,
+  });
+
+  it('uses the set amount until a payment took one', () => {
+    expect(billAmount(subscription([]), day('2026-03-05'))).toEqual(thb(45000));
+    const unlinked = subscription([
+      { dueOn: day('2026-02-05'), paidOn: day('2026-02-05') },
+    ]);
+    expect(billAmount(unlinked, day('2026-03-05'))).toEqual(thb(45000));
+  });
+
+  it('follows the latest payment for an earlier due date', () => {
+    const paid = subscription([
+      { dueOn: day('2026-01-05'), paidOn: day('2026-01-06'), paid: thb(44990) },
+      { dueOn: day('2026-02-05'), paidOn: day('2026-02-05'), paid: thb(45510) },
+      { dueOn: day('2026-04-05'), paidOn: day('2026-04-05'), paid: thb(50000) },
+    ]);
+    expect(billAmount(paid, day('2026-03-05'))).toEqual(thb(45510));
+  });
+
+  it('shows what a paid due date took', () => {
+    const paid = subscription([
+      { dueOn: day('2026-03-05'), paidOn: day('2026-03-05'), paid: thb(46275) },
+    ]);
+    expect(billAmount(paid, day('2026-03-05'))).toEqual(thb(46275));
+    expect(billAmount(paid, day('2026-04-05'))).toEqual(thb(46275));
+  });
+
+  it('keeps a fixed bill at its amount for later due dates', () => {
+    const fixed = bill(20000, 5, [
+      {
+        dueOn: day('2026-02-05'),
+        paidOn: day('2026-02-05'),
+        paid: usdOf(21000),
+      },
+    ]);
+    expect(billAmount(fixed, day('2026-02-05'))).toEqual(usdOf(21000));
+    expect(billAmount(fixed, day('2026-03-05'))).toEqual(usdOf(20000));
+  });
+
+  it('ignores a payment in another currency than the bill', () => {
+    const moved = subscription([
+      {
+        dueOn: day('2026-02-05'),
+        paidOn: day('2026-02-05'),
+        paid: usdOf(1250),
+      },
+    ]);
+    expect(billAmount(moved, day('2026-02-05'))).toEqual(thb(45000));
+    expect(billAmount(moved, day('2026-03-05'))).toEqual(thb(45000));
+  });
+});
+
 describe('reserveAtPayday', () => {
+  it('reserves what a variable bill last took', () => {
+    const subscription: Bill = {
+      ...bill(
+        45000,
+        5,
+        [
+          {
+            dueOn: day('2026-02-05'),
+            paidOn: day('2026-02-05'),
+            paid: money(46275, 'KWD'),
+          },
+        ],
+        'KWD',
+      ),
+      variable: true,
+    };
+    expect(
+      reserveAtPayday.reserved([subscription], cycle, day('2026-03-01')),
+    ).toEqual(new Map([['KWD', 46275n]]));
+  });
+
   it('reserves every bill due in the cycle from the day it opens', () => {
     const bills = [bill(20000, 5), bill(1500, 20), bill(300, 5, [], 'EUR')];
     expect(reserveAtPayday.reserved(bills, cycle, day('2026-03-01'))).toEqual(

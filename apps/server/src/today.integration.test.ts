@@ -22,7 +22,13 @@ type Today = {
   liveDaily: Money;
   cycleSpent: Money;
   paceSpent: Money;
-  billsDue: { billId: string; name: string; dueOn: string; amount: Money }[];
+  billsDue: {
+    billId: string;
+    name: string;
+    dueOn: string;
+    amount: Money;
+    price: Money | null;
+  }[];
   cycleBills: {
     billId: string;
     dueOn: string;
@@ -213,7 +219,14 @@ describe('daily figures', () => {
       });
       expect(paid.status).toBe(201);
       expect((paid.body as Bill).payments).toEqual([
-        { dueOn: '2026-03-20', paidOn: '2026-03-15', transactionId: null },
+        {
+          dueOn: '2026-03-20',
+          paidOn: '2026-03-15',
+          transactionId: null,
+          recorded: false,
+          paid: null,
+          price: null,
+        },
       ]);
       expect((await today(h.alice)).available).toEqual(usd(167500));
       expect((await today(h.alice)).cycleBills).toEqual([
@@ -257,6 +270,7 @@ describe('daily figures', () => {
             name: 'Rent',
             dueOn: '2026-03-20',
             amount: usd(30000),
+            price: null,
           },
         ]);
         const paid = await h.alice.post(`/v1/bills/${rent.id}/payments`, {

@@ -96,6 +96,7 @@ export {
 } from './projections/series.ts';
 export { convertOn, totalOn } from './projections/rates.ts';
 export {
+  billAmount,
   carryDeficit,
   defaultPolicies,
   dueDates,

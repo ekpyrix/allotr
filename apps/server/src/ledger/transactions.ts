@@ -692,6 +692,25 @@ export async function createTransaction(
   return { transaction: earlier, replayed: true };
 }
 
+/** Stores the reversal of an entry inside the caller's transaction. */
+export async function insertReversal(
+  db: Db,
+  userId: string,
+  id: string,
+  note: string | undefined,
+  now: Date,
+): Promise<string> {
+  const chart = await loadChart(db, userId);
+  const ledger = await loadLedger(db, userId, chart);
+  const reversal = reverse(chart, ledger, transactionId(id), {
+    id: newTransactionId(),
+    createdAt: now.toISOString(),
+    note: note ?? null,
+  });
+  await storeTransaction(db, userId, reversal, [], null, 'api');
+  return reversal.id;
+}
+
 /** Undoes an entry with a reversal that carries its date (FR-L4). */
 export async function reverseTransaction(
   db: Kysely<DB>,
@@ -700,17 +719,9 @@ export async function reverseTransaction(
   note: string | undefined,
   now: Date,
 ): Promise<TransactionView> {
-  const reversalId = await db.transaction().execute(async (trx) => {
-    const chart = await loadChart(trx, userId);
-    const ledger = await loadLedger(trx, userId, chart);
-    const reversal = reverse(chart, ledger, transactionId(id), {
-      id: newTransactionId(),
-      createdAt: now.toISOString(),
-      note: note ?? null,
-    });
-    await storeTransaction(trx, userId, reversal, [], null, 'api');
-    return reversal.id;
-  });
+  const reversalId = await db
+    .transaction()
+    .execute((trx) => insertReversal(trx, userId, id, note, now));
   return getTransaction(db, userId, reversalId);
 }
 

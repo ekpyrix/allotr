@@ -8,7 +8,8 @@ import { migrate } from './migrate.ts';
 import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
-// 0004_bill_payments.sql and 0005_reconciliations.sql against real SQLite.
+// 0004_bill_payments.sql, 0005_reconciliations.sql and 0006_bill_prices.sql
+// against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -44,6 +45,7 @@ function migrationsUpTo(last: string): string {
     '0002_auth.sql',
     '0003_ledger.sql',
     '0004_bill_payments.sql',
+    '0005_reconciliations.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -433,7 +435,10 @@ describe('migration 0005_reconciliations', () => {
     insertUser('u1');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0005_reconciliations']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0005_reconciliations',
+      '0006_bill_prices',
+    ]);
 
     insertReconciliation('r1');
     expect(count('SELECT count(*) FROM reconciliations')).toBe(1);
@@ -470,6 +475,114 @@ describe('migration 0005_reconciliations', () => {
       insertReconciliation('r1', { stated: 4000, adjustment: 't1' });
       sqlite.exec("DELETE FROM users WHERE id = 'u1'");
       expect(count('SELECT count(*) FROM reconciliations')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0006_bill_prices', () => {
+  const insertBill = (
+    id: string,
+    price: { minor: number | null; currency: string | null } = {
+      minor: null,
+      currency: null,
+    },
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO bills
+           (id, user_id, name, amount_minor, currency, price_minor,
+            price_currency, account_id, due_day, created_at, updated_at)
+         VALUES (?, 'u1', 'Streaming', 45000, 'THB', ?, ?, 'card', 5, ?, ?)`,
+      )
+      .run(id, price.minor, price.currency, at, at);
+  const insertPayment = (id: string, dueOn: string, recorded: number) =>
+    sqlite
+      .prepare(
+        `INSERT INTO bill_payments
+           (id, user_id, bill_id, due_on, paid_on, transaction_id, recorded, created_at)
+         VALUES (?, 'u1', 'b1', ?, ?, NULL, ?, ?)`,
+      )
+      .run(id, dueOn, dueOn, recorded, at);
+
+  it('applies to a database at 0005 with bills and payments', () => {
+    migrateFrom(migrationsUpTo('0005'));
+    insertUser('u1');
+    insertAccount('card', 'u1', 'THB');
+    sqlite
+      .prepare(
+        `INSERT INTO bills
+           (id, user_id, name, amount_minor, currency, account_id, due_day, created_at, updated_at)
+         VALUES ('b1', 'u1', 'Streaming', 45000, 'THB', 'card', 5, ?, ?)`,
+      )
+      .run(at, at);
+    sqlite
+      .prepare(
+        `INSERT INTO bill_payments (id, user_id, bill_id, due_on, paid_on, created_at)
+         VALUES ('p1', 'u1', 'b1', '2026-01-05', '2026-01-05', ?)`,
+      )
+      .run(at);
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0006_bill_prices']);
+
+    expect(
+      sqlite
+        .prepare('SELECT price_minor, price_currency, category_id FROM bills')
+        .get(),
+    ).toEqual({ price_minor: null, price_currency: null, category_id: null });
+    expect(sqlite.prepare('SELECT recorded FROM bill_payments').get()).toEqual({
+      recorded: 0,
+    });
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertAccount('card', 'u1', 'THB');
+    });
+
+    it('stores a price in another currency', () => {
+      insertBill('b1', { minor: 1250, currency: 'USD' });
+      expect(count('SELECT count(*) FROM bills')).toBe(1);
+    });
+
+    it('refuses a half-given price, or one in the account currency', () => {
+      expect(() => {
+        insertBill('b1', { minor: 1250, currency: null });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertBill('b2', { minor: null, currency: 'USD' });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertBill('b3', { minor: 1250, currency: 'THB' });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertBill('b4', { minor: 0, currency: 'USD' });
+      }).toThrow(/CHECK/);
+    });
+
+    it('only marks a payment recorded when it links an entry', () => {
+      insertBill('b1');
+      expect(() => {
+        insertPayment('p1', '2026-01-05', 1);
+      }).toThrow(/CHECK/);
+      insertPayment('p2', '2026-02-05', 0);
+      expect(count('SELECT count(*) FROM bill_payments')).toBe(1);
+    });
+
+    it('forgets a deleted category', () => {
+      sqlite
+        .prepare(
+          `INSERT INTO categories (id, user_id, name, kind, created_at, updated_at)
+           VALUES ('subs', 'u1', 'Subscriptions', 'expense', ?, ?)`,
+        )
+        .run(at, at);
+      insertBill('b1');
+      sqlite.prepare("UPDATE bills SET category_id = 'subs'").run();
+      sqlite.prepare("DELETE FROM categories WHERE id = 'subs'").run();
+      expect(sqlite.prepare('SELECT category_id FROM bills').get()).toEqual({
+        category_id: null,
+      });
     });
   });
 });

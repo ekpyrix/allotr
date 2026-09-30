@@ -120,6 +120,8 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
         <BillsSection
           bills={bills.data.bills}
           accounts={accounts.data.accounts}
+          categories={categories.data.categories}
+          rates={rates.data.rates}
           today={today.data}
           locale={locale}
         />

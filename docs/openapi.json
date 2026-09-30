@@ -11736,13 +11736,33 @@
                               "amountMinor",
                               "currency"
                             ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "billId",
                           "name",
                           "dueOn",
-                          "amount"
+                          "amount",
+                          "price"
                         ]
                       }
                     },
@@ -17321,8 +17341,51 @@
                               "currency"
                             ]
                           },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "reserve": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "accountId": {
                             "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "categoryId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
                             "minLength": 1,
                             "maxLength": 64
                           },
@@ -17354,12 +17417,56 @@
                                   ],
                                   "minLength": 1,
                                   "maxLength": 64
+                                },
+                                "recorded": {
+                                  "type": "boolean"
+                                },
+                                "paid": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "price": {
+                                  "type": [
+                                    "object",
+                                    "null"
+                                  ],
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
                                 }
                               },
                               "required": [
                                 "dueOn",
                                 "paidOn",
-                                "transactionId"
+                                "transactionId",
+                                "recorded",
+                                "paid",
+                                "price"
                               ]
                             }
                           },
@@ -17372,7 +17479,10 @@
                           "id",
                           "name",
                           "amount",
+                          "price",
+                          "reserve",
                           "accountId",
+                          "categoryId",
                           "dueDay",
                           "active",
                           "payments",
@@ -17505,7 +17615,7 @@
           "Bills"
         ],
         "summary": "Add a monthly bill",
-        "description": "Each active bill due in the cycle is reserved from the day the cycle opens until it is marked paid.",
+        "description": "Each active bill due in the cycle is reserved from the day the cycle opens until it is marked paid. A bill with a `price` in another currency reserves `amount` until a payment records what it took, then what its latest payment took.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17533,7 +17643,28 @@
                       "currency"
                     ]
                   },
+                  "price": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
                   "accountId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "categoryId": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64
@@ -17586,8 +17717,51 @@
                         "currency"
                       ]
                     },
+                    "price": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "accountId": {
                       "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "minLength": 1,
                       "maxLength": 64
                     },
@@ -17619,12 +17793,56 @@
                             ],
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "recorded": {
+                            "type": "boolean"
+                          },
+                          "paid": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "dueOn",
                           "paidOn",
-                          "transactionId"
+                          "transactionId",
+                          "recorded",
+                          "paid",
+                          "price"
                         ]
                       }
                     },
@@ -17637,7 +17855,10 @@
                     "id",
                     "name",
                     "amount",
+                    "price",
+                    "reserve",
                     "accountId",
+                    "categoryId",
                     "dueDay",
                     "active",
                     "payments",
@@ -17648,7 +17869,7 @@
             }
           },
           "400": {
-            "description": "The request is invalid, or the amount is not in the account's currency (`currency_mismatch`).",
+            "description": "The request is invalid, the amount is not in the account's currency (`currency_mismatch`), the price is (`price_same_currency`), or the category is not an expense category (`invalid_category`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17975,8 +18196,51 @@
                         "currency"
                       ]
                     },
+                    "price": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "accountId": {
                       "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "minLength": 1,
                       "maxLength": 64
                     },
@@ -18008,12 +18272,56 @@
                             ],
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "recorded": {
+                            "type": "boolean"
+                          },
+                          "paid": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "dueOn",
                           "paidOn",
-                          "transactionId"
+                          "transactionId",
+                          "recorded",
+                          "paid",
+                          "price"
                         ]
                       }
                     },
@@ -18026,7 +18334,10 @@
                     "id",
                     "name",
                     "amount",
+                    "price",
+                    "reserve",
                     "accountId",
+                    "categoryId",
                     "dueDay",
                     "active",
                     "payments",
@@ -18208,7 +18519,7 @@
           "Bills"
         ],
         "summary": "Change a bill",
-        "description": "An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount.",
+        "description": "An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount and differ from the price. `price: null` removes the price.",
         "parameters": [
           {
             "schema": {
@@ -18248,6 +18559,25 @@
                       "currency"
                     ]
                   },
+                  "price": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
                   "dueDay": {
                     "type": "integer",
                     "minimum": 1,
@@ -18255,6 +18585,14 @@
                   },
                   "accountId": {
                     "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "categoryId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "minLength": 1,
                     "maxLength": 64
                   },
@@ -18298,8 +18636,51 @@
                         "currency"
                       ]
                     },
+                    "price": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "accountId": {
                       "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "minLength": 1,
                       "maxLength": 64
                     },
@@ -18331,12 +18712,56 @@
                             ],
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "recorded": {
+                            "type": "boolean"
+                          },
+                          "paid": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "dueOn",
                           "paidOn",
-                          "transactionId"
+                          "transactionId",
+                          "recorded",
+                          "paid",
+                          "price"
                         ]
                       }
                     },
@@ -18349,7 +18774,10 @@
                     "id",
                     "name",
                     "amount",
+                    "price",
+                    "reserve",
                     "accountId",
+                    "categoryId",
                     "dueDay",
                     "active",
                     "payments",
@@ -18777,7 +19205,7 @@
           "Bills"
         ],
         "summary": "Mark a due date paid",
-        "description": "Releases the reserve for that due date from `paidOn` (today when omitted). Link the entry that paid it with `transactionId`; recording the entry itself is a separate transaction.",
+        "description": "Releases the reserve for that due date from `paidOn` (today when omitted). Either link the entry that paid it with `transactionId`, or give `paid` to record it: an expense of that amount from the bill's account, dated `paidOn`, with the bill's price (or `price`) and category (or `categoryId`).",
         "parameters": [
           {
             "schema": {
@@ -18805,6 +19233,43 @@
                     "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                   },
                   "transactionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "paid": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "price": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "categoryId": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64
@@ -18849,8 +19314,51 @@
                         "currency"
                       ]
                     },
+                    "price": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "accountId": {
                       "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "minLength": 1,
                       "maxLength": 64
                     },
@@ -18882,12 +19390,56 @@
                             ],
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "recorded": {
+                            "type": "boolean"
+                          },
+                          "paid": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "dueOn",
                           "paidOn",
-                          "transactionId"
+                          "transactionId",
+                          "recorded",
+                          "paid",
+                          "price"
                         ]
                       }
                     },
@@ -18900,7 +19452,10 @@
                     "id",
                     "name",
                     "amount",
+                    "price",
+                    "reserve",
                     "accountId",
+                    "categoryId",
                     "dueDay",
                     "active",
                     "payments",
@@ -18911,7 +19466,7 @@
             }
           },
           "400": {
-            "description": "The request is invalid, or the bill is not due that day (`not_a_due_date`).",
+            "description": "The request is invalid, the bill is not due that day (`not_a_due_date`), `paid` is not in the account's currency (`currency_mismatch`), or there is no category to record it under (`category_required`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19194,7 +19749,7 @@
           "Bills"
         ],
         "summary": "Undo a payment mark",
-        "description": "The due date is reserved again. Entries stay.",
+        "description": "The due date is reserved again. An entry recorded with the mark is undone with it; a linked entry stays.",
         "parameters": [
           {
             "schema": {
@@ -19248,8 +19803,51 @@
                         "currency"
                       ]
                     },
+                    "price": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reserve": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
                     "accountId": {
                       "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "categoryId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "minLength": 1,
                       "maxLength": 64
                     },
@@ -19281,12 +19879,56 @@
                             ],
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "recorded": {
+                            "type": "boolean"
+                          },
+                          "paid": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "price": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
                           }
                         },
                         "required": [
                           "dueOn",
                           "paidOn",
-                          "transactionId"
+                          "transactionId",
+                          "recorded",
+                          "paid",
+                          "price"
                         ]
                       }
                     },
@@ -19299,7 +19941,10 @@
                     "id",
                     "name",
                     "amount",
+                    "price",
+                    "reserve",
                     "accountId",
+                    "categoryId",
                     "dueDay",
                     "active",
                     "payments",
@@ -20186,6 +20831,27 @@
                             "currency"
                           ]
                         },
+                        "price": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "category": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 201
+                        },
                         "dueDay": {
                           "type": "integer",
                           "minimum": 1,
@@ -20212,6 +20878,9 @@
                                 "type": "string",
                                 "minLength": 1,
                                 "maxLength": 100
+                              },
+                              "recorded": {
+                                "type": "boolean"
                               }
                             },
                             "required": [
@@ -21308,6 +21977,27 @@
                               "currency"
                             ]
                           },
+                          "price": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "category": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 201
+                          },
                           "dueDay": {
                             "type": "integer",
                             "minimum": 1,
@@ -21334,6 +22024,9 @@
                                   "type": "string",
                                   "minLength": 1,
                                   "maxLength": 100
+                                },
+                                "recorded": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [

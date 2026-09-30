@@ -477,6 +477,8 @@ export const todaySchema = z.object({
       dueOn: localDateSchema,
       /** In the currency of the account it is paid from. */
       amount: moneySchema,
+      /** What the bill charges in another currency, if it has a price. */
+      price: moneySchema.nullable(),
     }),
   ),
   /** Every due date this cycle reserves, paid or not, earliest first. */
@@ -653,14 +655,35 @@ export const billPaymentSchema = z.object({
   paidOn: localDateSchema,
   /** The entry that paid it, if one is linked. */
   transactionId: idSchema.nullable(),
+  /** The entry was recorded with the mark; undoing the mark undoes it. */
+  recorded: z.boolean(),
+  /**
+   * What the linked entry took from the bill's account; null when nothing
+   * is linked or the entry was undone.
+   */
+  paid: moneySchema.nullable(),
+  /** The foreign price the linked entry recorded, if any. */
+  price: moneySchema.nullable(),
 });
 
 export const billSchema = z.object({
   id: idSchema,
   name: z.string(),
-  /** In the currency of the account it is paid from. */
+  /**
+   * In the currency of the account it is paid from. For a bill with a
+   * price, the estimate reserved until the first payment.
+   */
   amount: moneySchema,
+  /**
+   * What the bill charges in another currency, such as a subscription
+   * priced in USD. The bill then reserves what its latest payment took.
+   */
+  price: moneySchema.nullable(),
+  /** What the next unpaid due date sets aside, in the account's currency. */
+  reserve: moneySchema,
   accountId: idSchema,
+  /** The expense category a payment is recorded under. */
+  categoryId: idSchema.nullable(),
   /** Day of the month; shorter months use their last day. */
   dueDay: z.int().min(1).max(31),
   /** Inactive bills are not reserved. */
@@ -672,12 +695,20 @@ export type BillView = z.infer<typeof billSchema>;
 
 export const billListSchema = z.object({ bills: z.array(billSchema) });
 
+const billPriceSchema = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'A bill price is greater than zero',
+});
+
 export const createBillBodySchema = z.object({
   name: nameSchema,
   amount: moneySchema.refine((m) => m.amountMinor > 0, {
     error: 'A bill amount is greater than zero',
   }),
+  /** In a currency other than the account's. */
+  price: billPriceSchema.optional(),
   accountId: idSchema,
+  /** One of the user's expense categories. */
+  categoryId: idSchema.optional(),
   dueDay: z.int().min(1).max(31),
 });
 
@@ -689,21 +720,52 @@ export const updateBillBodySchema = z
         error: 'A bill amount is greater than zero',
       })
       .optional(),
+    /** null removes the price; the bill then reserves its amount. */
+    price: billPriceSchema.nullable().optional(),
     dueDay: z.int().min(1).max(31).optional(),
     /** Moves the bill to another open account, in the amount's currency. */
     accountId: idSchema.optional(),
+    categoryId: idSchema.nullable().optional(),
     active: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',
   });
 
-export const createBillPaymentBodySchema = z.object({
-  dueOn: localDateSchema,
-  /** Today when omitted. */
-  paidOn: localDateSchema.optional(),
-  transactionId: idSchema.optional(),
-});
+export const createBillPaymentBodySchema = z
+  .object({
+    dueOn: localDateSchema,
+    /** Today when omitted. */
+    paidOn: localDateSchema.optional(),
+    /** Links an entry already recorded. */
+    transactionId: idSchema.optional(),
+    /**
+     * Records the payment as an expense from the bill's account, dated
+     * `paidOn`: what it took, in the account's currency.
+     */
+    paid: moneySchema
+      .refine((m) => m.amountMinor > 0, {
+        error: 'A payment is greater than zero',
+      })
+      .optional(),
+    /** The price the entry records with `paid`; the bill's when omitted. */
+    price: billPriceSchema.optional(),
+    /** The entry's category; the bill's when omitted. */
+    categoryId: idSchema.optional(),
+  })
+  .refine(
+    (body) => body.paid === undefined || body.transactionId === undefined,
+    {
+      error: 'Give either paid or transactionId',
+      path: ['paid'],
+    },
+  )
+  .refine(
+    (body) =>
+      body.paid !== undefined ||
+      (body.price === undefined && body.categoryId === undefined),
+    { error: 'price and categoryId need paid', path: ['paid'] },
+  );
 
 export const billPaymentParamSchema = z.object({
   id: idSchema,
@@ -718,6 +780,7 @@ export type UpdateCategoryBody = z.input<typeof updateCategoryBodySchema>;
 export type CreateRateBody = z.input<typeof createRateBodySchema>;
 export type CreateBillBody = z.input<typeof createBillBodySchema>;
 export type UpdateBillBody = z.input<typeof updateBillBodySchema>;
+export type CreateBillPaymentBody = z.input<typeof createBillPaymentBodySchema>;
 
 export const reconcileResultSchema = z.object({
   on: localDateSchema,

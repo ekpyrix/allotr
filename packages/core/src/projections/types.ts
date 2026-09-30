@@ -27,6 +27,11 @@ export type BillPayment = Readonly<{
   paidOn: LocalDate;
   /** The entry that paid it, when linked; pace leaves it out. */
   transactionId?: TransactionId | null;
+  /**
+   * What the linked entry took from the bill's account, in the bill's
+   * currency; null when nothing is linked or it was undone.
+   */
+  paid?: Money | null;
 }>;
 
 /** A bill reserved at payday until it is paid. */
@@ -36,6 +41,12 @@ export type Bill = Readonly<{
   /** Day of the month; shorter months use their last day. */
   dueDay: number;
   payments: readonly BillPayment[];
+  /**
+   * The amount changes from payment to payment, such as a price in another
+   * currency: each due date reserves what the latest earlier payment took,
+   * and `amount` until one has.
+   */
+  variable?: boolean;
 }>;
 
 /** How many units of `quote` one unit of `base` buys from `asOf`. */

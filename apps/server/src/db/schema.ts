@@ -44,6 +44,7 @@ export interface BillPayments {
   due_on: string;
   id: string;
   paid_on: string;
+  recorded: Generated<number>;
   transaction_id: string | null;
   user_id: string;
 }
@@ -52,11 +53,14 @@ export interface Bills {
   account_id: string;
   active: Generated<number>;
   amount_minor: number;
+  category_id: string | null;
   created_at: string;
   currency: string;
   due_day: number;
   id: string;
   name: string;
+  price_currency: string | null;
+  price_minor: number | null;
   updated_at: string;
   user_id: string;
 }

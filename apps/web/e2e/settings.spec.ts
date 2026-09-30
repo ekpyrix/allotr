@@ -337,6 +337,71 @@ test('a bill due this cycle is set aside until it is marked paid', async ({
   await expect(region.getByRole('listitem', { name: 'Phone' })).toHaveCount(0);
 });
 
+test('a bill priced in another currency records what it took when paid', async ({
+  page,
+}) => {
+  const before = await today(page);
+  const dueDay = Number(before.today.slice(8));
+  await page.goto('/settings#bills');
+  const region = section(page, 'Bills');
+  await region.getByRole('button', { name: 'New bill' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New bill' });
+  await dialog.getByLabel('Name').fill('Streaming');
+  await dialog.getByLabel('Priced in another currency').check();
+  await dialog.getByRole('button', { name: 'Add bill' }).click();
+  await expect(
+    dialog.getByText('Choose the currency it is billed in.'),
+  ).toBeVisible();
+  await dialog.getByLabel('Billed in').selectOption('EUR');
+  await dialog.getByLabel('Price in EUR').fill('9.90');
+  await dialog.getByLabel('Estimate in USD').fill('11');
+  await dialog.getByLabel('Due each month on day').selectOption(String(dueDay));
+  await dialog
+    .getByLabel('Category for payments')
+    .selectOption({ label: 'Bills and subscriptions' });
+  await expectAccessible(page);
+  await dialog.getByRole('button', { name: 'Add bill' }).click();
+  await expect(dialog).toBeHidden();
+
+  const bill = region.getByRole('listitem', { name: 'Streaming' });
+  await expect(bill).toContainText('€9.90');
+  await expect(bill).toContainText('$11.00 set aside');
+  const reserved = await today(page);
+  expect(before.available.amountMinor - reserved.available.amountMinor).toBe(
+    1_100,
+  );
+
+  await bill.getByRole('button', { name: /^Pay/ }).click();
+  const pay = page.getByRole('dialog', { name: 'Pay Streaming' });
+  await expect(pay.getByLabel('Price in EUR')).toHaveValue('9.90');
+  await expect(pay.getByLabel('Charged in USD')).toHaveValue('11.00');
+  await pay.getByLabel('Charged in USD').fill('11.35');
+  await expect(pay).toContainText('1 EUR = $1.15');
+  await expectAccessible(page);
+  await pay.getByRole('button', { name: 'Record payment' }).click();
+  await expect(pay).toBeHidden();
+
+  await expect(bill).toContainText('$11.35 set aside');
+  await expect(bill).toContainText('Last paid $11.35 · 1 EUR = $1.15');
+  const paid = await today(page);
+  expect(paid.cycleBills[0]?.paidOn).toBe(paid.today);
+  expect(before.available.amountMinor - paid.available.amountMinor).toBe(1_135);
+
+  await bill.getByRole('button', { name: /^Undo paid/ }).click();
+  await expect(bill.getByRole('button', { name: /^Pay/ })).toBeVisible();
+  await expect(bill).toContainText('$11.00 set aside');
+  expect((await today(page)).available).toEqual(reserved.available);
+
+  await bill.getByRole('button', { name: 'Delete Streaming' }).click();
+  await page
+    .getByRole('dialog', { name: 'Delete Streaming?' })
+    .getByRole('button', { name: 'Delete' })
+    .click();
+  await expect(region.getByRole('listitem', { name: 'Streaming' })).toHaveCount(
+    0,
+  );
+});
+
 test('a manual rate brings a foreign account into the figures', async ({
   page,
   baseURL,

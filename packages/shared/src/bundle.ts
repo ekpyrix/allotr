@@ -142,6 +142,14 @@ const billSchema = z.strictObject({
   amount: moneySchema.refine((m) => m.amountMinor > 0, {
     error: 'A bill amount is greater than zero',
   }),
+  /** What it charges in another currency than the account's. */
+  price: moneySchema
+    .refine((m) => m.amountMinor > 0, {
+      error: 'A bill price is greater than zero',
+    })
+    .optional(),
+  /** The expense category its payments are recorded under. */
+  category: categoryPathSchema.optional(),
   dueDay: z.int().min(1).max(31),
   active: z.boolean().default(true),
   payments: z
@@ -151,6 +159,8 @@ const billSchema = z.strictObject({
         paidOn: localDateSchema,
         /** The `ref` of the entry that paid it. */
         transaction: refSchema.optional(),
+        /** The entry was recorded with the mark; undoing it undoes the entry. */
+        recorded: z.boolean().optional(),
       }),
     )
     .max(bundleLimits.items)

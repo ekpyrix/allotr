@@ -253,6 +253,8 @@ export function toBundle(snapshot: Snapshot): Bundle {
     name: bill.name,
     account: accountName(bill.accountId),
     amount: bill.amount,
+    ...(bill.price === null ? {} : { price: bill.price }),
+    ...(bill.categoryId === null ? {} : { category: path(bill.categoryId) }),
     dueDay: bill.dueDay,
     active: bill.active,
     // A payment for a day the bill is no longer due on settles nothing.
@@ -262,7 +264,10 @@ export function toBundle(snapshot: Snapshot): Bundle {
         dueOn: p.dueOn,
         paidOn: p.paidOn,
         ...(p.transactionId !== null && liveIds.has(p.transactionId)
-          ? { transaction: p.transactionId }
+          ? {
+              transaction: p.transactionId,
+              ...(p.recorded ? { recorded: true } : {}),
+            }
           : {}),
       })),
   }));

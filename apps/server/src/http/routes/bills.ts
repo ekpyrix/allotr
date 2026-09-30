@@ -27,7 +27,8 @@ import {
 } from '../openapi.ts';
 
 // Bills, only as far as the reserve in today's figures needs them
-// (docs/domain.md "Daily usable"). M4 adds cadence and payment flows.
+// (docs/domain.md "Daily usable"), and recording their payments. M4 adds
+// cadence and reminders.
 
 const tags = ['Bills'];
 const invalid = problemResponse('The request is invalid.');
@@ -48,7 +49,7 @@ const createRouteDef = createRoute({
   tags,
   summary: 'Add a monthly bill',
   description:
-    'Each active bill due in the cycle is reserved from the day the cycle opens until it is marked paid.',
+    'Each active bill due in the cycle is reserved from the day the cycle opens until it is marked paid. A bill with a `price` in another currency reserves `amount` until a payment records what it took, then what its latest payment took.',
   request: {
     body: {
       content: { 'application/json': { schema: createBillBodySchema } },
@@ -57,7 +58,7 @@ const createRouteDef = createRoute({
   responses: {
     201: json(billSchema, 'The new bill.'),
     400: problemResponse(
-      "The request is invalid, or the amount is not in the account's currency (`currency_mismatch`).",
+      "The request is invalid, the amount is not in the account's currency (`currency_mismatch`), the price is (`price_same_currency`), or the category is not an expense category (`invalid_category`).",
     ),
     ...signedIn,
     404: problemResponse('There is no such account.'),
@@ -80,7 +81,7 @@ const updateRoute = createRoute({
   tags,
   summary: 'Change a bill',
   description:
-    'An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount.',
+    'An inactive bill is no longer reserved. `accountId` moves the bill to another open account; its currency must match the amount and differ from the price. `price: null` removes the price.',
   request: {
     params: idParamSchema,
     body: {
@@ -111,7 +112,7 @@ const payRoute = createRoute({
   tags,
   summary: 'Mark a due date paid',
   description:
-    'Releases the reserve for that due date from `paidOn` (today when omitted). Link the entry that paid it with `transactionId`; recording the entry itself is a separate transaction.',
+    "Releases the reserve for that due date from `paidOn` (today when omitted). Either link the entry that paid it with `transactionId`, or give `paid` to record it: an expense of that amount from the bill's account, dated `paidOn`, with the bill's price (or `price`) and category (or `categoryId`).",
   request: {
     params: idParamSchema,
     body: {
@@ -121,7 +122,7 @@ const payRoute = createRoute({
   responses: {
     201: json(billSchema, 'The bill with the payment.'),
     400: problemResponse(
-      'The request is invalid, or the bill is not due that day (`not_a_due_date`).',
+      "The request is invalid, the bill is not due that day (`not_a_due_date`), `paid` is not in the account's currency (`currency_mismatch`), or there is no category to record it under (`category_required`).",
     ),
     ...signedIn,
     404: problemResponse('There is no such bill or entry.'),
@@ -136,7 +137,8 @@ const unpayRoute = createRoute({
   path: '/v1/bills/{id}/payments/{dueOn}',
   tags,
   summary: 'Undo a payment mark',
-  description: 'The due date is reserved again. Entries stay.',
+  description:
+    'The due date is reserved again. An entry recorded with the mark is undone with it; a linked entry stays.',
   request: { params: billPaymentParamSchema },
   responses: {
     200: json(billSchema, 'The bill without the payment.'),
@@ -204,6 +206,6 @@ export function registerBillRoutes(
 
   app.openapi(unpayRoute, async (c) => {
     const { id, dueOn } = c.req.valid('param');
-    return c.json(await unpayBill(db, c.get('user').id, id, dueOn), 200);
+    return c.json(await unpayBill(db, c.get('user').id, id, dueOn, now()), 200);
   });
 }

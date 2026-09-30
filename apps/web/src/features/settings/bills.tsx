@@ -1,8 +1,12 @@
 import {
   formatMoney,
   formatMoneyInput,
+  localDate,
   type AccountView,
   type BillView,
+  type CategoryView,
+  type ExchangeRateView,
+  type LocalDate,
   type Money,
   type TodayView,
 } from '@allotr/shared';
@@ -15,8 +19,11 @@ import { Input } from '@/components/ui/input';
 import { Sheet } from '@/features/accounts/sheet';
 import { formatLongDay } from '@/features/ledger/format';
 import { amountExample } from '@/features/quick-entry/draft';
+import { categoryOptions } from '@/features/quick-entry/options';
+import { useCurrencyOptions } from '@/lib/currency-options';
 import { describeProblem, errorMessage } from '@/lib/problem';
 import {
+  billPaymentQueryKeys,
   billQueryKeys,
   createBill,
   deleteBill,
@@ -28,7 +35,10 @@ import {
 import { t } from '@/messages/t';
 import {
   dueThisCycle,
+  lastPricedPayment,
+  paidUnit,
   parseBillAmount,
+  storedUnit,
   type AmountError,
   type CycleBill,
 } from './bill-draft.ts';
@@ -36,16 +46,22 @@ import { Section } from './section.tsx';
 import { useBusy } from './use-busy.ts';
 
 type Open =
-  { kind: 'create' } | { kind: 'edit' | 'delete'; bill: BillView } | null;
+  | { kind: 'create' }
+  | { kind: 'edit' | 'delete'; bill: BillView }
+  | { kind: 'pay'; bill: BillView; due: CycleBill }
+  | null;
 
 const dueDays = Array.from({ length: 31 }, (_, i) => i + 1);
 
-function useBillChange<A, R>(run: (args: A) => Promise<R>) {
+function useBillChange<A, R>(
+  run: (args: A) => Promise<R>,
+  keys: typeof billQueryKeys | typeof billPaymentQueryKeys = billQueryKeys,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: run,
     onSuccess: async () => {
-      await invalidate(queryClient, billQueryKeys);
+      await invalidate(queryClient, keys);
     },
   });
 }
@@ -104,9 +120,50 @@ function DueDaySelect({
   );
 }
 
+function CategorySelect({
+  categories,
+  value,
+  onChange,
+  label,
+  hint,
+  error,
+}: {
+  categories: readonly CategoryView[];
+  value: string;
+  onChange: (id: string) => void;
+  label: string;
+  hint?: string | undefined;
+  error?: string | undefined;
+}) {
+  const options = categoryOptions(categories, 'expense');
+  return (
+    <FieldControl label={label} hint={hint} error={error}>
+      {(props) => (
+        <select
+          {...props}
+          name="categoryId"
+          value={value}
+          className={selectClass}
+          onChange={(e) => {
+            onChange(e.currentTarget.value);
+          }}
+        >
+          <option value="">{t('settings.bills.noCategory')}</option>
+          {options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )}
+    </FieldControl>
+  );
+}
+
 export function BillForm({
   bill,
   accounts,
+  categories,
   locale,
   onDone,
   onCancel,
@@ -114,6 +171,8 @@ export function BillForm({
 }: {
   bill: BillView | undefined;
   accounts: readonly AccountView[];
+  /** Leave it out to not ask for a category, as during setup. */
+  categories?: readonly CategoryView[] | undefined;
   locale: string;
   onDone: (name: string) => void;
   /** Leave it out where there is nothing to cancel back to. */
@@ -136,19 +195,45 @@ export function BillForm({
   );
   const [dueDay, setDueDay] = useState(bill?.dueDay ?? 1);
   const [active, setActive] = useState(bill?.active ?? true);
+  const [priced, setPriced] = useState(bill?.price != null);
+  const [priceCurrency, setPriceCurrency] = useState(
+    bill?.price?.currency ?? '',
+  );
+  const [priceText, setPriceText] = useState(
+    bill?.price == null ? '' : formatMoneyInput(bill.price, locale),
+  );
+  const [categoryId, setCategoryId] = useState(bill?.categoryId ?? '');
   const [amountError, setAmountError] = useState<AmountError>();
+  const [priceError, setPriceError] = useState<AmountError>();
+  const [priceCurrencyMissing, setPriceCurrencyMissing] = useState(false);
   const [accountMissing, setAccountMissing] = useState(false);
   const activeId = useId();
-  const save = useBillChange((parsed: Money) =>
-    bill === undefined
-      ? createBill({ name: name.trim(), accountId, amount: parsed, dueDay })
-      : updateBill(bill.id, {
-          name: name.trim(),
-          amount: parsed,
-          dueDay,
-          active,
-          ...(accountId === bill.accountId ? {} : { accountId }),
-        }),
+  const pricedId = useId();
+  const currencyOptions = useCurrencyOptions(locale).filter(
+    (o) => o.code !== currency,
+  );
+  const save = useBillChange(
+    ({ amount: parsed, price }: { amount: Money; price: Money | null }) => {
+      const category = categoryId === '' ? null : categoryId;
+      return bill === undefined
+        ? createBill({
+            name: name.trim(),
+            accountId,
+            amount: parsed,
+            ...(price === null ? {} : { price }),
+            ...(category === null ? {} : { categoryId: category }),
+            dueDay,
+          })
+        : updateBill(bill.id, {
+            name: name.trim(),
+            amount: parsed,
+            dueDay,
+            active,
+            ...(accountId === bill.accountId ? {} : { accountId }),
+            ...(price === null && bill.price === null ? {} : { price }),
+            ...(category === bill.categoryId ? {} : { categoryId: category }),
+          });
+    },
   );
   useBusy(save.isPending, onBusyChange);
   const problem = save.isError ? describeProblem(save.error) : null;
@@ -157,20 +242,43 @@ export function BillForm({
     event.preventDefault();
     const missing = accountId === '' || currency === '';
     const parsed = missing ? null : parseBillAmount(amount, currency, locale);
+    const currencyMissing =
+      priced && (priceCurrency === '' || priceCurrency === currency);
+    const price =
+      !priced || currencyMissing
+        ? null
+        : parseBillAmount(priceText, priceCurrency, locale);
     setAccountMissing(missing);
     setAmountError(parsed !== null && !parsed.ok ? parsed.error : undefined);
-    if (missing || parsed === null || !parsed.ok) {
+    setPriceCurrencyMissing(currencyMissing);
+    setPriceError(price !== null && !price.ok ? price.error : undefined);
+    const firstInvalid = missing
+      ? 'accountId'
+      : currencyMissing
+        ? 'priceCurrency'
+        : price !== null && !price.ok
+          ? 'price'
+          : parsed === null || !parsed.ok
+            ? 'amount'
+            : null;
+    if (firstInvalid !== null || parsed === null || !parsed.ok) {
       const field = event.currentTarget.elements.namedItem(
-        missing ? 'accountId' : 'amount',
+        firstInvalid ?? 'amount',
       );
       if (field instanceof HTMLElement) field.focus();
       return;
     }
-    save.mutate(parsed.amount, {
-      onSuccess: (saved) => {
-        onDone(saved.name);
+    save.mutate(
+      {
+        amount: parsed.amount,
+        price: price?.ok === true ? price.amount : null,
       },
-    });
+      {
+        onSuccess: (saved) => {
+          onDone(saved.name);
+        },
+      },
+    );
   }
 
   return (
@@ -223,12 +331,94 @@ export function BillForm({
           </select>
         )}
       </FieldControl>
+      <div className="flex items-start gap-3">
+        <input
+          id={pricedId}
+          type="checkbox"
+          name="priced"
+          checked={priced}
+          aria-describedby={`${pricedId}-hint`}
+          onChange={(e) => {
+            setPriced(e.currentTarget.checked);
+            setPriceError(undefined);
+            setPriceCurrencyMissing(false);
+          }}
+          className="mt-1 size-4 accent-primary"
+        />
+        <div>
+          <label htmlFor={pricedId} className="font-medium">
+            {t('settings.bills.priced')}
+          </label>
+          <p id={`${pricedId}-hint`} className="text-sm text-text-muted">
+            {t('settings.bills.pricedHint')}
+          </p>
+        </div>
+      </div>
+      {priced ? (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FieldControl
+            label={t('settings.bills.priceCurrency')}
+            error={
+              priceCurrencyMissing
+                ? t('settings.bills.errors.priceCurrency')
+                : undefined
+            }
+          >
+            {(props) => (
+              <select
+                {...props}
+                name="priceCurrency"
+                value={priceCurrency === currency ? '' : priceCurrency}
+                className={selectClass}
+                onChange={(e) => {
+                  setPriceCurrency(e.currentTarget.value);
+                  setPriceCurrencyMissing(false);
+                  setPriceError(undefined);
+                }}
+              >
+                <option value="">{t('settings.rates.chooseCurrency')}</option>
+                {currencyOptions.map((o) => (
+                  <option key={o.code} value={o.code}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </FieldControl>
+          <FieldControl
+            label={
+              priceCurrency === '' || priceCurrency === currency
+                ? t('settings.bills.amount')
+                : t('settings.bills.priceIn', { currency: priceCurrency })
+            }
+            error={amountErrorText(priceError, priceCurrency, locale)}
+          >
+            {(props) => (
+              <Input
+                {...props}
+                name="price"
+                value={priceText}
+                inputMode="decimal"
+                autoComplete="off"
+                className="h-11 text-base"
+                onChange={(e) => {
+                  setPriceText(e.currentTarget.value);
+                  setPriceError(undefined);
+                }}
+              />
+            )}
+          </FieldControl>
+        </div>
+      ) : null}
       <FieldControl
         label={
           currency === ''
             ? t('settings.bills.amount')
-            : t('settings.bills.amountIn', { currency })
+            : priced
+              ? t('settings.bills.estimateIn', { currency })
+              : t('settings.bills.amountIn', { currency })
         }
+        hint={priced ? t('settings.bills.estimateHint') : undefined}
         error={amountErrorText(amountError, currency, locale)}
       >
         {(props) => (
@@ -247,6 +437,15 @@ export function BillForm({
         )}
       </FieldControl>
       <DueDaySelect value={dueDay} onChange={setDueDay} />
+      {categories === undefined ? null : (
+        <CategorySelect
+          categories={categories}
+          value={categoryId}
+          onChange={setCategoryId}
+          label={t('settings.bills.category')}
+          hint={t('settings.bills.categoryHint')}
+        />
+      )}
       {bill === undefined ? null : (
         <div className="flex items-start gap-3">
           <input
@@ -335,22 +534,282 @@ function DeleteBill({
   );
 }
 
+const isDay = (text: string) => /^\d{4}-\d{2}-\d{2}$/.test(text);
+
+function PayBill({
+  bill,
+  due,
+  account,
+  categories,
+  today,
+  locale,
+  onDone,
+  onCancel,
+  onBusyChange,
+}: {
+  bill: BillView;
+  due: CycleBill;
+  account: AccountView | undefined;
+  categories: readonly CategoryView[];
+  today: LocalDate;
+  locale: string;
+  onDone: (paid: Money) => void;
+  onCancel: () => void;
+  onBusyChange: (busy: boolean) => void;
+}) {
+  const currency = due.amount.currency;
+  const priceCurrency = bill.price?.currency ?? '';
+  const [paidText, setPaidText] = useState(
+    formatMoneyInput(due.amount, locale),
+  );
+  const [priceText, setPriceText] = useState(
+    bill.price === null ? '' : formatMoneyInput(bill.price, locale),
+  );
+  const [paidOn, setPaidOn] = useState<string>(today);
+  const [categoryId, setCategoryId] = useState(bill.categoryId ?? '');
+  const [paidError, setPaidError] = useState<AmountError>();
+  const [priceError, setPriceError] = useState<AmountError>();
+  const [paidOnInvalid, setPaidOnInvalid] = useState(false);
+  const [categoryMissing, setCategoryMissing] = useState(false);
+  const pay = useBillChange(
+    (body: {
+      paid: Money;
+      price: Money | null;
+      paidOn: LocalDate;
+      categoryId: string;
+    }) =>
+      payBill(bill.id, {
+        dueOn: due.dueOn,
+        paidOn: body.paidOn,
+        paid: body.paid,
+        ...(body.price === null ? {} : { price: body.price }),
+        categoryId: body.categoryId,
+      }),
+    billPaymentQueryKeys,
+  );
+  useBusy(pay.isPending, onBusyChange);
+  const problem = pay.isError ? describeProblem(pay.error) : null;
+
+  const paid = parseBillAmount(paidText, currency, locale);
+  const price =
+    priceCurrency === ''
+      ? null
+      : parseBillAmount(priceText, priceCurrency, locale);
+  const unit =
+    paid.ok && price?.ok === true ? paidUnit(paid.amount, price.amount) : null;
+
+  function submit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const badDay = !isDay(paidOn) || paidOn > today;
+    const noCategory = categoryId === '';
+    setPaidError(paid.ok ? undefined : paid.error);
+    setPriceError(price === null || price.ok ? undefined : price.error);
+    setPaidOnInvalid(badDay);
+    setCategoryMissing(noCategory);
+    const firstInvalid = !paid.ok
+      ? 'paid'
+      : price !== null && !price.ok
+        ? 'price'
+        : badDay
+          ? 'paidOn'
+          : noCategory
+            ? 'categoryId'
+            : null;
+    if (firstInvalid !== null || !paid.ok || (price !== null && !price.ok)) {
+      const field = event.currentTarget.elements.namedItem(
+        firstInvalid ?? 'paid',
+      );
+      if (field instanceof HTMLElement) field.focus();
+      return;
+    }
+    pay.mutate(
+      {
+        paid: paid.amount,
+        price: price?.amount ?? null,
+        paidOn: localDate(paidOn),
+        categoryId,
+      },
+      {
+        onSuccess: () => {
+          onDone(paid.amount);
+        },
+      },
+    );
+  }
+
+  return (
+    <form className="mt-4 grid gap-5" onSubmit={submit} noValidate>
+      <p>
+        {t('settings.bills.payIntro', {
+          day: formatLongDay(due.dueOn, locale),
+          account: account?.name ?? '',
+        })}
+      </p>
+      {priceCurrency === '' ? null : (
+        <FieldControl
+          label={t('settings.bills.priceIn', { currency: priceCurrency })}
+          error={amountErrorText(priceError, priceCurrency, locale)}
+        >
+          {(props) => (
+            <Input
+              {...props}
+              name="price"
+              value={priceText}
+              inputMode="decimal"
+              autoComplete="off"
+              className="h-11 text-base"
+              onChange={(e) => {
+                setPriceText(e.currentTarget.value);
+                setPriceError(undefined);
+              }}
+            />
+          )}
+        </FieldControl>
+      )}
+      <FieldControl
+        label={t('settings.bills.paid', { currency })}
+        hint={t('settings.bills.paidHint')}
+        error={amountErrorText(paidError, currency, locale)}
+      >
+        {(props) => (
+          <Input
+            {...props}
+            name="paid"
+            value={paidText}
+            inputMode="decimal"
+            autoComplete="off"
+            className="h-11 text-base"
+            onChange={(e) => {
+              setPaidText(e.currentTarget.value);
+              setPaidError(undefined);
+            }}
+          />
+        )}
+      </FieldControl>
+      {unit === null || price === null || !price.ok ? null : (
+        <p className="text-sm text-text-muted tabular-nums" aria-live="polite">
+          {t('settings.bills.paidRate', {
+            currency: priceCurrency,
+            unit: formatMoney(unit, locale),
+          })}
+        </p>
+      )}
+      <FieldControl
+        label={t('settings.bills.paidOnLabel')}
+        error={paidOnInvalid ? t('settings.bills.errors.paidOn') : undefined}
+      >
+        {(props) => (
+          <Input
+            {...props}
+            name="paidOn"
+            type="date"
+            max={today}
+            className="h-11 text-base"
+            value={paidOn}
+            onChange={(e) => {
+              setPaidOn(e.currentTarget.value);
+              setPaidOnInvalid(false);
+            }}
+          />
+        )}
+      </FieldControl>
+      <CategorySelect
+        categories={categories}
+        value={categoryId}
+        onChange={(id) => {
+          setCategoryId(id);
+          setCategoryMissing(false);
+        }}
+        label={t('settings.bills.category')}
+        error={
+          categoryMissing
+            ? t('settings.bills.errors.categoryRequired')
+            : undefined
+        }
+      />
+      <FormError message={problem?.message ?? null} />
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" className="h-11" disabled={pay.isPending}>
+          {pay.isPending ? t('settings.saving') : t('settings.bills.paySubmit')}
+        </Button>
+        <Button
+          type="button"
+          variant="outlined"
+          className="h-11"
+          disabled={pay.isPending}
+          onClick={onCancel}
+        >
+          {t('settings.cancel')}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// The price's rates under a priced bill: what the last payment worked out
+// to, and the latest stored rate, if there is one.
+function RateLines({
+  bill,
+  price,
+  rates,
+  locale,
+}: {
+  bill: BillView;
+  price: Money;
+  rates: readonly ExchangeRateView[];
+  locale: string;
+}) {
+  const last = lastPricedPayment(bill);
+  const stored = storedUnit(rates, price.currency, bill.amount.currency);
+  if (last === null && stored === null) return null;
+  return (
+    <div className="grid gap-0.5 text-sm text-text-muted tabular-nums">
+      {last === null ? null : (
+        <p>
+          {t('settings.bills.lastPaid', {
+            amount: formatMoney(last.paid, locale),
+            currency: last.price.currency,
+            unit: formatMoney(paidUnit(last.paid, last.price), locale),
+          })}
+        </p>
+      )}
+      {stored === null ? null : (
+        <p>
+          {t('settings.bills.storedRate', {
+            currency: price.currency,
+            unit: formatMoney(stored.unit, locale),
+            day: formatLongDay(stored.asOf, locale),
+          })}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function DueLine({
   bill,
   due,
   locale,
+  onPay,
   onAnnounce,
 }: {
   bill: BillView;
   due: CycleBill;
   locale: string;
+  /** Asks what the payment took instead of only marking it paid. */
+  onPay: (() => void) | undefined;
   onAnnounce: (message: string) => void;
 }) {
-  const mark = useBillChange((paid: boolean) =>
-    paid ? unpayBill(bill.id, due.dueOn) : payBill(bill.id, due.dueOn),
+  const mark = useBillChange(
+    (paid: boolean) =>
+      paid
+        ? unpayBill(bill.id, due.dueOn)
+        : payBill(bill.id, { dueOn: due.dueOn }),
+    billPaymentQueryKeys,
   );
   const day = formatLongDay(due.dueOn, locale);
   const paid = due.paidOn !== null;
+  const payment = bill.payments.find((p) => p.dueOn === due.dueOn);
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <span className="text-sm">
@@ -360,6 +819,12 @@ function DueLine({
               paidOn: formatLongDay(due.paidOn ?? due.dueOn, locale),
             })
           : t('settings.bills.reserved', { day })}
+        {payment?.paid == null ? null : (
+          <span className="font-mono tabular-nums">
+            {' · '}
+            {formatMoney(payment.paid, locale)}
+          </span>
+        )}
       </span>
       <span className="flex flex-wrap items-center gap-2">
         {mark.isError ? (
@@ -372,24 +837,29 @@ function DueLine({
           size="dense"
           disabled={mark.isPending}
           onClick={() => {
+            if (!paid && onPay !== undefined) {
+              onPay();
+              return;
+            }
             mark.mutate(paid, {
               onSuccess: () => {
+                const names = { name: bill.name, day };
                 onAnnounce(
-                  paid
-                    ? t('settings.bills.announce.unpaid', {
-                        name: bill.name,
-                        day,
-                      })
-                    : t('settings.bills.announce.paid', {
-                        name: bill.name,
-                        day,
-                      }),
+                  !paid
+                    ? t('settings.bills.announce.paid', names)
+                    : payment?.recorded === true
+                      ? t('settings.bills.announce.unrecorded', names)
+                      : t('settings.bills.announce.unpaid', names),
                 );
               },
             });
           }}
         >
-          {paid ? t('settings.bills.undoPaid') : t('settings.bills.markPaid')}
+          {paid
+            ? t('settings.bills.undoPaid')
+            : onPay === undefined
+              ? t('settings.bills.markPaid')
+              : t('settings.bills.pay')}
           <span className="sr-only">
             {' '}
             {t('settings.bills.dueOn', { name: bill.name, day })}
@@ -404,6 +874,7 @@ function BillItem({
   bill,
   account,
   cycleBills,
+  rates,
   locale,
   onOpen,
   onAnnounce,
@@ -411,6 +882,7 @@ function BillItem({
   bill: BillView;
   account: AccountView | undefined;
   cycleBills: readonly CycleBill[];
+  rates: readonly ExchangeRateView[];
   locale: string;
   onOpen: (open: Open) => void;
   onAnnounce: (message: string) => void;
@@ -436,10 +908,27 @@ function BillItem({
             {bill.active ? '' : ` · ${t('settings.bills.inactive')}`}
           </span>
         </p>
-        <p className="font-mono text-lg tabular-nums wrap-anywhere">
-          {formatMoney(bill.amount, locale)}
-        </p>
+        <div className="text-right">
+          <p className="font-mono text-lg tabular-nums wrap-anywhere">
+            {formatMoney(bill.price ?? bill.amount, locale)}
+          </p>
+          {bill.price === null ? null : (
+            <p className="text-sm text-text-muted tabular-nums">
+              {t('settings.bills.setAside', {
+                amount: formatMoney(bill.reserve, locale),
+              })}
+            </p>
+          )}
+        </div>
       </div>
+      {bill.price === null ? null : (
+        <RateLines
+          bill={bill}
+          price={bill.price}
+          rates={rates}
+          locale={locale}
+        />
+      )}
       {bill.active ? (
         due.length === 0 ? (
           <p className="text-sm text-text-muted">
@@ -453,6 +942,13 @@ function BillItem({
                 bill={bill}
                 due={d}
                 locale={locale}
+                onPay={
+                  bill.price === null
+                    ? undefined
+                    : () => {
+                        onOpen({ kind: 'pay', bill, due: d });
+                      }
+                }
                 onAnnounce={onAnnounce}
               />
             ))}
@@ -491,11 +987,15 @@ function BillItem({
 export function BillsSection({
   bills,
   accounts,
+  categories,
+  rates,
   today,
   locale,
 }: {
   bills: readonly BillView[];
   accounts: readonly AccountView[];
+  categories: readonly CategoryView[];
+  rates: readonly ExchangeRateView[];
   today: TodayView;
   locale: string;
 }) {
@@ -516,7 +1016,9 @@ export function BillsSection({
         ? t('settings.bills.addTitle')
         : open.kind === 'edit'
           ? t('settings.bills.editTitle', { name: open.bill.name })
-          : t('settings.bills.deleteTitle', { name: open.bill.name });
+          : open.kind === 'pay'
+            ? t('settings.bills.payTitle', { name: open.bill.name })
+            : t('settings.bills.deleteTitle', { name: open.bill.name });
   const hasAccounts = accounts.some((a) => !a.archived);
 
   return (
@@ -556,6 +1058,7 @@ export function BillsSection({
               bill={bill}
               account={accounts.find((a) => a.id === bill.accountId)}
               cycleBills={today.cycleBills}
+              rates={rates}
               locale={locale}
               onOpen={opening}
               onAnnounce={setAnnouncement}
@@ -570,7 +1073,28 @@ export function BillsSection({
         onClose={close}
         fallback={() => document.getElementById('bills-title')}
       >
-        {open === null ? null : open.kind === 'delete' ? (
+        {open === null ? null : open.kind === 'pay' ? (
+          <PayBill
+            bill={open.bill}
+            due={open.due}
+            account={accounts.find((a) => a.id === open.bill.accountId)}
+            categories={categories}
+            today={today.today}
+            locale={locale}
+            onBusyChange={setBusy}
+            onCancel={close}
+            onDone={(paid) => {
+              close();
+              setAnnouncement(
+                t('settings.bills.announce.recorded', {
+                  name: open.bill.name,
+                  day: formatLongDay(open.due.dueOn, locale),
+                  amount: formatMoney(paid, locale),
+                }),
+              );
+            }}
+          />
+        ) : open.kind === 'delete' ? (
           <DeleteBill
             bill={open.bill}
             onBusyChange={setBusy}
@@ -585,6 +1109,7 @@ export function BillsSection({
           <BillForm
             bill={open.kind === 'edit' ? open.bill : undefined}
             accounts={accounts}
+            categories={categories}
             locale={locale}
             onBusyChange={setBusy}
             onCancel={close}
