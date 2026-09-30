@@ -18,6 +18,8 @@ test('the gallery is accessible at rest', async ({ page }) => {
 
 test('hovered buttons keep their contrast', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Hover needs a pointer');
+  // Four axe runs over the whole gallery.
+  test.setTimeout(90_000);
   for (const name of ['Save', 'Edit', 'Delete', 'Cancel']) {
     await page.getByRole('button', { name, exact: true }).first().hover();
     await expectAccessible(page);

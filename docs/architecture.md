@@ -136,7 +136,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on
   `POST /v1/transactions` makes a repeat return the entry it first created
-  (200) instead of recording another, as offline queues need. An expense
+  (200) instead of recording another, as offline queues need. Each page
+  of `GET /v1/transactions` carries `dayTotals`: for every day on the
+  page, the net change all of that day's matching entries made to the
+  user's own accounts (or the filtered account), in the default currency
+  at the day's rate. An expense
   or income takes either `categoryId` or a split, `lines: [{categoryId,
   amount}]` (2–20 distinct categories adding up to the amount, or to
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split

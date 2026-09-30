@@ -2,6 +2,7 @@ import { formatMoney } from '@allotr/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useEffect } from 'react';
+import { EXPANDED, useMediaQuery } from '@/lib/media';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ export function LedgerPage({
   const tags = useQuery(tagsQuery);
   const settings = useQuery(ledgerSettingsQuery);
   const quickEntry = useQuickEntry();
+  const expanded = useMediaQuery(EXPANDED);
   const all = [entries, accounts, categories, tags, settings];
 
   // A tag or category that no longer exists (an old bookmark) drops out of
@@ -84,7 +86,7 @@ export function LedgerPage({
   )
     return (
       <Page title={t('ledger.title')}>
-        <p role="status" className="mt-6 text-muted-foreground">
+        <p role="status" className="mt-6 text-body text-text-muted">
           {t('ledger.loading')}
         </p>
       </Page>
@@ -92,6 +94,13 @@ export function LedgerPage({
 
   const { locale } = settings.data;
   const transactions = entries.data?.pages.flatMap((p) => p.transactions);
+  // A day split across pages has the same total on each; the first wins.
+  const dayTotals = new Map(
+    (entries.data?.pages ?? [])
+      .flatMap((p) => p.dayTotals)
+      .reverse()
+      .map((total) => [total.date, total] as const),
+  );
   const rows =
     transactions === undefined
       ? undefined
@@ -106,8 +115,8 @@ export function LedgerPage({
       : accounts.data.accounts.find((a) => a.id === search.account);
   const filters: LedgerSearch = { ...search, entry: undefined };
 
-  return (
-    <Page title={t('ledger.title')}>
+  const list = (
+    <>
       <LedgerFilters
         // Back and forward change the applied search: start the text over.
         key={search.q ?? ''}
@@ -125,7 +134,7 @@ export function LedgerPage({
       {account === undefined ? null : (
         <p
           data-testid="account-balance"
-          className="mt-6 font-mono text-lg tabular-nums"
+          className="mt-6 font-mono text-title-lg tabular-nums"
         >
           {t('ledger.balance', {
             name: account.name,
@@ -135,17 +144,17 @@ export function LedgerPage({
       )}
 
       {rows === undefined ? (
-        <p role="status" className="mt-6 text-muted-foreground">
+        <p role="status" className="mt-6 text-body text-text-muted">
           {t('ledger.loading')}
         </p>
       ) : rows.length === 0 ? (
-        <div className="mt-6 grid justify-items-start gap-3">
-          <p className="text-muted-foreground">
+        <div className="mt-6 grid justify-items-start gap-3 rounded-lg bg-card p-4">
+          <p className="text-body-lg">
             {isFiltered(search) ? t('ledger.emptyFiltered') : t('ledger.empty')}
           </p>
           {isFiltered(search) ? null : (
             <Button
-              variant="outlined"
+              variant="tonal"
               onClick={(event) => {
                 quickEntry.open(event.currentTarget);
               }}
@@ -162,6 +171,7 @@ export function LedgerPage({
           </p>
           <LedgerList
             rows={rows}
+            dayTotals={dayTotals}
             locale={locale}
             search={search}
             hasMore={entries.hasNextPage}
@@ -172,18 +182,37 @@ export function LedgerPage({
           />
         </>
       )}
+    </>
+  );
 
-      <EntryDialog
-        id={search.entry}
-        search={search}
-        // Replaced, so back after closing does not open it again.
-        onClose={() => {
-          navigate(filters, { replace: true });
-        }}
-        onShow={(id) => {
-          navigate({ ...filters, entry: id }, { replace: true });
-        }}
-      />
+  const entry = (
+    <EntryDialog
+      pane={expanded}
+      id={search.entry}
+      search={search}
+      // Replaced, so back after closing does not open it again.
+      onClose={() => {
+        navigate(filters, { replace: true });
+      }}
+      onShow={(id) => {
+        navigate({ ...filters, entry: id }, { replace: true });
+      }}
+    />
+  );
+
+  return (
+    <Page title={t('ledger.title')}>
+      {expanded ? (
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-6">
+          <div>{list}</div>
+          <div className="pt-6">{entry}</div>
+        </div>
+      ) : (
+        <>
+          {list}
+          {entry}
+        </>
+      )}
     </Page>
   );
 }

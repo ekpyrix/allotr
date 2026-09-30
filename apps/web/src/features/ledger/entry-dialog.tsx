@@ -460,23 +460,32 @@ function titleOf(
 // One entry over the list, opened from `?entry=`. Closing it goes back to
 // the list and returns focus to the entry's row. A pending save or undo
 // cannot be dismissed, so its result is never lost.
+/**
+ * One entry, to read, edit or undo (FR-L4). Below the expanded size class
+ * it is a dialog (a sheet on phones); from it, `pane` shows it beside the
+ * list instead, non-modal (spec §11.2). Either way `?entry=` deep-links it.
+ */
 export function EntryDialog({
   id,
   search,
   onClose,
   onShow,
+  pane = false,
 }: {
   id: string | undefined;
   search: LedgerSearch;
   onClose: () => void;
   /** Shows another entry in the dialog, replacing the history step. */
   onShow: (id: string) => void;
+  /** Beside the list rather than over it. */
+  pane?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const title = useRef<HTMLHeadingElement>(null);
   const content = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const entry = useQuery({
     ...entryQuery(id ?? ''),
     enabled: id !== undefined,
@@ -491,9 +500,123 @@ export function EntryDialog({
     setEditing(false);
   }
 
+  // In the pane, choosing an entry moves focus to it, as opening the
+  // dialog does.
+  useEffect(() => {
+    if (pane && id !== undefined) title.current?.focus();
+  }, [pane, id]);
+
   const heading = editing
     ? t('ledger.entry.editTitle')
     : titleOf(entry.data, accounts.data?.accounts, categories.data?.categories);
+
+  // The entry last shown: once it closes, the URL (and so `id`) no longer
+  // names it, but focus should go back to its row.
+  const [lastId, setLastId] = useState(id);
+  if (id !== undefined && id !== lastId) setLastId(id);
+
+  // Focus goes back to the entry's row, or to <main> when the row is
+  // filtered out.
+  const focusRow = () => {
+    setAnnouncement('');
+    const last = lastId;
+    const row =
+      last === undefined
+        ? null
+        : document.querySelector<HTMLElement>(
+            `[data-entry-id="${CSS.escape(last)}"]`,
+          );
+    (row ?? document.querySelector<HTMLElement>('main'))?.focus();
+  };
+
+  const titleClass = 'text-title outline-hidden';
+  const closeButton = (
+    <Button
+      variant="text"
+      size="icon"
+      aria-label={t('ledger.entry.close')}
+      disabled={saving}
+      onClick={
+        pane
+          ? () => {
+              onClose();
+              requestAnimationFrame(focusRow);
+            }
+          : undefined
+      }
+    >
+      <X aria-hidden="true" />
+    </Button>
+  );
+  const body = (
+    <>
+      <div className="flex items-center justify-between gap-4">
+        {pane ? (
+          <h2 id={titleId} ref={title} tabIndex={-1} className={titleClass}>
+            {heading}
+          </h2>
+        ) : (
+          <Dialog.Title ref={title} tabIndex={-1} className={titleClass}>
+            {heading}
+          </Dialog.Title>
+        )}
+        {pane ? (
+          closeButton
+        ) : (
+          <Dialog.Close asChild>{closeButton}</Dialog.Close>
+        )}
+      </div>
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+      {id === undefined ? null : (
+        <EntryLoader
+          key={id}
+          id={id}
+          search={search}
+          editing={editing}
+          saving={saving}
+          onEditingChange={(next) => {
+            setEditing(next);
+            setAnnouncement('');
+            requestAnimationFrame(() => title.current?.focus());
+          }}
+          onSavingChange={setSaving}
+          onEdited={(replacementId) => {
+            setAnnouncement(t('ledger.entry.edited'));
+            onShow(replacementId);
+            requestAnimationFrame(() => title.current?.focus());
+          }}
+          onAnnounce={(message) => {
+            setAnnouncement(message);
+            title.current?.focus();
+          }}
+        />
+      )}
+    </>
+  );
+
+  if (pane)
+    return id === undefined ? (
+      <div className="sticky top-20 rounded-2xl bg-card p-6 text-body text-text-muted">
+        {t('ledger.pickEntry')}
+      </div>
+    ) : (
+      <section
+        data-slot="entry-pane"
+        aria-labelledby={titleId}
+        // Escape closes the pane as it closes the dialog.
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape' || saving) return;
+          event.preventDefault();
+          onClose();
+          requestAnimationFrame(focusRow);
+        }}
+        className="sticky top-20 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-2xl bg-card p-6 text-text"
+      >
+        {body}
+      </section>
+    );
 
   return (
     <Dialog.Root
@@ -503,7 +626,7 @@ export function EntryDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-30 bg-black/50" />
+        <Dialog.Overlay className="fixed inset-0 z-30 bg-black/40 data-[state=open]:scrim-in dark:bg-black/60" />
         <Dialog.Content
           ref={content}
           aria-describedby={undefined}
@@ -513,64 +636,11 @@ export function EntryDialog({
           }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            setAnnouncement('');
-            const row =
-              id === undefined
-                ? null
-                : document.querySelector<HTMLElement>(
-                    `[data-entry-id="${CSS.escape(id)}"]`,
-                  );
-            // The shell makes <main> focusable; the row may be filtered out.
-            (row ?? document.querySelector<HTMLElement>('main'))?.focus();
+            focusRow();
           }}
-          className="fixed inset-x-0 bottom-0 z-40 max-h-[90dvh] overflow-y-auto rounded-t-lg border bg-background p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lg outline-none sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg"
+          className="fixed inset-x-0 bottom-0 z-40 max-h-[92dvh] overflow-y-auto rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-text outline-hidden data-[state=open]:rise-in medium:inset-x-auto medium:top-1/2 medium:bottom-auto medium:left-1/2 medium:w-full medium:max-w-[560px] medium:-translate-x-1/2 medium:-translate-y-1/2 medium:rounded-2xl medium:border-b medium:data-[state=open]:overlay-in"
         >
-          <div className="flex items-center justify-between gap-4">
-            <Dialog.Title
-              ref={title}
-              tabIndex={-1}
-              className="text-xl font-semibold outline-none"
-            >
-              {heading}
-            </Dialog.Title>
-            <Dialog.Close asChild>
-              <Button
-                variant="text"
-                size="icon"
-                aria-label={t('ledger.entry.close')}
-                disabled={saving}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </Dialog.Close>
-          </div>
-          <p aria-live="polite" className="sr-only">
-            {announcement}
-          </p>
-          {id === undefined ? null : (
-            <EntryLoader
-              key={id}
-              id={id}
-              search={search}
-              editing={editing}
-              saving={saving}
-              onEditingChange={(next) => {
-                setEditing(next);
-                setAnnouncement('');
-                requestAnimationFrame(() => title.current?.focus());
-              }}
-              onSavingChange={setSaving}
-              onEdited={(replacementId) => {
-                setAnnouncement(t('ledger.entry.edited'));
-                onShow(replacementId);
-                requestAnimationFrame(() => title.current?.focus());
-              }}
-              onAnnounce={(message) => {
-                setAnnouncement(message);
-                title.current?.focus();
-              }}
-            />
-          )}
+          {body}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

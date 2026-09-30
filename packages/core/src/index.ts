@@ -79,6 +79,7 @@ export {
   dailyFiguresOn,
   leftTodayDrop,
 } from './projections/daily.ts';
+export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';
 export {
   balanceHistory,
   cycleDays,
