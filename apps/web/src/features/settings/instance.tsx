@@ -206,7 +206,7 @@ function InviteForm({
           </FieldControl>
           <div className="flex flex-wrap items-center gap-4">
             <Button
-              variant="outline"
+              variant="outlined"
               className="h-11"
               onClick={() => {
                 void navigator.clipboard.writeText(invite.url).then(
@@ -249,7 +249,7 @@ export function InstanceSection({
         <div className="mt-4 grid justify-items-start gap-3">
           <FormError message={errorMessage(settings.error)} />
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => {
               void settings.refetch();
             }}

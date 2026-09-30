@@ -3,6 +3,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   Link,
   Outlet,
   redirect,
@@ -257,7 +258,23 @@ const editThemeRoute = createRoute({
   },
 });
 
+// The component gallery, in development only; the dynamic import keeps it
+// out of production builds.
+const devRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: '/dev/components',
+        component: lazyRouteComponent(
+          () => import('./routes/dev-components.tsx'),
+          'DevComponentsPage',
+        ),
+      }),
+    ]
+  : [];
+
 const routeTree = rootRoute.addChildren([
+  ...devRoutes,
   indexRoute,
   onboardingRoute,
   signInRoute,

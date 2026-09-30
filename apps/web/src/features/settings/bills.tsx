@@ -286,7 +286,7 @@ export function BillForm({
         {onCancel === undefined ? null : (
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             className="h-11"
             disabled={save.isPending}
             onClick={onCancel}
@@ -327,7 +327,7 @@ function DeleteBill({
           {remove.isPending ? t('settings.saving') : t('settings.delete')}
         </Button>
         <Button
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={remove.isPending}
           onClick={onCancel}
@@ -372,8 +372,8 @@ function DueLine({
           </span>
         ) : null}
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           disabled={mark.isPending}
           onClick={() => {
             mark.mutate(paid, {
@@ -465,8 +465,8 @@ function BillItem({
       ) : null}
       <div className="flex flex-wrap gap-2">
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           data-action="edit"
           onClick={() => {
             onOpen({ kind: 'edit', bill });
@@ -476,8 +476,8 @@ function BillItem({
           <span className="sr-only"> {bill.name}</span>
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           onClick={() => {
             onOpen({ kind: 'delete', bill });
           }}

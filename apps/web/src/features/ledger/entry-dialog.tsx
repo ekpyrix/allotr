@@ -263,7 +263,7 @@ function EntryDetail({
           {canUndo ? (
             <Button
               ref={undoButton}
-              variant="outline"
+              variant="outlined"
               aria-expanded={confirm === null ? undefined : confirming}
               aria-controls={
                 confirm !== null && confirming ? confirmId : undefined
@@ -292,7 +292,7 @@ function EntryDetail({
           <div className="flex flex-wrap gap-2">
             <Button
               ref={confirmButton}
-              size="sm"
+              size="dense"
               disabled={undo.isPending}
               onClick={() => {
                 undo.mutate(entry.id);
@@ -303,8 +303,8 @@ function EntryDetail({
                 : t('ledger.entry.confirmUndo')}
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="outlined"
+              size="dense"
               disabled={undo.isPending}
               onClick={() => {
                 setConfirming(false);
@@ -415,7 +415,7 @@ function EntryLoader({
           }}
         />
         <Button
-          variant="ghost"
+          variant="text"
           className="mt-2 w-full"
           disabled={saving}
           onClick={() => {
@@ -535,7 +535,7 @@ export function EntryDialog({
             </Dialog.Title>
             <Dialog.Close asChild>
               <Button
-                variant="ghost"
+                variant="text"
                 size="icon"
                 aria-label={t('ledger.entry.close')}
                 disabled={saving}

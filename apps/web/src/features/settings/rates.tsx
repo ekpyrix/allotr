@@ -214,8 +214,8 @@ function RateItem({
           </span>
         ) : null}
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           disabled={remove.isPending}
           onClick={() => {
             // The row is gone by the time the request settles, so its

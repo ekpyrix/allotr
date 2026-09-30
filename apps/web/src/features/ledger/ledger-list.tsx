@@ -119,7 +119,7 @@ export function LedgerList({
       })}
       {hasMore ? (
         <Button
-          variant="outline"
+          variant="outlined"
           className="mt-6"
           disabled={loadingMore}
           onClick={() => {

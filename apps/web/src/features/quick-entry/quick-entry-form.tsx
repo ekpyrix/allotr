@@ -451,7 +451,7 @@ export function QuickEntryForm({
           {transfer ? null : (
             <Button
               type="button"
-              variant="outline"
+              variant="outlined"
               className="justify-self-start"
               onClick={() => {
                 // The chosen category is already the first line's.
@@ -549,7 +549,7 @@ export function QuickEntryForm({
       />
       <Button
         type="submit"
-        size="lg"
+
         className="h-11 w-full"
         disabled={save.isPending}
       >

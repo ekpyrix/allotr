@@ -230,7 +230,7 @@ export function ReconcileFlow({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="outlined"
           disabled={busy}
           onClick={onCancel}
         >

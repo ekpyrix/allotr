@@ -80,7 +80,7 @@ function PasswordStep({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={pending}
           onClick={onCancel}
@@ -187,7 +187,7 @@ function Enrolment({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             className="h-11"
             disabled={verify.isPending}
             onClick={onCancel}
@@ -286,7 +286,7 @@ function TwoFactor({ session }: { session: SessionView }) {
         </p>
       ) : (
         <Button
-          variant={enabled ? 'outline' : 'default'}
+          variant={enabled ? 'outlined' : 'filled'}
           className="mt-2 h-11"
           onClick={() => {
             setStatus('');
@@ -343,7 +343,7 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
         <div className="mt-2 grid justify-items-start gap-3">
           <FormError message={errorMessage(devices.error)} />
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => {
               void devices.refetch();
             }}
@@ -395,8 +395,8 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
                     </span>
                     {current ? null : (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outlined"
+                        size="dense"
                         disabled={revokeOne.isPending}
                         onClick={() => {
                           revokeOne.mutate(device.token, {
@@ -430,7 +430,7 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
           />
           {devices.data.sessions.length > 1 ? (
             <Button
-              variant="outline"
+              variant="outlined"
               className="mt-2 h-11"
               disabled={revokeOthers.isPending}
               onClick={() => {
@@ -455,7 +455,7 @@ function SignOutButton() {
   const queryClient = useQueryClient();
   return (
     <Button
-      variant="outline"
+      variant="outlined"
       className="mt-10 h-11"
       onClick={() => {
         void signOut(queryClient).then(() => navigate({ to: '/sign-in' }));

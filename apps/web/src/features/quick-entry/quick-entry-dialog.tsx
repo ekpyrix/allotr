@@ -150,7 +150,7 @@ export function QuickEntryDialog({
             </Dialog.Title>
             <Dialog.Close asChild>
               <Button
-                variant="ghost"
+                variant="text"
                 size="icon"
                 aria-label={t('quickEntry.close')}
               >

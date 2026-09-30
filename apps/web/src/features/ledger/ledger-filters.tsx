@@ -66,7 +66,7 @@ export function LedgerFilters({
             )}
           </FieldControl>
         </div>
-        <Button type="submit" variant="outline" className="h-11">
+        <Button type="submit" variant="outlined" className="h-11">
           <Search aria-hidden />
           {t('ledger.filters.searchSubmit')}
         </Button>
@@ -175,7 +175,7 @@ export function LedgerFilters({
         <div>
           <Button
             type="button"
-            variant="ghost"
+            variant="text"
             onClick={() => {
               setQ('');
               onChange({

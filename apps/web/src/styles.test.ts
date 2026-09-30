@@ -69,19 +69,22 @@ describe('styles.css', () => {
   });
 
   it('keeps the legacy names until every screen uses roles', () => {
-    const aliases = block(css.slice(css.indexOf('Legacy aliases')), ':root');
-    expect(aliases).toMatchObject({
-      background: 'var(--canvas)',
-      foreground: 'var(--text)',
-      'muted-foreground': 'var(--text-muted)',
-      plot: 'var(--card)',
-      today: 'var(--hero-ok)',
-      over: 'var(--negative)',
-      border: 'var(--outline-variant)',
-      input: 'var(--outline)',
-      destructive: 'var(--negative)',
-      'primary-foreground': 'var(--on-primary)',
-    });
+    // Small text in `over` and `destructive` takes `negative`, the role
+    // fitted to 4.5:1; the hero and danger fills only reach 3:1.
+    for (const [name, role] of [
+      ['background', 'canvas'],
+      ['foreground', 'text'],
+      ['muted-foreground', 'text-muted'],
+      ['plot', 'card'],
+      ['today', 'hero-ok'],
+      ['over', 'negative'],
+      ['border', 'outline-variant'],
+      ['input', 'outline'],
+      ['destructive', 'negative'],
+      ['primary-foreground', 'on-primary'],
+    ] as const) {
+      expect(css).toContain(`--color-${name}: var(--${name}, var(--${role}));`);
+    }
   });
 
   it('never uses a box shadow for depth', () => {

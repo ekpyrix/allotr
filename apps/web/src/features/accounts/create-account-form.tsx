@@ -275,7 +275,7 @@ export function CreateAccountForm({
             : summary
         }
       />
-      <Button type="submit" size="lg" className="h-11 w-full" disabled={busy}>
+      <Button type="submit" className="h-11 w-full" disabled={busy}>
         {busy ? t('accounts.create.saving') : t('accounts.create.save')}
       </Button>
     </form>

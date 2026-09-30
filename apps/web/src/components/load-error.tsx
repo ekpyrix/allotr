@@ -37,7 +37,7 @@ export function LoadError({ error, reset }: ErrorComponentProps) {
       title={online ? t('errors.pageTitle') : t('offline.title')}
       intro={online ? describeProblem(error).message : t('offline.intro')}
     >
-      <Button size="lg" className="h-11" onClick={retry}>
+      <Button className="h-11" onClick={retry}>
         {t('errors.retry')}
       </Button>
     </AuthLayout>

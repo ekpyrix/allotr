@@ -16,7 +16,8 @@
     "scripts",
     "build",
     "vite.config.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "playwright.components.config.ts"
   ],
   "exclude": ["src/sw"]
 }

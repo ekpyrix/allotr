@@ -98,6 +98,14 @@ export const en = {
       'This instance requires two-factor authentication for your account.',
     twoFactorSetUp: 'Set it up in Settings',
   },
+  ui: {
+    removeChip: 'Remove {label}',
+    dismiss: 'Dismiss',
+    close: 'Close',
+    moreActions: 'More actions',
+    loading: 'Loading',
+    progress: '{value}% done',
+  },
   entries: {
     split: 'Split: {names}',
   },

@@ -90,7 +90,7 @@ export function BudgetSwitch({
               ? t('accounts.budget.confirmOff')
               : t('accounts.budget.confirmOn')}
         </Button>
-        <Button variant="outline" disabled={move.isPending} onClick={onCancel}>
+        <Button variant="outlined" disabled={move.isPending} onClick={onCancel}>
           {t('accounts.cancel')}
         </Button>
       </div>
@@ -278,7 +278,7 @@ export function ArchiveFlow({
                 : t('accounts.archiveFlow.confirmWriteOff')}
         </Button>
         <Button
-          variant="outline"
+          variant="outlined"
           disabled={archive.isPending}
           onClick={onCancel}
         >

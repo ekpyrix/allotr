@@ -261,7 +261,7 @@ function EditCategoryForm({
         </Button>
         <Button
           type="button"
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={update.isPending}
           onClick={onCancel}
@@ -305,7 +305,7 @@ function DeleteCategoryFlow({
     return (
       <div className="mt-4 grid gap-4">
         <p>{t('settings.categories.hasChildren')}</p>
-        <Button variant="outline" className="h-11" onClick={onCancel}>
+        <Button variant="outlined" className="h-11" onClick={onCancel}>
           {t('settings.close')}
         </Button>
       </div>
@@ -377,7 +377,7 @@ function DeleteCategoryFlow({
           )}
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             className="h-11"
             disabled={remove.isPending}
             onClick={onCancel}
@@ -418,7 +418,7 @@ function DeleteCategoryFlow({
             : t('settings.categories.deleteSubmit')}
         </Button>
         <Button
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={remove.isPending}
           onClick={onCancel}
@@ -456,8 +456,8 @@ function CategoryItem({
         <div className="flex flex-wrap gap-2">
           {category.parentId === null ? (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="text"
+              size="dense"
               onClick={() => {
                 onOpen({ kind: 'create', parentId: category.id });
               }}
@@ -467,8 +467,8 @@ function CategoryItem({
             </Button>
           ) : null}
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="dense"
             data-action="edit"
             onClick={() => {
               onOpen({ kind: 'edit', category });
@@ -478,8 +478,8 @@ function CategoryItem({
             <span className="sr-only"> {category.name}</span>
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="outlined"
+            size="dense"
             onClick={() => {
               onOpen({ kind: 'delete', category });
             }}

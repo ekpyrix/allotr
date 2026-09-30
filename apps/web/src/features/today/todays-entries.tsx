@@ -129,8 +129,8 @@ function EntryItem({
           ) : (
             <Button
               ref={undoButton}
-              variant="outline"
-              size="sm"
+              variant="outlined"
+              size="dense"
               aria-label={t('today.entries.undoLabel', { entry: description })}
               aria-expanded={opensCycle ? confirming : undefined}
               aria-controls={opensCycle && confirming ? confirmId : undefined}
@@ -154,7 +154,7 @@ function EntryItem({
           <div className="flex flex-wrap gap-2">
             <Button
               ref={confirmButton}
-              size="sm"
+              size="dense"
               disabled={undo.isPending}
               onClick={() => {
                 undo.mutate(row.id);
@@ -165,8 +165,8 @@ function EntryItem({
                 : t('today.entries.confirmUndo')}
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="outlined"
+              size="dense"
               disabled={undo.isPending}
               onClick={() => {
                 setConfirming(false);
@@ -221,7 +221,7 @@ export function TodaysEntries({
         <div className="mt-3 grid justify-items-start gap-3">
           <p className="text-muted-foreground">{t('today.entries.empty')}</p>
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={(event) => {
               quickEntry.open(event.currentTarget);
             }}

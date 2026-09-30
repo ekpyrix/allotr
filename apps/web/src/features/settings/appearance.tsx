@@ -244,15 +244,15 @@ function CustomThemeItem({
         </span>
       </span>
       <span className="flex flex-wrap gap-2">
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outlined" size="dense">
           <Link to="/settings/themes/$id" params={{ id: theme.id }}>
             {t('settings.appearance.edit')}
             {hidden}
           </Link>
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           onClick={() => {
             download(theme);
           }}
@@ -261,8 +261,8 @@ function CustomThemeItem({
           {hidden}
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="outlined"
+          size="dense"
           onClick={() => {
             onDelete(theme);
           }}
@@ -315,8 +315,7 @@ function DeleteTheme({
       ) : null}
       <div className="flex flex-wrap gap-3">
         <Button
-          variant="outline"
-          className="h-11 border-destructive text-destructive"
+          variant="danger-tonal"
           disabled={remove.isPending}
           onClick={() => {
             remove.mutate();
@@ -327,7 +326,7 @@ function DeleteTheme({
             : t('settings.appearance.delete')}
         </Button>
         <Button
-          variant="outline"
+          variant="outlined"
           className="h-11"
           disabled={remove.isPending}
           onClick={onCancel}

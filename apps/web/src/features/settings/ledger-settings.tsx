@@ -263,7 +263,7 @@ function PaydayForm({
           {settings.paydayOverride === null ? null : (
             <Button
               type="button"
-              variant="outline"
+              variant="outlined"
               className="h-11"
               disabled={save.isPending}
               onClick={() => {
