@@ -25,7 +25,7 @@ export function ExportSection() {
                 {t(`settings.export.${format}.label`)}
               </a>
             </Button>
-            <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+            <p className="mt-1 max-w-prose text-sm text-text-muted">
               {t(`settings.export.${format}.hint`)}
             </p>
           </li>

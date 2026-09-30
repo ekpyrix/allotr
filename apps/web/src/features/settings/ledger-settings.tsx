@@ -148,7 +148,7 @@ function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
         <Button type="submit" className="h-11" disabled={save.isPending}>
           {save.isPending ? t('settings.saving') : t('settings.save')}
         </Button>
-        <p role="status" className="text-sm text-muted-foreground">
+        <p role="status" className="text-sm text-text-muted">
           {saved ? t('settings.saved') : ''}
         </p>
       </div>
@@ -206,7 +206,7 @@ function PaydayForm({
       >
         {t('settings.payday.title')}
       </h3>
-      <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+      <p className="mt-1 max-w-prose text-sm text-text-muted">
         {t('settings.payday.next', {
           date: formatLongDay(today.cycle.payday, settings.locale),
           count: today.daysLeft,
@@ -276,7 +276,7 @@ function PaydayForm({
               {t('settings.payday.clearOverride')}
             </Button>
           )}
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-text-muted">
             {status}
           </p>
         </div>

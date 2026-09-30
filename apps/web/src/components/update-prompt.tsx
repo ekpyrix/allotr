@@ -15,10 +15,10 @@ export function UpdatePrompt() {
   return (
     <div
       aria-live="polite"
-      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 md:inset-x-auto md:right-4 md:bottom-4 md:w-sm"
+      className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 medium:inset-x-auto medium:right-4 medium:bottom-4 medium:w-sm"
     >
       {waiting === null ? null : (
-        <div className="flex flex-wrap items-center gap-3 rounded-md border bg-background p-4 shadow-lg">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card-raised p-4">
           <p className="grow">{t('update.ready')}</p>
           <div className="flex gap-2">
             <Button variant="text" onClick={updateStore.dismiss}>

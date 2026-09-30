@@ -81,7 +81,7 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
               {t(`settings.instance.modes.${option}`)}
               <span
                 id={`${modeName}-${option}`}
-                className="block text-sm text-muted-foreground"
+                className="block text-sm text-text-muted"
               >
                 {t(`settings.instance.modeHints.${option}`)}
               </span>
@@ -105,10 +105,7 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
           <label htmlFor={twoFactorId} className="font-medium">
             {t('settings.instance.requireTwoFactor')}
           </label>
-          <p
-            id={`${twoFactorId}-hint`}
-            className="text-sm text-muted-foreground"
-          >
+          <p id={`${twoFactorId}-hint`} className="text-sm text-text-muted">
             {t('settings.instance.requireTwoFactorHint')}
           </p>
         </div>
@@ -118,7 +115,7 @@ function InstanceForm({ settings }: { settings: InstanceSettings }) {
         <Button type="submit" className="h-11" disabled={save.isPending}>
           {save.isPending ? t('settings.saving') : t('settings.save')}
         </Button>
-        <p role="status" className="text-sm text-muted-foreground">
+        <p role="status" className="text-sm text-text-muted">
           {saved ? t('settings.saved') : ''}
         </p>
       </div>
@@ -143,7 +140,7 @@ function InviteForm({
       <h3 className="text-lg font-semibold">
         {t('settings.instance.inviteTitle')}
       </h3>
-      <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+      <p className="mt-1 max-w-prose text-sm text-text-muted">
         {t('settings.instance.inviteIntro')}
       </p>
       <form
@@ -219,7 +216,7 @@ function InviteForm({
             >
               {t('settings.instance.copy')}
             </Button>
-            <p role="status" className="text-sm text-muted-foreground">
+            <p role="status" className="text-sm text-text-muted">
               {copied ? t('settings.instance.copied') : ''}
             </p>
           </div>
@@ -258,9 +255,7 @@ export function InstanceSection({
           </Button>
         </div>
       ) : settings.data === undefined ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          {t('settings.loading')}
-        </p>
+        <p className="mt-4 text-sm text-text-muted">{t('settings.loading')}</p>
       ) : (
         <InstanceForm settings={settings.data} />
       )}

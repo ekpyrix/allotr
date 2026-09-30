@@ -17,6 +17,22 @@ export default defineConfig({
   // keeps a cold dev server from reloading mid-visit to pre-bundle its
   // imports.
   optimizeDeps: { entries: ['index.html', 'src/routes/dev-components.tsx'] },
+  // Libraries every screen needs go in one vendor chunk, cached across
+  // releases; ones only some screens load (charts, Motion) stay with them.
+  build: {
+    rolldownOptions: {
+      output: {
+        advancedChunks: {
+          groups: [
+            {
+              name: 'vendor',
+              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|@radix-ui|radix-ui|zod|tailwind-merge|clsx|class-variance-authority|lucide-react|cmdk|@floating-ui|aria-hidden|react-remove-scroll|react-remove-scroll-bar|react-style-singleton|use-callback-ref|use-sidecar|use-sync-external-store|detect-node-es|get-nonce|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,

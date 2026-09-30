@@ -151,14 +151,14 @@ export function SplitEditor({
         <span
           className={
             remainder === null || remainder.amountMinor === 0
-              ? 'text-muted-foreground'
+              ? 'text-text-muted'
               : undefined
           }
         >
           {left}
         </span>
         {mismatch === undefined ? null : (
-          <span className="block font-medium text-over">{mismatch}</span>
+          <span className="block font-medium text-negative">{mismatch}</span>
         )}
       </p>
       <div className="flex flex-wrap gap-2">

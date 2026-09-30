@@ -8,24 +8,16 @@ export {
   hexColorSchema,
   relativeLuminance,
 } from './color.ts';
+// The v1 contrast pairs (THEME_PAIRS, validateTheme) stay internal: only
+// the deprecated v1 theme body is still checked with them.
 export {
   CONTRAST_MINIMUM,
-  THEME_PAIRS,
   THEME_TOKENS,
   themeTokensSchema,
   type ContrastKind,
-  type ThemePair,
-  type ThemeTint,
   type ThemeToken,
   type ThemeTokens,
 } from './tokens.ts';
-export {
-  pairRatio,
-  pairSurface,
-  themePairs,
-  validateTheme,
-  type ContrastFailure,
-} from './validate.ts';
 export { darkTheme, lightTheme } from './builtin.ts';
 export { fromOklch, mixOklch, toOklch, type Oklch } from './oklch.ts';
 export {

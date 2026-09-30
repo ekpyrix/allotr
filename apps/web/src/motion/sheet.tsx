@@ -1,3 +1,4 @@
+import { MotionProvider } from './provider.tsx';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { X } from 'lucide-react';
 import {
@@ -90,7 +91,7 @@ export function settleDrag(
   );
 }
 
-export function Sheet({
+function SheetBody({
   open,
   onOpenChange,
   title,
@@ -280,5 +281,22 @@ export function Sheet({
         )}
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
+  );
+}
+
+/** The sheet, with Motion set up around it (ADR 0019). */
+export function Sheet(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  description?: ReactNode;
+  detents?: readonly Detent[];
+  defaultDetent?: Detent;
+  children: ReactNode;
+}) {
+  return (
+    <MotionProvider>
+      <SheetBody {...props} />
+    </MotionProvider>
   );
 }

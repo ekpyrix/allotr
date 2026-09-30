@@ -245,11 +245,11 @@ export function QuickEntryForm({
         <legend className="mb-2 text-sm font-medium">
           {t('quickEntry.kind')}
         </legend>
-        <div className="grid grid-cols-3 rounded-md border border-input p-0.5 text-sm">
+        <div className="grid grid-cols-3 rounded-md border border-outline p-0.5 text-sm">
           {ENTRY_KINDS.map((kind) => (
             <label
               key={kind}
-              className="cursor-pointer rounded-sm px-2.5 py-2 text-center text-muted-foreground has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
+              className="cursor-pointer rounded-sm px-2.5 py-2 text-center text-text-muted has-checked:bg-primary has-checked:text-on-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-canvas"
             >
               <input
                 type="radio"
@@ -514,7 +514,7 @@ export function QuickEntryForm({
             {tags.map((tag) => (
               <label
                 key={tag.id}
-                className="cursor-pointer rounded-full border border-input px-3 py-1.5 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
+                className="cursor-pointer rounded-full border border-outline px-3 py-1.5 text-sm has-checked:border-primary has-checked:bg-primary has-checked:text-on-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-canvas"
               >
                 <input
                   type="checkbox"

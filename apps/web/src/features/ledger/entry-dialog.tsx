@@ -179,7 +179,7 @@ function EntryDetail({
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
         {facts.map(([term, value]) => (
           <div key={term} className="contents">
-            <dt className="text-sm text-muted-foreground">{term}</dt>
+            <dt className="text-sm text-text-muted">{term}</dt>
             <dd className="min-w-0 wrap-anywhere">{value}</dd>
           </div>
         ))}
@@ -191,7 +191,7 @@ function EntryDetail({
             {t('ledger.entry.postings')}
           </caption>
           <thead>
-            <tr className="border-b border-border text-muted-foreground">
+            <tr className="border-b border-outline-variant text-text-muted">
               <th scope="col" className="py-1 text-left font-normal">
                 {t('ledger.entry.account')}
               </th>
@@ -202,7 +202,10 @@ function EntryDetail({
           </thead>
           <tbody>
             {entry.postings.map((p, index) => (
-              <tr key={index} className="border-b border-border last:border-0">
+              <tr
+                key={index}
+                className="border-b border-outline-variant last:border-0"
+              >
                 <td className="py-1.5">
                   {p.systemRole === null
                     ? (accountOf.get(p.accountId)?.name ?? '')
@@ -249,7 +252,7 @@ function EntryDetail({
         </p>
       )}
       {touchesArchived && entry.reversedById === null ? (
-        <p className="text-muted-foreground">{t('ledger.entry.archived')}</p>
+        <p className="text-text-muted">{t('ledger.entry.archived')}</p>
       ) : null}
 
       {canUndo || canEdit ? (
@@ -283,7 +286,7 @@ function EntryDetail({
         </div>
       ) : null}
       {confirming && confirm !== null && canUndo ? (
-        <div id={confirmId} className="grid gap-3 rounded-md bg-plot p-4">
+        <div id={confirmId} className="grid gap-3 rounded-md bg-card p-4">
           <p>
             {confirm === 'paycheck'
               ? t('ledger.entry.confirmPaycheck')
@@ -371,7 +374,7 @@ function EntryLoader({
     today.data === undefined
   )
     return (
-      <p role="status" className="mt-6 text-muted-foreground">
+      <p role="status" className="mt-6 text-text-muted">
         {t('ledger.entry.loading')}
       </p>
     );

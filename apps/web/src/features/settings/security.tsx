@@ -142,7 +142,7 @@ function Enrolment({
         <h4 id={codesId} className="font-medium">
           {t('settings.security.backupTitle')}
         </h4>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-text-muted">
           {t('settings.security.backupIntro')}
         </p>
         <ul
@@ -228,7 +228,7 @@ function TwoFactor({ session }: { session: SessionView }) {
       <h3 id="two-factor-title" className="text-lg font-semibold">
         {t('settings.security.twoFactorTitle')}
       </h3>
-      <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+      <p className="mt-1 max-w-prose text-sm text-text-muted">
         {enabled
           ? t('settings.security.twoFactorOn')
           : t('settings.security.twoFactorOff')}
@@ -352,14 +352,12 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
           </Button>
         </div>
       ) : devices.data === undefined ? (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t('settings.loading')}
-        </p>
+        <p className="mt-2 text-sm text-text-muted">{t('settings.loading')}</p>
       ) : (
         <>
           <ul
             aria-labelledby="devices-title"
-            className="mt-2 divide-y rounded-md bg-plot px-4"
+            className="mt-2 divide-y rounded-md bg-card px-4"
           >
             {[...devices.data.sessions]
               .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
@@ -375,12 +373,12 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
                       <span className="font-medium">
                         {name}
                         {current ? (
-                          <span className="ml-2 text-sm font-normal text-muted-foreground">
+                          <span className="ml-2 text-sm font-normal text-text-muted">
                             {t('settings.security.thisDevice')}
                           </span>
                         ) : null}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-text-muted">
                         {t('settings.security.lastActive', {
                           when: formatMoment(
                             device.updatedAt.toISOString(),

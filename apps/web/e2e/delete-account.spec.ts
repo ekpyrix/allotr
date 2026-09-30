@@ -135,8 +135,9 @@ test('destructive buttons keep contrast on hover in dark themes', async ({
   page,
   baseURL,
 }) => {
-  // Two axe runs on the settings page per theme.
-  test.setTimeout(120_000);
+  // Two axe runs per dark theme on the settings page, which also holds
+  // a live preview of every theme family.
+  test.setTimeout(240_000);
   const origin = { origin: baseURL ?? '' };
   const signIn = await page.request.post('/v1/auth/sign-in/email', {
     data: { email: account.email, password: account.password },

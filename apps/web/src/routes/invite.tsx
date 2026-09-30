@@ -69,7 +69,7 @@ export function InvitePage({ token }: { token: string }) {
   if (invite.data === undefined)
     return (
       <AuthLayout title={t('invite.title')}>
-        <p role="status" className="text-muted-foreground">
+        <p role="status" className="text-text-muted">
           {t('invite.checking')}
         </p>
       </AuthLayout>

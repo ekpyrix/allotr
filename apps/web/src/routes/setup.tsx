@@ -208,7 +208,7 @@ export function SetupPage() {
                 title: t(`setup.${step}.title`),
               })}
             </h2>
-            <p className="mt-1 max-w-prose text-muted-foreground">
+            <p className="mt-1 max-w-prose text-text-muted">
               {t(`setup.${step}.intro`)}
             </p>
             <p aria-live="polite" className="sr-only">
@@ -245,7 +245,7 @@ export function SetupPage() {
 
         <div className="px-2">
           {step === 'region' ? (
-            <p className="mb-3 max-w-prose text-sm text-muted-foreground">
+            <p className="mb-3 max-w-prose text-sm text-text-muted">
               {t('setup.importHint')}
             </p>
           ) : null}
@@ -263,7 +263,7 @@ export function SetupPage() {
           </Button>
           <p
             id="setup-skip-rest-hint"
-            className="max-w-prose text-sm text-muted-foreground"
+            className="max-w-prose text-sm text-text-muted"
           >
             {t('setup.skipRestHint')}
           </p>

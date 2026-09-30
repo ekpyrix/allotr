@@ -11,7 +11,7 @@ export function Wordmark({ className }: { className?: string }) {
           width="12"
           height="22"
           rx="1.5"
-          className="fill-foreground"
+          className="fill-text"
         />
         <rect
           x="15"
@@ -19,7 +19,7 @@ export function Wordmark({ className }: { className?: string }) {
           width="8"
           height="10"
           rx="1.5"
-          className="fill-today"
+          className="fill-hero-ok"
         />
         <rect
           x="15"
@@ -27,7 +27,7 @@ export function Wordmark({ className }: { className?: string }) {
           width="8"
           height="10"
           rx="1.5"
-          className="fill-foreground"
+          className="fill-text"
         />
       </svg>
       <span className="text-lg font-semibold tracking-tight">

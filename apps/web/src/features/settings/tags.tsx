@@ -187,11 +187,11 @@ export function TagsSection({ tags }: { tags: readonly TagView[] }) {
         {announcement}
       </p>
       {tags.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-4 text-sm text-text-muted">
           {t('settings.tags.none')}
         </p>
       ) : (
-        <ul className="mt-4 divide-y rounded-md bg-plot px-4">
+        <ul className="mt-4 divide-y rounded-md bg-card px-4">
           {tags.map((tag) => (
             <TagItem
               key={tag.id}

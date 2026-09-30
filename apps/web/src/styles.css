@@ -120,31 +120,6 @@
   --color-pace: var(--pace);
   --color-reserved: var(--reserved);
   --color-selection: var(--selection);
-
-  /*
-   * Legacy names, until every screen uses the roles. Inlined, so they
-   * resolve where they are used: a subtree that scopes its own roles (a
-   * theme preview) gets its own colours. The v1 editor preview still sets
-   * the old names, which win.
-   */
-  --color-background: var(--background, var(--canvas));
-  --color-foreground: var(--foreground, var(--text));
-  --color-muted: var(--muted, var(--card));
-  --color-muted-foreground: var(--muted-foreground, var(--text-muted));
-  --color-plot: var(--plot, var(--card));
-  --color-today: var(--today, var(--hero-ok));
-  --color-today-text: var(--today-text, var(--hero-ok));
-  --color-over: var(--over, var(--negative));
-  --color-primary-foreground: var(--primary-foreground, var(--on-primary));
-  --color-border: var(--border, var(--outline-variant));
-  --color-input: var(--input, var(--outline));
-  --color-destructive: var(--destructive, var(--negative));
-}
-
-/* Legacy duration names, until every screen uses the spring tokens. */
-:root {
-  --duration-fast: var(--dur-fade);
-  --duration-base: var(--dur-snappy);
 }
 
 @layer base {

@@ -200,7 +200,7 @@ export function CreateAccountForm({
             {(['on', 'off'] as const).map((group) => (
               <label
                 key={group}
-                className="flex cursor-pointer gap-3 rounded-md border border-input p-3 has-checked:border-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
+                className="flex cursor-pointer gap-3 rounded-md border border-outline p-3 has-checked:border-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-canvas"
               >
                 <input
                   type="radio"
@@ -216,7 +216,7 @@ export function CreateAccountForm({
                   <span className="font-medium">
                     {t(`accounts.groups.${group}`)}
                   </span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-text-muted">
                     {t(`accounts.groups.${group}Hint`)}
                   </span>
                 </span>

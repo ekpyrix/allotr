@@ -27,9 +27,7 @@ export function Section({
         {title}
       </h2>
       {intro === undefined ? null : (
-        <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          {intro}
-        </p>
+        <p className="mt-1 max-w-prose text-sm text-text-muted">{intro}</p>
       )}
       {children}
     </section>

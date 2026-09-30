@@ -22,7 +22,7 @@ export function ShortcutsSwitch({ className }: { className?: string }) {
         <label htmlFor={id} className="font-medium">
           {t('settings.shortcuts')}
         </label>
-        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+        <p id={`${id}-hint`} className="text-sm text-text-muted">
           {t('settings.shortcutsHint')}
         </p>
       </div>

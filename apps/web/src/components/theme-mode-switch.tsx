@@ -15,11 +15,11 @@ export function ThemeModeSwitch({ className }: { className?: string }) {
   return (
     <fieldset className={cn('text-sm', className)}>
       <legend className="sr-only">Theme</legend>
-      <div className="inline-flex rounded-md border border-input p-0.5">
+      <div className="inline-flex rounded-md border border-outline p-0.5">
         {THEME_MODES.map((option) => (
           <label
             key={option}
-            className="cursor-pointer rounded-sm px-2.5 py-1 text-muted-foreground transition-colors duration-(--duration-fast) has-checked:bg-primary has-checked:text-primary-foreground has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
+            className="cursor-pointer rounded-sm px-2.5 py-1 text-text-muted transition-colors duration-(--dur-fade) has-checked:bg-primary has-checked:text-on-primary has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-canvas"
           >
             <input
               type="radio"
@@ -36,7 +36,7 @@ export function ThemeModeSwitch({ className }: { className?: string }) {
         ))}
       </div>
       {saveError ? (
-        <p role="status" className="mt-1 text-over">
+        <p role="status" className="mt-1 text-negative">
           Theme not saved to your account. It still applies on this device.
         </p>
       ) : null}
