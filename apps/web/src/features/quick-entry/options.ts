@@ -62,8 +62,18 @@ function choicesFor(
   return {
     accountId,
     toAccountId,
-    categoryId: known(remembered?.categoryId, categoryIds) ?? '',
+    categoryId:
+      known(remembered?.categoryId, categoryIds) ??
+      (kind === 'income' ? paycheckCategory(defaults)?.id : undefined) ??
+      '',
   };
+}
+
+// Merged categories only resolve old entries.
+function paycheckCategory(defaults: DraftDefaults) {
+  return defaults.categories.find(
+    (c) => c.kind === 'income' && c.isPaycheck && c.mergedIntoId === null,
+  );
 }
 
 export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
@@ -87,13 +97,14 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
  */
 export function paycheckDraft(defaults: DraftDefaults): QuickEntryDraft {
   const draft = switchKind(newDraft(defaults), 'income', defaults);
-  const paycheck = defaults.categories.find(
-    (c) => c.kind === 'income' && c.isPaycheck && c.mergedIntoId === null,
-  );
+  const paycheck = paycheckCategory(defaults);
   return paycheck === undefined ? draft : { ...draft, categoryId: paycheck.id };
 }
 
-/** Keeps what was typed; accounts and category follow the new kind. */
+/**
+ * Keeps what was typed; accounts and category follow the new kind. Income
+ * starts in the paycheck category until another one has been used.
+ */
 export function switchKind(
   draft: QuickEntryDraft,
   kind: EntryKind,

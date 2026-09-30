@@ -20,6 +20,11 @@ import { QuickEntryForm } from './quick-entry-form.tsx';
 /** How the form starts: as a paycheck, for the first cycle. */
 export type QuickEntryPreset = 'paycheck';
 
+// The sheet has no bottom padding so the form's Save bar can sit flush
+// with its edge; the bar, or these states, keep clear of the home
+// indicator.
+const sheetEnd = 'pb-[max(1.5rem,env(safe-area-inset-bottom))]';
+
 function QuickEntryLoader({
   onSaved,
   onClose,
@@ -48,7 +53,7 @@ function QuickEntryLoader({
   const failed = all.find(failing);
   if (failed !== undefined)
     return (
-      <div className="mt-6 grid gap-4">
+      <div className={`mt-6 grid gap-4 ${sheetEnd}`}>
         <FormError message={errorMessage(failed.error)} />
         <Button
           onClick={() => {
@@ -67,7 +72,7 @@ function QuickEntryLoader({
     today.data === undefined
   )
     return (
-      <p role="status" className="mt-6 text-body text-text-muted">
+      <p role="status" className={`mt-6 text-body text-text-muted ${sheetEnd}`}>
         {/* Offline the queries wait for the connection instead of failing. */}
         {online ? t('quickEntry.loading') : t('quickEntry.offline')}
       </p>
@@ -76,7 +81,7 @@ function QuickEntryLoader({
   const open = accounts.data.accounts.filter((a) => !a.archived);
   if (open.length === 0)
     return (
-      <div className="mt-6 grid gap-4">
+      <div className={`mt-6 grid gap-4 ${sheetEnd}`}>
         <p>{t('quickEntry.noAccounts')}</p>
         <Link
           to="/accounts"
@@ -100,6 +105,7 @@ function QuickEntryLoader({
       onSaved={onSaved}
       onSavingChange={onSavingChange}
       preset={preset}
+      stickyActions
     />
   );
 }
@@ -151,7 +157,7 @@ export function QuickEntryDialog({
             if (!content.current?.contains(document.activeElement))
               content.current?.focus();
           }}
-          className="fixed inset-x-0 bottom-0 z-40 max-h-[92dvh] overflow-y-auto rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-text outline-none data-[state=open]:rise-in expanded:inset-x-auto expanded:top-1/2 expanded:bottom-auto expanded:left-1/2 expanded:w-full expanded:max-w-[560px] expanded:-translate-x-1/2 expanded:-translate-y-1/2 expanded:rounded-2xl expanded:border-b expanded:data-[state=open]:overlay-in"
+          className="fixed inset-x-0 bottom-0 z-40 max-h-[92dvh] overflow-y-auto rounded-t-2xl border border-b-0 border-outline-variant bg-card-raised px-6 pt-6 text-text outline-none data-[state=open]:rise-in expanded:inset-x-auto expanded:top-1/2 expanded:bottom-auto expanded:left-1/2 expanded:w-full expanded:max-w-[560px] expanded:-translate-x-1/2 expanded:-translate-y-1/2 expanded:rounded-2xl expanded:border-b expanded:data-[state=open]:overlay-in"
         >
           <div className="flex items-center justify-between gap-4">
             <Dialog.Title className="text-title">
