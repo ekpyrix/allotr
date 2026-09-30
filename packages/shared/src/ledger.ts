@@ -325,7 +325,22 @@ export const transactionListSchema = z.object({
   transactions: z.array(transactionSchema),
   /** Pass as `cursor` for the next, older page; null on the last one. */
   nextCursor: z.string().nullable(),
+  /**
+   * For each day on this page, newest first: the net change the day's
+   * matching entries (all of them, not only this page's) made to the
+   * user's own accounts, or to the filtered account, in the default
+   * currency at that day's rate.
+   */
+  dayTotals: z.array(
+    z.object({
+      date: localDateSchema,
+      net: moneySchema,
+      /** Currencies without a rate that day, left out of `net`. */
+      missingRates: z.array(currencyCodeSchema),
+    }),
+  ),
 });
+export type TransactionListView = z.infer<typeof transactionListSchema>;
 
 // Ledger settings, today's figures, exchange rates and bills (FR-C2,
 // FR-C4, FR-C5, FR-X2). Bills are only what the reserve needs until M4.

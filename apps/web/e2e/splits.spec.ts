@@ -8,6 +8,13 @@ import {
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
 
+// From the expanded size class the entry opens in a pane beside the list
+// (a region named for it); below that, in a dialog.
+const entryView = (page: Page, name?: string) =>
+  name === undefined
+    ? page.getByRole('dialog').or(page.locator('[data-slot="entry-pane"]'))
+    : page.getByRole('dialog', { name }).or(page.getByRole('region', { name }));
+
 // Split entries (FR-L5), one instance per size: the first hook onboards
 // and opens a synthetic account; every test signs in through the API.
 test.describe.configure({ mode: 'serial' });
@@ -130,12 +137,12 @@ test('edits one line of a split', async ({ page }) => {
     .locator('main')
     .getByRole('link', { name: new RegExp(title) })
     .click();
-  const dialog = page.getByRole('dialog', { name: title });
+  const dialog = entryView(page, title);
   await expect(dialog).toContainText('Food / Groceries, Food / Eating out');
   await expectAccessible(page);
 
   await dialog.getByRole('button', { name: 'Edit' }).click();
-  const form = page.getByRole('dialog', { name: 'Edit entry' });
+  const form = entryView(page, 'Edit entry');
   await expect(form.getByLabel('Amount 1 in USD')).toHaveValue('60.00');
   await expect(form.getByLabel('Amount 2 in USD')).toHaveValue('20.00');
   await form.getByLabel('Amount 1 in USD').fill('55');
@@ -144,9 +151,7 @@ test('edits one line of a split', async ({ page }) => {
   await expectAccessible(page);
   await form.getByRole('button', { name: 'Save changes' }).click();
 
-  await expect(page.getByRole('dialog', { name: title })).toContainText(
-    '-$75.00',
-  );
+  await expect(entryView(page, title)).toContainText('-$75.00');
   // The undo and the replacement share a timestamp; take the live one.
   const response = await page.request.get('/v1/transactions');
   const { transactions } = (await response.json()) as {

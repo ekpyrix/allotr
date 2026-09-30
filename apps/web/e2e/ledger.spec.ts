@@ -2,6 +2,7 @@ import {
   formatMoney,
   money,
   type AccountView,
+  type Money,
   type TodayView,
   type TransactionView,
 } from '@allotr/shared';
@@ -13,6 +14,13 @@ import {
 } from '@playwright/test';
 import { expectAccessible } from './a11y.ts';
 import { account } from './account.ts';
+
+// From the expanded size class the entry opens in a pane beside the list
+// (a region named for it); below that, in a dialog.
+const entryView = (page: Page, name?: string) =>
+  name === undefined
+    ? page.getByRole('dialog').or(page.locator('[data-slot="entry-pane"]'))
+    : page.getByRole('dialog', { name }).or(page.getByRole('region', { name }));
 
 // One instance per size: the first hook onboards and seeds synthetic
 // entries; every test signs in through the API. The server runs on the
@@ -131,7 +139,7 @@ test('editing an entry shows its undo and the new entry, and the balance matches
   );
 
   await entry(page, 'Transport').click();
-  const dialog = page.getByRole('dialog', { name: 'Transport' });
+  const dialog = entryView(page, 'Transport');
   await expect(dialog).toContainText('Bus pass');
   await expect(
     dialog.getByRole('table', { name: 'Postings' }).getByRole('row'),
@@ -139,13 +147,13 @@ test('editing an entry shows its undo and the new entry, and the balance matches
   await expectAccessible(page);
 
   await dialog.getByRole('button', { name: 'Edit' }).click();
-  const form = page.getByRole('dialog', { name: 'Edit entry' });
+  const form = entryView(page, 'Edit entry');
   await expect(form.getByLabel('Amount in USD')).toHaveValue('7.50');
   await form.getByLabel('Amount in USD').fill('9.25');
   await form.getByRole('button', { name: 'Save changes' }).click();
 
   // The dialog now shows the replacement.
-  const replacement = page.getByRole('dialog', { name: 'Transport' });
+  const replacement = entryView(page, 'Transport');
   await expect(replacement).toContainText('-$9.25');
   await expect(replacement.locator('[aria-live="polite"]')).toHaveText(
     'Entry changed. The old one is undone.',
@@ -191,15 +199,13 @@ test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) =>
   const before = await figures(page);
 
   await page.goto(`/ledger?entry=${original.id}`);
-  const dialog = page.getByRole('dialog', { name: 'Groceries' });
+  const dialog = entryView(page, 'Groceries');
   await dialog.getByRole('button', { name: 'Edit' }).click();
-  const form = page.getByRole('dialog', { name: 'Edit entry' });
+  const form = entryView(page, 'Edit entry');
   await expect(form.getByLabel('Date')).toHaveValue(day);
   await form.getByLabel('Amount in USD').fill('25.00');
   await form.getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByRole('dialog', { name: 'Groceries' })).toContainText(
-    '-$25.00',
-  );
+  await expect(entryView(page, 'Groceries')).toContainText('-$25.00');
 
   // The replacement keeps the original's date.
   const list = (await (
@@ -236,9 +242,50 @@ test('closing an entry that the filters hide returns focus to the page', async (
   ).json()) as { transactions: TransactionView[] };
   const id = list.transactions[0]?.id ?? '';
   await page.goto(`/ledger?q=nothing-matches&entry=${id}`);
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(entryView(page)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/entry=/);
   await expect(page.locator('main')).toBeFocused();
   await expect(page.getByText('No entries match these filters.')).toBeVisible();
+});
+
+test('day headers carry the server’s net total for the day', async ({
+  page,
+}) => {
+  const body = (await (await page.request.get('/v1/transactions')).json()) as {
+    dayTotals: { date: string; net: Money }[];
+  };
+  const first = body.dayTotals[0];
+  expect(first).toBeDefined();
+  if (first === undefined) return;
+  await page.goto('/ledger');
+  await expect(
+    page
+      .getByRole('heading', { level: 2 })
+      .filter({
+        hasText: formatMoney(first.net, 'en-US', { signDisplay: 'exceptZero' }),
+      })
+      .first(),
+  ).toBeVisible();
+  await expectAccessible(page);
+});
+
+test('a deep link opens the entry beside the list or over it', async ({
+  page,
+  isMobile,
+}) => {
+  const list = (await (
+    await page.request.get('/v1/transactions?limit=1')
+  ).json()) as { transactions: TransactionView[] };
+  const id = list.transactions[0]?.id ?? '';
+  await page.goto(`/ledger?entry=${id}`);
+  const view = isMobile
+    ? page.getByRole('dialog')
+    : page.locator('[data-slot="entry-pane"]');
+  await expect(view).toBeVisible();
+  await expect(view.getByRole('heading')).toBeFocused();
+  await expectAccessible(page);
+  await page.keyboard.press('Escape');
+  await expect(page).not.toHaveURL(/entry=/);
+  await expect(page.locator(`[data-entry-id="${id}"]`)).toBeFocused();
 });

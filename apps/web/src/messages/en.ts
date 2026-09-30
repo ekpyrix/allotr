@@ -221,6 +221,8 @@ export const en = {
     },
   },
   ledger: {
+    pickEntry: 'Choose an entry to see it here.',
+    dayNet: 'Net for the day:',
     title: 'Ledger',
     loading: 'Loading entries…',
     filters: {

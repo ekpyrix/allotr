@@ -48,7 +48,7 @@ export function AppShell({
           id="content"
           ref={main}
           tabIndex={-1}
-          className="mx-auto w-full max-w-3xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] outline-none medium:px-6 medium:pb-12 large:px-8"
+          className="mx-auto w-full max-w-3xl px-4 expanded:max-w-5xl pb-[calc(6.5rem+env(safe-area-inset-bottom))] outline-none medium:px-6 medium:pb-12 large:px-8"
         >
           {twoFactorRequired ? (
             <p

@@ -1,4 +1,14 @@
+import { formatMoney, type TransactionListView } from '@allotr/shared';
 import { Link } from '@tanstack/react-router';
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  Landmark,
+  Receipt,
+  Repeat,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -6,6 +16,16 @@ import { t } from '@/messages/t';
 import { formatLongDay, rowAmount, rowTitle } from './format.ts';
 import { byDay, type LedgerRow } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
+
+const kindIcons: Record<LedgerRow['kind'], LucideIcon> = {
+  expense: Receipt,
+  income: ArrowDownLeft,
+  transfer: ArrowLeftRight,
+  opening: Landmark,
+  write_off: Receipt,
+  reversal: Undo2,
+  budget_switch: Repeat,
+};
 
 function Row({
   row,
@@ -17,6 +37,7 @@ function Row({
   search: LedgerSearch;
 }) {
   const amount = rowAmount(row, locale);
+  const Icon = kindIcons[row.kind];
   const muted = row.undone || row.kind === 'reversal';
   const details = [
     row.accounts.filter((name) => name !== '').join(' → '),
@@ -28,18 +49,26 @@ function Row({
         to="/ledger"
         search={{ ...search, entry: row.id }}
         data-entry-id={row.id}
-        className="flex items-start gap-3 rounded-md px-2 py-3 outline-none hover:bg-plot focus-visible:ring-2 focus-visible:ring-ring"
+        aria-current={search.entry === row.id ? 'true' : undefined}
+        className="flex min-h-(--row-h) items-center gap-4 px-4 py-2 transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring aria-[current=true]:bg-card-raised"
       >
         <span
-          className={cn('min-w-0 flex-1', muted && 'text-muted-foreground')}
+          aria-hidden="true"
+          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-card-raised text-text-muted"
         >
+          <Icon className="size-5 stroke-[1.75]" />
+        </span>
+        <span className={cn('min-w-0 flex-1', muted && 'text-text-muted')}>
           <span
-            className={cn('block font-medium', row.undone && 'line-through')}
+            className={cn(
+              'block text-body-lg wrap-anywhere',
+              row.undone && 'line-through',
+            )}
           >
             {rowTitle(row)}
           </span>
           {details.length > 0 ? (
-            <span className="block truncate text-sm text-muted-foreground">
+            <span className="block truncate text-body text-text-muted">
               {details.join(' · ')}
             </span>
           ) : null}
@@ -47,8 +76,8 @@ function Row({
         {amount === null ? null : (
           <span
             className={cn(
-              'font-mono tabular-nums',
-              muted && 'text-muted-foreground',
+              'shrink-0 font-mono text-body-lg tabular-nums',
+              muted && 'text-text-muted',
               row.undone && 'line-through',
               !muted && row.kind === 'income' && 'text-positive',
             )}
@@ -57,7 +86,7 @@ function Row({
           </span>
         )}
         {row.undone ? (
-          <span className="text-sm text-muted-foreground">
+          <span className="shrink-0 text-body text-text-muted">
             {t('ledger.undone')}
           </span>
         ) : null}
@@ -70,6 +99,7 @@ function Row({
 // focus moves to the first new entry so keyboard users carry on reading.
 export function LedgerList({
   rows,
+  dayTotals,
   locale,
   search,
   hasMore,
@@ -77,6 +107,8 @@ export function LedgerList({
   onLoadMore,
 }: {
   rows: LedgerRow[];
+  /** The server's net total per day, over every matching entry. */
+  dayTotals: ReadonlyMap<string, TransactionListView['dayTotals'][number]>;
   locale: string;
   search: LedgerSearch;
   hasMore: boolean;
@@ -101,15 +133,24 @@ export function LedgerList({
     <div ref={list}>
       {byDay(rows).map((group) => {
         const headingId = `ledger-day-${group.day}`;
+        const total = dayTotals.get(group.day);
         return (
-          <section key={group.day} aria-labelledby={headingId} className="mt-6">
+          <section key={group.day} aria-labelledby={headingId} className="mt-4">
             <h2
               id={headingId}
-              className="border-b border-border pb-1 text-sm font-medium text-muted-foreground"
+              className="sticky top-16 z-[5] -mx-1 flex items-baseline justify-between gap-3 bg-canvas px-1 py-2 text-label text-text-muted"
             >
-              {formatLongDay(group.day, locale)}
+              <span>{formatLongDay(group.day, locale)}</span>
+              {total === undefined ? null : (
+                <span className="font-mono tabular-nums">
+                  <span className="sr-only">{t('ledger.dayNet')} </span>
+                  {formatMoney(total.net, locale, {
+                    signDisplay: 'exceptZero',
+                  })}
+                </span>
+              )}
             </h2>
-            <ul className="mt-1">
+            <ul className="overflow-hidden rounded-lg bg-card">
               {group.rows.map((row) => (
                 <Row key={row.id} row={row} locale={locale} search={search} />
               ))}

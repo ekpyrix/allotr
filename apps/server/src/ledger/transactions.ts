@@ -1,6 +1,7 @@
 import {
   accountId,
   categoryId,
+  dayNetTotals,
   edit,
   expense,
   income,
@@ -13,11 +14,14 @@ import {
 import type {
   CreateTransactionBody,
   LocalDate,
+  TransactionListView,
   TransactionView,
 } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { atPath, RequestProblem } from '../http/domain-errors.ts';
+import { readLedgerSettings } from './ledger-settings.ts';
+import { loadRates } from './rates.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
 import {
   appendTransaction,
@@ -268,11 +272,8 @@ async function checkTagExists(
 }
 
 /** Entries newest first, by date, then time of entry, then ID. */
-export async function listTransactions(
-  db: Db,
-  userId: string,
-  filter: ListFilter,
-): Promise<{ transactions: TransactionView[]; nextCursor: string | null }> {
+// The entries a filter matches, before paging.
+async function matching(db: Db, userId: string, filter: ListFilter) {
   let query = db
     .selectFrom('transactions')
     .select(transactionColumns)
@@ -361,6 +362,15 @@ export async function listTransactions(
       ]),
     );
   }
+  return query;
+}
+
+export async function listTransactions(
+  db: Db,
+  userId: string,
+  filter: ListFilter,
+): Promise<TransactionListView> {
+  let query = await matching(db, userId, filter);
   if (filter.cursor !== undefined) {
     const [occurredOn, createdAt, id] = decodeCursor(filter.cursor);
     query = query.where(
@@ -381,7 +391,49 @@ export async function listTransactions(
       rows.length > filter.limit && last !== undefined
         ? encodeCursor(last)
         : null,
+    dayTotals: await dayTotalsFor(db, userId, filter, page),
   };
+}
+
+/**
+ * The net total of every matching entry on each day the page shows, not
+ * only the entries on this page, so a day split across pages still shows
+ * its whole total (spec §11.2).
+ */
+async function dayTotalsFor(
+  db: Db,
+  userId: string,
+  filter: ListFilter,
+  page: readonly TransactionView[],
+): Promise<TransactionListView['dayTotals']> {
+  const days = [...new Set(page.map((view) => view.occurredOn))];
+  if (days.length === 0) return [];
+  const [rows, chart, rates, settings] = await Promise.all([
+    (await matching(db, userId, filter))
+      .where('occurred_on', 'in', days)
+      .execute(),
+    loadChart(db, userId),
+    loadRates(db, userId),
+    readLedgerSettings(db, userId),
+  ]);
+  const entries = (await views(db, userId, rows)).map((view) => ({
+    occurredOn: view.occurredOn,
+    postings: view.postings.map((posting) => ({
+      accountId: accountId(posting.accountId),
+      amount: posting.amount,
+    })),
+  }));
+  return dayNetTotals(
+    chart,
+    entries,
+    rates,
+    settings.defaultCurrency,
+    filter.accountId === undefined ? undefined : accountId(filter.accountId),
+  ).map((total) => ({
+    date: total.date,
+    net: total.net,
+    missingRates: [...total.missingRates],
+  }));
 }
 
 // ---------------------------------------------------------------- writing

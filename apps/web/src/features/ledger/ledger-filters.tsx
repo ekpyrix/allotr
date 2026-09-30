@@ -48,7 +48,11 @@ export function LedgerFilters({
       className="mt-6 grid gap-4"
     >
       <div className="flex items-end gap-2">
-        <div className="min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute bottom-3.5 left-4 size-5 text-text-muted"
+          />
           <FieldControl label={t('ledger.filters.search')}>
             {(props) => (
               <Input
@@ -57,7 +61,7 @@ export function LedgerFilters({
                 type="search"
                 maxLength={100}
                 autoComplete="off"
-                className="h-11 text-base"
+                className="rounded-full pl-11"
                 value={q}
                 onChange={(e) => {
                   setQ(e.currentTarget.value);
@@ -66,13 +70,13 @@ export function LedgerFilters({
             )}
           </FieldControl>
         </div>
-        <Button type="submit" variant="outlined" className="h-11">
-          <Search aria-hidden />
+        <Button type="submit" variant="tonal">
           {t('ledger.filters.searchSubmit')}
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      {/* Scrolls sideways inside itself, never the page. */}
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 medium:-mx-6 medium:px-6 [&>*]:w-44 [&>*]:shrink-0">
         <FieldControl label={t('ledger.filters.account')}>
           {(props) => (
             <select
@@ -150,7 +154,6 @@ export function LedgerFilters({
               {...props}
               name="from"
               type="date"
-              className="h-11 text-base"
               value={search.from ?? ''}
               onChange={set('from')}
             />
@@ -163,7 +166,6 @@ export function LedgerFilters({
               {...props}
               name="to"
               type="date"
-              className="h-11 text-base"
               value={search.to ?? ''}
               onChange={set('to')}
             />
