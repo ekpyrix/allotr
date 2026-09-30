@@ -36,3 +36,13 @@ export function afterStep(state: SetupState, step: SetupStep): SetupState {
     handled,
   };
 }
+
+/** The step before `step`, or null on the first one. */
+export function previousStep(step: SetupStep): SetupStep | null {
+  return setupSteps[setupSteps.indexOf(step) - 1] ?? null;
+}
+
+/** The step after `step`, or null on the last one. */
+export function followingStep(step: SetupStep): SetupStep | null {
+  return setupSteps[setupSteps.indexOf(step) + 1] ?? null;
+}

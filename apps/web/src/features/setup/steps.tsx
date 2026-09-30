@@ -106,9 +106,13 @@ export function RegionStep({
   busy,
   onNext,
   onSkip,
-}: StepProps & { settings: LedgerSettingsView }) {
-  // New users start at UTC and en-US; this device knows better.
-  const [detected] = useState(browserRegion);
+  detect,
+}: StepProps & { settings: LedgerSettingsView; detect: boolean }) {
+  // New users start at UTC and en-US; this device knows better. Coming
+  // back to the step, the saved choice wins.
+  const [detected] = useState<ReturnType<typeof browserRegion>>(() =>
+    detect ? browserRegion() : {},
+  );
   const [locale, setLocale] = useState(detected.locale ?? settings.locale);
   const [timeZone, setTimeZone] = useState(
     detected.timeZone ?? settings.timeZone,

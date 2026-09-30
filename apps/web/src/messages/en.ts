@@ -37,6 +37,7 @@ export const en = {
     step: 'Step {n} of {total}: {title}',
     continue: 'Continue',
     skip: 'Skip this step',
+    back: 'Back',
     finish: 'Finish',
     saving: 'Saving…',
     reveal: {
