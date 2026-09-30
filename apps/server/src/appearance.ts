@@ -1,38 +1,114 @@
 import { randomUUID } from 'node:crypto';
 import {
   appearanceSchema,
+  completePalette,
   contrastProblems,
+  convertV1,
   CUSTOM_THEME_LIMIT,
   customThemeSchema,
-  DEFAULT_APPEARANCE,
-  findTheme,
+  DEFAULT_PALETTE_THEME_ID,
+  describeRoleFailure,
+  familyIdSchema,
+  findPaletteTheme,
+  PALETTE_THEMES,
+  paletteSchema,
+  paletteTheme,
+  resolveTheme,
   SHIPPED_THEMES,
+  THEME_ID_ALIASES,
   THEME_SCHEMES,
   themeModeSchema,
+  themeNameSchema,
+  themeRolesSchema,
+  themeSchemeSchema,
+  themeTokensSchema,
+  toThemeFileV2,
+  tokensFromRoles,
+  type AnyThemeBody,
   type Appearance,
   type AppearanceBody,
   type CustomTheme,
-  type ThemeBody,
+  type CustomThemeView,
+  type PaletteTheme,
+  type ThemeProblem,
 } from '@allotr/shared';
 import type { Kysely, Transaction } from 'kysely';
 import { z } from 'zod';
 import type { DB } from './db/schema.ts';
 import { RequestProblem } from './http/domain-errors.ts';
 
-// A user's appearance settings and custom themes (FR-W5), each kept as one
-// JSON value in user_settings. A value that no longer parses reads as the
-// default rather than failing every page load.
+// A user's appearance settings and custom themes (FR-W5, ADR 0016), each
+// kept as one JSON value in user_settings. A value that no longer parses
+// reads as the default rather than failing every page load. Themes stored
+// as v1 (16 tokens) are read as v2 and written back as v2 with the next
+// change to the list; there is no SQL migration.
 
 const appearanceKey = 'appearance';
 const themesKey = 'themes';
 
-// Values saved before themes had slots hold only the mode.
+/** What a user gets before saving any appearance. */
+export const DEFAULT_APPEARANCE: Appearance = {
+  mode: 'system',
+  ...DEFAULT_PALETTE_THEME_ID,
+};
+
+// An earlier id of a shipped theme reads as the theme it now names.
+const themeId = (id: string) =>
+  Object.hasOwn(THEME_ID_ALIASES, id) ? (THEME_ID_ALIASES[id] ?? id) : id;
+
+// Values saved before themes had slots hold only the mode; those users
+// had the built-in themes, now Allotr Classic.
 const storedAppearanceSchema = z.object({
   mode: themeModeSchema,
-  light: appearanceSchema.shape.light.default(DEFAULT_APPEARANCE.light),
-  dark: appearanceSchema.shape.dark.default(DEFAULT_APPEARANCE.dark),
+  light: appearanceSchema.shape.light.default('allotr-classic-light'),
+  dark: appearanceSchema.shape.dark.default('allotr-classic-dark'),
 });
-const storedThemesSchema = z.array(customThemeSchema);
+
+const storedThemeV2Schema = z.object({
+  id: z.string().min(1),
+  version: z.literal(2),
+  name: themeNameSchema,
+  scheme: themeSchemeSchema,
+  family: familyIdSchema.optional(),
+  palette: paletteSchema,
+  roles: themeRolesSchema.default({}),
+  /** The tokens a v1 body sent, returned as they were. */
+  tokens: themeTokensSchema.optional(),
+});
+type StoredTheme = z.infer<typeof storedThemeV2Schema>;
+const storedThemesSchema = z.array(
+  z.union([storedThemeV2Schema, customThemeSchema]),
+);
+
+function upgrade(theme: StoredTheme | CustomTheme): StoredTheme {
+  if ('version' in theme) return theme;
+  return {
+    id: theme.id,
+    version: 2,
+    name: theme.name,
+    scheme: theme.scheme,
+    ...convertV1(theme.tokens, theme.scheme),
+    tokens: theme.tokens,
+  };
+}
+
+function asPaletteTheme(theme: StoredTheme): PaletteTheme {
+  return paletteTheme(theme.id, toThemeFileV2(theme));
+}
+
+function view(theme: StoredTheme): CustomThemeView {
+  return {
+    id: theme.id,
+    version: 2,
+    name: theme.name,
+    scheme: theme.scheme,
+    ...(theme.family === undefined ? {} : { family: theme.family }),
+    palette: theme.palette,
+    roles: theme.roles,
+    tokens:
+      theme.tokens ?? tokensFromRoles(asPaletteTheme(theme).resolved.roles),
+  };
+}
 
 type Db = Kysely<DB> | Transaction<DB>;
 
@@ -80,17 +156,23 @@ export async function readAppearance(
   const parsed = storedAppearanceSchema.safeParse(
     await readValue(db, userId, appearanceKey),
   );
-  return parsed.success ? parsed.data : DEFAULT_APPEARANCE;
+  if (!parsed.success) return DEFAULT_APPEARANCE;
+  const { mode, light, dark } = parsed.data;
+  return { mode, light: themeId(light), dark: themeId(dark) };
+}
+
+async function storedThemes(db: Db, userId: string): Promise<StoredTheme[]> {
+  const parsed = storedThemesSchema.safeParse(
+    await readValue(db, userId, themesKey),
+  );
+  return parsed.success ? parsed.data.map(upgrade) : [];
 }
 
 export async function listThemes(
   db: Db,
   userId: string,
-): Promise<CustomTheme[]> {
-  const parsed = storedThemesSchema.safeParse(
-    await readValue(db, userId, themesKey),
-  );
-  return parsed.success ? parsed.data : [];
+): Promise<CustomThemeView[]> {
+  return (await storedThemes(db, userId)).map(view);
 }
 
 export async function saveAppearance(
@@ -103,12 +185,12 @@ export async function saveAppearance(
     const current = await readAppearance(trx, userId);
     const appearance: Appearance = {
       mode: body.mode,
-      light: body.light ?? current.light,
-      dark: body.dark ?? current.dark,
+      light: themeId(body.light ?? current.light),
+      dark: themeId(body.dark ?? current.dark),
     };
-    const custom = await listThemes(trx, userId);
+    const custom = (await storedThemes(trx, userId)).map(asPaletteTheme);
     for (const scheme of THEME_SCHEMES) {
-      const theme = findTheme(appearance[scheme], custom);
+      const theme = findPaletteTheme(appearance[scheme], custom);
       const path = [{ path: `/${scheme}`, message: appearance[scheme] }];
       if (theme === undefined)
         throw new RequestProblem(
@@ -134,19 +216,58 @@ function notFound(): RequestProblem {
   return new RequestProblem(404, 'theme_not_found', 'There is no such theme.');
 }
 
-// Contrast first: a failing theme is refused whatever else is wrong.
-function check(body: ThemeBody, others: readonly CustomTheme[]): void {
-  const problems = contrastProblems(body.tokens, body.scheme);
-  if (problems.length > 0)
-    throw new RequestProblem(
-      422,
-      'theme_contrast',
-      'Some colour pairs do not meet WCAG 2.2 AA contrast.',
-      problems,
+function contrastProblem(problems: readonly ThemeProblem[]): RequestProblem {
+  return new RequestProblem(
+    422,
+    'theme_contrast',
+    'Some colours do not meet WCAG 2.2 AA contrast.',
+    problems,
+  );
+}
+
+/**
+ * A body as the theme to store. A v1 body is checked by the v1 contrast
+ * pairs, as before v2, and keeps its tokens; a v2 body is resolved, and a
+ * role that cannot meet its contrast is refused at `/roles/<role>`, or at
+ * `/palette` when the role comes from the default map. Contrast is
+ * checked first: a failing theme is refused whatever else is wrong.
+ */
+function toStored(id: string, body: AnyThemeBody): StoredTheme {
+  if ('tokens' in body) {
+    const problems = contrastProblems(body.tokens, body.scheme);
+    if (problems.length > 0) throw contrastProblem(problems);
+    return upgrade({ id, ...body });
+  }
+  const palette = completePalette(body.palette, body.scheme);
+  const roles = body.roles ?? {};
+  const { failures } = resolveTheme({ scheme: body.scheme, palette, roles });
+  if (failures.length > 0)
+    throw contrastProblem(
+      failures.map((failure) => ({
+        path:
+          roles[failure.role] === undefined
+            ? '/palette'
+            : `/roles/${failure.role}`,
+        message: describeRoleFailure(failure),
+      })),
     );
-  const name = body.name.toLowerCase();
-  const taken = [...SHIPPED_THEMES, ...others].some(
-    (theme) => theme.name.toLowerCase() === name,
+  return {
+    id,
+    version: 2,
+    name: body.name,
+    scheme: body.scheme,
+    ...(body.family === undefined ? {} : { family: body.family }),
+    palette,
+    roles,
+  };
+}
+
+// Custom theme names are unique among the shipped themes, old and new, and
+// the user's own.
+function checkName(name: string, others: readonly StoredTheme[]): void {
+  const wanted = name.toLowerCase();
+  const taken = [...SHIPPED_THEMES, ...PALETTE_THEMES, ...others].some(
+    (theme) => theme.name.toLowerCase() === wanted,
   );
   if (taken)
     throw new RequestProblem(
@@ -159,21 +280,21 @@ function check(body: ThemeBody, others: readonly CustomTheme[]): void {
 export async function createTheme(
   db: Kysely<DB>,
   userId: string,
-  body: ThemeBody,
+  body: AnyThemeBody,
   now: Date,
-): Promise<CustomTheme> {
+): Promise<CustomThemeView> {
   return db.transaction().execute(async (trx) => {
-    const themes = await listThemes(trx, userId);
-    check(body, themes);
+    const themes = await storedThemes(trx, userId);
+    const theme = toStored(randomUUID(), body);
+    checkName(theme.name, themes);
     if (themes.length >= CUSTOM_THEME_LIMIT)
       throw new RequestProblem(
         409,
         'theme_limit',
         `You can keep up to ${String(CUSTOM_THEME_LIMIT)} custom themes.`,
       );
-    const theme: CustomTheme = { id: randomUUID(), ...body };
     await writeValue(trx, userId, themesKey, [...themes, theme], now);
-    return theme;
+    return view(theme);
   });
 }
 
@@ -182,8 +303,8 @@ export async function createTheme(
 async function releaseSlots(
   trx: Transaction<DB>,
   userId: string,
-  theme: CustomTheme,
-  remaining: CustomTheme | undefined,
+  theme: StoredTheme,
+  remaining: StoredTheme | undefined,
   now: Date,
 ): Promise<void> {
   const appearance = await readAppearance(trx, userId);
@@ -200,18 +321,18 @@ export async function updateTheme(
   db: Kysely<DB>,
   userId: string,
   id: string,
-  body: ThemeBody,
+  body: AnyThemeBody,
   now: Date,
-): Promise<CustomTheme> {
+): Promise<CustomThemeView> {
   return db.transaction().execute(async (trx) => {
-    const themes = await listThemes(trx, userId);
+    const themes = await storedThemes(trx, userId);
     const current = themes.find((theme) => theme.id === id);
     if (current === undefined) throw notFound();
-    check(
-      body,
-      themes.filter((theme) => theme.id !== id),
+    const theme = toStored(id, body);
+    checkName(
+      theme.name,
+      themes.filter((other) => other.id !== id),
     );
-    const theme: CustomTheme = { id, ...body };
     await writeValue(
       trx,
       userId,
@@ -220,7 +341,7 @@ export async function updateTheme(
       now,
     );
     await releaseSlots(trx, userId, current, theme, now);
-    return theme;
+    return view(theme);
   });
 }
 
@@ -231,7 +352,7 @@ export async function deleteTheme(
   now: Date,
 ): Promise<void> {
   await db.transaction().execute(async (trx) => {
-    const themes = await listThemes(trx, userId);
+    const themes = await storedThemes(trx, userId);
     const current = themes.find((theme) => theme.id === id);
     if (current === undefined) throw notFound();
     await writeValue(

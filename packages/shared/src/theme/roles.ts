@@ -112,12 +112,14 @@ export const ROLE_SPECS: Readonly<Record<Role, RoleSpec>> = {
  * out). `fit: 'auto'` (the default) shifts lightness until the role meets
  * its contrast; `fit: 'off'` keeps the colour and reports any failure.
  */
-export const roleEntrySchema = z.strictObject({
-  slot: z.string().min(1).max(80),
-  alpha: z.number().min(0).max(1).optional(),
-  over: z.enum(SURFACE_ROLES).optional(),
-  fit: z.enum(['auto', 'off']).optional(),
-});
+export const roleEntrySchema = z
+  .strictObject({
+    slot: z.string().min(1).max(80),
+    alpha: z.number().min(0).max(1).optional(),
+    over: z.enum(SURFACE_ROLES).optional(),
+    fit: z.enum(['auto', 'off']).optional(),
+  })
+  .meta({ id: 'ThemeRoleEntry' });
 export type RoleEntry = z.infer<typeof roleEntrySchema>;
 export type RoleMap = Readonly<Record<Role, RoleEntry>>;
 

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { FAMILY_FILES } from './families/index.ts';
 import {
   completePalette,
+  paletteSchema,
   partialPaletteSchema,
   type Palette,
   type PartialPalette,
@@ -18,16 +19,20 @@ import {
   type RoleEntry,
 } from './roles.ts';
 import {
+  customThemeSchema,
   findTheme,
   THEME_FILE_FORMAT,
+  themeBodySchema,
   themeFileSchema,
   themeNameSchema,
   type ThemeFile,
   type ThemeProblem,
 } from './themes.ts';
 import {
+  THEME_TOKENS,
   themeSchemeSchema,
   type ThemeScheme,
+  type ThemeToken,
   type ThemeTokens,
 } from './tokens.ts';
 
@@ -50,10 +55,9 @@ export const themeCreditSchema = z.strictObject({
 export type ThemeCredit = z.infer<typeof themeCreditSchema>;
 
 /** Roles a theme sets; every other role comes from the default map. */
-export const themeRolesSchema = z.partialRecord(
-  themeRoleSchema,
-  roleEntrySchema,
-);
+export const themeRolesSchema = z
+  .partialRecord(themeRoleSchema, roleEntrySchema)
+  .meta({ id: 'ThemeRoles' });
 export type ThemeRoles = Readonly<Partial<Record<Role, RoleEntry>>>;
 
 /** A v2 file. Its palette may leave out slots; reading completes it. */
@@ -370,4 +374,65 @@ export function slotPaletteTheme(
   const fallback = findPaletteTheme(DEFAULT_PALETTE_THEME_ID[scheme], []);
   if (fallback === undefined) throw new Error(`No ${scheme} default theme`);
   return fallback;
+}
+
+/** A custom theme as v2 sends it: a palette and the roles it sets. */
+export const themeBodyV2Schema = z.object({
+  name: themeNameSchema,
+  scheme: themeSchemeSchema,
+  family: familyIdSchema.optional(),
+  palette: partialPaletteSchema,
+  roles: themeRolesSchema.optional(),
+});
+export type ThemeBodyV2 = z.infer<typeof themeBodyV2Schema>;
+
+/** A v1 body (16 tokens, deprecated) or a v2 body (a palette). */
+export const anyThemeBodySchema = z.union([themeBodySchema, themeBodyV2Schema]);
+export type AnyThemeBody = z.infer<typeof anyThemeBodySchema>;
+
+/**
+ * A custom theme as the API returns it: the v2 palette and roles, plus the
+ * 16 v1 tokens clients before v2 paint with. A theme sent as v1 keeps the
+ * tokens it was sent with; for one sent as v2 they come from its resolved
+ * roles.
+ */
+export const customThemeViewSchema = customThemeSchema.extend({
+  version: z.literal(2),
+  family: familyIdSchema.optional(),
+  palette: paletteSchema,
+  roles: themeRolesSchema,
+});
+export type CustomThemeView = z.infer<typeof customThemeViewSchema>;
+
+export const customThemeViewListSchema = z.object({
+  themes: z.array(customThemeViewSchema),
+});
+
+// The role each v1 token is painted from.
+const TOKEN_ROLE: Readonly<Record<ThemeToken, Role>> = {
+  background: 'canvas',
+  foreground: 'text',
+  muted: 'card-raised',
+  'muted-foreground': 'text-muted',
+  plot: 'card',
+  today: 'hero-ok',
+  'today-text': 'hero-ok',
+  over: 'hero-over',
+  positive: 'positive',
+  negative: 'negative',
+  primary: 'primary',
+  'primary-foreground': 'on-primary',
+  border: 'outline-variant',
+  input: 'outline',
+  ring: 'ring',
+  destructive: 'danger',
+};
+
+/** The v1 tokens a resolved theme stands for, for clients before v2. */
+export function tokensFromRoles(
+  roles: Readonly<Record<Role, string>>,
+): ThemeTokens {
+  return Object.fromEntries(
+    THEME_TOKENS.map((token) => [token, roles[TOKEN_ROLE[token]]]),
+  ) as Record<ThemeToken, string>;
 }

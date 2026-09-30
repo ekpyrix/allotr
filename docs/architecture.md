@@ -165,14 +165,20 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme
   mode (`light`, `dark` or `system`, the default) and the theme for each
-  scheme: a shipped theme (built-in or community, in
-  `packages/shared/src/theme/`) or one of the user's custom themes.
-  `/v1/settings/themes` keeps up to 20 custom themes per user; every save
-  runs the WCAG 2.2 AA contrast validator for the theme's scheme and a
-  failing theme is refused with each failing pair listed (`theme_contrast`).
-  Dark themes are also checked for destructive text on the translucent
-  fills that outline buttons get in the dark scheme, at rest and on hover. Deleting a theme in use,
-  or changing its scheme, puts that slot back on the built-in theme. The web
+  scheme: a shipped theme (a palette family such as Catppuccin, Allotr
+  Classic or a community theme, in `packages/shared/src/theme/`) or one of
+  the user's custom themes. Before any change the slots are Catppuccin
+  Latte and Mocha; the earlier ids `light` and `dark` read as Allotr
+  Classic. `/v1/settings/themes` keeps up to 20 custom themes per user as
+  palette themes (theme file v2, ADR 0016): a palette and the roles it
+  sets, each role resolved with contrast fitting, and a theme whose roles
+  cannot meet WCAG 2.2 AA is refused with each role listed
+  (`theme_contrast`). The deprecated v1 body (16 tokens) is still accepted:
+  it is checked by the v1 contrast pairs, including destructive text on
+  the dark-scheme outline button fills, and converted. Themes stored as v1
+  are read as v2 and written back as v2 with the next change, and every
+  response keeps the v1 `tokens` for older clients. Deleting a theme in
+  use, or changing its scheme, puts that slot back on the default theme. The web
   app caches the mode and any non-built-in colours in localStorage, so
   `theme-init.js` paints them before the app loads. `/v1/settings/setup`
   holds a new user's progress through setup (currency and region, payday,

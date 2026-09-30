@@ -15,7 +15,11 @@ afterAll(async () => {
   await h.close();
 });
 
-const defaults = { mode: 'system', light: 'light', dark: 'dark' };
+const defaults = {
+  mode: 'system',
+  light: 'catppuccin-latte',
+  dark: 'catppuccin-mocha',
+};
 
 function theme(name: string, scheme: 'light' | 'dark' = 'light') {
   return { name, scheme, tokens: scheme === 'light' ? lightTheme : darkTheme };
@@ -40,7 +44,7 @@ async function clearAlice() {
 }
 
 describe('appearance settings', () => {
-  it('defaults to following the system with the built-in themes', async () => {
+  it('defaults to following the system with Catppuccin', async () => {
     const response = await h.alice.get('/v1/settings/appearance');
     expect(response.status).toBe(200);
     expect(response.body).toEqual(defaults);
@@ -100,7 +104,7 @@ describe('appearance settings', () => {
     });
   });
 
-  it('reads a value saved before slots with the default themes', async () => {
+  it('reads a value saved before slots with Allotr Classic', async () => {
     await h.alice.put('/v1/settings/appearance', defaults);
     await h.db
       .updateTable('user_settings')
@@ -108,7 +112,11 @@ describe('appearance settings', () => {
       .where('user_id', '=', await userIdOf(h.alice))
       .where('key', '=', 'appearance')
       .execute();
-    expect(await aliceAppearance()).toEqual({ ...defaults, mode: 'dark' });
+    expect(await aliceAppearance()).toEqual({
+      mode: 'dark',
+      light: 'allotr-classic-light',
+      dark: 'allotr-classic-dark',
+    });
   });
 
   it('falls back to the defaults when the stored value no longer parses', async () => {
@@ -138,10 +146,10 @@ describe('custom themes', () => {
     const first = await create(theme('Mint'));
     const second = await create(theme('Night', 'dark'));
     const list = await h.alice.get('/v1/settings/themes');
-    expect(list.body).toEqual({
+    expect(list.body).toMatchObject({
       themes: [
-        { id: first, ...theme('Mint') },
-        { id: second, ...theme('Night', 'dark') },
+        { id: first, version: 2, ...theme('Mint') },
+        { id: second, version: 2, ...theme('Night', 'dark') },
       ],
     });
     expect((await h.bob.get('/v1/settings/themes')).body).toEqual({
@@ -284,7 +292,7 @@ describe('custom themes', () => {
     expect(await aliceAppearance()).toEqual({
       mode: 'dark',
       light: 'paper',
-      dark: 'dark',
+      dark: 'catppuccin-mocha',
     });
     expect((await h.alice.get('/v1/settings/themes')).body).toEqual({
       themes: [],
@@ -302,5 +310,151 @@ describe('custom themes', () => {
   it('needs a signed-in user', async () => {
     const anonymous = await fetch(new URL('/v1/settings/themes', h.server.url));
     expect(anonymous.status).toBe(401);
+  });
+});
+
+describe('palette themes (v2)', () => {
+  const dusk = {
+    name: 'Dusk',
+    scheme: 'dark',
+    palette: {
+      neutrals: { base: '#17151f', text: '#e4e0f2' },
+      accents: { violet: '#b69cf0', rose: '#f09aa8' },
+      hues: { purple: 'violet', red: 'rose' },
+    },
+  };
+
+  it('creates a theme from a palette and completes it', async () => {
+    await clearAlice();
+    const response = await h.alice.post('/v1/settings/themes', dusk);
+    expect(response.status).toBe(201);
+    expect(response.headers.get('deprecation')).toBeNull();
+    const created = response.body as {
+      id: string;
+      version: number;
+      palette: { neutrals: object; hues: object };
+      roles: object;
+      tokens: Record<string, string>;
+    };
+    expect(created).toMatchObject({ version: 2, name: 'Dusk', roles: {} });
+    expect(Object.keys(created.palette.neutrals)).toHaveLength(12);
+    expect(Object.keys(created.palette.hues)).toHaveLength(8);
+    // Clients before v2 paint the tokens taken from the resolved roles.
+    expect(created.tokens.background).toBe('#17151f');
+    const list = await h.alice.get('/v1/settings/themes');
+    expect(list.body).toEqual({ themes: [created] });
+  });
+
+  it('converts a v1 body, keeps its tokens and marks it deprecated', async () => {
+    await clearAlice();
+    const response = await h.alice.post('/v1/settings/themes', theme('Mint'));
+    expect(response.status).toBe(201);
+    expect(response.headers.get('deprecation')).toBe('@1790726400');
+    expect(response.body).toMatchObject({
+      version: 2,
+      tokens: lightTheme,
+      palette: { neutrals: { base: lightTheme.background } },
+    });
+  });
+
+  it('lists a theme stored as v1 as v2, and writes it back as v2', async () => {
+    await clearAlice();
+    await h.db
+      .insertInto('user_settings')
+      .values({
+        user_id: await userIdOf(h.alice),
+        key: 'themes',
+        value: JSON.stringify([{ id: 'old-one', ...theme('Old') }]),
+        updated_at: new Date().toISOString(),
+      })
+      .execute();
+    expect((await h.alice.get('/v1/settings/themes')).body).toMatchObject({
+      themes: [{ id: 'old-one', version: 2, tokens: lightTheme }],
+    });
+    await create(dusk);
+    const row = await h.db
+      .selectFrom('user_settings')
+      .select('value')
+      .where('user_id', '=', await userIdOf(h.alice))
+      .where('key', '=', 'themes')
+      .executeTakeFirstOrThrow();
+    const stored = JSON.parse(row.value) as { id: string; version?: number }[];
+    expect(stored.map((t) => t.version)).toEqual([2, 2]);
+    expect(stored[0]?.id).toBe('old-one');
+  });
+
+  it('refuses a role that cannot meet contrast with fitting off', async () => {
+    const response = await h.alice.post('/v1/settings/themes', {
+      ...dusk,
+      name: 'Exact',
+      roles: { 'hero-ok': { slot: 'surface1', fit: 'off' } },
+    });
+    expect(response.status).toBe(422);
+    const { code, errors } = response.body as {
+      code: string;
+      errors: { path: string; message: string }[];
+    };
+    expect(code).toBe('theme_contrast');
+    expect(errors.map((error) => error.path)).toEqual(['/roles/hero-ok']);
+    expect(errors[0]?.message).toMatch(/^hero-ok on card: .* needs 3:1$/);
+  });
+
+  it('refuses a role naming a colour the palette lacks', async () => {
+    const response = await h.alice.post('/v1/settings/themes', {
+      ...dusk,
+      name: 'Typo',
+      roles: { ring: { slot: 'lavendr' } },
+    });
+    expect(response.status).toBe(422);
+    expect(response.body).toMatchObject({
+      errors: [{ path: '/roles/ring' }],
+    });
+  });
+
+  it('refuses the name of a shipped flavour', async () => {
+    const response = await h.alice.post('/v1/settings/themes', {
+      ...dusk,
+      name: 'catppuccin mocha',
+    });
+    expect(response.status).toBe(409);
+    expect(response.body).toMatchObject({ code: 'theme_name_taken' });
+  });
+
+  it('reads the earlier built-in ids as Allotr Classic', async () => {
+    const saved = await h.alice.put('/v1/settings/appearance', {
+      mode: 'light',
+      light: 'light',
+      dark: 'dark',
+    });
+    expect(saved.body).toEqual({
+      mode: 'light',
+      light: 'allotr-classic-light',
+      dark: 'allotr-classic-dark',
+    });
+    await h.db
+      .updateTable('user_settings')
+      .set({ value: '{"mode":"light","light":"light","dark":"harbour"}' })
+      .where('user_id', '=', await userIdOf(h.alice))
+      .where('key', '=', 'appearance')
+      .execute();
+    expect(await aliceAppearance()).toEqual({
+      mode: 'light',
+      light: 'allotr-classic-light',
+      dark: 'harbour',
+    });
+  });
+
+  it('takes any shipped flavour in its slot', async () => {
+    const saved = await h.alice.put('/v1/settings/appearance', {
+      mode: 'dark',
+      light: 'rose-pine-dawn',
+      dark: 'tokyo-night-storm',
+    });
+    expect(saved.status).toBe(200);
+    const wrong = await h.alice.put('/v1/settings/appearance', {
+      mode: 'dark',
+      light: 'nord',
+    });
+    expect(wrong.body).toMatchObject({ code: 'theme_scheme_mismatch' });
   });
 });

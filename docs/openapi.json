@@ -6,7 +6,417 @@
     "description": "Authentication (sign-in, two-factor, sessions) is served under /v1/auth."
   },
   "components": {
-    "schemas": {},
+    "schemas": {
+      "Palette": {
+        "type": "object",
+        "properties": {
+          "neutrals": {
+            "type": "object",
+            "properties": {
+              "crust": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "mantle": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface2": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay2": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "subtext0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "subtext1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "text": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              }
+            },
+            "required": [
+              "crust",
+              "mantle",
+              "base",
+              "surface0",
+              "surface1",
+              "surface2",
+              "overlay0",
+              "overlay1",
+              "overlay2",
+              "subtext0",
+              "subtext1",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "accents": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+            }
+          },
+          "hues": {
+            "type": "object",
+            "properties": {
+              "red": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "orange": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "yellow": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "green": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "cyan": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "blue": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "purple": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "pink": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              }
+            },
+            "required": [
+              "red",
+              "orange",
+              "yellow",
+              "green",
+              "cyan",
+              "blue",
+              "purple",
+              "pink"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "neutrals",
+          "accents",
+          "hues"
+        ],
+        "additionalProperties": false
+      },
+      "ThemeRoles": {
+        "type": "object",
+        "properties": {
+          "canvas": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "chrome": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "card": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "card-raised": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "inverse": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "primary": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "info": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "success": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "warning": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "danger": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "primary-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "info-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "success-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "warning-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "danger-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "text": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "text-muted": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "on-inverse": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "on-primary": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "on-primary-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "on-danger-container": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "outline": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "outline-variant": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "ring": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "hero-ok": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "hero-tight": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "hero-over": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "positive": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "negative": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-1": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-2": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-3": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-4": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-5": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-6": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-7": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "series-8": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "pace": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "reserved": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/ThemeRoleEntry"
+          }
+        }
+      },
+      "ThemeRoleEntry": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "alpha": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "over": {
+            "type": "string",
+            "enum": [
+              "canvas",
+              "chrome",
+              "card",
+              "card-raised",
+              "inverse"
+            ]
+          },
+          "fit": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "off"
+            ]
+          }
+        },
+        "required": [
+          "slot"
+        ],
+        "additionalProperties": false
+      },
+      "PartialPalette": {
+        "type": "object",
+        "properties": {
+          "neutrals": {
+            "type": "object",
+            "properties": {
+              "crust": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "mantle": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "surface2": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "overlay2": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "subtext0": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "subtext1": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              },
+              "text": {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+              }
+            },
+            "required": [
+              "base",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "accents": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+            }
+          },
+          "hues": {
+            "type": "object",
+            "properties": {
+              "red": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "orange": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "yellow": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "green": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "cyan": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "blue": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "purple": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              },
+              "pink": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,23}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "neutrals",
+          "accents",
+          "hues"
+        ],
+        "additionalProperties": false
+      }
+    },
     "parameters": {}
   },
   "paths": {
@@ -11685,7 +12095,7 @@
           "Settings"
         ],
         "summary": "Appearance settings",
-        "description": "`system` follows the device light or dark preference. `light` and `dark` name the theme used for each scheme: a shipped theme id or a custom theme id.",
+        "description": "`system` follows the device light or dark preference. `light` and `dark` name the theme used for each scheme: a shipped theme id or a custom theme id. Before any change, they are Catppuccin Latte and Mocha. The earlier ids `light` and `dark` read as `allotr-classic-light` and `allotr-classic-dark`.",
         "responses": {
           "200": {
             "description": "Current appearance settings.",
@@ -12254,13 +12664,32 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 64
+                          },
+                          "version": {
+                            "type": "number",
+                            "enum": [
+                              2
+                            ]
+                          },
+                          "family": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                          },
+                          "palette": {
+                            "$ref": "#/components/schemas/Palette"
+                          },
+                          "roles": {
+                            "$ref": "#/components/schemas/ThemeRoles"
                           }
                         },
                         "required": [
                           "name",
                           "scheme",
                           "tokens",
-                          "id"
+                          "id",
+                          "version",
+                          "palette",
+                          "roles"
                         ]
                       }
                     }
@@ -12389,118 +12818,154 @@
           "Settings"
         ],
         "summary": "Add a custom theme",
-        "description": "Every theme must pass the contrast validator.",
+        "description": "Send a v2 body, `{ name, scheme, family?, palette, roles? }`: the palette is completed and each role resolved with contrast fitting (ADR 0016). A v1 body, `{ name, scheme, tokens }`, is still accepted, checked by the v1 contrast pairs and converted; it is deprecated, and the response carries a `Deprecation` header. Responses are v2 and keep `tokens` for clients before v2: the tokens sent, or ones taken from the resolved roles.",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                  },
-                  "scheme": {
-                    "type": "string",
-                    "enum": [
-                      "light",
-                      "dark"
-                    ]
-                  },
-                  "tokens": {
+                "anyOf": [
+                  {
                     "type": "object",
                     "properties": {
-                      "background": {
+                      "name": {
                         "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        "minLength": 1,
+                        "maxLength": 40
                       },
-                      "foreground": {
+                      "scheme": {
                         "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        "enum": [
+                          "light",
+                          "dark"
+                        ]
                       },
-                      "muted": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "muted-foreground": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "plot": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "today": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "today-text": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "over": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "positive": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "negative": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "primary": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "primary-foreground": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "border": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "input": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "ring": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "destructive": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      "tokens": {
+                        "type": "object",
+                        "properties": {
+                          "background": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "muted": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "muted-foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "plot": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "today": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "today-text": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "over": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "positive": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "negative": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "primary": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "primary-foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "border": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "input": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "ring": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "destructive": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          }
+                        },
+                        "required": [
+                          "background",
+                          "foreground",
+                          "muted",
+                          "muted-foreground",
+                          "plot",
+                          "today",
+                          "today-text",
+                          "over",
+                          "positive",
+                          "negative",
+                          "primary",
+                          "primary-foreground",
+                          "border",
+                          "input",
+                          "ring",
+                          "destructive"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
-                      "background",
-                      "foreground",
-                      "muted",
-                      "muted-foreground",
-                      "plot",
-                      "today",
-                      "today-text",
-                      "over",
-                      "positive",
-                      "negative",
-                      "primary",
-                      "primary-foreground",
-                      "border",
-                      "input",
-                      "ring",
-                      "destructive"
-                    ],
-                    "additionalProperties": false
+                      "name",
+                      "scheme",
+                      "tokens"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "scheme": {
+                        "type": "string",
+                        "enum": [
+                          "light",
+                          "dark"
+                        ]
+                      },
+                      "family": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                      },
+                      "palette": {
+                        "$ref": "#/components/schemas/PartialPalette"
+                      },
+                      "roles": {
+                        "$ref": "#/components/schemas/ThemeRoles"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "scheme",
+                      "palette"
+                    ]
                   }
-                },
-                "required": [
-                  "name",
-                  "scheme",
-                  "tokens"
                 ]
               }
             }
@@ -12618,13 +13083,32 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 64
+                    },
+                    "version": {
+                      "type": "number",
+                      "enum": [
+                        2
+                      ]
+                    },
+                    "family": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                    },
+                    "palette": {
+                      "$ref": "#/components/schemas/Palette"
+                    },
+                    "roles": {
+                      "$ref": "#/components/schemas/ThemeRoles"
                     }
                   },
                   "required": [
                     "name",
                     "scheme",
                     "tokens",
-                    "id"
+                    "id",
+                    "version",
+                    "palette",
+                    "roles"
                   ]
                 }
               }
@@ -12851,7 +13335,7 @@
             }
           },
           "422": {
-            "description": "Some colour pairs fail WCAG 2.2 AA (`theme_contrast`); `errors` lists each failing pair at `/tokens/<foreground>`.",
+            "description": "Some colours fail WCAG 2.2 AA (`theme_contrast`). For a v2 body, `errors` lists each role that cannot meet its contrast at `/roles/<role>` (a role the body sets, or an unknown slot), or at `/palette` (a role from the default map); for a v1 body, each failing pair at `/tokens/<foreground>`.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12914,7 +13398,7 @@
           "Settings"
         ],
         "summary": "Change a custom theme",
-        "description": "If the scheme changes while the theme is in use, that slot goes back to its default theme.",
+        "description": "Send a v2 body, `{ name, scheme, family?, palette, roles? }`: the palette is completed and each role resolved with contrast fitting (ADR 0016). A v1 body, `{ name, scheme, tokens }`, is still accepted, checked by the v1 contrast pairs and converted; it is deprecated, and the response carries a `Deprecation` header. Responses are v2 and keep `tokens` for clients before v2: the tokens sent, or ones taken from the resolved roles. If the scheme changes while the theme is in use, that slot goes back to its default theme.",
         "parameters": [
           {
             "schema": {
@@ -12931,113 +13415,149 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                  },
-                  "scheme": {
-                    "type": "string",
-                    "enum": [
-                      "light",
-                      "dark"
-                    ]
-                  },
-                  "tokens": {
+                "anyOf": [
+                  {
                     "type": "object",
                     "properties": {
-                      "background": {
+                      "name": {
                         "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        "minLength": 1,
+                        "maxLength": 40
                       },
-                      "foreground": {
+                      "scheme": {
                         "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                        "enum": [
+                          "light",
+                          "dark"
+                        ]
                       },
-                      "muted": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "muted-foreground": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "plot": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "today": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "today-text": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "over": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "positive": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "negative": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "primary": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "primary-foreground": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "border": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "input": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "ring": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
-                      },
-                      "destructive": {
-                        "type": "string",
-                        "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                      "tokens": {
+                        "type": "object",
+                        "properties": {
+                          "background": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "muted": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "muted-foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "plot": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "today": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "today-text": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "over": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "positive": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "negative": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "primary": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "primary-foreground": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "border": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "input": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "ring": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          },
+                          "destructive": {
+                            "type": "string",
+                            "pattern": "^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i"
+                          }
+                        },
+                        "required": [
+                          "background",
+                          "foreground",
+                          "muted",
+                          "muted-foreground",
+                          "plot",
+                          "today",
+                          "today-text",
+                          "over",
+                          "positive",
+                          "negative",
+                          "primary",
+                          "primary-foreground",
+                          "border",
+                          "input",
+                          "ring",
+                          "destructive"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
-                      "background",
-                      "foreground",
-                      "muted",
-                      "muted-foreground",
-                      "plot",
-                      "today",
-                      "today-text",
-                      "over",
-                      "positive",
-                      "negative",
-                      "primary",
-                      "primary-foreground",
-                      "border",
-                      "input",
-                      "ring",
-                      "destructive"
-                    ],
-                    "additionalProperties": false
+                      "name",
+                      "scheme",
+                      "tokens"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "scheme": {
+                        "type": "string",
+                        "enum": [
+                          "light",
+                          "dark"
+                        ]
+                      },
+                      "family": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                      },
+                      "palette": {
+                        "$ref": "#/components/schemas/PartialPalette"
+                      },
+                      "roles": {
+                        "$ref": "#/components/schemas/ThemeRoles"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "scheme",
+                      "palette"
+                    ]
                   }
-                },
-                "required": [
-                  "name",
-                  "scheme",
-                  "tokens"
                 ]
               }
             }
@@ -13155,13 +13675,32 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 64
+                    },
+                    "version": {
+                      "type": "number",
+                      "enum": [
+                        2
+                      ]
+                    },
+                    "family": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                    },
+                    "palette": {
+                      "$ref": "#/components/schemas/Palette"
+                    },
+                    "roles": {
+                      "$ref": "#/components/schemas/ThemeRoles"
                     }
                   },
                   "required": [
                     "name",
                     "scheme",
                     "tokens",
-                    "id"
+                    "id",
+                    "version",
+                    "palette",
+                    "roles"
                   ]
                 }
               }
@@ -13443,7 +13982,7 @@
             }
           },
           "422": {
-            "description": "Some colour pairs fail WCAG 2.2 AA (`theme_contrast`); `errors` lists each failing pair at `/tokens/<foreground>`.",
+            "description": "Some colours fail WCAG 2.2 AA (`theme_contrast`). For a v2 body, `errors` lists each role that cannot meet its contrast at `/roles/<role>` (a role the body sets, or an unknown slot), or at `/palette` (a role from the default map); for a v1 body, each failing pair at `/tokens/<foreground>`.",
             "content": {
               "application/problem+json": {
                 "schema": {
