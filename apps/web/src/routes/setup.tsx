@@ -1,11 +1,20 @@
-import { setupSteps, type SetupState, type SetupStep } from '@allotr/shared';
+import {
+  formatMoney,
+  setupSteps,
+  type SetupState,
+  type SetupStep,
+  type TodayView,
+} from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
+import { StepPills } from '@/components/step-pills';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { PageState } from '@/features/cycles/parts';
+import { formatLongDay } from '@/features/today/format';
 import {
   AccountsStep,
   BillsStep,
@@ -17,6 +26,7 @@ import { errorMessage } from '@/lib/problem';
 import { billsQuery } from '@/lib/settings';
 import { afterStep, nextStep, saveSetup, setupQuery } from '@/lib/setup';
 import { t } from '@/messages/t';
+import { DigitRoller } from '@/motion/digit-roller';
 
 function useSaveSetup() {
   const queryClient = useQueryClient();
@@ -26,6 +36,63 @@ function useSaveSetup() {
       queryClient.setQueryData(setupQuery.queryKey, saved);
     },
   });
+}
+
+// The end of setup (spec §11.7): the first daily number rolls up from
+// zero, with the days to payday under it. The figure is the server's;
+// only its digits start at 0 for the roll.
+function FirstNumber({
+  today,
+  locale,
+  total,
+  onGo,
+}: {
+  today: TodayView;
+  locale: string;
+  total: number;
+  onGo: () => void;
+}) {
+  const value = formatMoney(today.leftToday, locale);
+  const [shown, setShown] = useState(() => value.replace(/\d/gu, '0'));
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setShown(value);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [value]);
+  return (
+    <Card variant="hero" className="axis-in grid gap-4">
+      <StepPills current={total + 1} total={total} />
+      <h2
+        ref={heading}
+        tabIndex={-1}
+        className="text-title-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+      >
+        {t('setup.reveal.title')}
+      </h2>
+      <p className="text-text-muted">{t('setup.reveal.intro')}</p>
+      <p className="text-display text-hero-ok">
+        <DigitRoller value={shown} label={value} testId="first-number" />
+      </p>
+      <p>
+        {today.overdue
+          ? t('cycle.overdue')
+          : t('cycle.payday', {
+              date: formatLongDay(today.cycleEnd, locale),
+              count: today.daysLeft,
+            })}
+      </p>
+      <Button className="w-fit" onClick={onGo}>
+        {t('setup.reveal.go')}
+      </Button>
+    </Card>
+  );
 }
 
 // Setup after first sign-in (FR-W7): currency and region, payday, spending
@@ -43,6 +110,11 @@ export function SetupPage() {
   const [announcement, setAnnouncement] = useState('');
   const step = setup.data === undefined ? null : nextStep(setup.data);
   const shown = useRef<SetupStep | null>(null);
+  // The first step shown is simply there; later ones slide in.
+  const [first, setFirst] = useState<SetupStep | null>(null);
+  if (first === null && step !== null) setFirst(step);
+  const [revealed, setRevealed] = useState(false);
+  const queryClient = useQueryClient();
 
   // A new step takes focus on its heading, which says where the user is.
   useEffect(() => {
@@ -51,6 +123,22 @@ export function SetupPage() {
       heading.current?.focus();
     shown.current = step;
   }, [step]);
+
+  if (revealed && settings.data !== undefined && today.data !== undefined)
+    return (
+      <Page title={t('setup.title')}>
+        <div className="mx-auto mt-8 w-full max-w-[440px]">
+          <FirstNumber
+            today={today.data}
+            locale={settings.data.locale}
+            total={setupSteps.length}
+            onGo={() => {
+              void navigate({ to: '/today' });
+            }}
+          />
+        </div>
+      </Page>
+    );
 
   if (
     setup.data === undefined ||
@@ -69,16 +157,27 @@ export function SetupPage() {
     );
 
   const state = setup.data;
-  const go = (next: SetupState) => {
+  // Finishing the last step shows the first number; skipping the rest
+  // goes straight to Today.
+  const go = (next: SetupState, reveal: boolean) => {
     save.mutate(next, {
       onSuccess: (saved) => {
-        if (saved.finished) void navigate({ to: '/today' });
+        if (!saved.finished) return;
+        if (!reveal) {
+          void navigate({ to: '/today' });
+          return;
+        }
+        void queryClient
+          .invalidateQueries({ queryKey: todayQuery.queryKey })
+          .then(() => {
+            setRevealed(true);
+          });
       },
     });
   };
   const handled = () => {
     setAnnouncement('');
-    go(afterStep(state, step));
+    go(afterStep(state, step), true);
   };
   const props = {
     busy: save.isPending,
@@ -89,75 +188,86 @@ export function SetupPage() {
 
   return (
     <Page title={t('setup.title')} intro={t('setup.intro')}>
-      <section aria-labelledby="setup-step" className="mt-8">
-        <h2
-          id="setup-step"
-          ref={heading}
-          tabIndex={-1}
-          className="text-xl font-semibold outline-none"
-        >
-          {t('setup.step', {
-            n: number,
-            total: setupSteps.length,
-            title: t(`setup.${step}.title`),
-          })}
-        </h2>
-        <p className="mt-1 max-w-prose text-muted-foreground">
-          {t(`setup.${step}.intro`)}
-        </p>
-        <p aria-live="polite" className="sr-only">
-          {announcement}
-        </p>
-        {step === 'region' ? (
-          <RegionStep settings={settings.data} {...props} />
-        ) : step === 'payday' ? (
-          <PaydayStep settings={settings.data} {...props} />
-        ) : step === 'spending' || step === 'savings' ? (
-          <AccountsStep
+      <div className="mx-auto mt-8 grid w-full max-w-[440px] gap-6">
+        <Card className="grid gap-5 overflow-hidden rounded-2xl p-6 medium:p-8">
+          <StepPills current={number} total={setupSteps.length} />
+          <section
             key={step}
-            group={step === 'spending' ? 'on' : 'off'}
-            accounts={accounts.data.accounts}
-            settings={settings.data}
-            today={today.data.today}
-            onAnnounce={setAnnouncement}
-            {...props}
-          />
-        ) : (
-          <BillsStep
-            bills={bills.data.bills}
-            accounts={accounts.data.accounts}
-            locale={settings.data.locale}
-            onAnnounce={setAnnouncement}
-            {...props}
-          />
-        )}
-        <FormError message={save.isError ? errorMessage(save.error) : null} />
-      </section>
+            aria-labelledby="setup-step"
+            className={step === first ? undefined : 'axis-in'}
+          >
+            <h2
+              id="setup-step"
+              ref={heading}
+              tabIndex={-1}
+              className="text-title-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            >
+              {t('setup.step', {
+                n: number,
+                total: setupSteps.length,
+                title: t(`setup.${step}.title`),
+              })}
+            </h2>
+            <p className="mt-1 max-w-prose text-muted-foreground">
+              {t(`setup.${step}.intro`)}
+            </p>
+            <p aria-live="polite" className="sr-only">
+              {announcement}
+            </p>
+            {step === 'region' ? (
+              <RegionStep settings={settings.data} {...props} />
+            ) : step === 'payday' ? (
+              <PaydayStep settings={settings.data} {...props} />
+            ) : step === 'spending' || step === 'savings' ? (
+              <AccountsStep
+                key={step}
+                group={step === 'spending' ? 'on' : 'off'}
+                accounts={accounts.data.accounts}
+                settings={settings.data}
+                today={today.data.today}
+                onAnnounce={setAnnouncement}
+                {...props}
+              />
+            ) : (
+              <BillsStep
+                bills={bills.data.bills}
+                accounts={accounts.data.accounts}
+                locale={settings.data.locale}
+                onAnnounce={setAnnouncement}
+                {...props}
+              />
+            )}
+            <FormError
+              message={save.isError ? errorMessage(save.error) : null}
+            />
+          </section>
+        </Card>
 
-      <div className="mt-12 border-t pt-6">
-        {step === 'region' ? (
-          <p className="mb-3 max-w-prose text-sm text-muted-foreground">
-            {t('setup.importHint')}
+        <div className="px-2">
+          {step === 'region' ? (
+            <p className="mb-3 max-w-prose text-sm text-muted-foreground">
+              {t('setup.importHint')}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="link"
+            className="h-11 px-0"
+            disabled={save.isPending}
+            aria-describedby="setup-skip-rest-hint"
+            onClick={() => {
+              go({ ...state, finished: true }, false);
+            }}
+          >
+            {t('setup.skipRest')}
+          </Button>
+          <p
+            id="setup-skip-rest-hint"
+            className="max-w-prose text-sm text-muted-foreground"
+          >
+            {t('setup.skipRestHint')}
           </p>
-        ) : null}
-        <Button
-          type="button"
-          variant="link"
-          className="h-11 px-0"
-          disabled={save.isPending}
-          aria-describedby="setup-skip-rest-hint"
-          onClick={() => {
-            go({ ...state, finished: true });
-          }}
-        >
-          {t('setup.skipRest')}
-        </Button>
-        <p
-          id="setup-skip-rest-hint"
-          className="max-w-prose text-sm text-muted-foreground"
-        >
-          {t('setup.skipRestHint')}
-        </p>
+        </div>
       </div>
     </Page>
   );

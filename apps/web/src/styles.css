@@ -229,6 +229,10 @@
 @utility chart-draw {
   animation: check-draw var(--dur-gentle) var(--ease-gentle) backwards;
 }
+/* Shared axis X (spec §7.3): the next step slides in 30 px with a fade. */
+@utility axis-in {
+  animation: axis-in var(--dur-smooth) var(--ease-smooth) backwards;
+}
 @utility rise-in {
   animation: rise-in var(--dur-smooth) var(--ease-smooth);
 }
@@ -261,6 +265,12 @@
 @keyframes fade-out {
   to {
     opacity: 0;
+  }
+}
+@keyframes axis-in {
+  from {
+    opacity: 0;
+    translate: 30px 0;
   }
 }
 @keyframes rise-in {

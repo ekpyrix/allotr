@@ -46,6 +46,23 @@ async function toCodeStep(page: Page) {
   ).toBeVisible();
 }
 
+test('the sign-in card is centred and at most 440 px wide', async ({
+  page,
+}) => {
+  await page.goto('/sign-in');
+  const heading = page.getByRole('heading', { level: 1, name: 'Sign in' });
+  const card = page.locator('main > div').filter({ has: heading });
+  const box = await card.boundingBox();
+  const viewport = page.viewportSize();
+  if (box === null || viewport === null) throw new Error('no layout');
+  expect(box.width).toBeLessThanOrEqual(440);
+  // Centred: equal space either side, within a pixel.
+  expect(
+    Math.abs(box.x - (viewport.width - box.x - box.width)),
+  ).toBeLessThanOrEqual(1);
+  await expectAccessible(page);
+});
+
 test('signs in with a backup code', async ({ page }) => {
   const [code] = backupCodes;
   if (code === undefined) throw new Error('no backup codes');
