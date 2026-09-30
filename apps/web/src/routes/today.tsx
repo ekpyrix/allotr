@@ -8,6 +8,10 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AttentionList } from '@/features/today/attention-list';
 import { entryRows } from '@/features/today/entries';
+import {
+  FirstPaycheck,
+  needsFirstPaycheck,
+} from '@/features/today/first-paycheck';
 import { FigureTiles } from '@/features/today/figure-tiles';
 import { formatLongDay } from '@/features/today/format';
 import { HeroCard } from '@/features/today/hero-card';
@@ -117,6 +121,15 @@ export function TodayPage({ user }: { user: SessionUser }) {
             <p className="max-w-prose text-body-lg">
               {t('today.greeting', { name: user.name })}
             </p>
+          ) : null}
+          {accounts.data !== undefined &&
+          categories.data !== undefined &&
+          needsFirstPaycheck(
+            figures.cycle.openedBy,
+            accounts.data.accounts,
+            categories.data.categories,
+          ) ? (
+            <FirstPaycheck />
           ) : null}
           <AttentionList figures={figures} locale={locale} />
         </div>

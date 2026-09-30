@@ -43,6 +43,7 @@ import { readLastUsed, rememberChoice } from './last-used.ts';
 import {
   categoryOptions,
   newDraft,
+  paycheckDraft,
   switchKind,
   withToday,
   type DraftDefaults,
@@ -85,6 +86,7 @@ export function QuickEntryForm({
   onSaved,
   onSavingChange,
   edit,
+  preset,
 }: {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
@@ -96,6 +98,8 @@ export function QuickEntryForm({
   onSavingChange: (saving: boolean) => void;
   /** Replace this entry instead of recording a new one. */
   edit?: { id: string; draft: QuickEntryDraft } | undefined;
+  /** Start from an income entry in the paycheck category. */
+  preset?: 'paycheck' | undefined;
 }) {
   const [defaults] = useState<DraftDefaults>(() => ({
     accounts,
@@ -103,7 +107,11 @@ export function QuickEntryForm({
     today,
     lastUsed: readLastUsed(storage()),
   }));
-  const [typed, setDraft] = useState(() => edit?.draft ?? newDraft(defaults));
+  const [typed, setDraft] = useState(
+    () =>
+      edit?.draft ??
+      (preset === 'paycheck' ? paycheckDraft(defaults) : newDraft(defaults)),
+  );
   // Until the user picks a date it follows `today`, which can be corrected
   // by a refetch after the form opened on a cached value. An edit keeps the
   // entry's own date.

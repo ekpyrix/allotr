@@ -193,6 +193,12 @@ export const en = {
       timeMarker: 'Where spending would be at an even pace',
       details: 'See this cycle',
     },
+    firstPaycheck: {
+      title: 'Start your first pay cycle',
+      intro:
+        'A pay cycle starts with a paycheck. Record your latest one, with its amount, date and the account it landed in, and your daily number counts from that day.',
+      action: 'Record a paycheck',
+    },
     attention: {
       title: 'Needs attention',
       overdue:

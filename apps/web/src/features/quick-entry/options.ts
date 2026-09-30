@@ -81,6 +81,18 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
   };
 }
 
+/**
+ * An income entry in the paycheck category, for recording the first
+ * paycheck. Without a paycheck category it is a plain income draft.
+ */
+export function paycheckDraft(defaults: DraftDefaults): QuickEntryDraft {
+  const draft = switchKind(newDraft(defaults), 'income', defaults);
+  const paycheck = defaults.categories.find(
+    (c) => c.kind === 'income' && c.isPaycheck && c.mergedIntoId === null,
+  );
+  return paycheck === undefined ? draft : { ...draft, categoryId: paycheck.id };
+}
+
 /** Keeps what was typed; accounts and category follow the new kind. */
 export function switchKind(
   draft: QuickEntryDraft,

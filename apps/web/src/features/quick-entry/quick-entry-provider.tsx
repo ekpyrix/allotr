@@ -26,11 +26,14 @@ import {
 } from '@/lib/shortcuts';
 import { t } from '@/messages/t';
 import { haptic } from '@/motion/haptics';
-import { QuickEntryDialog } from './quick-entry-dialog.tsx';
+import {
+  QuickEntryDialog,
+  type QuickEntryPreset,
+} from './quick-entry-dialog.tsx';
 
 interface QuickEntryContextValue {
   /** Pass the element that was clicked: Safari does not focus buttons. */
-  open: (opener?: HTMLElement) => void;
+  open: (opener?: HTMLElement, preset?: QuickEntryPreset) => void;
   shortcutsEnabled: boolean;
   setShortcutsEnabled: (enabled: boolean) => void;
 }
@@ -57,6 +60,7 @@ const SAVED_MESSAGE_MS = 6000;
 // Lives in the app shell, so the form opens from every signed-in view.
 export function QuickEntryProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
+  const [preset, setPreset] = useState<QuickEntryPreset | undefined>();
   const opener = useRef<HTMLElement | null>(null);
   // Off when the dialog closes to navigate: the new view has focus by then.
   const restoreFocus = useRef(true);
@@ -72,7 +76,8 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
 
   // Radix only returns focus to its own trigger, and this dialog has none:
   // remember the opener (or what had focus) and give focus back on close.
-  const show = useCallback((from?: HTMLElement) => {
+  const show = useCallback((from?: HTMLElement, start?: QuickEntryPreset) => {
+    setPreset(start);
     opener.current =
       from ??
       (document.activeElement instanceof HTMLElement
@@ -200,6 +205,7 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
       {children}
       <QuickEntryDialog
         open={isOpen}
+        preset={preset}
         onOpenChange={setOpen}
         onSaved={(message, id) => {
           pendingSaved.current = { message, id };

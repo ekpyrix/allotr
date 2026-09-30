@@ -140,6 +140,9 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   earlier in the cycle adds to it. Undoing a paycheck merges its cycle back.
 - **Fixed-period mode** (monthly on day N, every two weeks, weekly) serves
   irregular income: income lands in *ready to assign* and funds each period.
+- Until a paycheck opens a cycle, Today offers to record the first one (an
+  income entry in the paycheck category, saved like any other entry). It is
+  the only way to open a cycle.
 - The first cycle opens on the day the user joined, from opening balances,
   or with an older paycheck from imported history. Back-dated spending never moves it.
 - The first cycle opens on the day the user joined. An imported history
