@@ -17,6 +17,8 @@ export type Snack = Readonly<{
   action?: Readonly<{ label: string; onAction: () => void }>;
   /** `error` is announced assertively. */
   tone?: 'status' | 'error';
+  /** Not announced here, because the caller announces it itself. */
+  silent?: boolean;
 }>;
 
 type Shown = Snack & { id: number };
@@ -75,13 +77,14 @@ function SnackbarHost({
   const resume = () => countdown.current?.resume();
 
   const error = shown?.tone === 'error';
+  const spoken = shown !== null && shown.silent !== true;
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 medium:bottom-6">
       <p aria-live="polite" data-slot="snackbar-status" className="sr-only">
-        {shown !== null && !error ? shown.message : ''}
+        {spoken && !error ? shown.message : ''}
       </p>
       <p aria-live="assertive" data-slot="snackbar-alert" className="sr-only">
-        {shown !== null && error ? shown.message : ''}
+        {spoken && error ? shown.message : ''}
       </p>
       {shown === null ? null : (
         <div

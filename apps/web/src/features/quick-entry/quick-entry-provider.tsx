@@ -8,11 +8,24 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { formatMoney } from '@allotr/shared';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSnackbar } from '@/components/ui/snackbar';
+import { ApiError } from '@/lib/api';
+import {
+  entryQueryKeys,
+  ledgerSettingsQuery,
+  reverseTransaction,
+  todayQuery,
+} from '@/lib/ledger';
+import { errorMessage } from '@/lib/problem';
 import {
   isQuickEntryShortcut,
   readShortcutsEnabled,
   saveShortcutsEnabled,
 } from '@/lib/shortcuts';
+import { t } from '@/messages/t';
+import { haptic } from '@/motion/haptics';
 import { QuickEntryDialog } from './quick-entry-dialog.tsx';
 
 interface QuickEntryContextValue {
@@ -50,7 +63,9 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
   const [saved, setSaved] = useState('');
   // Shown once the dialog is gone: while it is open everything behind it is
   // aria-hidden, so text set then would not be announced.
-  const pendingSaved = useRef('');
+  const pendingSaved = useRef<{ message: string; id: string } | null>(null);
+  const queryClient = useQueryClient();
+  const snack = useSnackbar();
   const [shortcutsEnabled, setEnabled] = useState(() =>
     readShortcutsEnabled(storage()),
   );
@@ -64,7 +79,7 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
         ? document.activeElement
         : null);
     restoreFocus.current = true;
-    pendingSaved.current = '';
+    pendingSaved.current = null;
     setSaved('');
     setOpen(true);
   }, []);
@@ -107,6 +122,67 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
     };
   }, [saved]);
 
+  // An undo posts a reversal (spec §9.3): the entry stays in the ledger,
+  // marked undone, and the figures follow.
+  const undo = useCallback(
+    async (id: string) => {
+      try {
+        await reverseTransaction(id);
+      } catch (error) {
+        if (!(
+          error instanceof ApiError && error.problem.code === 'already_reversed'
+        )) {
+          const message = errorMessage(error);
+          setSaved(message);
+          snack({ message, tone: 'error', silent: true });
+          haptic('error');
+          return;
+        }
+      }
+      await Promise.all(
+        entryQueryKeys.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      );
+      setSaved(t('quickEntry.undone'));
+      snack({ message: t('quickEntry.undone'), silent: true });
+    },
+    [queryClient, snack],
+  );
+
+  // Says what was saved and what is left today, from the refreshed
+  // figures, with Undo beside it.
+  const announce = useCallback(
+    async (entry: { message: string; id: string }) => {
+      let message = entry.message;
+      try {
+        const [today, settings] = await Promise.all([
+          queryClient.query({ ...todayQuery, staleTime: 0 }),
+          queryClient.query(ledgerSettingsQuery),
+        ]);
+        message = t('quickEntry.savedLeft', {
+          saved: entry.message,
+          amount: formatMoney(today.leftToday, settings.locale),
+        });
+      } catch {
+        // Offline or failing: the saved message alone still holds.
+      }
+      haptic('save');
+      setSaved(message);
+      snack({
+        message,
+        silent: true,
+        action: {
+          label: t('quickEntry.undo'),
+          onAction: () => {
+            void undo(entry.id);
+          },
+        },
+      });
+    },
+    [queryClient, snack, undo],
+  );
+
   const value = useMemo<QuickEntryContextValue>(
     () => ({
       open: show,
@@ -125,29 +201,24 @@ export function QuickEntryProvider({ children }: { children: ReactNode }) {
       <QuickEntryDialog
         open={isOpen}
         onOpenChange={setOpen}
-        onSaved={(message) => {
-          pendingSaved.current = message;
+        onSaved={(message, id) => {
+          pendingSaved.current = { message, id };
         }}
         onNavigate={() => {
           restoreFocus.current = false;
         }}
         onCloseAutoFocus={() => {
           if (restoreFocus.current) opener.current?.focus();
-          setSaved(pendingSaved.current);
-          pendingSaved.current = '';
+          const entry = pendingSaved.current;
+          pendingSaved.current = null;
+          if (entry !== null) void announce(entry);
         }}
       />
-      {/* Always in the DOM so screen readers hear the change. */}
-      <div
-        role="status"
-        className="pointer-events-none fixed inset-x-4 bottom-24 z-20 flex justify-center md:inset-x-auto md:right-6 md:bottom-6"
-      >
-        {saved === '' ? null : (
-          <p className="rounded-md bg-foreground px-4 py-3 text-sm font-medium text-background shadow-lg">
-            {saved}
-          </p>
-        )}
-      </div>
+      {/* Always in the DOM so screen readers hear the change; the snackbar
+          shows it with Undo. */}
+      <p role="status" className="sr-only">
+        {saved}
+      </p>
     </QuickEntryContext>
   );
 }

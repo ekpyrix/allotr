@@ -56,3 +56,26 @@ export function isQuickEntryShortcut(
     !(target.isContentEditable || TEXT_TAGS.has(target.tagName))
   );
 }
+
+/**
+ * ⌘K or Ctrl+K opens the command palette anywhere; `/` does too, unless
+ * the user is typing. Both follow the same on/off setting.
+ */
+export function isPaletteShortcut(
+  event: ShortcutEvent,
+  enabled: boolean,
+): boolean {
+  if (!enabled || event.repeat || event.isComposing || event.altKey)
+    return false;
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    (event.key === 'k' || event.key === 'K')
+  )
+    return true;
+  if (event.ctrlKey || event.metaKey || event.key !== '/') return false;
+  const { target } = event;
+  return (
+    target === null ||
+    !(target.isContentEditable || TEXT_TAGS.has(target.tagName))
+  );
+}
