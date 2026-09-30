@@ -12,6 +12,7 @@ import {
 } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
+import { DigitRoller } from '@/motion/digit-roller';
 import { archiveWarning, type ArchiveWarning } from './archive-impact.ts';
 import { transferTargets } from './groups.ts';
 
@@ -99,6 +100,41 @@ export function BudgetSwitch({
 }
 
 type Method = Settle['method'];
+
+// Left today before and after, the after figure rolling in from the
+// before one (spec §11.3). Both come from the server.
+function BeforeAfter({
+  warning,
+  locale,
+}: {
+  warning: ArchiveWarning;
+  locale: string;
+}) {
+  const before = formatMoney(warning.before, locale);
+  const after = formatMoney(warning.after, locale);
+  const [shown, setShown] = useState(before);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setShown(after);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [after]);
+  return (
+    <p className="grid gap-1 rounded-lg bg-card p-4">
+      <span className="text-label text-text-muted">
+        {t('accounts.archiveFlow.leftToday')}
+      </span>
+      <span className="flex flex-wrap items-baseline gap-x-3 font-mono text-title-lg tabular-nums">
+        <span className="text-text-muted">{before}</span>
+        <span aria-hidden="true">→</span>
+        <span className="sr-only">{t('accounts.archiveFlow.becomes')}</span>
+        <DigitRoller value={shown} label={after} />
+      </span>
+    </p>
+  );
+}
 
 function warningText(
   warning: ArchiveWarning,
@@ -257,6 +293,9 @@ export function ArchiveFlow({
       <p id={impactId} aria-live="polite" className="empty:hidden">
         {impactText}
       </p>
+      {warning === null ? null : (
+        <BeforeAfter warning={warning} locale={locale} />
+      )}
 
       {archive.isError ? (
         <FormError message={errorMessage(archive.error)} />

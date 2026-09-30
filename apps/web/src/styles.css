@@ -212,6 +212,10 @@
 @utility burst-pill {
   animation: burst 600ms var(--ease-smooth) forwards;
 }
+/* A check mark drawing itself in, by clip-path (transform-free). */
+@utility check-draw {
+  animation: check-draw var(--dur-gentle) var(--ease-gentle) both;
+}
 @utility rise-in {
   animation: rise-in var(--dur-smooth) var(--ease-smooth);
 }
@@ -250,6 +254,14 @@
   from {
     opacity: 0;
     transform: translateY(16px);
+  }
+}
+@keyframes check-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
   }
 }
 @keyframes burst {
@@ -299,7 +311,7 @@ html {
     animation-range: 0 3rem;
   }
   .top-app-bar-title {
-    animation: fade-in linear both;
+    animation: title-rise linear both;
     animation-timeline: scroll(root);
     animation-range: 2rem 4rem;
   }
@@ -313,6 +325,11 @@ html {
 :root[data-motion='reduced'] :is(.top-app-bar, .top-app-bar-title),
 :root[data-motion='off'] :is(.top-app-bar, .top-app-bar-title) {
   animation: none;
+}
+@keyframes title-rise {
+  from {
+    translate: 0 100%;
+  }
 }
 @keyframes top-bar-fill {
   from {

@@ -77,6 +77,7 @@ export {
   billsInCycle,
   dailyFigures,
   dailyFiguresOn,
+  leftTodayChange,
   leftTodayDrop,
 } from './projections/daily.ts';
 export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';

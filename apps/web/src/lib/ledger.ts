@@ -73,6 +73,16 @@ export function cycleQuery(openedOn: LocalDate | undefined) {
   });
 }
 
+/** An account's end-of-day balances; waits until `enabled` (on screen). */
+export function accountHistoryQuery(id: string, days = 30) {
+  return queryOptions({
+    // Under ['accounts'], so whatever refreshes balances refreshes it too.
+    queryKey: ['accounts', id, 'history', days],
+    queryFn: () =>
+      call(endpoints.accountHistory, { params: { id }, query: { days } }),
+  });
+}
+
 /** A cycle day by day, for charts; waits while the day it opened is unknown. */
 export function cycleDaysQuery(openedOn: LocalDate | undefined) {
   return queryOptions({

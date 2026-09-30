@@ -9,8 +9,13 @@ import { startWithTwoUsers, type TwoUsers } from './testing/users.ts';
 
 type Money = { amountMinor: number; currency: string };
 type Impact = {
-  writeOff: { leftTodayDrop: Money };
-  transfers: { toAccountId: string; leftTodayDrop: Money }[];
+  leftToday: Money;
+  writeOff: { leftTodayDrop: Money; leftTodayAfter: Money };
+  transfers: {
+    toAccountId: string;
+    leftTodayDrop: Money;
+    leftTodayAfter: Money;
+  }[];
 };
 
 const started = new Date('2026-03-15T12:00:00Z');
@@ -71,15 +76,25 @@ describe('archive impact', () => {
   it('counts a write-off as spending and a transfer to savings as a lower allowance', async () => {
     expect(await leftToday()).toBe(21_470);
     const result = await impact(h.alice, ids.wallet);
-    expect(result.writeOff).toEqual({ leftTodayDrop: usd(25_000) });
+    expect(result.leftToday).toEqual(usd(21_470));
+    expect(result.writeOff).toEqual({
+      leftTodayDrop: usd(25_000),
+      leftTodayAfter: usd(-3_530),
+    });
     // $3,400.00 / 17 = $200.00 once the $250.00 is in savings.
-    expect(result.transfers).toEqual(
-      expect.arrayContaining([
-        { toAccountId: ids.everyday, leftTodayDrop: usd(0) },
-        { toAccountId: ids.savings, leftTodayDrop: usd(1_470) },
-        { toAccountId: ids.spare, leftTodayDrop: usd(0) },
-      ]),
-    );
+    const byTarget = new Map(result.transfers.map((t) => [t.toAccountId, t]));
+    expect(byTarget.get(ids.everyday)).toMatchObject({
+      leftTodayDrop: usd(0),
+      leftTodayAfter: usd(21_470),
+    });
+    expect(byTarget.get(ids.savings)).toMatchObject({
+      leftTodayDrop: usd(1_470),
+      leftTodayAfter: usd(20_000),
+    });
+    expect(byTarget.get(ids.spare)).toMatchObject({
+      leftTodayDrop: usd(0),
+      leftTodayAfter: usd(21_470),
+    });
     expect(result.transfers).toHaveLength(3);
     // Nothing is recorded.
     expect(await leftToday()).toBe(21_470);
@@ -96,11 +111,15 @@ describe('archive impact', () => {
     expect(await leftToday()).toBe(
       before - (drop?.leftTodayDrop.amountMinor ?? Number.NaN),
     );
+    expect(await leftToday()).toBe(drop?.leftTodayAfter.amountMinor);
   });
 
   it('leaves out archived accounts as targets and is zero for an empty account', async () => {
     const result = await impact(h.alice, ids.spare);
-    expect(result.writeOff).toEqual({ leftTodayDrop: usd(0) });
+    expect(result.writeOff).toEqual({
+      leftTodayDrop: usd(0),
+      leftTodayAfter: result.leftToday,
+    });
     expect(result.transfers.map((t) => t.toAccountId).sort()).toEqual(
       [ids.everyday, ids.savings].sort(),
     );

@@ -5,10 +5,13 @@ import type { Settle } from '@/lib/ledger';
 // comes from the server, which runs core's daily projection on the ledger
 // plus the settling entry; nothing here adds money up.
 
+/** Left today now and once the entry is recorded, both from the server. */
+type Figures = Readonly<{ drop: Money; before: Money; after: Money }>;
+
 export type ArchiveWarning =
-  | Readonly<{ kind: 'write_off'; drop: Money }>
-  | Readonly<{ kind: 'savings'; drop: Money; target: AccountView }>
-  | Readonly<{ kind: 'transfer'; drop: Money }>;
+  | (Figures & Readonly<{ kind: 'write_off' }>)
+  | (Figures & Readonly<{ kind: 'savings'; target: AccountView }>)
+  | (Figures & Readonly<{ kind: 'transfer' }>);
 
 /**
  * The warning for the chosen way of clearing the balance, or null when it
@@ -22,18 +25,27 @@ export function archiveWarning(
   accounts: readonly AccountView[],
 ): ArchiveWarning | null {
   if (settle === undefined) return null;
+  const before = impact.leftToday;
   if (settle.method === 'write_off') {
-    const drop = impact.writeOff.leftTodayDrop;
-    return drop.amountMinor > 0 ? { kind: 'write_off', drop } : null;
+    const { leftTodayDrop: drop, leftTodayAfter: after } = impact.writeOff;
+    return drop.amountMinor > 0
+      ? { kind: 'write_off', drop, before, after }
+      : null;
   }
-  const drop = impact.transfers.find(
+  const option = impact.transfers.find(
     (t) => t.toAccountId === settle.toAccountId,
-  )?.leftTodayDrop;
-  if (drop === undefined || drop.amountMinor <= 0) return null;
+  );
+  if (option === undefined || option.leftTodayDrop.amountMinor <= 0)
+    return null;
+  const figures = {
+    drop: option.leftTodayDrop,
+    before,
+    after: option.leftTodayAfter,
+  };
   const target = accounts.find((a) => a.id === settle.toAccountId);
   return target !== undefined &&
     account.budgetGroup === 'on' &&
     target.budgetGroup === 'off'
-    ? { kind: 'savings', drop, target }
-    : { kind: 'transfer', drop };
+    ? { kind: 'savings', ...figures, target }
+    : { kind: 'transfer', ...figures };
 }

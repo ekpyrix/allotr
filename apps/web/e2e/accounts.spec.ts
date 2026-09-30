@@ -304,8 +304,16 @@ test('writing off an on-budget balance counts as spending and says how much toda
   const dialog = page.getByRole('dialog', { name: 'Archive Pocket cash?' });
   await dialog.getByLabel('Writing it off').check();
 
-  const { writeOff } = await archiveImpact(page, 'Pocket cash');
+  const impact = await archiveImpact(page, 'Pocket cash');
+  const { writeOff } = impact;
   expect(writeOff.leftTodayDrop).toEqual(money(4_000, 'USD'));
+  // Before and after, both from the server.
+  await expect(dialog).toContainText(formatMoney(impact.leftToday, 'en-US'));
+  await expect(
+    dialog.locator('.sr-only', {
+      hasText: formatMoney(writeOff.leftTodayAfter, 'en-US'),
+    }),
+  ).toHaveCount(1);
   const confirm = dialog.getByRole('button', { name: 'Write off and archive' });
   await expect(confirm).toHaveAccessibleDescription(
     'It counts as spending today, so today’s figure drops by $40.00.',
@@ -438,4 +446,42 @@ test('reconciling a debt takes the amount owed the statement shows', async ({
   await expect(dialog).toBeHidden();
   await expect(page.getByText('Travel card matches the bank.')).toBeAttached();
   await expect(card).toContainText('Reconciled ');
+});
+
+test('the summary splits on-budget money as today does, and the filter shows one group', async ({
+  page,
+}) => {
+  const histories: string[] = [];
+  page.on('request', (request) => {
+    if (/\/v1\/accounts\/[^/]+\/history/.test(request.url()))
+      histories.push(request.url());
+  });
+  await page.goto('/accounts');
+  const figures = await today(page);
+  const split = page.getByRole('definition');
+  await expect(page.getByTestId('summary-on-budget')).toHaveText(
+    formatMoney(figures.onBudget, 'en-US'),
+  );
+  await expect(split.first()).toHaveText(
+    formatMoney(figures.reserved, 'en-US'),
+  );
+  await expect(split.nth(1)).toHaveText(
+    formatMoney(figures.available, 'en-US'),
+  );
+  // Sparklines load as their cards come into view.
+  await expect.poll(() => histories.length).toBeGreaterThan(0);
+  await expectAccessible(page);
+
+  const show = page.getByRole('radiogroup', { name: 'Show accounts' });
+  await show.getByRole('radio', { name: 'Off budget' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'On budget', level: 2 }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Off budget', level: 2 }),
+  ).toBeVisible();
+  await show.getByRole('radio', { name: 'All' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'On budget', level: 2 }),
+  ).toBeVisible();
 });

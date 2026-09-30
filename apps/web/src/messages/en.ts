@@ -317,6 +317,21 @@ export const en = {
     loading: 'Loading accounts…',
     add: 'New account',
     empty: 'No accounts yet. Add the accounts you spend from and save in.',
+    show: {
+      label: 'Show accounts',
+      on: 'On budget',
+      off: 'Off budget',
+      all: 'All',
+    },
+    summary: {
+      title: 'On budget',
+      caption: 'Counts toward today',
+      reserved: 'Set aside for bills',
+      free: 'Free to spend',
+      split: 'How on-budget money splits',
+    },
+    notInToday: 'Not in today’s number',
+    allMatched: 'All matched',
     groups: {
       on: 'On budget',
       onHint: 'Spendable money. Today’s figure comes from these accounts.',
@@ -385,6 +400,8 @@ export const en = {
       saving: 'Moving…',
     },
     archiveFlow: {
+      leftToday: 'Left today',
+      becomes: 'becomes',
       title: 'Archive {name}?',
       empty:
         'It leaves the list and cannot take new entries. Its entries stay in the ledger.',

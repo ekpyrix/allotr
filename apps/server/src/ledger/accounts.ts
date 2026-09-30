@@ -6,7 +6,8 @@ import {
   balanceOf,
   budgetGroupsOn,
   budgetSwitch,
-  leftTodayDrop,
+  dailyFiguresOn,
+  leftTodayChange,
   opening,
   totalOn,
   transfer,
@@ -447,14 +448,21 @@ export async function archiveImpact(
   const from = accountId(id);
   const balance = balanceOf(view.chart, view.ledger, from);
   const chart = withSystemAccounts(view.chart, [balance.currency], now);
-  const drop = (settle: Settle) =>
-    balance.amountMinor === 0
-      ? money(0, view.settings.defaultCurrency)
-      : leftTodayDrop(
-          { ...view, chart },
-          today,
-          settlement(chart, from, balance, settle, newEntry(now, today)),
-        );
+  const withSystem = { ...view, chart };
+  const leftToday = dailyFiguresOn(withSystem, today).leftToday;
+  const change = (settle: Settle) => {
+    if (balance.amountMinor === 0)
+      return {
+        leftTodayDrop: money(0, view.settings.defaultCurrency),
+        leftTodayAfter: leftToday,
+      };
+    const { drop, after } = leftTodayChange(
+      withSystem,
+      today,
+      settlement(chart, from, balance, settle, newEntry(now, today)),
+    );
+    return { leftTodayDrop: drop, leftTodayAfter: after };
+  };
   const targets = [...view.chart.values()].filter(
     (a) =>
       a.systemRole === null &&
@@ -463,10 +471,11 @@ export async function archiveImpact(
       a.currency === balance.currency,
   );
   return {
-    writeOff: { leftTodayDrop: drop({ method: 'write_off' }) },
+    leftToday,
+    writeOff: change({ method: 'write_off' }),
     transfers: targets.map((target) => ({
       toAccountId: target.id,
-      leftTodayDrop: drop({ method: 'transfer', toAccountId: target.id }),
+      ...change({ method: 'transfer', toAccountId: target.id }),
     })),
   };
 }

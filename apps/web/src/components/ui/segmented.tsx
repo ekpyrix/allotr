@@ -36,7 +36,9 @@ function Segmented<V extends string>({
         if (next !== '') onValueChange(next as V);
       }}
       className={cn(
-        'relative grid auto-cols-fr grid-flow-col rounded-full border border-outline p-1',
+        // `isolate` keeps the labels' z-index inside the control, so they
+        // never paint over the sticky top app bar.
+        'relative isolate grid auto-cols-fr grid-flow-col rounded-full border border-outline p-1',
         className,
       )}
     >

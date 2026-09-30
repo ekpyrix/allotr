@@ -143,7 +143,7 @@ const archiveImpactRoute = createRoute({
   tags,
   summary: "What archiving would do to today's figure",
   description:
-    "For each way of clearing the balance before archiving, how much today's left-today figure would drop, from the same projection as `/v1/today` with the settling entry added. A write-off from an on-budget account counts as spending; a transfer to an off-budget account lowers the allowance. Nothing is recorded.",
+    "For each way of clearing the balance before archiving, how much today's left-today figure would drop, from the same projection as `/v1/today` with the settling entry added. A write-off from an on-budget account counts as spending; a transfer to an off-budget account lowers the allowance. `leftToday` is the figure now and each option's `leftTodayAfter` the figure once it is recorded. Nothing is recorded.",
   request: { params: idParamSchema },
   responses: {
     200: json(archiveImpactSchema, "The drop in today's figure per option."),

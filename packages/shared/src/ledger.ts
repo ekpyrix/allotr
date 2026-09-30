@@ -98,10 +98,21 @@ export const archiveAccountBodySchema = z.object({
  * would raise it; zero when the account holds nothing.
  */
 export const archiveImpactSchema = z.object({
-  writeOff: z.object({ leftTodayDrop: moneySchema }),
+  /** Today's left-today figure now, before archiving. */
+  leftToday: moneySchema,
+  writeOff: z.object({
+    leftTodayDrop: moneySchema,
+    /** Left today once the write-off is recorded. */
+    leftTodayAfter: moneySchema,
+  }),
   /** One entry per open account in the same currency. */
   transfers: z.array(
-    z.object({ toAccountId: idSchema, leftTodayDrop: moneySchema }),
+    z.object({
+      toAccountId: idSchema,
+      leftTodayDrop: moneySchema,
+      /** Left today once the transfer is recorded. */
+      leftTodayAfter: moneySchema,
+    }),
   ),
 });
 export type ArchiveImpactView = z.infer<typeof archiveImpactSchema>;
