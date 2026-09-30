@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   accountBalances,
   accountId,
+  balanceHistory,
   balanceOf,
   budgetGroupsOn,
   budgetSwitch,
@@ -16,9 +17,11 @@ import {
   type Transaction,
 } from '@allotr/core';
 import {
+  addDays,
   formatMoney,
   localDateIn,
   money,
+  type AccountHistoryView,
   type AccountListView,
   type ArchiveImpactView,
   type AccountView,
@@ -465,5 +468,31 @@ export async function archiveImpact(
       toAccountId: target.id,
       leftTodayDrop: drop({ method: 'transfer', toAccountId: target.id }),
     })),
+  };
+}
+
+/**
+ * An account's end-of-day balance for the last `days` days, today
+ * included, in its own currency. Archived accounts have a history too.
+ */
+export async function accountHistory(
+  db: Kysely<DB>,
+  userId: string,
+  id: string,
+  days: number,
+  now: Date,
+): Promise<AccountHistoryView> {
+  const { view, timeZone } = await db.transaction().execute(async (trx) => {
+    await findOwned(trx, userId, id);
+    return loadView(trx, userId);
+  });
+  const today = localDateIn(now, timeZone);
+  return {
+    points: balanceHistory(
+      view,
+      accountId(id),
+      addDays(today, 1 - days),
+      today,
+    ),
   };
 }

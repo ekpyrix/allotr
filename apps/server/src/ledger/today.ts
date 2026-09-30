@@ -146,6 +146,8 @@ export async function todayFigures(
     overdue: figures.overdue,
     daysLeft: figures.daysLeft,
     available: figures.available,
+    onBudget: figures.onBudget,
+    reserved: figures.reserved,
     startOfDay: figures.startOfDay,
     spentToday: figures.spentToday,
     todayAllowance: figures.todayAllowance,

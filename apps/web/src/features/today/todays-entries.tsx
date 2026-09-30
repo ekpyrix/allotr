@@ -93,19 +93,14 @@ function EntryItem({
   ].filter((part) => part !== null && part !== '');
 
   return (
-    <li className="grid gap-2 border-b border-border py-3 last:border-b-0">
+    <li className="grid gap-2 border-b border-outline-variant px-4 py-3 last:border-b-0">
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            'min-w-0 flex-1',
-            row.undone && 'text-muted-foreground',
-          )}
-        >
+        <div className={cn('min-w-0 flex-1', row.undone && 'text-text-muted')}>
           <p className={cn('font-medium', row.undone && 'line-through')}>
             {title}
           </p>
           {details.length > 0 ? (
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="truncate text-body text-text-muted">
               {details.join(' · ')}
             </p>
           ) : null}
@@ -114,7 +109,7 @@ function EntryItem({
           <p
             className={cn(
               'font-mono tabular-nums',
-              row.undone && 'text-muted-foreground line-through',
+              row.undone && 'text-text-muted line-through',
               !row.undone && row.kind === 'income' && 'text-positive',
             )}
           >
@@ -123,7 +118,7 @@ function EntryItem({
         )}
         <div className="flex w-24 shrink-0 justify-end">
           {row.undone ? (
-            <span className="py-1.5 text-sm text-muted-foreground">
+            <span className="py-1.5 text-body text-text-muted">
               {t('today.entries.undone')}
             </span>
           ) : (
@@ -149,7 +144,10 @@ function EntryItem({
         </div>
       </div>
       {confirming && !row.undone ? (
-        <div id={confirmId} className="grid gap-3 rounded-md bg-plot p-4">
+        <div
+          id={confirmId}
+          className="grid gap-3 rounded-md bg-card-raised p-4 text-body"
+        >
           <p>{t('today.entries.confirmPaycheck')}</p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -179,7 +177,7 @@ function EntryItem({
         </div>
       ) : null}
       {undo.isError ? (
-        <p role="alert" className="text-sm font-medium text-over">
+        <p role="alert" className="text-body font-medium text-negative">
           {errorMessage(undo.error)}
         </p>
       ) : null}
@@ -205,12 +203,12 @@ export function TodaysEntries({
   const quickEntry = useQuickEntry();
 
   return (
-    <section aria-labelledby={headingId} className="mt-10">
+    <section aria-labelledby={headingId}>
       <h2
         id={headingId}
         ref={heading}
         tabIndex={-1}
-        className="font-medium outline-none"
+        className="text-title outline-none"
       >
         {t('today.entries.title')}
       </h2>
@@ -218,10 +216,10 @@ export function TodaysEntries({
         {announcement}
       </p>
       {rows.length === 0 ? (
-        <div className="mt-3 grid justify-items-start gap-3">
-          <p className="text-muted-foreground">{t('today.entries.empty')}</p>
+        <div className="mt-3 grid justify-items-start gap-3 rounded-lg bg-card p-4">
+          <p className="text-body-lg">{t('today.entries.empty')}</p>
           <Button
-            variant="outlined"
+            variant="tonal"
             onClick={(event) => {
               quickEntry.open(event.currentTarget);
             }}
@@ -231,7 +229,7 @@ export function TodaysEntries({
           </Button>
         </div>
       ) : (
-        <ul className="mt-1">
+        <ul className="mt-3 overflow-hidden rounded-lg bg-card">
           {rows.map((row) => (
             <EntryItem
               key={row.id}

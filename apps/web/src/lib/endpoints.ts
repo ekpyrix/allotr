@@ -10,6 +10,7 @@ import {
   categoryListSchema,
   categorySchema,
   createCategoryBodySchema,
+  cycleDayListSchema,
   cycleDetailSchema,
   cycleListSchema,
   createInviteBodySchema,
@@ -385,6 +386,11 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/cycles/{openedOn}',
     response: cycleDetailSchema,
+  }),
+  cycleDays: endpoint({
+    method: 'GET',
+    path: '/v1/cycles/{openedOn}/days',
+    response: cycleDayListSchema,
   }),
   transactions: endpoint({
     method: 'GET',

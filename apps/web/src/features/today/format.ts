@@ -23,3 +23,20 @@ export function formatAbs(amount: Money, locale: string): string {
     locale,
   );
 }
+
+const longFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** A calendar day as "Tuesday, April 1" in the user's locale. */
+export function formatLongDay(date: LocalDate, locale: string): string {
+  let formatter = longFormatters.get(locale);
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+    longFormatters.set(locale, formatter);
+  }
+  return formatter.format(new Date(`${date}T00:00:00Z`));
+}

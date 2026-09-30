@@ -79,6 +79,12 @@ export {
   dailyFiguresOn,
   leftTodayDrop,
 } from './projections/daily.ts';
+export {
+  balanceHistory,
+  cycleDays,
+  type CycleDay,
+  type CycleDays,
+} from './projections/series.ts';
 export { convertOn, totalOn } from './projections/rates.ts';
 export {
   carryDeficit,
