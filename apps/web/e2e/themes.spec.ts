@@ -106,6 +106,8 @@ test('chooses a flavour per slot and credits it', async ({ page }) => {
 test('creates a palette theme, fits a role, applies it and keeps it after a reload', async ({
   page,
 }) => {
+  // A long walk through both editor tabs: slow under a full run.
+  test.setTimeout(90_000);
   await page.goto('/settings#appearance');
   await page.getByRole('link', { name: 'Create theme' }).click();
   await expect(page).toHaveURL(/\/settings\/themes\/new$/);
