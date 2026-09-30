@@ -94,6 +94,28 @@ test('changing the payday override updates Today’s days left', async ({
   expect((await ledgerSettings(page)).paydayOverride).toBeNull();
 });
 
+test('the payday rule can be set to the last working day and back', async ({
+  page,
+}) => {
+  await page.goto('/settings#payday');
+  const region = section(page, 'Payday');
+  await region.getByLabel('How payday is set').selectOption('last-working-day');
+  // The day of the month is not used by this rule.
+  await expect(region.getByLabel('Payday each month')).toHaveCount(0);
+  await region.getByRole('button', { name: 'Save' }).click();
+  await expect(region.getByText('Saved.')).toBeVisible();
+  expect((await ledgerSettings(page)).paydayRule).toBe('last-working-day');
+  const payday = (await today(page)).cycle.payday;
+  const weekday = new Date(`${payday}T00:00:00Z`).getUTCDay();
+  expect(weekday).toBeGreaterThanOrEqual(1);
+  expect(weekday).toBeLessThanOrEqual(5);
+
+  await region.getByLabel('How payday is set').selectOption('fixed');
+  await region.getByRole('button', { name: 'Save' }).click();
+  await expect(region.getByText('Saved.')).toBeVisible();
+  expect((await ledgerSettings(page)).paydayRule).toBe('fixed');
+});
+
 test('the locale shows a sample and is saved in canonical form', async ({
   page,
 }) => {

@@ -71,6 +71,7 @@ export {
   type LedgerView,
 } from './projections/types.ts';
 export { cycleOn, cyclesOf } from './projections/cycles.ts';
+export { lastWorkingDayOfMonth, nextPayday } from './projections/payday.ts';
 export {
   availableOn,
   billsDueOn,

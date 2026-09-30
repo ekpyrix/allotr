@@ -53,7 +53,7 @@ const patchSettingsRoute = createRoute({
   tags: ['Settings'],
   summary: 'Change ledger settings',
   description:
-    'Switching the default currency changes how figures are reported, never the entries. `paydayOverride: null` clears the override.',
+    'Switching the default currency changes how figures are reported, never the entries. `paydayRule` is `fixed` (the default: `paydayDay` of the month), `last-working-day` (the last Monday to Friday of the month) or `manual` (set `paydayOverride` each cycle; `paydayDay` stands in until then). `paydayOverride: null` clears the override.',
   request: {
     body: {
       content: {

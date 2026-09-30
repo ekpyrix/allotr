@@ -131,8 +131,9 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
 - A transaction in a *paycheck* income category opens a new cycle and closes
   the previous one with a snapshot (opening balances, income, allocation,
   spending by category, leftover, savings net change).
-- `cycle_end` is the next occurrence of the configured payday (day of month;
-  shorter months use their last day), overridable at any time. From payday
+- `cycle_end` is the next payday predicted by the *payday rule* (see
+  Policies; by default the configured day of month, shorter months using
+  their last day), overridable at any time. From payday
   on, until a paycheck arrives, the cycle extends day by day; the day after
   payday it shows "payday overdue".
 - A paycheck up to three days before payday opens the next cycle early; one
@@ -168,7 +169,7 @@ Per-user settings. The default is listed first.
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
 | Overspend at payday | Carry the deficit into the next cycle | Cover from savings · ask |
 | Savings withdrawal | Visible, no debt | Tracked debt with repayment prompt · confirm first |
-| Payday rule | Fixed day of month (the 1st until set), overridable | Latest day of a window · last working day · manual |
+| Payday rule | Fixed day of month (the 1st until set), overridable | Last working day · manual · latest day of a window (not yet built) |
 | Cycle mode | Paycheck | Fixed period |
 | Second paycheck in a cycle | Ask (guess: new cycle within 3 days of payday) | Always new cycle · always add |
 | Paycheck split | Fixed allowance, rest to savings | Fixed savings · percentage |
@@ -180,6 +181,14 @@ Per-user settings. The default is listed first.
 
 Each policy is a strategy in `core` with its own property tests; invariants
 are shared by all strategies.
+
+**Payday rule.** It predicts the payday when a cycle opens; a date set for
+the open cycle always wins. `fixed` uses the configured day of the month.
+`last-working-day` is the last Monday to Friday of the month; public
+holidays are not known. `manual` predicts nothing: the user sets the
+cycle's payday after each paycheck, and the configured day stands in until
+they do. "Latest day of a window" is not built yet, as its meaning is still
+open.
 
 ## Edge cases
 

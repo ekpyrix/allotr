@@ -4,6 +4,7 @@ import {
   budgetGroupSchema,
   categoryKindSchema,
   createAccountBodySchema,
+  paydayRuleSchema,
 } from './ledger.ts';
 import {
   currencyCodeSchema,
@@ -30,6 +31,7 @@ const settingsSchema = z.strictObject({
   locale: z.string().trim().min(2).max(35).optional(),
   timeZone: z.string().trim().min(1).max(64).optional(),
   defaultCurrency: currencyCodeSchema.optional(),
+  paydayRule: paydayRuleSchema.optional(),
   paydayDay: z.int().min(1).max(31).optional(),
   paydayOverride: localDateSchema.nullable().optional(),
 });

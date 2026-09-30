@@ -76,6 +76,20 @@ export function daysBetween(from: LocalDate, to: LocalDate): number {
   return toEpochDay(to) - toEpochDay(from);
 }
 
+/** ISO weekday: 1 is Monday, 7 is Sunday. */
+export function isoWeekday(date: LocalDate): number {
+  // Day 0 of the epoch, 1970-01-01, was a Thursday (4).
+  return ((((toEpochDay(date) + 3) % 7) + 7) % 7) + 1;
+}
+
+/** The last calendar day of the month `date` is in. */
+export function lastDayOfMonth(date: LocalDate): LocalDate {
+  const [year, month] = date.split('-').map(Number) as [number, number];
+  return localDate(
+    `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(daysInMonth(year, month))}`,
+  );
+}
+
 /**
  * The first date after `after` that falls on `day` of its month. Months
  * shorter than `day` use their last day, so day 31 is 28 February.

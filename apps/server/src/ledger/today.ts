@@ -101,6 +101,7 @@ export async function loadView(
         importedFrom !== null && importedFrom < joinedOn
           ? importedFrom
           : joinedOn,
+      paydayRule: settings.paydayRule,
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
     },

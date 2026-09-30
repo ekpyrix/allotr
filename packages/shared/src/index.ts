@@ -10,6 +10,8 @@ export {
   isLocalDate,
   localDate,
   localDateIn,
+  isoWeekday,
+  lastDayOfMonth,
   nextDayOfMonth,
   localDateSchema,
   type DateErrorCode,
