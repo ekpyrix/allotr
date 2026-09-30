@@ -17,6 +17,7 @@ import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { describeProblem } from '@/lib/problem';
+import { randomId } from '@/lib/random-id';
 import { t } from '@/messages/t';
 import {
   addLine,
@@ -227,9 +228,7 @@ export function QuickEntryForm({
       return;
     }
     clearErrors();
-    key.current = keyForBody(key.current, result.body, () =>
-      crypto.randomUUID(),
-    );
+    key.current = keyForBody(key.current, result.body, () => randomId());
     inFlight.current = true;
     save.mutate(
       { body: result.body, idempotencyKey: key.current.key },

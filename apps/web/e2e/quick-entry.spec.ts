@@ -182,6 +182,10 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
 });
 
 test('a double click on Save records one entry', async ({ page }) => {
+  // As over plain HTTP on a home network, where randomUUID is missing.
+  await page.addInitScript(() => {
+    Reflect.deleteProperty(Crypto.prototype, 'randomUUID');
+  });
   await page.goto('/ledger');
   const posts: string[] = [];
   page.on('request', (request) => {

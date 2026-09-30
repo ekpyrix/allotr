@@ -54,6 +54,9 @@ Today left: $27.50 · $40.00/day for 24 days
   the app's privacy settings.
 - Your data stays on your server. Allotr is meant to be reached over a VPN or
   a reverse proxy, not exposed directly to the internet.
+- Serve it over HTTPS where you can. Over plain HTTP (other than
+  `localhost`) browsers still let you use Allotr, but not install it as an
+  app or open it offline.
 
 ## Contributing
 
