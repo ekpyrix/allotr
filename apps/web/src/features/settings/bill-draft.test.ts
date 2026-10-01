@@ -5,11 +5,13 @@ import {
   parseRate as rate,
   type BillView,
   type ExchangeRateView,
+  type TransactionView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
 import {
   dueThisCycle,
   lastPricedPayment,
+  linkCandidates,
   paidUnit,
   parseBillAmount,
   parseRate,
@@ -161,5 +163,72 @@ describe('lastPricedPayment', () => {
       ),
     ).toMatchObject({ dueOn: '2026-08-20', paid: money(46275, 'THB') });
     expect(lastPricedPayment(bill([payment('2026-09-20', null)]))).toBeNull();
+  });
+});
+
+describe('linkCandidates', () => {
+  const entry = (
+    id: string,
+    postings: [string, number][],
+    more: Partial<TransactionView> = {},
+  ): TransactionView => ({
+    id,
+    kind: 'expense',
+    occurredOn: localDate('2026-03-18'),
+    createdAt: '2026-03-18T09:00:00.000Z',
+    source: 'api',
+    categoryId: null,
+    note: null,
+    postings: postings.map(([accountId, minor]) => ({
+      accountId,
+      systemRole: null,
+      amount: money(minor, 'USD'),
+      categoryId: null,
+    })),
+    reversesId: null,
+    reversedById: null,
+    restoredById: null,
+    impliedRate: null,
+    budgetSwitch: null,
+    tagIds: [],
+    ...more,
+  });
+
+  it("keeps entries in effect that took money from the bill's account", () => {
+    const paid = entry('paid', [
+      ['cards', -30000],
+      ['expenses', 30000],
+    ]);
+    const funded = entry('funded', [
+      ['main', -30000],
+      ['cards', 30000],
+    ]);
+    const undone = entry(
+      'undone',
+      [
+        ['cards', -1200],
+        ['expenses', 1200],
+      ],
+      { reversedById: 'undo' },
+    );
+    const undo = entry(
+      'undo',
+      [
+        ['cards', 1200],
+        ['expenses', -1200],
+      ],
+      { reversesId: 'undone' },
+    );
+    const taken = entry('taken', [
+      ['cards', -500],
+      ['expenses', 500],
+    ]);
+    expect(
+      linkCandidates(
+        [paid, funded, undone, undo, taken],
+        'cards',
+        new Set(['taken']),
+      ),
+    ).toEqual([{ entry: paid, took: money(30000, 'USD') }]);
   });
 });

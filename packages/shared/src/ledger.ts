@@ -735,9 +735,12 @@ export const updateBillBodySchema = z
 export const createBillPaymentBodySchema = z
   .object({
     dueOn: localDateSchema,
-    /** Today when omitted. */
+    /** The linked entry's date, or today, when omitted. */
     paidOn: localDateSchema.optional(),
-    /** Links an entry already recorded. */
+    /**
+     * Links an entry already recorded instead of `paid`: one in effect that
+     * took money out of the bill's account and pays no other due date.
+     */
     transactionId: idSchema.optional(),
     /**
      * Records the payment as an expense from the bill's account, dated
@@ -754,7 +757,7 @@ export const createBillPaymentBodySchema = z
     categoryId: idSchema.optional(),
   })
   .refine(
-    (body) => body.paid === undefined || body.transactionId === undefined,
+    (body) => (body.paid === undefined) !== (body.transactionId === undefined),
     {
       error: 'Give either paid or transactionId',
       path: ['paid'],

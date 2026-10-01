@@ -616,7 +616,11 @@ async function recordPayment(
   );
 }
 
-/** Marks one due date paid, which releases its reserve from `paidOn`. */
+/**
+ * Marks one due date paid, which releases its reserve from `paidOn`. The
+ * payment either records its entry (`paid`) or links one already in the
+ * ledger, which then dates it unless `paidOn` is given.
+ */
 export async function payBill(
   db: Kysely<DB>,
   userId: string,
@@ -624,10 +628,92 @@ export async function payBill(
   input: PayBill,
   now: Date,
 ): Promise<BillView> {
-  await db
-    .transaction()
-    .execute((trx) => insertBillPayment(trx, userId, id, input, now));
+  await db.transaction().execute(async (trx) => {
+    const linked =
+      input.transactionId === undefined
+        ? undefined
+        : await linkable(trx, userId, id, input.transactionId);
+    await insertBillPayment(
+      trx,
+      userId,
+      id,
+      { ...input, paidOn: input.paidOn ?? linked },
+      now,
+    );
+  });
   return getBill(db, userId, id);
+}
+
+// An entry a payment can link: one in effect that took money out of the
+// bill's account and pays no other due date. Returns the entry's date.
+async function linkable(
+  db: Db,
+  userId: string,
+  billId: string,
+  transactionId: string,
+): Promise<LocalDate> {
+  const bill = await db
+    .selectFrom('bills')
+    .select('account_id')
+    .where('user_id', '=', userId)
+    .where('id', '=', billId)
+    .executeTakeFirst();
+  if (bill === undefined) throw notFound();
+  const entry = await db
+    .selectFrom('transactions')
+    .select(['occurred_on', 'reverses_id'])
+    .where('user_id', '=', userId)
+    .where('id', '=', transactionId)
+    .executeTakeFirst();
+  if (entry === undefined) {
+    throw new RequestProblem(
+      404,
+      'transaction_not_found',
+      'There is no such entry.',
+    );
+  }
+  const undone = await db
+    .selectFrom('transactions')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('reverses_id', '=', transactionId)
+    .executeTakeFirst();
+  if (entry.reverses_id !== null || undone !== undefined) {
+    throw new RequestProblem(
+      409,
+      'transaction_undone',
+      'That entry was undone, or undoes another; link the entry that paid the bill.',
+    );
+  }
+  const outflow = await db
+    .selectFrom('postings')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('transaction_id', '=', transactionId)
+    .where('account_id', '=', bill.account_id)
+    .where('amount_minor', '<', 0)
+    .executeTakeFirst();
+  if (outflow === undefined) {
+    throw new RequestProblem(
+      400,
+      'not_a_bill_payment',
+      "That entry took nothing from the bill's account.",
+    );
+  }
+  const taken = await db
+    .selectFrom('bill_payments')
+    .select('id')
+    .where('user_id', '=', userId)
+    .where('transaction_id', '=', transactionId)
+    .executeTakeFirst();
+  if (taken !== undefined) {
+    throw new RequestProblem(
+      409,
+      'transaction_already_linked',
+      'That entry already pays a bill.',
+    );
+  }
+  return localDate(entry.occurred_on);
 }
 
 /**

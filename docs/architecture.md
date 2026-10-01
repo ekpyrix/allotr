@@ -215,9 +215,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   and an import finishes it. The web app sends a user to `/setup` from
   Today until it is finished. `/v1/rates` takes manual exchange rates, one
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
-  `POST /v1/bills/{id}/payments` marks a due date paid, linking an entry
-  or, given `paid`, recording one, and `DELETE …/payments/{dueOn}` undoes
-  the mark and any entry it recorded. A bill's optional `price` in another
+  `POST /v1/bills/{id}/payments` marks a due date paid and needs either
+  `paid`, to record the expense, or `transactionId`, to link one that
+  already took money out of the bill's account; `DELETE
+  …/payments/{dueOn}` undoes the mark and any entry it recorded. A bill's optional `price` in another
   currency makes it reserve what its latest payment took.
 - `GET /v1/cycles` lists every cycle's snapshot, newest first. Each one has
   income, spending, leftover and savings change in the default currency at

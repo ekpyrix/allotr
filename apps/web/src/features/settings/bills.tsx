@@ -1,16 +1,18 @@
 import {
+  addDays,
   formatMoney,
   formatMoneyInput,
   localDate,
   type AccountView,
   type BillView,
   type CategoryView,
+  type CreateBillPaymentBody,
   type ExchangeRateView,
   type LocalDate,
   type Money,
   type TodayView,
 } from '@allotr/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useId, useState, type SubmitEvent } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
@@ -21,6 +23,7 @@ import { formatLongDay } from '@/features/ledger/format';
 import { amountExample } from '@/features/quick-entry/draft';
 import { categoryOptions } from '@/features/quick-entry/options';
 import { useCurrencyOptions } from '@/lib/currency-options';
+import { accountEntriesQuery } from '@/lib/ledger';
 import { describeProblem, errorMessage } from '@/lib/problem';
 import {
   billPaymentQueryKeys,
@@ -36,6 +39,7 @@ import { t } from '@/messages/t';
 import {
   dueThisCycle,
   lastPricedPayment,
+  linkCandidates,
   paidUnit,
   parseBillAmount,
   storedUnit,
@@ -44,6 +48,11 @@ import {
 } from './bill-draft.ts';
 import { Section } from './section.tsx';
 import { useBusy } from './use-busy.ts';
+
+type PayHow = 'record' | 'link';
+
+// How far before a due date an entry can be that paid it.
+const LINK_DAYS_BEFORE = 31;
 
 type Open =
   | { kind: 'create' }
@@ -536,11 +545,14 @@ function DeleteBill({
 
 const isDay = (text: string) => /^\d{4}-\d{2}-\d{2}$/.test(text);
 
+// Paying a due date either records the expense or links the entry that
+// already paid it, so the reserve and the balance always move together.
 function PayBill({
   bill,
   due,
   account,
   categories,
+  linked,
   today,
   locale,
   onDone,
@@ -551,14 +563,18 @@ function PayBill({
   due: CycleBill;
   account: AccountView | undefined;
   categories: readonly CategoryView[];
+  /** Entries that already pay a bill. */
+  linked: ReadonlySet<string>;
   today: LocalDate;
   locale: string;
-  onDone: (paid: Money) => void;
+  onDone: (paid: Money, how: PayHow) => void;
   onCancel: () => void;
   onBusyChange: (busy: boolean) => void;
 }) {
   const currency = due.amount.currency;
   const priceCurrency = bill.price?.currency ?? '';
+  const howName = useId();
+  const [how, setHow] = useState<PayHow>('record');
   const [paidText, setPaidText] = useState(
     formatMoneyInput(due.amount, locale),
   );
@@ -567,28 +583,29 @@ function PayBill({
   );
   const [paidOn, setPaidOn] = useState<string>(today);
   const [categoryId, setCategoryId] = useState(bill.categoryId ?? '');
+  const [entryId, setEntryId] = useState('');
   const [paidError, setPaidError] = useState<AmountError>();
   const [priceError, setPriceError] = useState<AmountError>();
   const [paidOnInvalid, setPaidOnInvalid] = useState(false);
   const [categoryMissing, setCategoryMissing] = useState(false);
+  const [entryMissing, setEntryMissing] = useState(false);
   const pay = useBillChange(
-    (body: {
-      paid: Money;
-      price: Money | null;
-      paidOn: LocalDate;
-      categoryId: string;
-    }) =>
-      payBill(bill.id, {
-        dueOn: due.dueOn,
-        paidOn: body.paidOn,
-        paid: body.paid,
-        ...(body.price === null ? {} : { price: body.price }),
-        categoryId: body.categoryId,
-      }),
+    (body: CreateBillPaymentBody) => payBill(bill.id, body),
     billPaymentQueryKeys,
   );
   useBusy(pay.isPending, onBusyChange);
   const problem = pay.isError ? describeProblem(pay.error) : null;
+  const since = addDays(due.dueOn, -LINK_DAYS_BEFORE);
+  const entries = useQuery({
+    ...accountEntriesQuery(bill.accountId, since, today),
+    enabled: how === 'link',
+  });
+  const candidates =
+    entries.data === undefined
+      ? []
+      : linkCandidates(entries.data.transactions, bill.accountId, linked);
+  const categoryName = (id: string | null) =>
+    categories.find((c) => c.id === id)?.name ?? null;
 
   const paid = parseBillAmount(paidText, currency, locale);
   const price =
@@ -598,8 +615,36 @@ function PayBill({
   const unit =
     paid.ok && price?.ok === true ? paidUnit(paid.amount, price.amount) : null;
 
+  function choose(next: PayHow) {
+    if (pay.isError) pay.reset();
+    setHow(next);
+  }
+
+  function link(form: HTMLFormElement) {
+    const chosen = candidates.find((c) => c.entry.id === entryId);
+    setEntryMissing(chosen === undefined);
+    if (chosen === undefined) {
+      const field = form.elements.namedItem('entryId');
+      const first = field instanceof RadioNodeList ? field[0] : field;
+      if (first instanceof HTMLElement) first.focus();
+      return;
+    }
+    pay.mutate(
+      { dueOn: due.dueOn, transactionId: chosen.entry.id },
+      {
+        onSuccess: () => {
+          onDone(chosen.took, 'link');
+        },
+      },
+    );
+  }
+
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (how === 'link') {
+      link(event.currentTarget);
+      return;
+    }
     const badDay = !isDay(paidOn) || paidOn > today;
     const noCategory = categoryId === '';
     setPaidError(paid.ok ? undefined : paid.error);
@@ -624,14 +669,15 @@ function PayBill({
     }
     pay.mutate(
       {
-        paid: paid.amount,
-        price: price?.amount ?? null,
+        dueOn: due.dueOn,
         paidOn: localDate(paidOn),
+        paid: paid.amount,
+        ...(price === null ? {} : { price: price.amount }),
         categoryId,
       },
       {
         onSuccess: () => {
-          onDone(paid.amount);
+          onDone(paid.amount, 'record');
         },
       },
     );
@@ -645,92 +691,209 @@ function PayBill({
           account: account?.name ?? '',
         })}
       </p>
-      {priceCurrency === '' ? null : (
-        <FieldControl
-          label={t('settings.bills.priceIn', { currency: priceCurrency })}
-          error={amountErrorText(priceError, priceCurrency, locale)}
+      <fieldset className="grid gap-3">
+        <legend className="mb-2 text-sm font-medium">
+          {t('settings.bills.payHow')}
+        </legend>
+        <label className="flex cursor-pointer gap-3">
+          <input
+            type="radio"
+            name={howName}
+            value="record"
+            checked={how === 'record'}
+            onChange={() => {
+              choose('record');
+            }}
+            className="mt-1 accent-primary"
+          />
+          <span className="grid gap-0.5">
+            <span>{t('settings.bills.payRecord')}</span>
+            <span className="text-sm text-text-muted">
+              {t('settings.bills.payRecordHint', {
+                account: account?.name ?? '',
+              })}
+            </span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer gap-3">
+          <input
+            type="radio"
+            name={howName}
+            value="link"
+            checked={how === 'link'}
+            onChange={() => {
+              choose('link');
+            }}
+            className="mt-1 accent-primary"
+          />
+          <span className="grid gap-0.5">
+            <span>{t('settings.bills.payLink')}</span>
+            <span className="text-sm text-text-muted">
+              {t('settings.bills.payLinkHint')}
+            </span>
+          </span>
+        </label>
+      </fieldset>
+      {how === 'link' ? (
+        <fieldset
+          className="grid gap-3"
+          aria-describedby={entryMissing ? `${howName}-entry-error` : undefined}
         >
-          {(props) => (
-            <Input
-              {...props}
-              name="price"
-              value={priceText}
-              inputMode="decimal"
-              autoComplete="off"
-              className="h-11 text-base"
-              onChange={(e) => {
-                setPriceText(e.currentTarget.value);
-                setPriceError(undefined);
-              }}
-            />
+          <legend className="mb-2 text-sm font-medium">
+            {t('settings.bills.linkLegend', {
+              account: account?.name ?? '',
+              day: formatLongDay(since, locale),
+            })}
+          </legend>
+          {entries.isPending ? (
+            <p className="text-sm text-text-muted">{t('ui.loading')}</p>
+          ) : entries.isError ? (
+            <p role="alert" className="text-sm font-medium text-negative">
+              {errorMessage(entries.error)}
+            </p>
+          ) : candidates.length === 0 ? (
+            <p className="text-sm text-text-muted">
+              {t('settings.bills.linkNone')}
+            </p>
+          ) : (
+            candidates.map(({ entry, took }) => (
+              <label key={entry.id} className="flex cursor-pointer gap-3">
+                <input
+                  type="radio"
+                  name="entryId"
+                  value={entry.id}
+                  checked={entryId === entry.id}
+                  onChange={() => {
+                    if (pay.isError) pay.reset();
+                    setEntryId(entry.id);
+                    setEntryMissing(false);
+                  }}
+                  className="mt-1 accent-primary"
+                />
+                <span className="grid min-w-0 flex-1 grid-cols-[1fr_auto] gap-x-3">
+                  <span className="wrap-anywhere">
+                    {entry.note ??
+                      categoryName(entry.categoryId) ??
+                      t('settings.bills.linkUntitled')}
+                  </span>
+                  <span className="font-mono tabular-nums">
+                    {formatMoney(took, locale)}
+                  </span>
+                  <span className="text-sm text-text-muted">
+                    {formatLongDay(entry.occurredOn, locale)}
+                  </span>
+                </span>
+              </label>
+            ))
           )}
-        </FieldControl>
-      )}
-      <FieldControl
-        label={t('settings.bills.paid', { currency })}
-        hint={t('settings.bills.paidHint')}
-        error={amountErrorText(paidError, currency, locale)}
-      >
-        {(props) => (
-          <Input
-            {...props}
-            name="paid"
-            value={paidText}
-            inputMode="decimal"
-            autoComplete="off"
-            className="h-11 text-base"
-            onChange={(e) => {
-              setPaidText(e.currentTarget.value);
-              setPaidError(undefined);
+          {entryMissing ? (
+            <p
+              id={`${howName}-entry-error`}
+              className="text-sm font-medium text-negative"
+            >
+              {t('settings.bills.errors.linkRequired')}
+            </p>
+          ) : null}
+        </fieldset>
+      ) : (
+        <>
+          {priceCurrency === '' ? null : (
+            <FieldControl
+              label={t('settings.bills.priceIn', { currency: priceCurrency })}
+              error={amountErrorText(priceError, priceCurrency, locale)}
+            >
+              {(props) => (
+                <Input
+                  {...props}
+                  name="price"
+                  value={priceText}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  className="h-11 text-base"
+                  onChange={(e) => {
+                    setPriceText(e.currentTarget.value);
+                    setPriceError(undefined);
+                  }}
+                />
+              )}
+            </FieldControl>
+          )}
+          <FieldControl
+            label={t('settings.bills.paid', { currency })}
+            hint={t('settings.bills.paidHint')}
+            error={amountErrorText(paidError, currency, locale)}
+          >
+            {(props) => (
+              <Input
+                {...props}
+                name="paid"
+                value={paidText}
+                inputMode="decimal"
+                autoComplete="off"
+                className="h-11 text-base"
+                onChange={(e) => {
+                  setPaidText(e.currentTarget.value);
+                  setPaidError(undefined);
+                }}
+              />
+            )}
+          </FieldControl>
+          {unit === null || price === null || !price.ok ? null : (
+            <p
+              className="text-sm text-text-muted tabular-nums"
+              aria-live="polite"
+            >
+              {t('settings.bills.paidRate', {
+                currency: priceCurrency,
+                unit: formatMoney(unit, locale),
+              })}
+            </p>
+          )}
+          <FieldControl
+            label={t('settings.bills.paidOnLabel')}
+            error={
+              paidOnInvalid ? t('settings.bills.errors.paidOn') : undefined
+            }
+          >
+            {(props) => (
+              <Input
+                {...props}
+                name="paidOn"
+                type="date"
+                max={today}
+                className="h-11 text-base"
+                value={paidOn}
+                onChange={(e) => {
+                  setPaidOn(e.currentTarget.value);
+                  setPaidOnInvalid(false);
+                }}
+              />
+            )}
+          </FieldControl>
+          <CategorySelect
+            categories={categories}
+            value={categoryId}
+            onChange={(id) => {
+              setCategoryId(id);
+              setCategoryMissing(false);
             }}
+            label={t('settings.bills.category')}
+            error={
+              categoryMissing
+                ? t('settings.bills.errors.categoryRequired')
+                : undefined
+            }
           />
-        )}
-      </FieldControl>
-      {unit === null || price === null || !price.ok ? null : (
-        <p className="text-sm text-text-muted tabular-nums" aria-live="polite">
-          {t('settings.bills.paidRate', {
-            currency: priceCurrency,
-            unit: formatMoney(unit, locale),
-          })}
-        </p>
+        </>
       )}
-      <FieldControl
-        label={t('settings.bills.paidOnLabel')}
-        error={paidOnInvalid ? t('settings.bills.errors.paidOn') : undefined}
-      >
-        {(props) => (
-          <Input
-            {...props}
-            name="paidOn"
-            type="date"
-            max={today}
-            className="h-11 text-base"
-            value={paidOn}
-            onChange={(e) => {
-              setPaidOn(e.currentTarget.value);
-              setPaidOnInvalid(false);
-            }}
-          />
-        )}
-      </FieldControl>
-      <CategorySelect
-        categories={categories}
-        value={categoryId}
-        onChange={(id) => {
-          setCategoryId(id);
-          setCategoryMissing(false);
-        }}
-        label={t('settings.bills.category')}
-        error={
-          categoryMissing
-            ? t('settings.bills.errors.categoryRequired')
-            : undefined
-        }
-      />
       <FormError message={problem?.message ?? null} />
       <div className="flex flex-wrap gap-3">
         <Button type="submit" className="h-11" disabled={pay.isPending}>
-          {pay.isPending ? t('settings.saving') : t('settings.bills.paySubmit')}
+          {pay.isPending
+            ? t('settings.saving')
+            : how === 'link'
+              ? t('settings.bills.linkSubmit')
+              : t('settings.bills.paySubmit')}
         </Button>
         <Button
           type="button"
@@ -796,15 +959,12 @@ function DueLine({
   bill: BillView;
   due: CycleBill;
   locale: string;
-  /** Asks what the payment took instead of only marking it paid. */
-  onPay: (() => void) | undefined;
+  /** Opens the payment sheet. */
+  onPay: () => void;
   onAnnounce: (message: string) => void;
 }) {
-  const mark = useBillChange(
-    (paid: boolean) =>
-      paid
-        ? unpayBill(bill.id, due.dueOn)
-        : payBill(bill.id, { dueOn: due.dueOn }),
+  const unpay = useBillChange(
+    () => unpayBill(bill.id, due.dueOn),
     billPaymentQueryKeys,
   );
   const day = formatLongDay(due.dueOn, locale);
@@ -827,39 +987,33 @@ function DueLine({
         )}
       </span>
       <span className="flex flex-wrap items-center gap-2">
-        {mark.isError ? (
+        {unpay.isError ? (
           <span role="alert" className="text-sm font-medium text-negative">
-            {errorMessage(mark.error)}
+            {errorMessage(unpay.error)}
           </span>
         ) : null}
         <Button
           variant="outlined"
           size="dense"
-          disabled={mark.isPending}
+          disabled={unpay.isPending}
           onClick={() => {
-            if (!paid && onPay !== undefined) {
+            if (!paid) {
               onPay();
               return;
             }
-            mark.mutate(paid, {
+            unpay.mutate(undefined, {
               onSuccess: () => {
                 const names = { name: bill.name, day };
                 onAnnounce(
-                  !paid
-                    ? t('settings.bills.announce.paid', names)
-                    : payment?.recorded === true
-                      ? t('settings.bills.announce.unrecorded', names)
-                      : t('settings.bills.announce.unpaid', names),
+                  payment?.recorded === true
+                    ? t('settings.bills.announce.unrecorded', names)
+                    : t('settings.bills.announce.unpaid', names),
                 );
               },
             });
           }}
         >
-          {paid
-            ? t('settings.bills.undoPaid')
-            : onPay === undefined
-              ? t('settings.bills.markPaid')
-              : t('settings.bills.pay')}
+          {paid ? t('settings.bills.undoPaid') : t('settings.bills.pay')}
           <span className="sr-only">
             {' '}
             {t('settings.bills.dueOn', { name: bill.name, day })}
@@ -942,13 +1096,9 @@ function BillItem({
                 bill={bill}
                 due={d}
                 locale={locale}
-                onPay={
-                  bill.price === null
-                    ? undefined
-                    : () => {
-                        onOpen({ kind: 'pay', bill, due: d });
-                      }
-                }
+                onPay={() => {
+                  onOpen({ kind: 'pay', bill, due: d });
+                }}
                 onAnnounce={onAnnounce}
               />
             ))}
@@ -1020,6 +1170,13 @@ export function BillsSection({
             ? t('settings.bills.payTitle', { name: open.bill.name })
             : t('settings.bills.deleteTitle', { name: open.bill.name });
   const hasAccounts = accounts.some((a) => !a.archived);
+  const linked = new Set(
+    bills.flatMap((b) =>
+      b.payments.flatMap((p) =>
+        p.transactionId === null ? [] : [p.transactionId],
+      ),
+    ),
+  );
 
   return (
     <Section
@@ -1079,18 +1236,24 @@ export function BillsSection({
             due={open.due}
             account={accounts.find((a) => a.id === open.bill.accountId)}
             categories={categories}
+            linked={linked}
             today={today.today}
             locale={locale}
             onBusyChange={setBusy}
             onCancel={close}
-            onDone={(paid) => {
+            onDone={(paid, how) => {
               close();
               setAnnouncement(
-                t('settings.bills.announce.recorded', {
-                  name: open.bill.name,
-                  day: formatLongDay(open.due.dueOn, locale),
-                  amount: formatMoney(paid, locale),
-                }),
+                t(
+                  how === 'link'
+                    ? 'settings.bills.announce.linked'
+                    : 'settings.bills.announce.recorded',
+                  {
+                    name: open.bill.name,
+                    day: formatLongDay(open.due.dueOn, locale),
+                    amount: formatMoney(paid, locale),
+                  },
+                ),
               );
             }}
           />
