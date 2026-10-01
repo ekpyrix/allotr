@@ -23,6 +23,8 @@ const pay: CategoryView = {
   parentId: null,
   isPaycheck: true,
   position: 0,
+  colour: null,
+  icon: null,
   mergedIntoId: null,
 };
 

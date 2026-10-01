@@ -43,6 +43,8 @@ function category(
     parentId,
     isPaycheck: false,
     position,
+    colour: null,
+    icon: null,
     mergedIntoId,
   };
 }

@@ -14,7 +14,9 @@ const accounts = [
   { id: 'a-everyday', name: 'Everyday' },
   { id: 'a-savings', name: 'Savings' },
 ] as AccountView[];
-const categories = [{ id: 'c-food', name: 'Food' }] as CategoryView[];
+const categories = [
+  { id: 'c-food', name: 'Food', colour: 'series-6', icon: 'utensils' },
+] as CategoryView[];
 
 function entry(overrides: Partial<TransactionView>): TransactionView {
   return {
@@ -70,6 +72,7 @@ describe('entryRows', () => {
         note: 'Lunch',
         accounts: ['Everyday'],
         amount: usd(-1250),
+        style: { colour: 'series-6', icon: 'utensils' },
       },
     ]);
   });

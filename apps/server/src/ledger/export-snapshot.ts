@@ -2,6 +2,7 @@ import type { ExchangeRate, Transaction } from '@allotr/core';
 import {
   localDateIn,
   money,
+  type CategoryView,
   type LedgerSettingsView,
   type LocalDate,
   type Money,
@@ -36,6 +37,8 @@ export type SnapshotCategory = Readonly<{
   kind: 'expense' | 'income' | 'transfer';
   parentId: string | null;
   isPaycheck: boolean;
+  colour: CategoryView['colour'];
+  icon: CategoryView['icon'];
   mergedIntoId: string | null;
 }>;
 
@@ -118,6 +121,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'kind',
         'parent_id',
         'is_paycheck',
+        'colour',
+        'icon',
         'merged_into_id',
         'position',
       ])
@@ -201,6 +206,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     kind: row.kind as SnapshotCategory['kind'],
     parentId: row.parent_id,
     isPaycheck: row.is_paycheck === 1,
+    colour: row.colour as SnapshotCategory['colour'],
+    icon: row.icon as SnapshotCategory['icon'],
     mergedIntoId: row.merged_into_id,
   }));
   // Parents in their order, then children in their parents' order; a

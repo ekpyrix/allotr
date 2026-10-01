@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema } from './dates.ts';
 import {
   budgetGroupSchema,
@@ -44,6 +45,9 @@ const categorySchema = z.strictObject({
   kind: categoryKindSchema.optional(),
   /** New categories default to false; a match keeps its own. */
   isPaycheck: z.boolean().optional(),
+  /** Only used when the category is created; a match keeps its own. */
+  colour: categoryColourSchema.optional(),
+  icon: categoryIconSchema.optional(),
 });
 
 const accountSchema = z.strictObject({

@@ -272,6 +272,36 @@ test('a category nobody uses is deleted at once, and tags can be renamed', async
   await expectAccessible(page);
 });
 
+test('a category gets a colour and an icon that show in its row', async ({
+  page,
+  baseURL,
+}) => {
+  const made = await post(page, baseURL, '/v1/categories', {
+    name: 'Pets',
+    kind: 'expense',
+  });
+  expect(made.ok()).toBe(true);
+  await page.goto('/settings#categories');
+  const region = section(page, 'Categories');
+  await region.getByRole('button', { name: 'Rename Pets' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Rename Pets' });
+  // The radios are visually hidden; their labels are the targets.
+  await dialog.getByRole('radio', { name: 'Colour 4' }).check({ force: true });
+  await dialog.getByRole('radio', { name: 'Paw print' }).check({ force: true });
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+
+  expect((await categories(page)).find((c) => c.name === 'Pets')).toMatchObject(
+    { colour: 'series-4', icon: 'paw-print' },
+  );
+  await expect(
+    region
+      .getByRole('listitem', { name: 'Pets' })
+      .locator('[data-slot="category-icon"]'),
+  ).toBeVisible();
+  await expectAccessible(page);
+});
+
 test('a bill due this cycle is set aside until it is paid', async ({
   page,
   baseURL,

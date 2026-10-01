@@ -18,6 +18,8 @@ function category(
     parentId: null,
     isPaycheck: false,
     position: 0,
+    colour: null,
+    icon: null,
     mergedIntoId: null,
     ...patch,
   };

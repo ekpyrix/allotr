@@ -11546,6 +11546,80 @@
                           "position": {
                             "type": "integer"
                           },
+                          "colour": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8",
+                              null
+                            ]
+                          },
+                          "icon": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench",
+                              null
+                            ]
+                          },
                           "mergedIntoId": {
                             "type": [
                               "string",
@@ -11562,6 +11636,8 @@
                           "parentId",
                           "isPaycheck",
                           "position",
+                          "colour",
+                          "icon",
                           "mergedIntoId"
                         ]
                       }
@@ -11778,6 +11854,72 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 10000
+                  },
+                  "colour": {
+                    "type": "string",
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8"
+                    ]
+                  },
+                  "icon": {
+                    "type": "string",
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench"
+                    ]
                   }
                 },
                 "required": [
@@ -11825,6 +11967,80 @@
                     "position": {
                       "type": "integer"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
                     "mergedIntoId": {
                       "type": [
                         "string",
@@ -11841,6 +12057,8 @@
                     "parentId",
                     "isPaycheck",
                     "position",
+                    "colour",
+                    "icon",
                     "mergedIntoId"
                   ]
                 }
@@ -12126,6 +12344,80 @@
                     "position": {
                       "type": "integer"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
                     "mergedIntoId": {
                       "type": [
                         "string",
@@ -12142,6 +12434,8 @@
                     "parentId",
                     "isPaycheck",
                     "position",
+                    "colour",
+                    "icon",
                     "mergedIntoId"
                   ]
                 }
@@ -12358,6 +12652,80 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 10000
+                  },
+                  "colour": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "series-1",
+                      "series-2",
+                      "series-3",
+                      "series-4",
+                      "series-5",
+                      "series-6",
+                      "series-7",
+                      "series-8",
+                      null
+                    ]
+                  },
+                  "icon": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "banknote",
+                      "baby",
+                      "beer",
+                      "bike",
+                      "book-open",
+                      "briefcase",
+                      "bus",
+                      "car",
+                      "circle-dollar-sign",
+                      "coffee",
+                      "credit-card",
+                      "dumbbell",
+                      "film",
+                      "fuel",
+                      "gamepad-2",
+                      "gift",
+                      "graduation-cap",
+                      "hand-coins",
+                      "heart-pulse",
+                      "house",
+                      "landmark",
+                      "laptop",
+                      "lightbulb",
+                      "music",
+                      "paw-print",
+                      "percent",
+                      "piggy-bank",
+                      "pill",
+                      "plane",
+                      "receipt",
+                      "repeat",
+                      "scissors",
+                      "shirt",
+                      "shopping-bag",
+                      "shopping-basket",
+                      "smartphone",
+                      "sparkles",
+                      "tag",
+                      "ticket",
+                      "train-front",
+                      "tree-pine",
+                      "trending-up",
+                      "umbrella",
+                      "utensils",
+                      "utensils-crossed",
+                      "wallet",
+                      "wifi",
+                      "wrench",
+                      null
+                    ]
                   }
                 }
               }
@@ -12402,6 +12770,80 @@
                     "position": {
                       "type": "integer"
                     },
+                    "colour": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "series-1",
+                        "series-2",
+                        "series-3",
+                        "series-4",
+                        "series-5",
+                        "series-6",
+                        "series-7",
+                        "series-8",
+                        null
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "banknote",
+                        "baby",
+                        "beer",
+                        "bike",
+                        "book-open",
+                        "briefcase",
+                        "bus",
+                        "car",
+                        "circle-dollar-sign",
+                        "coffee",
+                        "credit-card",
+                        "dumbbell",
+                        "film",
+                        "fuel",
+                        "gamepad-2",
+                        "gift",
+                        "graduation-cap",
+                        "hand-coins",
+                        "heart-pulse",
+                        "house",
+                        "landmark",
+                        "laptop",
+                        "lightbulb",
+                        "music",
+                        "paw-print",
+                        "percent",
+                        "piggy-bank",
+                        "pill",
+                        "plane",
+                        "receipt",
+                        "repeat",
+                        "scissors",
+                        "shirt",
+                        "shopping-bag",
+                        "shopping-basket",
+                        "smartphone",
+                        "sparkles",
+                        "tag",
+                        "ticket",
+                        "train-front",
+                        "tree-pine",
+                        "trending-up",
+                        "umbrella",
+                        "utensils",
+                        "utensils-crossed",
+                        "wallet",
+                        "wifi",
+                        "wrench",
+                        null
+                      ]
+                    },
                     "mergedIntoId": {
                       "type": [
                         "string",
@@ -12418,6 +12860,8 @@
                     "parentId",
                     "isPaycheck",
                     "position",
+                    "colour",
+                    "icon",
                     "mergedIntoId"
                   ]
                 }
@@ -26527,6 +26971,72 @@
                         },
                         "isPaycheck": {
                           "type": "boolean"
+                        },
+                        "colour": {
+                          "type": "string",
+                          "enum": [
+                            "series-1",
+                            "series-2",
+                            "series-3",
+                            "series-4",
+                            "series-5",
+                            "series-6",
+                            "series-7",
+                            "series-8"
+                          ]
+                        },
+                        "icon": {
+                          "type": "string",
+                          "enum": [
+                            "banknote",
+                            "baby",
+                            "beer",
+                            "bike",
+                            "book-open",
+                            "briefcase",
+                            "bus",
+                            "car",
+                            "circle-dollar-sign",
+                            "coffee",
+                            "credit-card",
+                            "dumbbell",
+                            "film",
+                            "fuel",
+                            "gamepad-2",
+                            "gift",
+                            "graduation-cap",
+                            "hand-coins",
+                            "heart-pulse",
+                            "house",
+                            "landmark",
+                            "laptop",
+                            "lightbulb",
+                            "music",
+                            "paw-print",
+                            "percent",
+                            "piggy-bank",
+                            "pill",
+                            "plane",
+                            "receipt",
+                            "repeat",
+                            "scissors",
+                            "shirt",
+                            "shopping-bag",
+                            "shopping-basket",
+                            "smartphone",
+                            "sparkles",
+                            "tag",
+                            "ticket",
+                            "train-front",
+                            "tree-pine",
+                            "trending-up",
+                            "umbrella",
+                            "utensils",
+                            "utensils-crossed",
+                            "wallet",
+                            "wifi",
+                            "wrench"
+                          ]
                         }
                       },
                       "required": [
@@ -27673,6 +28183,72 @@
                           },
                           "isPaycheck": {
                             "type": "boolean"
+                          },
+                          "colour": {
+                            "type": "string",
+                            "enum": [
+                              "series-1",
+                              "series-2",
+                              "series-3",
+                              "series-4",
+                              "series-5",
+                              "series-6",
+                              "series-7",
+                              "series-8"
+                            ]
+                          },
+                          "icon": {
+                            "type": "string",
+                            "enum": [
+                              "banknote",
+                              "baby",
+                              "beer",
+                              "bike",
+                              "book-open",
+                              "briefcase",
+                              "bus",
+                              "car",
+                              "circle-dollar-sign",
+                              "coffee",
+                              "credit-card",
+                              "dumbbell",
+                              "film",
+                              "fuel",
+                              "gamepad-2",
+                              "gift",
+                              "graduation-cap",
+                              "hand-coins",
+                              "heart-pulse",
+                              "house",
+                              "landmark",
+                              "laptop",
+                              "lightbulb",
+                              "music",
+                              "paw-print",
+                              "percent",
+                              "piggy-bank",
+                              "pill",
+                              "plane",
+                              "receipt",
+                              "repeat",
+                              "scissors",
+                              "shirt",
+                              "shopping-bag",
+                              "shopping-basket",
+                              "smartphone",
+                              "sparkles",
+                              "tag",
+                              "ticket",
+                              "train-front",
+                              "tree-pine",
+                              "trending-up",
+                              "umbrella",
+                              "utensils",
+                              "utensils-crossed",
+                              "wallet",
+                              "wifi",
+                              "wrench"
+                            ]
                           }
                         },
                         "required": [

@@ -8,9 +8,9 @@ import { migrate } from './migrate.ts';
 import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
-// 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql and
-// 0007_pools.sql, 0008_budgets.sql and 0009_budget_cover.sql against real
-// SQLite.
+// 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql,
+// 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql and
+// 0010_category_style.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -50,6 +50,7 @@ function migrationsUpTo(last: string): string {
     '0006_bill_prices.sql',
     '0007_pools.sql',
     '0008_budgets.sql',
+    '0009_budget_cover.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -445,6 +446,7 @@ describe('migration 0005_reconciliations', () => {
       '0007_pools',
       '0008_budgets',
       '0009_budget_cover',
+      '0010_category_style',
     ]);
 
     insertReconciliation('r1');
@@ -534,6 +536,7 @@ describe('migration 0006_bill_prices', () => {
       '0007_pools',
       '0008_budgets',
       '0009_budget_cover',
+      '0010_category_style',
     ]);
 
     expect(
@@ -963,5 +966,56 @@ describe('migration 0009_budget_cover', () => {
       sqlite.exec("DELETE FROM users WHERE id = 'u1'");
       expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
     });
+  });
+});
+
+describe('migration 0010_category_style', () => {
+  const style = (name: string, userId = 'u1') =>
+    sqlite
+      .prepare(
+        'SELECT colour, icon FROM categories WHERE user_id = ? AND name = ?',
+      )
+      .get(userId, name);
+
+  it('styles starter categories a user still has unstyled, and no others', () => {
+    migrateFrom(migrationsUpTo('0009'));
+    insertUser('u1');
+    sqlite
+      .prepare(
+        `INSERT INTO categories (id, user_id, name, kind, created_at, updated_at)
+         VALUES ('pets', 'u1', 'Pets', 'expense', ?, ?)`,
+      )
+      .run(at, at);
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0010_category_style']);
+
+    expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
+    expect(style('Groceries')).toEqual({
+      colour: null,
+      icon: 'shopping-basket',
+    });
+    expect(style('Pets')).toEqual({ colour: null, icon: null });
+  });
+
+  it('copies the style to a new user with the starter set', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u2');
+    expect(style('Paycheck', 'u2')).toEqual({
+      colour: 'series-6',
+      icon: 'banknote',
+    });
+    expect(style('Eating out', 'u2')).toEqual({ colour: null, icon: 'coffee' });
+  });
+
+  it('refuses a colour outside the series roles and a malformed icon', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    const set = (column: string, value: string) =>
+      sqlite
+        .prepare(`UPDATE categories SET ${column} = ? WHERE name = 'Food'`)
+        .run(value);
+    expect(() => set('colour', '#ff0000')).toThrow(/CHECK/);
+    expect(() => set('icon', 'Not An Icon')).toThrow(/CHECK/);
+    expect(() => set('colour', 'series-3')).not.toThrow();
   });
 });

@@ -416,7 +416,8 @@ pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)
                                         -- append-only
 categories(id, user_id, name, kind[expense|income|transfer], parent_id,
-           default_account_id, is_paycheck, merged_into_id)
+           default_account_id, is_paycheck, colour[series-1..8], icon[Lucide
+           name from a fixed set], merged_into_id)
 tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)
 aliases(id, user_id, alias, target_type, target_id)
 transactions(id, user_id, kind, occurred_on, created_at, source, category_id,

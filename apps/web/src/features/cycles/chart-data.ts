@@ -1,11 +1,13 @@
 import {
   formatMoney,
+  type CategoryColour,
   type CycleDayView,
   type CycleDetailView,
   type CycleSummaryView,
   type Money,
 } from '@allotr/shared';
 import { formatDay, formatLongDay } from '@/features/today/format';
+import type { CategoryStyle } from '@/lib/category-style';
 import { t } from '@/messages/t';
 import { categoryName, formatRange } from './format.ts';
 
@@ -26,18 +28,23 @@ export type CategoryBar = Readonly<{
   key: string;
   name: string;
   amount: Money;
+  /** The category's colour; null for "Other", which has no category. */
+  colour: CategoryColour | null;
 }>;
 
 /** The ranked categories, then "Other" as the server summed it. */
 export function categoryBars(
   top: CycleDetailView['spendingTop'],
   names: ReadonlyMap<string, string>,
+  styles: ReadonlyMap<string, CategoryStyle> = new Map(),
 ): CategoryBar[] {
   return [
     ...top.top.map(({ categoryId, amount }) => ({
       key: categoryId ?? '',
       name: categoryName(names, categoryId),
       amount,
+      colour:
+        categoryId === null ? null : (styles.get(categoryId)?.colour ?? null),
     })),
     ...(top.other === null
       ? []
@@ -46,6 +53,7 @@ export function categoryBars(
             key: 'other',
             name: t('charts.other', { count: top.other.count }),
             amount: top.other.amount,
+            colour: null,
           },
         ]),
   ];

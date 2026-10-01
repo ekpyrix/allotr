@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema } from './dates.ts';
 import {
   currencyCodeSchema,
@@ -158,6 +159,10 @@ export const categorySchema = z.object({
   parentId: idSchema.nullable(),
   isPaycheck: z.boolean(),
   position: z.int(),
+  /** A chart series role; null follows the parent, else a default. */
+  colour: categoryColourSchema.nullable(),
+  /** A Lucide icon from the fixed set; null follows the parent. */
+  icon: categoryIconSchema.nullable(),
   /** Set once merged; the category then only resolves old entries. */
   mergedIntoId: idSchema.nullable(),
 });
@@ -178,6 +183,8 @@ export const createCategoryBodySchema = z.object({
   parentId: idSchema.optional(),
   isPaycheck: z.boolean().default(false),
   position: z.int().min(0).max(10_000).optional(),
+  colour: categoryColourSchema.optional(),
+  icon: categoryIconSchema.optional(),
 });
 
 export const updateCategoryBodySchema = z
@@ -186,6 +193,9 @@ export const updateCategoryBodySchema = z
     parentId: idSchema.nullable().optional(),
     isPaycheck: z.boolean().optional(),
     position: z.int().min(0).max(10_000).optional(),
+    /** null clears it. */
+    colour: categoryColourSchema.nullable().optional(),
+    icon: categoryIconSchema.nullable().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

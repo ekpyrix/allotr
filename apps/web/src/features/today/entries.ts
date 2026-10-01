@@ -5,6 +5,8 @@ import {
   type Money,
   type TransactionView,
 } from '@allotr/shared';
+import { singleStyle } from '@/features/ledger/rows';
+import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
 import { categoryTitle } from '@/lib/entry-categories';
 
 // Today's entries as rows: what was logged today, with delete. A deleted
@@ -24,6 +26,8 @@ export interface EntryRow {
   accounts: string[];
   /** Signed from the user's side: money out is negative. */
   amount: Money | null;
+  /** The category's colour and icon; null for a split or none. */
+  style: CategoryStyle | null;
 }
 
 // Budget switches have no amount to show or delete from here.
@@ -44,6 +48,7 @@ export function entryRows(
 ): EntryRow[] {
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
+  const styles = categoryStyles(categories);
   return transactions.filter(shown).map((entry) => {
     const own = entry.postings.filter((p) => p.systemRole === null);
     const out = own.find((p) => p.amount.amountMinor < 0);
@@ -64,6 +69,7 @@ export function entryRows(
             ? null
             : money(-out.amount.amountMinor, out.amount.currency)
           : (ordered[0]?.amount ?? null),
+      style: singleStyle(entry, styles),
     };
   });
 }

@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
+import { CategoryIcon } from '@/components/ui/category-icon';
 import { useQuickEntry } from '@/features/quick-entry/quick-entry-provider';
 import { useDeleteEntry } from '@/features/ledger/use-delete-entry';
 import { errorMessage } from '@/lib/problem';
@@ -64,6 +65,11 @@ function EntryItem({
   return (
     <li className="grid gap-2 border-b border-outline-variant px-4 py-3 last:border-b-0">
       <div className="flex items-start gap-3">
+        {row.style === null ? null : (
+          <span className="mt-0.5 flex size-5 shrink-0">
+            <CategoryIcon style={row.style} />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <p className="font-medium">{title}</p>
           {details.length > 0 ? (
