@@ -15,6 +15,7 @@ import { problem, type ProblemStatus } from './problem.ts';
 import { registerLedgerAccountRoutes } from './routes/accounts.ts';
 import { registerAppearanceRoutes } from './routes/appearance.ts';
 import { registerBillRoutes } from './routes/bills.ts';
+import { registerBudgetRoutes } from './routes/budgets.ts';
 import { registerCategoryRoutes } from './routes/categories.ts';
 import { registerCycleRoutes } from './routes/cycles.ts';
 import { registerOnboardingRoutes } from './routes/onboarding.ts';
@@ -101,6 +102,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerUserRoutes(app, deps, serialiseUsers);
   registerLedgerAccountRoutes(app, deps);
   registerPoolRoutes(app, deps);
+  registerBudgetRoutes(app, deps);
   registerCategoryRoutes(app, deps);
   registerTagRoutes(app, deps);
   registerTransactionRoutes(app, deps);

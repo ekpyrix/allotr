@@ -136,6 +136,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   add, and rename, switch or archive. `PUT /v1/accounts/{id}/pool` moves an
   account into a pool from a date. `GET`/`PATCH /v1/settings/ledger` carry
   `countSavingsInDaily`.
+- Budgets (ADR 0021) are served under `/v1/budgets`: the status for the
+  current period (every budget's planned, carried, spent, left and held, free
+  money and the daily number), plan, change and end. Budgets are virtual and
+  computed from the ledger on each read. `GET`/`PATCH /v1/settings/ledger` also
+  carry `budgetPeriod` (`cycle`, `month`) and `dailyMode` (`free`,
+  `pool-minus-bills`, `daily-budgets`).
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on

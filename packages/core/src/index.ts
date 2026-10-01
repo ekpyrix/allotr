@@ -80,6 +80,7 @@ export { cycleOn, cyclesOf } from './projections/cycles.ts';
 export { lastWorkingDayOfMonth, nextPayday } from './projections/payday.ts';
 export {
   availableOn,
+  budgetFold,
   billsDueOn,
   billsInCycle,
   dailyFigures,
@@ -94,6 +95,35 @@ export {
   type CycleDay,
   type CycleDays,
 } from './projections/series.ts';
+export {
+  budgetId,
+  budgetPeriodOn,
+  budgetPeriods,
+  foldBudgets,
+  heldBy,
+  leftOf,
+  tagId,
+  type Budget,
+  type BudgetAmount,
+  type BudgetFold,
+  type BudgetId,
+  type BudgetLeftover,
+  type BudgetMode,
+  type BudgetPeriod,
+  type BudgetPeriodLine,
+  type BudgetPeriodRule,
+  type BudgetSetup,
+  type BudgetTarget,
+  type CategoryNode,
+  type DailyMode,
+  type SpendLine,
+  type TagId,
+} from './projections/budgets.ts';
+export {
+  budgetStatus,
+  type BudgetLineStatus,
+  type BudgetStatus,
+} from './projections/budget-status.ts';
 export {
   defaultPoolSetup,
   groupsOn,

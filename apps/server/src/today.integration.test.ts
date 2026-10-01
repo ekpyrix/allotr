@@ -535,6 +535,8 @@ describe('ledger settings', () => {
       paydayDay: 1,
       paydayOverride: null,
       countSavingsInDaily: false,
+      budgetPeriod: 'cycle',
+      dailyMode: 'free',
     });
   });
 

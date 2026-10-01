@@ -8,11 +8,10 @@ import {
 } from '@allotr/shared';
 import { accountIn } from '../ledger/chart.ts';
 import type { AccountId, Transaction } from '../ledger/types.ts';
-import { cyclesOf } from './cycles.ts';
+import { cycleEndOn, cyclesOf } from './cycles.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import {
   add,
-  cycleEndOn,
   lessReserved,
   onBudgetSums,
   paceExclusions,

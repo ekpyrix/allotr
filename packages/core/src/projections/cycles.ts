@@ -103,3 +103,12 @@ export function billWindow(cycle: Cycle): DateWindow {
       : cycle.payday;
   return { from: cycle.openedOn, to };
 }
+
+/**
+ * The day after the cycle's last day as seen on `date`: the payday, or,
+ * from payday on until a paycheck arrives, the next day (the cycle runs
+ * one day at a time, and is overdue the day after payday).
+ */
+export function cycleEndOn(cycle: Cycle, date: LocalDate): LocalDate {
+  return date >= cycle.payday ? addDays(date, 1) : cycle.payday;
+}
