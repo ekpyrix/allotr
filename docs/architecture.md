@@ -147,6 +147,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   tells the entry sheet what an expense would take before it is saved, and
   `PUT`/`DELETE /v1/transactions/{id}/cover` set or clear a per-entry
   override, a setting that changes no ledger row.
+- The payday plan and insights are read-only projections: `GET /v1/payday-plan`
+  (the sheet) and `POST /v1/payday-plan/confirm` (budget amounts plus one
+  savings transfer, idempotent per cycle), `GET /v1/insights/emergency-fund`,
+  `GET /v1/insights/net-worth?days=` and `GET /v1/insights/weekly-review`.
+  `payYourselfFirst` and `emergencyMonths` are ledger settings.
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on

@@ -37,6 +37,10 @@ type Status = {
 };
 
 const started = new Date('2026-03-15T12:00:00Z');
+// The clock moves on a millisecond per call, so entries made on the same day
+// keep the order they were recorded in, which cover depends on.
+let tick = 0;
+const clock = () => new Date(started.getTime() + (tick += 1));
 let h: TwoUsers;
 let everyday = '';
 const ids: Record<string, string> = {};
@@ -44,7 +48,7 @@ const ids: Record<string, string> = {};
 const usd = (amountMinor: number) => ({ amountMinor, currency: 'USD' });
 
 beforeAll(async () => {
-  h = await startWithTwoUsers({ now: () => started });
+  h = await startWithTwoUsers({ now: clock });
   await h.db
     .updateTable('users')
     .set({ created_at: started.toISOString() })

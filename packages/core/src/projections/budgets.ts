@@ -264,7 +264,7 @@ function ordered(a: Transaction, b: Transaction): number {
   );
 }
 
-type Raw = Readonly<{
+export type CountedSpend = Readonly<{
   entryId: TransactionId;
   date: LocalDate;
   at: string;
@@ -276,12 +276,12 @@ type Raw = Readonly<{
 // not undone, in time order. An undo cancels its entry, so neither counts.
 // `excluded` entries, such as a payment of a bill that was already reserved,
 // do not count: their money left free money when the cycle opened.
-function rawSpend(
+export function countedSpendLines(
   view: LedgerView,
   today: LocalDate,
   excluded: ReadonlySet<TransactionId>,
   missing: Set<CurrencyCode>,
-): Raw[] {
+): CountedSpend[] {
   const reversed = new Set(
     view.ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
   );
@@ -291,7 +291,7 @@ function rawSpend(
       .map((a) => a.id),
   );
   const groups = new Map<LocalDate, ReturnType<typeof groupsOn>>();
-  const raw: Raw[] = [];
+  const raw: CountedSpend[] = [];
   for (const t of [...view.ledger].sort(ordered)) {
     if (
       t.kind === 'reversal' ||
@@ -492,7 +492,12 @@ export function foldBudgets(
     today,
   );
   const missing = new Set<CurrencyCode>();
-  const raw = rawSpend(view, today, env.excluded ?? new Set(), missing);
+  const raw = countedSpendLines(
+    view,
+    today,
+    env.excluded ?? new Set(),
+    missing,
+  );
   const periods = budgetPeriods(view, since, today);
   const returns = [...(setup.returns ?? [])]
     .filter((r) => r.on <= today)
@@ -551,7 +556,7 @@ export function foldBudgets(
 
     // Spending and money coming back, together, in time order.
     type Event =
-      | { kind: 'spend'; date: LocalDate; at: string; line: Raw }
+      | { kind: 'spend'; date: LocalDate; at: string; line: CountedSpend }
       | { kind: 'return'; date: LocalDate; at: string; ret: BudgetReturn };
     const events: Event[] = [
       ...raw

@@ -88,6 +88,21 @@ export {
   leftTodayChange,
   leftTodayDrop,
 } from './projections/daily.ts';
+export {
+  emergencyFund,
+  netWorthOn,
+  netWorthSeries,
+  paydayPlan,
+  savingsLine,
+  weeklyReview,
+  type EmergencyFund,
+  type NetWorth,
+  type NetWorthPoint,
+  type PaydayPlan,
+  type PayYourselfFirst,
+  type PlanLine,
+  type WeeklyReview,
+} from './projections/plan.ts';
 export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';
 export {
   balanceHistory,

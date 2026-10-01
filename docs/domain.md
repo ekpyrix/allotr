@@ -204,6 +204,37 @@ grocery entry takes $10 from free money, $40 from the Buffer, and the Buffer
 shows $160. Had the Buffer been empty, $40 would be uncovered and the daily
 number would go negative.
 
+## Payday plan and insights
+
+All of these are computed from the ledger and settings when read.
+
+- **Pay yourself first.** The setting `payYourselfFirst` is a fixed amount or
+  a share of the paycheck (in hundredths of a percent). The savings line comes
+  first in the payday sheet: a fixed amount never exceeds the paycheck, and a
+  share is rounded down so the plan never promises more than there is. It
+  becomes one transfer to a savings account when the sheet is confirmed.
+- **Payday sheet.** After the savings line, each budget in use is prefilled
+  with this period's plan, or, when it has none, with the suggestion. Every
+  expense category without a budget that has been spending is offered with a
+  suggestion. A suggestion is the average spending of the category per cycle
+  over up to the last three closed cycles, each converted at the rate of its
+  last day and rounded down. Confirming sets the amounts from the current
+  period on and plans the new budgets. Repeating the confirmation moves no
+  second transfer: it carries an idempotency key for the cycle.
+- **Emergency fund.** Target = `emergencyMonths` (3 by default) times average
+  expenses per cycle over the same history; the usual three and six months are
+  reported too. Saved = accounts that do not count toward the daily number.
+  Progress is saved over target, capped at 100%. Without a closed cycle there
+  is no history and the target is zero.
+- **Net worth.** Every account, savings included, converted to the default
+  currency at the rate of the day, with debts, receivables and payables
+  counted by their sign. A daily series comes from one pass over the ledger
+  and agrees with the figure for each day.
+- **Weekly review.** The seven days ending today against the seven before,
+  the three biggest categories, the daily figure, free money and where the
+  budgets stand. Spending counts as for budgets: paid from counted accounts,
+  without linked bill payments and reconcile adjustments.
+
 ## Daily usable
 
 ```
@@ -321,6 +352,8 @@ Per-user settings. The default is listed first.
 |---|---|---|
 | Daily-number mode | Free money ÷ days left | Counted accounts − bills ÷ days left (ignores budgets) · daily budgets left ÷ days left |
 | Budget period | Follows the cycle | Calendar month |
+| Pay yourself first | None | A fixed amount or a percentage of the paycheck, set aside first at payday |
+| Emergency fund target | 3 months of average expenses | 1 to 24 months |
 | Cover order | Free money, the Buffer, then budgets in the order planned | A list the user orders by dragging; a per-entry override |
 | Savings in the daily number | Off: savings pools never count | On: a savings pool whose own switch is on counts too |
 | Bills | Reserve at payday | No reservation · dedicated off-budget bills account |
