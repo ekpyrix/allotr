@@ -270,12 +270,16 @@ export function dailyFiguresOn(
 
   const onBudgetNative = onBudgetSums(view, today);
   const availableNative = availableSums(view, cycles, today);
-  const spentNative = spentSums(view, today, today).spent;
+  const excluded = paceExclusions(view);
+  // Linked bill payments and their undos are left out of today's spending
+  // as they are of pace: the bill's reserve already left the budget, so
+  // paying it moves neither the allowance nor what is left today.
+  const spentNative = spentSums(view, today, today, excluded).kept;
   const { spent: cycleSpentNative, kept: paceSpentNative } = spentSums(
     view,
     cycle.openedOn,
     today,
-    paceExclusions(view),
+    excluded,
   );
   // The start of the day counts everything dated today except spending,
   // so a paycheck that lands today is in today's allowance.

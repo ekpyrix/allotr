@@ -99,6 +99,10 @@ live_daily       = available(now) / days_left
 - `spent_today` is the on-budget side of today's entries that reach an
   Expenses account, less any undo. Moving money to savings lowers the
   allowance itself instead.
+- Payments linked to a bill, and their undos, are left out of
+  `spent_today` (and so out of `start_of_day`), the same entries pace
+  leaves out. The bill's reserve already left `available`, so paying it
+  changes neither `today_allowance` nor `left_today`.
 - Overspending today lowers tomorrow's allowance automatically.
 - Daily figures round down, so they never promise more than is there; the
   spare minor units show up in later days.
