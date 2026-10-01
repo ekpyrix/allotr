@@ -1,0 +1,110 @@
+{
+  "description": "A $700 Food purchase is covered by the Buffer ($200) and Travel ($300) after its $100 own part and free money are used up. A $350 refund restores Travel first, then the Buffer; a $500 repayment later restores what is still owed and sends the rest to free money.",
+  "today": "2026-03-10",
+  "settings": { "dailyMode": "free" },
+  "categories": { "food": null, "travel": null, "other": null },
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "rent",
+      "kind": "expense",
+      "on": "2026-03-05",
+      "account": "card-USD",
+      "amountMinor": 95000,
+      "category": "other"
+    },
+    {
+      "id": "big",
+      "kind": "expense",
+      "on": "2026-03-06",
+      "account": "card-USD",
+      "amountMinor": 70000,
+      "category": "food"
+    }
+  ],
+  "returns": [
+    { "id": "r1", "against": "big", "on": "2026-03-08", "amountMinor": 35000 },
+    { "id": "r2", "against": "big", "on": "2026-03-09", "amountMinor": 50000 }
+  ],
+  "budgets": [
+    {
+      "id": "food",
+      "target": { "kind": "category", "category": "food" },
+      "mode": "daily",
+      "leftover": "free",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 10000]]
+    },
+    {
+      "id": "travel",
+      "target": { "kind": "category", "category": "travel" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 30000]]
+    },
+    {
+      "id": "buffer",
+      "target": { "kind": "buffer" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "entries": {
+      "big": {
+        "own": 10000,
+        "covers": { "buffer": 20000, "travel": 30000 },
+        "uncovered": 10000
+      }
+    },
+    "refills": {
+      "r1": { "restored": { "travel": 30000, "buffer": 5000 }, "toFree": 0 },
+      "r2": { "restored": { "buffer": 15000 }, "toFree": 35000 }
+    },
+    "available": -15000,
+    "held": 50000,
+    "free": -65000,
+    "dailyLeft": 0,
+    "unbudgeted": 95000,
+    "dailyNumber": -2955,
+    "budgets": {
+      "food": {
+        "planned": 10000,
+        "carriedIn": 0,
+        "spent": 70000,
+        "left": 0,
+        "held": 0
+      },
+      "travel": {
+        "planned": 30000,
+        "carriedIn": 0,
+        "spent": 0,
+        "left": 30000,
+        "held": 30000
+      },
+      "buffer": {
+        "planned": 20000,
+        "carriedIn": 0,
+        "spent": 0,
+        "left": 20000,
+        "held": 20000
+      }
+    }
+  }
+}

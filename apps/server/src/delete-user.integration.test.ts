@@ -174,6 +174,25 @@ describe('POST /v1/user/delete', () => {
           })
         ).status,
       ).toBe(200);
+      // A cover override, so every per-user table has a row.
+      const { defaultCurrency } = (await h.bob.get('/v1/settings/ledger'))
+        .body as { defaultCurrency: string };
+      const entries = await h.bob.get('/v1/transactions?limit=100');
+      const spending = (
+        entries.body as { transactions: { id: string; kind: string }[] }
+      ).transactions.find((t) => t.kind === 'expense');
+      expect(
+        (
+          await h.bob.put(`/v1/transactions/${spending?.id ?? ''}/cover`, {
+            covers: [
+              {
+                source: 'free',
+                amount: { amountMinor: 100, currency: defaultCurrency },
+              },
+            ],
+          })
+        ).status,
+      ).toBe(204);
       ({ totpURI } = await enrolTwoFactor(h.bob));
       expect(
         (await h.bob.put('/v1/settings/appearance', { mode: 'dark' })).status,

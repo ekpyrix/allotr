@@ -130,6 +130,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-C9 | Configurable policies for bills, leftover, overspending, savings withdrawals, extra income, second paychecks and reconciliation (see [domain.md](domain.md#policies)). | M | M4 |
 | FR-C10 | Savings goals as earmarks on the off-budget total, with progress. | S | M4 |
 | FR-C11 | The daily number has three modes: free money ÷ days left (default), counted accounts − bills ÷ days left, or daily budgets left ÷ days left. | M | v2 |
+| FR-C12 | Cover: when spending passes what its budget has left, the shortfall is covered automatically in the user's cover order (free money, then the Buffer, then budgets from lowest priority up; bills never). The daily number goes negative only when everything is used. The entry sheet previews the cover, with a second tap when it reaches set-aside money; the user can change an entry's cover later; refunds and repayments refill what the cover took, in reverse order. | M | v2 |
 
 ### 6.3 Input and chat
 

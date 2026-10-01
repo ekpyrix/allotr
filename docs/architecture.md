@@ -141,7 +141,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   money and the daily number), plan, change and end. Budgets are virtual and
   computed from the ledger on each read. `GET`/`PATCH /v1/settings/ledger` also
   carry `budgetPeriod` (`cycle`, `month`) and `dailyMode` (`free`,
-  `pool-minus-bills`, `daily-budgets`).
+  `pool-minus-bills`, `daily-budgets`). Cover is computed on read as well:
+  `PUT /v1/budgets/cover-order` saves the order, `GET /v1/budgets/covers`
+  lists this period's covered entries, `POST /v1/budgets/cover-preview`
+  tells the entry sheet what an expense would take before it is saved, and
+  `PUT`/`DELETE /v1/transactions/{id}/cover` set or clear a per-entry
+  override, a setting that changes no ledger row.
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on

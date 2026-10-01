@@ -251,6 +251,57 @@ export function dailyFigures(
   return dailyFiguresOn(view, localDateIn(now, timeZone));
 }
 
+// What the counted accounts held, less unpaid reserved bills, just before each
+// entry that has an expense line, in the default currency. A cover reads it to
+// tell how much free money an entry found. Entries are taken in time order,
+// the order the budgets are folded in.
+function availableBeforeEntries(
+  view: LedgerView,
+  cycles: readonly Cycle[],
+  today: LocalDate,
+): Map<TransactionId, bigint> {
+  const expenses = new Set(
+    [...view.chart.values()]
+      .filter((a) => a.systemRole === 'expenses')
+      .map((a) => a.id),
+  );
+  const running = new Map<AccountId, bigint>();
+  const before = new Map<TransactionId, bigint>();
+  const groupsByDate = new Map<LocalDate, ReturnType<typeof groupsOn>>();
+  const sorted = [...view.ledger].sort(
+    (a, b) =>
+      a.occurredOn.localeCompare(b.occurredOn) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.id.localeCompare(b.id),
+  );
+  for (const t of sorted) {
+    if (t.occurredOn > today) break;
+    if (t.postings.some((p) => expenses.has(p.accountId))) {
+      let groups = groupsByDate.get(t.occurredOn);
+      if (groups === undefined) {
+        groups = groupsOn(view, t.occurredOn);
+        groupsByDate.set(t.occurredOn, groups);
+      }
+      const counted: Sums = new Map();
+      for (const [id, balance] of running) {
+        const currency = view.chart.get(id)?.currency;
+        if (groups.get(id) === 'on' && currency !== undefined) {
+          add(counted, currency, balance);
+        }
+      }
+      const sums = lessReserved(view, cycles, t.occurredOn, counted);
+      before.set(t.id, BigInt(toFigure(view, sums, today).amount.amountMinor));
+    }
+    for (const p of t.postings) {
+      running.set(
+        p.accountId,
+        (running.get(p.accountId) ?? 0n) + BigInt(p.amount.amountMinor),
+      );
+    }
+  }
+  return before;
+}
+
 /**
  * The budget figures for the period holding `today`, leaving out the entries
  * pace leaves out (linked bill payments, reconcile adjustments). Null when
@@ -260,7 +311,19 @@ export function budgetFold(
   view: LedgerView,
   today: LocalDate,
 ): BudgetFold | null {
-  return foldBudgets(view, today, paceExclusions(view));
+  if (view.budgets === undefined || view.budgets.budgets.length === 0) {
+    return null;
+  }
+  const cycles = cyclesOf(view, today);
+  let before: Map<TransactionId, bigint> | undefined;
+  return foldBudgets(view, today, {
+    excluded: paceExclusions(view),
+    // Only worked out when an entry actually needs cover.
+    availableBefore: (id) => {
+      before ??= availableBeforeEntries(view, cycles, today);
+      return before.get(id) ?? 0n;
+    },
+  });
 }
 
 type DailyBase = Readonly<{
@@ -330,9 +393,20 @@ function dailyBase(
   const left = lines
     .filter((l) => l.budget.mode === 'daily')
     .reduce((sum, line) => sum + leftOf(line), 0n);
-  const spent = todays
-    .filter((line) => line.budgetId !== null && daily.has(line.budgetId))
-    .reduce((sum, line) => sum + line.amount, 0n);
+  // Spending in a daily budget counts against it, and so does what its
+  // shortfall took from another daily budget.
+  const spent = todays.reduce((sum, line) => {
+    const ownDaily =
+      line.budgetId !== null && daily.has(line.budgetId) ? line.own : 0n;
+    const coveredByDaily = line.covers.reduce(
+      (total, take) =>
+        take.source !== 'free' && daily.has(take.source)
+          ? total + take.amount
+          : total,
+      0n,
+    );
+    return sum + ownDaily + coveredByDaily;
+  }, 0n);
   return {
     ...common,
     available: money(Number(left), currency),

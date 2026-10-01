@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   accountId,
   budgetId,
+  budgetFold,
   budgetStatus,
   categoryId,
   chartOf,
@@ -14,6 +15,7 @@ import {
   type Account,
   type Budget,
   type BudgetSetup,
+  type CoverSource,
   type DailyMode,
   type LedgerView,
   type Transaction,
@@ -38,6 +40,12 @@ type Fixture = {
     category?: string;
     tags?: string[];
   }[];
+  /** Who pays a shortfall, first to last; the usual order when omitted. */
+  coverOrder?: string[];
+  /** Splits chosen for an entry's shortfall. */
+  overrides?: Record<string, Record<string, number>>;
+  /** Money coming back against an earlier entry. */
+  returns?: { id: string; against: string; on: string; amountMinor: number }[];
   budgets: {
     id: string;
     target:
@@ -50,6 +58,16 @@ type Fixture = {
     amounts: [string, number][];
   }[];
   expected: {
+    /** What each entry's budget paid, what covered the rest, and what is left. */
+    entries?: Record<
+      string,
+      { own: number; covers: Record<string, number>; uncovered: number }
+    >;
+    /** What each return restored, by source, and what went to free money. */
+    refills?: Record<
+      string,
+      { restored: Record<string, number>; toFree: number }
+    >;
     available: number;
     held: number;
     free: number;
@@ -164,6 +182,38 @@ function build(fixture: Fixture) {
       ]),
     ),
     entryTags: tags,
+    ...(fixture.coverOrder === undefined
+      ? {}
+      : {
+          coverOrder: fixture.coverOrder.map((id): CoverSource =>
+            id === 'free' ? 'free' : budgetId(id),
+          ),
+        }),
+    ...(fixture.overrides === undefined
+      ? {}
+      : {
+          coverOverrides: new Map(
+            Object.entries(fixture.overrides).map(([entry, split]) => [
+              transactionId(entry),
+              Object.entries(split).map(([source, amount]) => ({
+                source:
+                  source === 'free' ? ('free' as const) : budgetId(source),
+                amount: usd(amount),
+              })),
+            ]),
+          ),
+        }),
+    ...(fixture.returns === undefined
+      ? {}
+      : {
+          returns: fixture.returns.map((r) => ({
+            id: r.id,
+            against: transactionId(r.against),
+            amount: usd(r.amountMinor),
+            on: localDate(r.on),
+            at: `${r.on}T12:00:00.000Z`,
+          })),
+        }),
   };
   const found: LedgerView = {
     chart,
@@ -204,6 +254,29 @@ describe('budget golden fixtures', () => {
       expect(status.dailyLeft.amountMinor).toBe(expected.dailyLeft);
       expect(status.unbudgeted.amountMinor).toBe(expected.unbudgeted);
       expect(status.dailyNumber.amountMinor).toBe(expected.dailyNumber);
+      const fold = budgetFold(build(fixture), localDate(fixture.today));
+      for (const [id, want] of Object.entries(expected.entries ?? {})) {
+        const lines = fold?.spend.filter((l) => l.entryId === id) ?? [];
+        expect(lines.length, id).toBeGreaterThan(0);
+        expect({
+          own: lines.reduce((sum, l) => sum + Number(l.own), 0),
+          covers: Object.fromEntries(
+            lines.flatMap((l) =>
+              l.covers.map((c) => [c.source, Number(c.amount)] as const),
+            ),
+          ),
+          uncovered: lines.reduce((sum, l) => sum + Number(l.uncovered), 0),
+        }).toEqual(want);
+      }
+      for (const [id, want] of Object.entries(expected.refills ?? {})) {
+        const refill = fold?.refills.find((r) => r.returnId === id);
+        expect({
+          restored: Object.fromEntries(
+            (refill?.restored ?? []).map((r) => [r.source, Number(r.amount)]),
+          ),
+          toFree: Number(refill?.toFree ?? -1),
+        }).toEqual(want);
+      }
       for (const [id, figures] of Object.entries(expected.budgets)) {
         const line = status.lines.find((l) => l.budget.id === id);
         expect(line, id).toBeDefined();

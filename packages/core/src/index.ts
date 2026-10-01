@@ -98,6 +98,7 @@ export {
 export {
   budgetId,
   budgetPeriodOn,
+  coverOrderOf,
   budgetPeriods,
   foldBudgets,
   heldBy,
@@ -112,6 +113,12 @@ export {
   type BudgetPeriod,
   type BudgetPeriodLine,
   type BudgetPeriodRule,
+  type BudgetReturn,
+  type CoverRequest,
+  type CoverSource,
+  type CoverTake,
+  type FoldEnv,
+  type Refill,
   type BudgetSetup,
   type BudgetTarget,
   type CategoryNode,
@@ -120,9 +127,14 @@ export {
   type TagId,
 } from './projections/budgets.ts';
 export {
+  budgetCovers,
   budgetStatus,
+  coverPreview,
+  type BudgetCover,
   type BudgetLineStatus,
   type BudgetStatus,
+  type CoveredFigures,
+  type CoverPreview,
 } from './projections/budget-status.ts';
 export {
   defaultPoolSetup,

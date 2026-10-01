@@ -9,7 +9,8 @@ import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql and
-// 0007_pools.sql and 0008_budgets.sql against real SQLite.
+// 0007_pools.sql, 0008_budgets.sql and 0009_budget_cover.sql against real
+// SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -48,6 +49,7 @@ function migrationsUpTo(last: string): string {
     '0005_reconciliations.sql',
     '0006_bill_prices.sql',
     '0007_pools.sql',
+    '0008_budgets.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -442,6 +444,7 @@ describe('migration 0005_reconciliations', () => {
       '0006_bill_prices',
       '0007_pools',
       '0008_budgets',
+      '0009_budget_cover',
     ]);
 
     insertReconciliation('r1');
@@ -530,6 +533,7 @@ describe('migration 0006_bill_prices', () => {
       '0006_bill_prices',
       '0007_pools',
       '0008_budgets',
+      '0009_budget_cover',
     ]);
 
     expect(
@@ -610,7 +614,11 @@ describe('migration 0007_pools', () => {
     insertUser('u2');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0007_pools', '0008_budgets']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0007_pools',
+      '0008_budgets',
+      '0009_budget_cover',
+    ]);
 
     expect(pools()).toEqual([
       {
@@ -757,7 +765,10 @@ describe('migration 0008_budgets', () => {
     migrateFrom(migrationsUpTo('0007'));
     insertUser('u1');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0008_budgets']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0008_budgets',
+      '0009_budget_cover',
+    ]);
 
     expect(
       sqlite
@@ -880,6 +891,77 @@ describe('migration 0008_budgets', () => {
       sqlite.exec("DELETE FROM users WHERE id = 'u1'");
       expect(count('SELECT count(*) FROM budgets')).toBe(0);
       expect(count('SELECT count(*) FROM budget_amounts')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0009_budget_cover', () => {
+  const insertEntry = () =>
+    sqlite
+      .prepare(
+        `INSERT INTO transactions (id, user_id, kind, occurred_on, created_at, source)
+         VALUES ('t1', 'u1', 'expense', '2026-03-10', ?, 'api')`,
+      )
+      .run(at);
+  const insertOverride = (
+    id: string,
+    fields: { position?: number; source?: string; minor?: number } = {},
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO cover_overrides
+           (id, user_id, transaction_id, position, source, amount_minor, currency, created_at)
+         VALUES (?, 'u1', 't1', ?, ?, ?, 'USD', ?)`,
+      )
+      .run(
+        id,
+        fields.position ?? 0,
+        fields.source ?? 'free',
+        fields.minor ?? 4000,
+        at,
+      );
+
+  it('applies to a database at 0008', () => {
+    migrateFrom(migrationsUpTo('0008'));
+    insertUser('u1');
+    expect(migrateFrom(repoMigrations)).toEqual(['0009_budget_cover']);
+    expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertEntry();
+    });
+
+    it('stores a split per entry, one row per source', () => {
+      insertOverride('o1');
+      insertOverride('o2', { position: 1, source: 'budget-1', minor: 500 });
+      expect(count('SELECT count(*) FROM cover_overrides')).toBe(2);
+      expect(() => {
+        insertOverride('o3', { position: 2, source: 'free' });
+      }).toThrow(/UNIQUE/);
+      expect(() => {
+        insertOverride('o4', { position: 0, source: 'other' });
+      }).toThrow(/UNIQUE/);
+    });
+
+    it('refuses an empty source and an amount of zero or less', () => {
+      expect(() => {
+        insertOverride('o1', { source: '' });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertOverride('o2', { minor: 0 });
+      }).toThrow(/CHECK/);
+    });
+
+    it('keeps the entry itself untouched and goes with the user', () => {
+      insertOverride('o1');
+      // The override is a setting: it can change without touching the entry.
+      sqlite.prepare('UPDATE cover_overrides SET amount_minor = 100').run();
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
     });
   });
 });

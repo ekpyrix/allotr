@@ -146,6 +146,9 @@ corrects past and present figures through the same function.
   overspend is not a debt of the budget.
 - **Buffer.** Created for every user; set aside and carried over, and fixed
   that way. It starts with an amount of zero, and it only holds money.
+- **Overspending.** A budget never goes below zero. What its own budget
+  could not pay is covered (see Cover and refill); `spent` still counts the
+  whole entry and `overflow` is the part that went past.
 - **Free money** = `available − Σ held`, where `held` is what each set-aside
   budget has left, floored at zero, and `available` is counted accounts less
   unpaid reserved bills.
@@ -154,6 +157,52 @@ Example: counted $5,000, Food $900 daily with $120 spent, Travel $300 set
 aside with $100 spent, $50 spent outside any budget. Available is $4,730,
 Travel still holds $200, free money is $4,530, and with 22 days left the
 daily number is $205.90.
+
+## Cover and refill
+
+When spending passes what its budget has left, the shortfall is **covered**
+automatically (ADR 0021), so an unplanned cost never leaves "where did the
+rest come from" unanswered. Cover is computed from the ledger, the budgets and
+the cover order each time it is read; it is never stored, and no money moves.
+
+- **Cover order.** One list the user orders by dragging: by default free
+  money, then the Buffer, then the other budgets in the order they were planned
+  (a new budget is used last). Bills are never used. A budget a shortfall comes
+  from is never the budget that overspent.
+- **Per line, in time order.** A line first takes what its own budget has
+  left. The shortfall goes down the cover order. Each source gives at most
+  what it has: a budget its left (never below zero), free money what was free
+  just before the entry, less what the entry already cost it. What no source
+  covers is *uncovered*: the daily number goes negative and the overspend
+  policy applies (default: carry the deficit). Spending counted by no budget
+  is all shortfall and goes down the same order.
+- **Effect on the daily number.** Paying from free money, or from a daily
+  budget (which sits inside free money), lowers the daily number. Paying from
+  a set-aside budget's hold, including cover taken from a set-aside budget or
+  the Buffer, does not: that money was already held out.
+- **Identity.** For every line: own part + what the sources covered +
+  uncovered = the line's amount.
+- **Override.** The user may change the split of an entry's cover later. The
+  choice is a setting on the entry (`cover_overrides`), not a ledger entry: the
+  entry stays as recorded. Core caps each requested source at what it had, and
+  any shortfall left goes down the cover order, so an override can never
+  create money.
+- **Refill.** Money coming back against an entry (a refund, an IOU
+  repayment) restores what that entry's cover took from budgets, in reverse
+  order, never more than was taken; the rest goes to free money. An undone
+  entry is simply gone: neither it nor its cover counts.
+- **Preview.** Before saving, the entry sheet asks what an entry would take
+  (`POST /v1/budgets/cover-preview`). Cover that reaches a set-aside budget or
+  the Buffer, or is uncovered, is shown in a warning colour and needs a second
+  tap to save.
+- **Covered this period.** The status reports, for the current period, the
+  total shortfall that needed cover and how it was covered, so cover stays
+  visible.
+
+Example: Food $900 is spent, free money is $10, the Buffer holds $200. A $50
+grocery entry takes $10 from free money, $40 from the Buffer, and the Buffer
+shows $160. Had the Buffer been empty, $40 would be uncovered and the daily
+number would go negative.
 
 ## Daily usable
 
@@ -272,6 +321,7 @@ Per-user settings. The default is listed first.
 |---|---|---|
 | Daily-number mode | Free money ÷ days left | Counted accounts − bills ÷ days left (ignores budgets) · daily budgets left ÷ days left |
 | Budget period | Follows the cycle | Calendar month |
+| Cover order | Free money, the Buffer, then budgets in the order planned | A list the user orders by dragging; a per-entry override |
 | Savings in the daily number | Off: savings pools never count | On: a savings pool whose own switch is on counts too |
 | Bills | Reserve at payday | No reservation · dedicated off-budget bills account |
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
@@ -359,6 +409,8 @@ accounts(id, user_id, name, kind[asset|liability|receivable|payable|
 budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
         mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
 budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)
+cover_overrides(id, user_id, transaction_id, position, source, amount_minor,
+                currency)               -- a setting on the entry, not the ledger
 pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
       default_for[on|off], position, archived)
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)

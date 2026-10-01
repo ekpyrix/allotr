@@ -80,6 +80,41 @@ export type BudgetSetup = Readonly<{
   categories: ReadonlyMap<CategoryId, CategoryNode>;
   /** Tags of each entry, which the ledger does not carry. */
   entryTags: ReadonlyMap<TransactionId, readonly TagId[]>;
+  /**
+   * The user's cover order: who pays when spending passes what a budget has
+   * left, first to last. Free money and budgets not listed, or no longer in
+   * use, are placed as `coverOrderOf` says.
+   */
+  coverOrder?: readonly CoverSource[];
+  /**
+   * Splits the user chose for an entry's shortfall. A setting on the entry,
+   * not a ledger change: the entry itself stays as recorded.
+   */
+  coverOverrides?: ReadonlyMap<TransactionId, readonly CoverRequest[]>;
+  /** Money coming back against earlier entries (a refund or a repayment). */
+  returns?: readonly BudgetReturn[];
+}>;
+
+/** Where cover comes from: free money, or a budget (the Buffer included). */
+export type CoverSource = 'free' | BudgetId;
+
+/** What an entry's shortfall took from one source. */
+export type CoverTake = Readonly<{ source: CoverSource; amount: bigint }>;
+
+/** An amount the user wants a source to cover for an entry. */
+export type CoverRequest = Readonly<{ source: CoverSource; amount: Money }>;
+
+/**
+ * Money that came back against an earlier entry. It restores what that
+ * entry's cover took, in reverse order, and the rest goes to free money.
+ */
+export type BudgetReturn = Readonly<{
+  id: string;
+  against: TransactionId;
+  amount: Money;
+  on: LocalDate;
+  /** ISO 8601 UTC instant; orders returns made on the same day. */
+  at: string;
 }>;
 
 /** The days a budget period covers: `from` up to, not including, `to`. */
@@ -143,7 +178,19 @@ export type SpendLine = Readonly<{
   amount: bigint;
   /** The budget it counts toward, or null. At most one, never two. */
   budgetId: BudgetId | null;
-  /** The part paid out of a set-aside budget's hold rather than free money. */
+  /** The part its own budget had left, paid from it. */
+  own: bigint;
+  /** What the shortfall took from each source, in the order taken. */
+  covers: readonly CoverTake[];
+  /** The shortfall nothing could cover: it lowers the daily number. */
+  uncovered: bigint;
+  /** The user chose the split of this entry's cover. */
+  overridden: boolean;
+  /**
+   * The part paid out of money a set-aside budget was holding (its own
+   * hold, or cover taken from a set-aside budget or the Buffer) rather than
+   * out of free money.
+   */
   fromHold: bigint;
 }>;
 
@@ -153,7 +200,21 @@ export type BudgetPeriodLine = Readonly<{
   amount: bigint;
   /** Left over from earlier periods, when it carries. */
   carriedIn: bigint;
+  /** Everything counted toward it, covered or not. */
   spent: bigint;
+  /** The part of `spent` that went past what it had left. */
+  overflow: bigint;
+  /** What other budgets' shortfalls took from it. */
+  coveredOut: bigint;
+  /** What came back to it as a refill. */
+  restored: bigint;
+}>;
+
+/** What money coming back did: sources restored, and the rest to free money. */
+export type Refill = Readonly<{
+  returnId: string;
+  restored: readonly CoverTake[];
+  toFree: bigint;
 }>;
 
 export type BudgetFold = Readonly<{
@@ -162,16 +223,30 @@ export type BudgetFold = Readonly<{
   period: BudgetPeriod;
   /** The budgets in use in that period, with their figures so far. */
   lines: readonly BudgetPeriodLine[];
+  /** The cover order in that period, first to last. */
+  order: readonly CoverSource[];
   /** Every expense line counted, earliest first, in every period. */
   spend: readonly SpendLine[];
+  /** Every refill, earliest first, in every period. */
+  refills: readonly Refill[];
   /** Spending in the period no budget counts. */
   unbudgeted: bigint;
   missingRates: readonly CurrencyCode[];
 }>;
 
-/** What is left: planned, plus carried in, less spent. May be negative. */
+/**
+ * What is left: planned, plus carried in and restored, less what it paid
+ * itself and what others took from it. Never negative: a shortfall is
+ * covered by another source, not carried as the budget's debt.
+ */
 export function leftOf(line: BudgetPeriodLine): bigint {
-  return line.amount + line.carriedIn - line.spent;
+  return (
+    line.amount +
+    line.carriedIn +
+    line.restored -
+    (line.spent - line.overflow) -
+    line.coveredOut
+  );
 }
 
 /** What a set-aside budget still holds out of free money. */
@@ -192,6 +267,7 @@ function ordered(a: Transaction, b: Transaction): number {
 type Raw = Readonly<{
   entryId: TransactionId;
   date: LocalDate;
+  at: string;
   categoryId: CategoryId | null;
   amount: bigint;
 }>;
@@ -256,6 +332,7 @@ function rawSpend(
       raw.push({
         entryId: t.id,
         date: t.occurredOn,
+        at: t.createdAt,
         categoryId: line.categoryId,
         amount: BigInt(converted.amountMinor),
       });
@@ -334,19 +411,79 @@ function amountIn(
 }
 
 /**
+ * The cover order for the budgets in use: the user's list without what is
+ * gone or repeated, then free money first and the Buffer next if the list
+ * leaves them out, then every other budget not listed, in the order planned,
+ * so a new budget is the last to be used.
+ */
+export function coverOrderOf(
+  setup: BudgetSetup,
+  active: readonly Budget[],
+): CoverSource[] {
+  const usable = new Set<CoverSource>(['free', ...active.map((b) => b.id)]);
+  const order: CoverSource[] = [];
+  for (const source of setup.coverOrder ?? []) {
+    if (usable.has(source) && !order.includes(source)) order.push(source);
+  }
+  if (!order.includes('free')) order.unshift('free');
+  const buffer = active.find((b) => b.target.kind === 'buffer');
+  if (buffer !== undefined && !order.includes(buffer.id)) {
+    order.splice(order.indexOf('free') + 1, 0, buffer.id);
+  }
+  for (const budget of active) {
+    if (!order.includes(budget.id)) order.push(budget.id);
+  }
+  return order;
+}
+
+/**
+ * What the fold needs from outside the budgets: entries to leave out, and
+ * the money in the counted accounts, less unpaid bills, just before an entry
+ * (so a cover can tell how much free money there was).
+ */
+export type FoldEnv = Readonly<{
+  excluded?: ReadonlySet<TransactionId>;
+  availableBefore?: (entryId: TransactionId) => bigint;
+}>;
+
+type Mutable = {
+  budget: Budget;
+  amount: bigint;
+  carriedIn: bigint;
+  spent: bigint;
+  overflow: bigint;
+  coveredOut: bigint;
+  restored: bigint;
+};
+
+const left = (s: Mutable) => leftOf(s);
+const min = (a: bigint, b: bigint) => (a < b ? a : b);
+const positive = (a: bigint) => (a > 0n ? a : 0n);
+
+type Take = { source: CoverSource; amount: bigint; refilled: bigint };
+
+/**
  * Folds the ledger into budget figures for every period up to the one that
- * holds `today`. Null when the view has no budgets. A budget's leftover
- * either returns to free money at the period's end or carries into the next
- * period; carrying one never goes below zero, as an overspend is not a debt
- * of the budget.
+ * holds `today`. Null when the view has no budgets.
+ *
+ * Lines are handled in time order. A line takes what its own budget has
+ * left; the shortfall is covered in the cover order, each source giving at
+ * most what it has (free money: what was free before the entry, less what
+ * the entry already cost it), and what nothing covers is `uncovered`, which
+ * lowers the daily number. Spending counted by no budget is all shortfall.
+ * Money coming back restores what the entry's cover took, in reverse order,
+ * and the rest goes to free money. A leftover either returns to free money at
+ * the period's end or carries into the next period; carrying one never goes
+ * below zero.
  */
 export function foldBudgets(
   view: LedgerView,
   today: LocalDate,
-  excluded: ReadonlySet<TransactionId> = new Set(),
+  env: FoldEnv = {},
 ): BudgetFold | null {
   const setup = view.budgets;
   if (setup === undefined || setup.budgets.length === 0) return null;
+  const currency = view.settings.defaultCurrency;
   // The Buffer exists from the start, so only the other budgets say when
   // the first period is.
   const since = setup.budgets.reduce(
@@ -355,12 +492,32 @@ export function foldBudgets(
     today,
   );
   const missing = new Set<CurrencyCode>();
-  const raw = rawSpend(view, today, excluded, missing);
+  const raw = rawSpend(view, today, env.excluded ?? new Set(), missing);
   const periods = budgetPeriods(view, since, today);
+  const returns = [...(setup.returns ?? [])]
+    .filter((r) => r.on <= today)
+    .sort(
+      (a, b) =>
+        a.on.localeCompare(b.on) ||
+        a.at.localeCompare(b.at) ||
+        a.id.localeCompare(b.id),
+    );
+  const requests = new Map(
+    [...(setup.coverOverrides ?? [])].map(([id, list]) => [
+      id,
+      list.map((r): { source: CoverSource; amount: bigint } => ({
+        source: r.source,
+        amount: BigInt(r.amount.amountMinor),
+      })),
+    ]),
+  );
 
   const spend: SpendLine[] = [];
+  const refills: Refill[] = [];
+  const takesBy = new Map<TransactionId, Take[]>();
   let carry = new Map<BudgetId, bigint>();
   let lines: BudgetPeriodLine[] = [];
+  let order: CoverSource[] = [];
   let unbudgeted = 0n;
   for (const period of periods) {
     const active = setup.budgets.filter(
@@ -369,7 +526,8 @@ export function foldBudgets(
         (period.to > b.startedOn &&
           (b.endedOn === null || period.from <= b.endedOn)),
     );
-    const state = new Map<BudgetId, BudgetPeriodLine>(
+    order = coverOrderOf(setup, active);
+    const state = new Map<BudgetId, Mutable>(
       active.map((budget) => [
         budget.id,
         {
@@ -377,43 +535,168 @@ export function foldBudgets(
           amount: amountIn(view, budget, period, today, missing),
           carriedIn: carry.get(budget.id) ?? 0n,
           spent: 0n,
+          overflow: 0n,
+          coveredOut: 0n,
+          restored: 0n,
         },
       ]),
     );
+    const holds = () =>
+      [...state.values()].reduce(
+        (sum, s) =>
+          s.budget.mode === 'set-aside' ? sum + positive(left(s)) : sum,
+        0n,
+      );
     unbudgeted = 0n;
-    for (const line of raw) {
-      if (line.date < period.from || line.date >= period.to) continue;
-      const budget = pick(setup, active, line.entryId, line.categoryId);
-      const current = budget === null ? undefined : state.get(budget.id);
-      if (budget === null || current === undefined) {
-        unbudgeted += line.amount;
-        spend.push({ ...line, budgetId: null, fromHold: 0n });
+
+    // Spending and money coming back, together, in time order.
+    type Event =
+      | { kind: 'spend'; date: LocalDate; at: string; line: Raw }
+      | { kind: 'return'; date: LocalDate; at: string; ret: BudgetReturn };
+    const events: Event[] = [
+      ...raw
+        .filter((l) => l.date >= period.from && l.date < period.to)
+        .map((line): Event => ({
+          kind: 'spend',
+          date: line.date,
+          at: line.at,
+          line,
+        })),
+      ...returns
+        .filter((r) => r.on >= period.from && r.on < period.to)
+        .map((ret): Event => ({
+          kind: 'return',
+          date: ret.on,
+          at: ret.at,
+          ret,
+        })),
+    ].sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.at.localeCompare(b.at) ||
+        Number(a.kind === 'return') - Number(b.kind === 'return'),
+    );
+
+    const cashOfEntry = new Map<TransactionId, bigint>();
+    for (const event of events) {
+      if (event.kind === 'return') {
+        const { ret } = event;
+        let rest = BigInt(ret.amount.amountMinor);
+        const restored: CoverTake[] = [];
+        for (const take of [...(takesBy.get(ret.against) ?? [])].reverse()) {
+          if (take.source === 'free' || rest <= 0n) continue;
+          const target = state.get(take.source);
+          const give = min(rest, take.amount - take.refilled);
+          if (target === undefined || give <= 0n) continue;
+          target.restored += give;
+          take.refilled += give;
+          rest -= give;
+          restored.push({ source: take.source, amount: give });
+        }
+        refills.push({ returnId: ret.id, restored, toFree: rest });
         continue;
       }
-      const left = leftOf(current);
-      let fromHold = 0n;
-      if (budget.mode === 'set-aside' && left > 0n) {
-        fromHold = line.amount < left ? line.amount : left;
+
+      const { line } = event;
+      const budget = pick(setup, active, line.entryId, line.categoryId);
+      const own = budget === null ? undefined : state.get(budget.id);
+      const ownPart =
+        own === undefined ? 0n : min(line.amount, positive(left(own)));
+      // What was held just before this line, and the cash earlier lines of
+      // the same entry already spent.
+      const heldBefore = holds();
+      const cash = cashOfEntry.get(line.entryId) ?? 0n;
+      if (own === undefined) {
+        unbudgeted += line.amount;
+      } else {
+        own.spent += line.amount;
+        own.overflow += line.amount - ownPart;
       }
-      state.set(budget.id, { ...current, spent: current.spent + line.amount });
-      spend.push({ ...line, budgetId: budget.id, fromHold });
+      let shortfall = line.amount - ownPart;
+      // How much of the line has been paid so far, and how much of that came
+      // out of held money. The rest landed on free money.
+      let funded = ownPart;
+      let fromHold =
+        own !== undefined && own.budget.mode === 'set-aside' ? ownPart : 0n;
+      // Free money just before this line, less what the line has cost it so
+      // far: free money bears what was not paid out of held money.
+      const freeCapacity = () => {
+        if (env.availableBefore === undefined) return shortfall;
+        const free =
+          env.availableBefore(line.entryId) -
+          cash -
+          heldBefore -
+          (funded - fromHold);
+        return positive(free);
+      };
+      const taken: CoverTake[] = [];
+      const draw = (source: CoverSource, want: bigint) => {
+        const wanted = min(want, shortfall);
+        if (wanted <= 0n) return;
+        const from = source === 'free' ? undefined : state.get(source);
+        if (source !== 'free' && (from === undefined || from === own)) return;
+        const got = min(
+          wanted,
+          from === undefined ? freeCapacity() : positive(left(from)),
+        );
+        if (got <= 0n) return;
+        if (from !== undefined) {
+          from.coveredOut += got;
+          if (from.budget.mode === 'set-aside') fromHold += got;
+        }
+        shortfall -= got;
+        funded += got;
+        const before = taken.findIndex((t) => t.source === source);
+        const prior = taken[before];
+        if (prior === undefined) taken.push({ source, amount: got });
+        else taken[before] = { source, amount: prior.amount + got };
+      };
+
+      const asked = requests.get(line.entryId);
+      for (const request of asked ?? []) {
+        // A request is used up across the entry's lines.
+        const draw0 = min(request.amount, shortfall);
+        const before = shortfall;
+        draw(request.source, draw0);
+        request.amount -= before - shortfall;
+      }
+      for (const source of order) draw(source, shortfall);
+
+      const list = takesBy.get(line.entryId) ?? [];
+      for (const t of taken) list.push({ ...t, refilled: 0n });
+      takesBy.set(line.entryId, list);
+      cashOfEntry.set(line.entryId, cash + line.amount);
+      spend.push({
+        entryId: line.entryId,
+        date: line.date,
+        categoryId: line.categoryId,
+        amount: line.amount,
+        budgetId: budget === null ? null : budget.id,
+        own: ownPart,
+        covers: taken,
+        uncovered: shortfall,
+        overridden: asked !== undefined,
+        fromHold,
+      });
     }
     lines = [...state.values()];
     carry = new Map(
       lines.map((l) => {
-        const left = leftOf(l);
+        const rest = leftOf(l);
         return [
           l.budget.id,
-          l.budget.leftover === 'carry' && left > 0n ? left : 0n,
+          l.budget.leftover === 'carry' && rest > 0n ? rest : 0n,
         ];
       }),
     );
   }
   return {
-    currency: view.settings.defaultCurrency,
+    currency,
     period: periods.at(-1) ?? budgetPeriodOn(view, today, today),
     lines,
+    order,
     spend,
+    refills,
     unbudgeted,
     missingRates: [...missing].sort(),
   };
