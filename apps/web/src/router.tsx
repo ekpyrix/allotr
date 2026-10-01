@@ -12,6 +12,7 @@ import { useCallback } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { LoadError } from '@/components/load-error';
+import { RouteSkeleton } from '@/components/route-skeleton';
 import { UpdatePrompt } from '@/components/update-prompt';
 import { validateCycleSearch } from '@/features/cycles/search';
 import {
@@ -32,6 +33,10 @@ import { t } from '@/messages/t';
 const AccountsPage = lazyRouteComponent(
   () => import('./routes/accounts.tsx'),
   'AccountsPage',
+);
+const BudgetPage = lazyRouteComponent(
+  () => import('./routes/budget.tsx'),
+  'BudgetPage',
 );
 const CyclePage = lazyRouteComponent(
   () => import('./routes/cycle.tsx'),
@@ -89,12 +94,12 @@ interface RouterContext {
 }
 
 // Where a visitor belongs: onboarding until the first account exists, then
-// sign-in, then Today.
+// sign-in, then the Dashboard.
 async function destination(queryClient: QueryClient) {
   const { required } = await queryOrCached(queryClient, onboardingQuery);
   if (required) return '/onboarding' as const;
   const session = await queryOrCached(queryClient, sessionQuery);
-  return session === null ? ('/sign-in' as const) : ('/today' as const);
+  return session === null ? ('/sign-in' as const) : ('/' as const);
 }
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -114,13 +119,33 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   ),
 });
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  beforeLoad: async ({ context }) => {
-    throw redirect({ to: await destination(context.queryClient) });
-  },
-});
+// Routes the v2 navigation renamed. Old links, bookmarks and installed
+// shortcuts keep working: each redirects, carrying its search, before any
+// session check.
+function renamed(
+  from: string,
+  to:
+    | '/'
+    | '/transactions'
+    | '/reports'
+    | '/reports/history'
+    | '/accounts/savings',
+) {
+  return createRoute({
+    getParentRoute: () => rootRoute,
+    path: from,
+    beforeLoad: ({ location }) => {
+      if (to === '/transactions')
+        throw redirect({
+          to,
+          search: validateLedgerSearch(location.search),
+        });
+      if (to === '/reports')
+        throw redirect({ to, search: validateCycleSearch(location.search) });
+      throw redirect({ to });
+    },
+  });
+}
 
 function only(path: '/onboarding' | '/sign-in') {
   return async ({ context }: { context: RouterContext }) => {
@@ -151,7 +176,7 @@ const signInRoute = createRoute({
   beforeLoad: only('/sign-in'),
   component: function SignIn() {
     const { redirect: target, deleted } = signInRoute.useSearch();
-    return <SignInPage next={target ?? '/today'} deleted={deleted === true} />;
+    return <SignInPage next={target ?? '/'} deleted={deleted === true} />;
   },
 });
 
@@ -195,26 +220,26 @@ const appRoute = createRoute({
   },
 });
 
-// Sign-in, invites and the first account all land on Today, so this is
-// where setup catches a new user. Other routes stay reachable during it.
+// Sign-in, invites and the first account all land on the Dashboard, so this
+// is where setup catches a new user. Other routes stay reachable during it.
 // Required 2FA comes first: until then the server refuses the check.
-const todayRoute = createRoute({
+const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/today',
+  path: '/',
   beforeLoad: async ({ context }) => {
     if (context.session.twoFactorRequired) return;
     const { finished } = await queryOrCached(context.queryClient, setupQuery);
     if (!finished) throw redirect({ to: '/setup' });
   },
   component: function Today() {
-    const { session } = todayRoute.useRouteContext();
+    const { session } = dashboardRoute.useRouteContext();
     return <TodayPage user={session.user} />;
   },
 });
 
 const ledgerRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/ledger',
+  path: '/transactions',
   validateSearch: validateLedgerSearch,
   component: preloading(function Ledger() {
     const search = ledgerRoute.useSearch();
@@ -235,11 +260,18 @@ const accountsRoute = createRoute({
   component: AccountsPage,
 });
 
-// The cycle, history and savings views hang off Today and Accounts rather
-// than the nav.
+const budgetRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/budget',
+  component: preloading(function Budget() {
+    return <BudgetPage />;
+  }, BudgetPage),
+});
+
+// Reports is the cycle view; history hangs off it, and Savings off Accounts.
 const cycleRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/cycle',
+  path: '/reports',
   validateSearch: validateCycleSearch,
   component: preloading(function Cycle() {
     const { start, tab } = cycleRoute.useSearch();
@@ -249,13 +281,13 @@ const cycleRoute = createRoute({
 
 const historyRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/history',
+  path: '/reports/history',
   component: HistoryPage,
 });
 
 const savingsRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/savings',
+  path: '/accounts/savings',
   component: SavingsPage,
 });
 
@@ -263,10 +295,10 @@ const setupRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/setup',
   beforeLoad: async ({ context }) => {
-    if (context.session.twoFactorRequired) throw redirect({ to: '/today' });
+    if (context.session.twoFactorRequired) throw redirect({ to: '/' });
     const { queryClient } = context;
     const setup = await queryOrCached(queryClient, setupQuery);
-    if (setup.finished) throw redirect({ to: '/today' });
+    if (setup.finished) throw redirect({ to: '/' });
     // Until something is saved, an account added from another view would
     // read as setup done, so save the start.
     if (setup.handled.length === 0)
@@ -278,6 +310,10 @@ const setupRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
+  // Bills moved to Budget (ADR 0023).
+  beforeLoad: ({ location }) => {
+    if (location.hash === 'bills') throw redirect({ to: '/budget' });
+  },
   component: preloading(function Settings() {
     const { session } = settingsRoute.useRouteContext();
     return <SettingsPage session={session} />;
@@ -323,14 +359,19 @@ const devRoutes = import.meta.env.DEV
 
 const routeTree = rootRoute.addChildren([
   ...devRoutes,
-  indexRoute,
+  renamed('/today', '/'),
+  renamed('/ledger', '/transactions'),
+  renamed('/cycle', '/reports'),
+  renamed('/history', '/reports/history'),
+  renamed('/savings', '/accounts/savings'),
   onboardingRoute,
   signInRoute,
   inviteRoute,
   appRoute.addChildren([
-    todayRoute,
-    ledgerRoute,
+    dashboardRoute,
     accountsRoute,
+    ledgerRoute,
+    budgetRoute,
     cycleRoute,
     historyRoute,
     savingsRoute,
@@ -346,6 +387,11 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: false,
+    // A route still loading shows its skeleton after a short wait, never a
+    // spinner and never a blank page.
+    defaultPendingComponent: RouteSkeleton,
+    defaultPendingMs: 120,
+    defaultPendingMinMs: 0,
     defaultViewTransition: viewTransitions,
   });
 }

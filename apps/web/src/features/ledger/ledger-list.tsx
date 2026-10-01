@@ -46,7 +46,7 @@ function Row({
   return (
     <li>
       <Link
-        to="/ledger"
+        to="/transactions"
         search={{ ...search, entry: row.id }}
         data-entry-id={row.id}
         aria-current={search.entry === row.id ? 'true' : undefined}

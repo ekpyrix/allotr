@@ -95,11 +95,18 @@ export const en = {
   nav: {
     label: 'Main',
     skip: 'Skip to content',
-    today: 'Today',
-    ledger: 'Ledger',
+    dashboard: 'Dashboard',
     accounts: 'Accounts',
+    transactions: 'Transactions',
+    budget: 'Budget',
+    reports: 'Reports',
     settings: 'Settings',
     savings: 'Savings',
+  },
+  budget: {
+    title: 'Budget',
+    intro: 'What is set aside before the daily number.',
+    loading: 'Loading the budget',
   },
   shell: {
     twoFactorRequired:
@@ -136,7 +143,7 @@ export const en = {
     restored: 'Restored {entry}.',
   },
   today: {
-    heading: 'Today',
+    heading: 'Dashboard',
     title: 'Left today',
     status: {
       ok: 'On pace',
@@ -963,7 +970,7 @@ export const en = {
     later: 'Later',
   },
   cycle: {
-    title: 'This cycle',
+    title: 'Reports',
     pastTitle: 'Cycle {range}',
     loading: 'Loading the cycle…',
     opened: 'Opened {date}.',

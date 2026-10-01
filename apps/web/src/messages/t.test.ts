@@ -3,7 +3,7 @@ import { errorCodeMessage, t } from './t.ts';
 
 describe('t', () => {
   it('returns a plain message', () => {
-    expect(t('nav.today')).toBe('Today');
+    expect(t('nav.dashboard')).toBe('Dashboard');
   });
 
   it('fills placeholders', () => {

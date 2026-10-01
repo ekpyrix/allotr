@@ -30,7 +30,7 @@ function PastCycle({
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="font-medium">
           <Link
-            to="/cycle"
+            to="/reports"
             search={{ start: cycle.openedOn }}
             aria-label={t('history.open', { range })}
             className={linkClass}
@@ -88,7 +88,7 @@ export function HistoryPage() {
   return (
     <Page title={t('history.title')} intro={t('history.intro')}>
       <p className="mt-4">
-        <Link to="/cycle" className={linkClass}>
+        <Link to="/reports" className={linkClass}>
           {t('history.current')}
         </Link>
       </p>

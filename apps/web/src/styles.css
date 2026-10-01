@@ -355,17 +355,11 @@ body[data-scroll-locked] {
 }
 
 /*
- * Route changes (ADR 0019). The router sets a transition type: `tab`
- * between top-level destinations fades through (out 90 ms, in 210 ms with
- * a 0.92 → 1 scale), `push` and `pop` slide 24 px with a fade. With reduced
- * or no motion the router starts no transition at all.
+ * Route changes (ADR 0019, amended by 0023). Switching top-level
+ * destinations is instant, with no view transition. `push` and `pop` slide
+ * 24 px with a fade. With reduced or no motion the router starts no
+ * transition at all.
  */
-html:active-view-transition-type(tab)::view-transition-old(root) {
-  animation: vt-fade-out 90ms var(--ease-exit) both;
-}
-html:active-view-transition-type(tab)::view-transition-new(root) {
-  animation: vt-fade-scale-in 210ms var(--ease-smooth) 90ms both;
-}
 html:active-view-transition-type(push)::view-transition-old(root),
 html:active-view-transition-type(pop)::view-transition-old(root) {
   animation: vt-fade-out var(--dur-exit) var(--ease-exit) both;
@@ -380,12 +374,6 @@ html:active-view-transition-type(pop)::view-transition-new(root) {
 @keyframes vt-fade-out {
   to {
     opacity: 0;
-  }
-}
-@keyframes vt-fade-scale-in {
-  from {
-    opacity: 0;
-    scale: 0.92;
   }
 }
 @keyframes vt-slide-in-end {

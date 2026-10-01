@@ -51,7 +51,7 @@ test('a crafted redirect falls back to Today', async ({ page }) => {
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Password').fill(account.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test('every route is reachable from the nav and accessible', async ({
@@ -61,7 +61,7 @@ test('every route is reachable from the nav and accessible', async ({
   await apiSignIn(page, baseURL);
   // Start on the last item so every click, including the first, changes
   // the route and moves focus to <main>.
-  await page.goto(navItems[navItems.length - 1]?.to ?? '/today');
+  await page.goto(navItems[navItems.length - 1]?.to ?? '/');
   const nav = page.getByRole('navigation', { name: t('nav.label') });
 
   for (const item of navItems) {
@@ -81,7 +81,7 @@ test('a failed session check offers a retry instead of a dead end', async ({
 }) => {
   await apiSignIn(page, baseURL);
   await page.route('**/v1/session', (route) => route.abort());
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   // Reads retry twice with backoff before the error shows.
   await expect(
     page.getByRole('heading', { name: t('errors.pageTitle') }),
@@ -114,15 +114,16 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
   baseURL,
 }) => {
   await apiSignIn(page, baseURL);
-  await page.goto('/today');
+  await page.goto('/');
   // The app renders after the session check; Tab before that hits nothing.
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: t('nav.skip') })).toBeFocused();
 
-  // The Add button comes first in the rail and drawer (from 600 px), and
-  // after the second item in the bottom bar below that.
+  // From 600 px the sidebar has the Add button first, then the five
+  // destinations, then Settings. Below that the tab bar has the five
+  // destinations, then the round Add button.
   const nav = page.getByRole('navigation', { name: t('nav.label') });
   const links = navItems.map((item) => ({
     stop: nav.getByRole('link', { name: t(item.label) }),
@@ -133,9 +134,11 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
     to: 'add',
   };
   const wide = (page.viewportSize()?.width ?? 0) >= 600;
-  const stops = wide
-    ? [add, ...links]
-    : [...links.slice(0, 2), add, ...links.slice(2)];
+  const settings = {
+    stop: nav.getByRole('link', { name: t('nav.settings') }),
+    to: '/settings',
+  };
+  const stops = wide ? [add, ...links, settings] : [...links, add];
   for (const { stop: control, to } of stops) {
     await page.keyboard.press('Tab');
     await expect(control).toBeFocused();
@@ -150,9 +153,12 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
     expect(ringVisible, `${to} focus ring`).toBe(true);
   }
 
+  // Enter follows the focused link: Settings in the sidebar, or the last
+  // tab after stepping back from the Add button.
+  if (!wide) await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Enter');
-  const last = navItems[navItems.length - 1];
-  await expect(page).toHaveURL(new RegExp(`${last?.to ?? ''}$`));
+  const last = wide ? '/settings' : (navItems[navItems.length - 1]?.to ?? '');
+  await expect(page).toHaveURL(new RegExp(`${last}$`));
 });
 
 test('each window size class gets its navigation, without sideways scroll', async ({
@@ -165,13 +171,13 @@ test('each window size class gets its navigation, without sideways scroll', asyn
   await page.goto('/settings');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const nav = page.getByRole('navigation', { name: t('nav.label') });
-  const savings = nav.getByRole('link', { name: t('nav.savings') });
+  const settings = nav.getByRole('link', { name: t('nav.settings') });
   for (const [width, form] of [
     [390, 'bar'],
-    [700, 'rail'],
-    [1000, 'rail'],
-    [1400, 'drawer'],
-    [1700, 'drawer'],
+    [700, 'sidebar'],
+    [1000, 'sidebar'],
+    [1400, 'sidebar'],
+    [1700, 'sidebar'],
   ] as const) {
     await page.setViewportSize({ width, height: 900 });
     await expect(nav).toHaveCount(1);
@@ -179,17 +185,39 @@ test('each window size class gets its navigation, without sideways scroll', asyn
     expect(box, `${String(width)} nav`).not.toBeNull();
     if (box === null) continue;
     if (form === 'bar') {
-      expect(box.width).toBe(width);
+      // A floating pill: inside the screen's gutters, near its bottom.
+      expect(box.x).toBeGreaterThanOrEqual(16);
+      expect(box.x + box.width).toBeLessThanOrEqual(width - 16);
       expect(box.y).toBeGreaterThan(700);
-      await expect(savings).toBeHidden();
+      await expect(settings).toBeHidden();
     } else {
-      expect(box.width).toBe(form === 'rail' ? 80 : 280);
-      await expect(savings).toBeVisible();
+      expect(box.width).toBe(224);
+      await expect(settings).toBeVisible();
     }
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
     expect(overflow, `${String(width)} sideways scroll`).toBeLessThanOrEqual(0);
     await expectAccessible(page);
+  }
+});
+
+test('old addresses redirect to their new places', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  const moves: readonly (readonly [string, RegExp])[] = [
+    ['/today', /\/$/],
+    ['/ledger?q=coffee', /\/transactions\?q=coffee$/],
+    ['/cycle', /\/reports$/],
+    ['/history', /\/reports\/history$/],
+    ['/savings', /\/accounts\/savings$/],
+    ['/settings#bills', /\/budget$/],
+  ];
+  for (const [from, to] of moves) {
+    await page.goto(from);
+    await expect(page, from).toHaveURL(to);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   }
 });

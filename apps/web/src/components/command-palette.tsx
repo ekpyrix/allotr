@@ -2,10 +2,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { Command } from 'cmdk';
 import {
   BookOpenText,
-  CalendarCheck,
   CalendarRange,
   History,
+  LayoutDashboard,
   Palette,
+  PieChart,
   PiggyBank,
   Plus,
   Search,
@@ -29,24 +30,26 @@ type Destination = Readonly<{
   label: string;
   icon: LucideIcon;
   to:
-    | '/today'
-    | '/ledger'
+    | '/'
+    | '/transactions'
     | '/accounts'
-    | '/cycle'
-    | '/history'
-    | '/savings'
+    | '/budget'
+    | '/reports'
+    | '/reports/history'
+    | '/accounts/savings'
     | '/settings';
   hash?: string;
 }>;
 
 function destinations(): Destination[] {
   return [
-    { label: t('nav.today'), icon: CalendarCheck, to: '/today' },
-    { label: t('nav.ledger'), icon: BookOpenText, to: '/ledger' },
+    { label: t('nav.dashboard'), icon: LayoutDashboard, to: '/' },
+    { label: t('nav.transactions'), icon: BookOpenText, to: '/transactions' },
     { label: t('nav.accounts'), icon: WalletCards, to: '/accounts' },
-    { label: t('palette.cycle'), icon: CalendarRange, to: '/cycle' },
-    { label: t('palette.history'), icon: History, to: '/history' },
-    { label: t('nav.savings'), icon: PiggyBank, to: '/savings' },
+    { label: t('nav.budget'), icon: PieChart, to: '/budget' },
+    { label: t('nav.reports'), icon: CalendarRange, to: '/reports' },
+    { label: t('palette.history'), icon: History, to: '/reports/history' },
+    { label: t('nav.savings'), icon: PiggyBank, to: '/accounts/savings' },
     { label: t('nav.settings'), icon: Settings, to: '/settings' },
     {
       label: t('palette.appearance'),
@@ -193,7 +196,7 @@ export function CommandPalette() {
                     onSelect={() => {
                       run(() => {
                         void navigate({
-                          to: '/ledger',
+                          to: '/transactions',
                           search: { q: trimmed },
                         });
                       });

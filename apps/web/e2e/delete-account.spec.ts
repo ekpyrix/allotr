@@ -182,7 +182,7 @@ test('a user deletes their account and lands on sign-in', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByLabel('Code').fill(totpFromUri(totpURI));
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
 
   await page.goto('/settings#delete-account');
   await page.getByRole('button', { name: 'Delete account…' }).click();

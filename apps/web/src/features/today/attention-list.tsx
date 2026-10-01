@@ -6,7 +6,7 @@ import { t } from '@/messages/t';
 import { formatDay } from './format.ts';
 
 // What the user should look at before trusting the figures: the flags from
-// `/v1/today`. Rates, payday and bills are managed in Settings (#62).
+// `/v1/today`. Rates, payday and bills are managed in Budget.
 function Item({
   children,
   action,
@@ -85,7 +85,7 @@ export function AttentionList({
             <Item
               key={`${bill.billId}:${bill.dueOn}`}
               action={
-                <Link to="/settings" hash="bills" className={linkClass}>
+                <Link to="/budget" className={linkClass}>
                   {t('today.attention.billAction', { name: bill.name })}
                 </Link>
               }

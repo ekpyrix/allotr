@@ -85,7 +85,7 @@ test('logs an expense, an income and a transfer from the keyboard only', async (
     if (message.text().includes('Content Security Policy'))
       blocked.push(message.text());
   });
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   const start = await today(page);
 
@@ -186,7 +186,7 @@ test('a double click on Save records one entry', async ({ page }) => {
   await page.addInitScript(() => {
     Reflect.deleteProperty(Crypto.prototype, 'randomUUID');
   });
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   const posts: string[] = [];
   page.on('request', (request) => {
     if (
@@ -223,7 +223,7 @@ test('a double click on Save records one entry', async ({ page }) => {
 test('failed validation is announced, focused and described', async ({
   page,
 }) => {
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('n');
   const amount = page.getByLabel('Amount in USD');
@@ -295,7 +295,7 @@ test('the date follows a corrected today until the user edits it', async ({
     return route.fulfill({ response, json: body });
   });
   await page.clock.install();
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('n');
   const date = page.getByLabel('Date');
@@ -322,7 +322,7 @@ test('a server error clears when the user edits the form', async ({ page }) => {
         })
       : route.fallback(),
   );
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByLabel('Amount in USD').fill('3.21');
   await dialog(page)
@@ -351,7 +351,7 @@ test('Go to Accounts leaves focus on the new view', async ({ page }) => {
         })
       : route.fallback(),
   );
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   const add = page.getByRole('button', { name: 'Add', exact: true });
   await add.click();
   await page.getByRole('link', { name: 'Go to Accounts' }).click();
@@ -369,7 +369,7 @@ test('a save in flight cannot be dismissed and still announces', async ({
     await new Promise((resolve) => setTimeout(resolve, 800));
     return route.continue();
   });
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByLabel('Amount in USD').fill('8.88');
   await dialog(page)

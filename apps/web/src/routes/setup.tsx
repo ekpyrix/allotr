@@ -143,7 +143,7 @@ export function SetupPage() {
             locale={settings.data.locale}
             total={setupSteps.length}
             onGo={() => {
-              void navigate({ to: '/today' });
+              void navigate({ to: '/' });
             }}
           />
         </div>
@@ -178,7 +178,7 @@ export function SetupPage() {
           return;
         }
         if (!reveal) {
-          void navigate({ to: '/today' });
+          void navigate({ to: '/' });
           return;
         }
         void queryClient

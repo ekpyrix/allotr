@@ -1,12 +1,16 @@
+import { Link } from '@tanstack/react-router';
+import { Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { iconButtonVariants } from '@/components/ui/icon-button';
+import { t } from '@/messages/t';
 
 // The top app bar (spec §4): transparent over the page at rest; once the
 // content scrolls under it, it turns chrome with a hairline and shows the
 // title inline while the large title scrolls away. Driven by a scroll
 // timeline where the browser has one; elsewhere it stays chrome. The
 // inline title repeats the page's h1, so it is hidden from assistive
-// technology. It slides up into view rather than fading, so it is never
-// shown half-transparent.
+// technology. On phones it ends with the settings gear (ADR 0023); wider
+// screens have Settings in the sidebar.
 export function TopAppBar({
   title,
   actions,
@@ -22,6 +26,13 @@ export function TopAppBar({
         </p>
       </div>
       {actions}
+      <Link
+        to="/settings"
+        aria-label={t('nav.settings')}
+        className={`${iconButtonVariants()} -mr-2 medium:hidden`}
+      >
+        <Settings aria-hidden="true" />
+      </Link>
     </div>
   );
 }

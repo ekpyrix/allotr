@@ -215,7 +215,7 @@ function EntryDetail({
         <p>
           {t('ledger.entry.undoneBy')}{' '}
           <Link
-            to="/ledger"
+            to="/transactions"
             search={{ ...search, entry: entry.reversedById }}
             replace
             className="font-medium underline underline-offset-4"
@@ -228,7 +228,7 @@ function EntryDetail({
         <p>
           {t('ledger.entry.restoredBy')}{' '}
           <Link
-            to="/ledger"
+            to="/transactions"
             search={{ ...search, entry: entry.restoredById }}
             replace
             className="font-medium underline underline-offset-4"
@@ -263,7 +263,7 @@ function EntryDetail({
         <p>
           {t('ledger.entry.undoes')}{' '}
           <Link
-            to="/ledger"
+            to="/transactions"
             search={{ ...search, entry: entry.reversesId }}
             replace
             className="font-medium underline underline-offset-4"

@@ -197,7 +197,7 @@ export function SavingsPage() {
                     trailing={formatMoney(account.balance, locale)}
                     render={({ className, children }) => (
                       <Link
-                        to="/ledger"
+                        to="/transactions"
                         search={{ account: account.id }}
                         className={className}
                       >

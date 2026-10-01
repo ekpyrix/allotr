@@ -86,7 +86,7 @@ const entries = (page: Page) =>
   page.getByRole('region', { name: 'Today’s entries' });
 
 test('the hero number and figures match /v1/today', async ({ page }) => {
-  await page.goto('/today');
+  await page.goto('/');
   const figures = await today(page);
   await expect(hero(page)).toHaveText(formatMoney(figures.leftToday, 'en-US'));
   await expect(
@@ -125,7 +125,7 @@ test('the hero number and figures match /v1/today', async ({ page }) => {
 test('the waterfall explains the figure with the same numbers', async ({
   page,
 }) => {
-  await page.goto('/today');
+  await page.goto('/');
   const figures = await today(page);
   await page
     .getByRole('button', { name: 'How today’s allowance is worked out' })
@@ -162,7 +162,7 @@ test('with reduced motion the hero shows its value without rolling', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/today');
+  await page.goto('/');
   const figures = await today(page);
   await expect(hero(page)).toHaveText(formatMoney(figures.leftToday, 'en-US'));
   const strip = page
@@ -177,7 +177,7 @@ test('with reduced motion the hero shows its value without rolling', async ({
 test('logging an expense lowers left today; delete and undo', async ({
   page,
 }) => {
-  await page.goto('/today');
+  await page.goto('/');
   const before = await today(page);
   await expect(hero(page)).toHaveText(formatMoney(before.leftToday, 'en-US'));
 
@@ -226,7 +226,7 @@ test('logging an expense lowers left today; delete and undo', async ({
 test('Undo on the save snackbar removes the entry, and again brings it back', async ({
   page,
 }) => {
-  await page.goto('/today');
+  await page.goto('/');
   const before = await today(page);
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await page.getByLabel('Amount in USD').fill('5.55');
@@ -261,7 +261,7 @@ test('a missing rate shows a needs-attention item that links to rates', async ({
   expect(response.ok()).toBe(true);
   expect((await today(page)).missingRates).toEqual(['EUR']);
 
-  await page.goto('/today');
+  await page.goto('/');
   const attention = page.getByRole('region', { name: 'Needs attention' });
   await expect(attention).toContainText(
     'There is no exchange rate for EUR, so EUR accounts are left out of these figures.',
@@ -287,14 +287,14 @@ test('a bill due today and not paid needs attention', async ({
   });
   expect(response.ok()).toBe(true);
 
-  await page.goto('/today');
+  await page.goto('/');
   const attention = page.getByRole('region', { name: 'Needs attention' });
   await expect(attention).toContainText(
     'Phone, $35.00, is due today and is not marked paid.',
   );
   await expect(
     attention.getByRole('link', { name: 'Review Phone' }),
-  ).toHaveAttribute('href', '/settings#bills');
+  ).toHaveAttribute('href', '/budget');
   await expectAccessible(page);
 });
 
@@ -312,7 +312,7 @@ test('deleting the paycheck that opened the cycle asks first', async ({
   const { id } = (await response.json()) as { id: string };
   expect((await today(page)).cycle.openedBy).toBe(id);
 
-  await page.goto('/today');
+  await page.goto('/');
   const undo = entries(page).getByRole('button', {
     name: 'Delete Paycheck, +$3,200.00',
   });
@@ -342,7 +342,7 @@ test('deleting the paycheck that opened the cycle asks first', async ({
 });
 
 test('deleting an opening balance asks first', async ({ page }) => {
-  await page.goto('/today');
+  await page.goto('/');
   const remove = entries(page)
     .getByRole('button', { name: /^Delete Opening balance/ })
     .first();

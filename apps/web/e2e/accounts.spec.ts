@@ -74,6 +74,14 @@ const section = (page: Page, name: 'On budget' | 'Off budget') =>
 const row = (page: Page, name: string) =>
   page.getByRole('listitem', { name, exact: true });
 
+// Rename, move off budget and archive sit in the row's overflow menu.
+async function rowAction(page: Page, name: string, action: string) {
+  await row(page, name)
+    .getByRole('button', { name: `More actions for ${name}` })
+    .click();
+  await page.getByRole('menuitem', { name: action }).click();
+}
+
 async function createAccount(
   page: Page,
   fields: { name: string; currency: string; balance: string; off?: boolean },
@@ -176,9 +184,7 @@ test('moving an account off budget lowers Today’s figure from that day', async
   });
   const before = await today(page);
 
-  await row(page, 'Holiday fund')
-    .getByRole('button', { name: 'Move off budget' })
-    .click();
+  await rowAction(page, 'Holiday fund', 'Move off budget');
   const dialog = page.getByRole('dialog', {
     name: 'Move Holiday fund off budget?',
   });
@@ -201,7 +207,7 @@ test('moving an account off budget lowers Today’s figure from that day', async
   expect(after.available).toEqual(
     money(before.available.amountMinor - 30_000, 'USD'),
   );
-  await page.getByRole('link', { name: 'Today' }).first().click();
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
     heroText(after.leftToday),
   );
@@ -210,7 +216,7 @@ test('moving an account off budget lowers Today’s figure from that day', async
   const holiday = (await accounts(page)).accounts.find(
     (a) => a.name === 'Holiday fund',
   );
-  await page.goto(`/ledger?account=${holiday?.id ?? ''}`);
+  await page.goto(`/transactions?account=${holiday?.id ?? ''}`);
   await expect(page.getByText('Moved off budget')).toBeVisible();
 });
 
@@ -225,7 +231,7 @@ test('archiving an account with a balance goes through a transfer, then archives
     off: true,
   });
 
-  await row(page, 'Travel').getByRole('button', { name: 'Archive' }).click();
+  await rowAction(page, 'Travel', 'Archive');
   const dialog = page.getByRole('dialog', { name: 'Archive Travel?' });
   await expect(dialog).toContainText('It still holds €200.00.');
   await expect(
@@ -285,9 +291,7 @@ test('an account at zero balance archives after a plain confirm', async ({
     currency: 'USD',
     balance: '',
   });
-  await row(page, 'Old wallet')
-    .getByRole('button', { name: 'Archive' })
-    .click();
+  await rowAction(page, 'Old wallet', 'Archive');
   const dialog = page.getByRole('dialog', { name: 'Archive Old wallet?' });
   await expect(dialog).toContainText('It leaves the list');
   await expect(dialog.getByRole('radio')).toHaveCount(0);
@@ -306,9 +310,7 @@ test('writing off an on-budget balance counts as spending and says how much toda
     currency: 'USD',
     balance: '40',
   });
-  await row(page, 'Pocket cash')
-    .getByRole('button', { name: 'Archive' })
-    .click();
+  await rowAction(page, 'Pocket cash', 'Archive');
   const dialog = page.getByRole('dialog', { name: 'Archive Pocket cash?' });
   await dialog.getByLabel('Writing it off').check();
 
@@ -338,7 +340,7 @@ test('writing off an on-budget balance counts as spending and says how much toda
   expect(after.spentToday).toEqual(
     money(before.spentToday.amountMinor + 4_000, 'USD'),
   );
-  await page.getByRole('link', { name: 'Today' }).first().click();
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
     heroText(after.leftToday),
   );
@@ -396,7 +398,7 @@ test('reconciling an on-budget account records a match, then adjusts a differenc
   expect(after.available).toEqual(
     money(before.available.amountMinor - 1_250, 'USD'),
   );
-  await page.getByRole('link', { name: 'Today' }).first().click();
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
     heroText(after.leftToday),
   );
@@ -405,7 +407,7 @@ test('reconciling an on-budget account records a match, then adjusts a differenc
   const id = (await accounts(page)).accounts.find(
     (a) => a.name === 'Everyday',
   )?.id;
-  await page.goto(`/ledger?account=${id ?? ''}`);
+  await page.goto(`/transactions?account=${id ?? ''}`);
   await expect(
     page.getByRole('link', { name: /^Unrecorded Everyday -\$12\.50/ }),
   ).toBeVisible();
@@ -506,7 +508,7 @@ test('an account can be renamed, and a name in use is refused', async ({
   const before = await accounts(page);
   const original = before.accounts.find((a) => a.name === 'Temporary');
 
-  await row(page, 'Temporary').getByRole('button', { name: 'Rename' }).click();
+  await rowAction(page, 'Temporary', 'Rename');
   const dialog = page.getByRole('dialog', { name: 'Rename Temporary' });
   await expectAccessible(page);
   await dialog.getByLabel('Name').fill('Everyday');

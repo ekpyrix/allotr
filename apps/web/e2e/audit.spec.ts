@@ -76,7 +76,7 @@ test('reduced motion, from the device or the app, stops every animation', async 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByTestId('left-today')).toBeAttached();
   expect(await longestMotion(page)).toBeLessThanOrEqual(0.0001);
 
@@ -161,7 +161,7 @@ test('saving an entry and opening a sheet respond within 200 ms on a slow CPU', 
       durationThreshold: 16,
     } as PerformanceObserverInit);
   });
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByTestId('left-today')).toBeAttached();
   // A person looks at the figure before tapping: idle prefetches finish.
   await page.waitForLoadState('networkidle');

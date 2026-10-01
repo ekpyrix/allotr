@@ -12,6 +12,9 @@ import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LoadingBlock } from '@/components/route-skeleton';
+import { MenuItem } from '@/components/ui/menu';
+import { OverflowMenu } from '@/components/ui/overflow-menu';
 import { Amount } from '@/components/ui/amount';
 import { ToggleGroup } from '@/components/ui/toggle-group';
 import { StatusChip } from '@/components/ui/status-chip';
@@ -158,33 +161,10 @@ function AccountRow({
       </StatusChip>
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="text" size="dense">
-          <Link to="/ledger" search={{ account: account.id }}>
+          <Link to="/transactions" search={{ account: account.id }}>
             {t('accounts.showEntries')}
             <span className="sr-only"> {account.name}</span>
           </Link>
-        </Button>
-        <Button
-          variant="outlined"
-          size="dense"
-          data-action="budget"
-          onClick={() => {
-            onOpen({ kind: 'budget', account });
-          }}
-        >
-          {account.budgetGroup === 'on'
-            ? t('accounts.moveOff')
-            : t('accounts.moveOn')}
-          <span className="sr-only"> {account.name}</span>
-        </Button>
-        <Button
-          variant="outlined"
-          size="dense"
-          onClick={() => {
-            onOpen({ kind: 'rename', account });
-          }}
-        >
-          {t('accounts.rename.action')}
-          <span className="sr-only"> {account.name}</span>
         </Button>
         <Button
           variant="outlined"
@@ -196,16 +176,35 @@ function AccountRow({
           {t('accounts.reconcile')}
           <span className="sr-only"> {account.name}</span>
         </Button>
-        <Button
-          variant="outlined"
-          size="dense"
-          onClick={() => {
-            onOpen({ kind: 'archive', account });
-          }}
-        >
-          {t('accounts.archive')}
-          <span className="sr-only"> {account.name}</span>
-        </Button>
+        <div className="ml-auto">
+          <OverflowMenu label={t('ui.moreActionsFor', { label: account.name })}>
+            <MenuItem
+              data-action="budget"
+              onSelect={() => {
+                onOpen({ kind: 'budget', account });
+              }}
+            >
+              {account.budgetGroup === 'on'
+                ? t('accounts.moveOff')
+                : t('accounts.moveOn')}
+            </MenuItem>
+            <MenuItem
+              onSelect={() => {
+                onOpen({ kind: 'rename', account });
+              }}
+            >
+              {t('accounts.rename.action')}
+            </MenuItem>
+            <MenuItem
+              variant="danger"
+              onSelect={() => {
+                onOpen({ kind: 'archive', account });
+              }}
+            >
+              {t('accounts.archive')}
+            </MenuItem>
+          </OverflowMenu>
+        </div>
       </div>
     </li>
   );
@@ -315,7 +314,7 @@ function Group({
       </p>
       {group === 'off' ? (
         <p className="mt-1 text-body">
-          <Link to="/savings" className={linkClass}>
+          <Link to="/accounts/savings" className={linkClass}>
             {t('accounts.groups.savingsLink')}
           </Link>
         </p>
@@ -387,9 +386,7 @@ export function AccountsPage() {
   )
     return (
       <Page title={t('accounts.title')}>
-        <p role="status" className="mt-6 text-text-muted">
-          {t('accounts.loading')}
-        </p>
+        <LoadingBlock label={t('accounts.loading')} />
       </Page>
     );
 
@@ -484,7 +481,7 @@ export function AccountsPage() {
                 {groups.archived.map((account) => (
                   <li key={account.id}>
                     <Link
-                      to="/ledger"
+                      to="/transactions"
                       search={{ account: account.id }}
                       className={linkClass}
                     >

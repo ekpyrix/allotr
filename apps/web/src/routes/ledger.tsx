@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { EXPANDED, useMediaQuery } from '@/lib/media';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
+import { LoadingBlock } from '@/components/route-skeleton';
 import { Button } from '@/components/ui/button';
 import { EntryDialog } from '@/features/ledger/entry-dialog';
 import { LedgerFilters } from '@/features/ledger/ledger-filters';
@@ -86,9 +87,7 @@ export function LedgerPage({
   )
     return (
       <Page title={t('ledger.title')}>
-        <p role="status" className="mt-6 text-body text-text-muted">
-          {t('ledger.loading')}
-        </p>
+        <LoadingBlock label={t('ledger.loading')} />
       </Page>
     );
 
@@ -144,9 +143,7 @@ export function LedgerPage({
       )}
 
       {rows === undefined ? (
-        <p role="status" className="mt-6 text-body text-text-muted">
-          {t('ledger.loading')}
-        </p>
+        <LoadingBlock label={t('ledger.loading')} rows={6} />
       ) : rows.length === 0 ? (
         <div className="mt-6 grid justify-items-start gap-3 rounded-lg border border-outline-variant p-4">
           <p className="text-body-lg">

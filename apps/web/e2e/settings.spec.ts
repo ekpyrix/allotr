@@ -78,7 +78,7 @@ test('changing the payday override and rule updates Today’s figures', async ({
     }),
   ).toBeVisible();
 
-  await page.getByRole('link', { name: 'Today' }).first().click();
+  await page.getByRole('link', { name: 'Dashboard' }).first().click();
   await expect(page.getByRole('definition').nth(2)).toHaveText(
     String(after.daysLeft),
   );
@@ -133,7 +133,7 @@ test('the locale shows a sample and is saved in canonical form', async ({
   await expectAccessible(page);
 
   // A ledger query that fails takes only the ledger sections down.
-  await page.route('**/v1/bills', (route) =>
+  await page.route('**/v1/rates', (route) =>
     route.fulfill({
       status: 400,
       contentType: 'application/problem+json',
@@ -153,7 +153,7 @@ test('the locale shows a sample and is saved in canonical form', async ({
       exact: true,
     }),
   ).toBeVisible();
-  await page.unroute('**/v1/bills');
+  await page.unroute('**/v1/rates');
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(section(page, 'Ledger')).toBeVisible();
 });
@@ -280,10 +280,12 @@ test('a bill due this cycle is set aside until it is paid', async ({
   test.setTimeout(90_000);
   const before = await today(page);
   const dueDay = Number(before.today.slice(8));
+  // Bills moved to Budget; the old settings address redirects there.
   await page.goto('/settings#bills');
+  await expect(page).toHaveURL(/\/budget$/);
   await expect(
     page.getByRole('heading', { name: 'Bills', exact: true }),
-  ).toBeFocused();
+  ).toBeVisible();
   const region = section(page, 'Bills');
   await region.getByRole('button', { name: 'New bill' }).click();
   const dialog = page.getByRole('dialog', { name: 'New bill' });
@@ -396,7 +398,7 @@ test('a bill due this cycle is set aside until it is paid', async ({
   {
     const before = await today(page);
     const dueDay = Number(before.today.slice(8));
-    await page.goto('/settings#bills');
+    await page.goto('/budget');
     const region = section(page, 'Bills');
     await region.getByRole('button', { name: 'New bill' }).click();
     const dialog = page.getByRole('dialog', { name: 'New bill' });
@@ -549,7 +551,7 @@ test('an invite link from the instance section signs up a new user', async ({
   // A new user starts with setup (setup.spec covers it).
   await expect(guest).toHaveURL(/\/setup$/);
   await guest.getByRole('button', { name: 'Skip the rest of setup' }).click();
-  await expect(guest).toHaveURL(/\/today$/);
+  await expect(guest).toHaveURL(/\/$/);
 
   await guest.goto('/settings');
   await expect(
@@ -560,7 +562,7 @@ test('an invite link from the instance section signs up a new user', async ({
   ).toHaveCount(0);
 
   await guest.goto(url.pathname);
-  await expect(guest).toHaveURL(/\/today$/);
+  await expect(guest).toHaveURL(/\/$/);
   invitedState = await other.storageState();
   await other.close();
 });
@@ -579,8 +581,8 @@ test('signing out other devices signs out a second browser', async ({
     headers: { origin: baseURL ?? '' },
   });
   expect(signIn.ok()).toBe(true);
-  await otherPage.goto('/today');
-  await expect(otherPage).toHaveURL(/\/today$/);
+  await otherPage.goto('/');
+  await expect(otherPage).toHaveURL(/\/$/);
 
   await page.goto('/settings#security');
   const region = section(page, 'Security');
@@ -600,7 +602,7 @@ test('signing out other devices signs out a second browser', async ({
   ).toBeVisible();
   await expect(devices.getByRole('listitem')).toHaveCount(1);
 
-  await otherPage.goto('/today');
+  await otherPage.goto('/');
   await expect(otherPage).toHaveURL(/\/sign-in/);
   await other.close();
   await page.reload();
@@ -655,7 +657,7 @@ test('two-factor authentication turns on with a code and stays on while required
     storageState: invitedState,
   });
   const unenrolled = await other.newPage();
-  await unenrolled.goto('/today');
+  await unenrolled.goto('/');
   await unenrolled.getByRole('link', { name: 'Set it up in Settings' }).click();
   await expect(unenrolled).toHaveURL(/\/settings#security$/);
   await expect(

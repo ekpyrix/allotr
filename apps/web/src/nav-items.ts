@@ -1,22 +1,20 @@
 import type { MessageKey } from './messages/t.ts';
 
-// Top-level destinations, in order. Both the bottom bar and the side rail
-// render from this list, and the shell E2E test visits every entry.
+// Top-level destinations, in order (ADR 0023). The phone's tab bar and the
+// desktop sidebar render from this list, and the shell E2E test visits every
+// entry. Settings is not a tab: it opens from the header gear on phones and
+// from the foot of the sidebar.
 export const navItems = [
-  { to: '/today', label: 'nav.today' },
-  { to: '/ledger', label: 'nav.ledger' },
+  { to: '/', label: 'nav.dashboard' },
   { to: '/accounts', label: 'nav.accounts' },
-  { to: '/settings', label: 'nav.settings' },
+  { to: '/transactions', label: 'nav.transactions' },
+  { to: '/budget', label: 'nav.budget' },
+  { to: '/reports', label: 'nav.reports' },
 ] as const satisfies readonly { to: `/${string}`; label: MessageKey }[];
 
 export type NavPath = (typeof navItems)[number]['to'];
 
-/**
- * Destinations only the rail and drawer have room for; on phones they stay
- * reachable from their parent view (Savings from Accounts).
- */
-export const wideNavItems = [
-  { to: '/savings', label: 'nav.savings' },
-] as const satisfies readonly { to: `/${string}`; label: MessageKey }[];
-
-export type WideNavPath = (typeof wideNavItems)[number]['to'];
+export const settingsItem = {
+  to: '/settings',
+  label: 'nav.settings',
+} as const satisfies { to: `/${string}`; label: MessageKey };

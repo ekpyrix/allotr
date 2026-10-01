@@ -1,6 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { paramShellPaths, publicPaths, shellPaths } from './lib/redirect.ts';
+import {
+  paramShellPaths,
+  publicPaths,
+  renamedPaths,
+  shellPaths,
+} from './lib/redirect.ts';
 import { createAppRouter } from './router.tsx';
 
 // Every signed-in route must be in shellPaths, which the shell E2E test
@@ -15,7 +20,8 @@ describe('route tree', () => {
       (path) =>
         path.startsWith('/') &&
         !path.startsWith('/dev/') &&
-        !(publicPaths as readonly string[]).includes(path),
+        !(publicPaths as readonly string[]).includes(path) &&
+        !(renamedPaths as readonly string[]).includes(path),
     );
     expect(new Set(routed)).toEqual(
       new Set([...shellPaths, ...paramShellPaths]),
