@@ -24,6 +24,7 @@ import {
   type ReconcileDraftErrors,
   type ReconcileMode,
 } from './reconcile-draft.ts';
+import { reformatAmountInput } from '@/lib/amount-input.ts';
 
 // Reconciling an account with the bank (FR-L9), default policy: compare
 // first; a match is recorded, a difference is offered as one adjustment.
@@ -181,6 +182,15 @@ export function ReconcileFlow({
             value={draft.balance}
             onChange={(e) => {
               update({ balance: e.currentTarget.value });
+            }}
+            onBlur={(e) => {
+              update({
+                balance: reformatAmountInput(
+                  e.currentTarget.value,
+                  account.currency,
+                  locale,
+                ),
+              });
             }}
           />
         )}

@@ -51,6 +51,7 @@ import {
 } from './options.ts';
 import { SplitEditor } from './split-editor.tsx';
 import { useSaveEntry } from './use-save-entry.ts';
+import { reformatAmountInput } from '@/lib/amount-input.ts';
 
 function storage(): Storage | undefined {
   try {
@@ -302,6 +303,15 @@ export function QuickEntryForm({
             onChange={(e) => {
               update({ amount: e.currentTarget.value });
             }}
+            onBlur={(e) => {
+              update({
+                amount: reformatAmountInput(
+                  e.currentTarget.value,
+                  source?.currency,
+                  locale,
+                ),
+              });
+            }}
           />
         )}
       </FieldControl>
@@ -370,6 +380,15 @@ export function QuickEntryForm({
               onChange={(e) => {
                 update({ received: e.currentTarget.value });
               }}
+              onBlur={(e) => {
+                update({
+                  received: reformatAmountInput(
+                    e.currentTarget.value,
+                    target.currency,
+                    locale,
+                  ),
+                });
+              }}
             />
           )}
         </FieldControl>
@@ -391,6 +410,15 @@ export function QuickEntryForm({
               value={draft.foreign}
               onChange={(e) => {
                 update({ foreign: e.currentTarget.value });
+              }}
+              onBlur={(e) => {
+                update({
+                  foreign: reformatAmountInput(
+                    e.currentTarget.value,
+                    draft.foreignCurrency,
+                    locale,
+                  ),
+                });
               }}
             />
           )}
