@@ -199,7 +199,7 @@ test('moving an account off budget lowers Today’s figure from that day', async
   ).toBeVisible();
   await expect(
     section(page, 'Off budget').getByRole('button', {
-      name: 'Move on budget Holiday fund',
+      name: 'More actions for Holiday fund',
     }),
   ).toBeFocused();
 

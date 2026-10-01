@@ -179,7 +179,6 @@ function AccountRow({
         <div className="ml-auto">
           <OverflowMenu label={t('ui.moreActionsFor', { label: account.name })}>
             <MenuItem
-              data-action="budget"
               onSelect={() => {
                 onOpen({ kind: 'budget', account });
               }}
@@ -500,12 +499,13 @@ export function AccountsPage() {
         title={title}
         busy={busy}
         onClose={close}
-        // A moved account's row is rendered anew in its new group.
+        // A moved account's row is rendered anew in its new group; focus lands
+        // on its overflow menu button, where the action came from.
         fallback={() =>
           lastAccount.current === undefined
             ? null
             : document.querySelector<HTMLElement>(
-                `[data-account-id="${CSS.escape(lastAccount.current)}"] [data-action="budget"]`,
+                `[data-account-id="${CSS.escape(lastAccount.current)}"] [data-slot="icon-button"]`,
               )
         }
       >

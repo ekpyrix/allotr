@@ -112,7 +112,7 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
   const context = await browser.newContext();
   const again = await context.newPage();
   await again.goto(new URL('/', baseURL).href);
-  await expect(again).toHaveURL(/\/sign-in$/);
+  await expect(again).toHaveURL(/\/sign-in(\?redirect=%2F)?$/);
   await again.getByLabel('Email').fill(account.email);
   await again.getByLabel('Password').fill(account.password);
   await again.getByRole('button', { name: 'Sign in' }).click();
