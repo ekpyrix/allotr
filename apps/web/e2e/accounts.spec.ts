@@ -3,6 +3,7 @@ import {
   money,
   type AccountListView,
   type ArchiveImpactView,
+  type Money,
   type TodayView,
 } from '@allotr/shared';
 import { expect, test, type Page } from '@playwright/test';
@@ -45,6 +46,13 @@ async function accounts(page: Page): Promise<AccountListView> {
   return (await (
     await page.request.get('/v1/accounts?includeArchived=true')
   ).json()) as AccountListView;
+}
+
+// The hero reads "Over by …" rather than a negative amount once spent.
+function heroText(left: Money): string {
+  return left.amountMinor < 0
+    ? `Over by ${formatMoney(money(-left.amountMinor, left.currency), 'en-US')}`
+    : formatMoney(left, 'en-US');
 }
 
 async function today(page: Page): Promise<TodayView> {
@@ -195,7 +203,7 @@ test('moving an account off budget lowers Today’s figure from that day', async
   );
   await page.getByRole('link', { name: 'Today' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
-    formatMoney(after.leftToday, 'en-US'),
+    heroText(after.leftToday),
   );
 
   // The switch is an entry dated today in the account's ledger.
@@ -332,7 +340,7 @@ test('writing off an on-budget balance counts as spending and says how much toda
   );
   await page.getByRole('link', { name: 'Today' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
-    formatMoney(after.leftToday, 'en-US'),
+    heroText(after.leftToday),
   );
 });
 
@@ -390,7 +398,7 @@ test('reconciling an on-budget account records a match, then adjusts a differenc
   );
   await page.getByRole('link', { name: 'Today' }).first().click();
   await expect(page.getByTestId('left-today')).toHaveText(
-    formatMoney(after.leftToday, 'en-US'),
+    heroText(after.leftToday),
   );
 
   // The adjustment is an ordinary entry in the ledger.

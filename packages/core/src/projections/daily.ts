@@ -11,7 +11,12 @@ import type { AccountId, TransactionId } from '../ledger/types.ts';
 import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
-import { defaultPolicies, dueDates, type Policies } from './policies.ts';
+import {
+  billAmount,
+  defaultPolicies,
+  dueDates,
+  type Policies,
+} from './policies.ts';
 import { totalOn } from './rates.ts';
 import type {
   BillDue,
@@ -167,7 +172,9 @@ export function billsDueOn(
       const paid = bill.payments.some(
         (payment) => payment.dueOn === dueOn && payment.paidOn <= date,
       );
-      if (!paid) due.push({ billId: bill.id, dueOn, amount: bill.amount });
+      if (!paid) {
+        due.push({ billId: bill.id, dueOn, amount: billAmount(bill, dueOn) });
+      }
     }
   }
   return due.sort(
@@ -186,7 +193,7 @@ export function billsInCycle(view: LedgerView, cycle: Cycle): CycleBill[] {
       bills.push({
         billId: bill.id,
         dueOn,
-        amount: bill.amount,
+        amount: billAmount(bill, dueOn),
         paidOn: payment?.paidOn ?? null,
       });
     }

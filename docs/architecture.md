@@ -215,8 +215,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   and an import finishes it. The web app sends a user to `/setup` from
   Today until it is finished. `/v1/rates` takes manual exchange rates, one
   per pair and day. `/v1/bills` is the minimal bill list the reserve needs;
-  `POST /v1/bills/{id}/payments` marks a due date paid and `DELETE
-  …/payments/{dueOn}` undoes the mark.
+  `POST /v1/bills/{id}/payments` marks a due date paid, linking an entry
+  or, given `paid`, recording one, and `DELETE …/payments/{dueOn}` undoes
+  the mark and any entry it recorded. A bill's optional `price` in another
+  currency makes it reserve what its latest payment took.
 - `GET /v1/cycles` lists every cycle's snapshot, newest first. Each one has
   income, spending, leftover and savings change in the default currency at
   the rate on the cycle's last day, plus the `amended` flag.
@@ -310,6 +312,14 @@ bundle rather than imported directly.
       "amount": { "amountMinor": 2500, "currency": "EUR" },
       "dueDay": 22,
       "payments": [{ "dueOn": "2026-03-22", "paidOn": "2026-03-21" }]
+    },
+    {
+      "name": "Streaming",
+      "account": "Wallet",
+      "amount": { "amountMinor": 1900, "currency": "EUR" },
+      "price": { "amountMinor": 1250, "currency": "USD" },
+      "category": "Bills and subscriptions",
+      "dueDay": 5
     }
   ]
 }

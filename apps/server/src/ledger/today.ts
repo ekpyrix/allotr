@@ -6,7 +6,7 @@ import {
   type LedgerView,
   type TransactionId,
 } from '@allotr/core';
-import { localDateIn, type TodayView } from '@allotr/shared';
+import { localDateIn, money, type Money, type TodayView } from '@allotr/shared';
 import type { Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { loadBills } from './bills.ts';
@@ -112,16 +112,28 @@ export async function loadView(
   return { view, timeZone: settings.timeZone };
 }
 
+// Names and prices of the bills the figures list.
 async function loadBillNames(
   db: Db,
   userId: string,
-): Promise<Map<string, string>> {
+): Promise<Map<string, { name: string; price: Money | null }>> {
   const rows = await db
     .selectFrom('bills')
-    .select(['id', 'name'])
+    .select(['id', 'name', 'price_minor', 'price_currency'])
     .where('user_id', '=', userId)
     .execute();
-  return new Map(rows.map((row) => [row.id, row.name]));
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        name: row.name,
+        price:
+          row.price_minor === null || row.price_currency === null
+            ? null
+            : money(row.price_minor, row.price_currency),
+      },
+    ]),
+  );
 }
 
 export async function todayFigures(
@@ -158,7 +170,8 @@ export async function todayFigures(
     paceSpent: figures.paceSpent,
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,
-      name: billNames.get(due.billId) ?? '',
+      name: billNames.get(due.billId)?.name ?? '',
+      price: billNames.get(due.billId)?.price ?? null,
       dueOn: due.dueOn,
       amount: due.amount,
     })),

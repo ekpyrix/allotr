@@ -1,5 +1,6 @@
 import type {
   CreateBillBody,
+  CreateBillPaymentBody,
   CreateCategoryBody,
   CreateRateBody,
   LocalDate,
@@ -77,6 +78,11 @@ export const ratesQuery = queryOptions({
 
 /** Bills and rates feed the reserve and the conversions in every figure. */
 export const billQueryKeys = [['bills'], ...figureQueryKeys] as const;
+/** Paying a bill can record an entry, or undo the one it recorded. */
+export const billPaymentQueryKeys = [
+  ...billQueryKeys,
+  ['transactions'],
+] as const;
 export const rateQueryKeys = [['rates'], ...figureQueryKeys] as const;
 
 export function createBill(body: CreateBillBody) {
@@ -91,9 +97,12 @@ export async function deleteBill(id: string) {
   await call(endpoints.deleteBill, { params: { id } });
 }
 
-/** Marks a due date paid today; its reserve is released. */
-export function payBill(id: string, dueOn: LocalDate) {
-  return call(endpoints.payBill, { params: { id }, body: { dueOn } });
+/**
+ * Marks a due date paid, today unless `paidOn` says otherwise; its reserve
+ * is released. With `paid`, it also records the expense.
+ */
+export function payBill(id: string, body: CreateBillPaymentBody) {
+  return call(endpoints.payBill, { params: { id }, body });
 }
 
 export function unpayBill(id: string, dueOn: LocalDate) {

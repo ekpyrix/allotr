@@ -6,10 +6,30 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { Bill } from './types.ts';
+import type { Bill, BillPayment } from './types.ts';
 
 // Per-user behaviour as strategies (docs/domain.md "Policies"). M1 ships the
 // defaults only; M4 adds the alternatives behind the same interfaces.
+
+/**
+ * What a bill reserves for one due date. A variable bill follows the latest
+ * payment for an earlier due date that took an amount; a paid due date
+ * shows what its own payment took.
+ */
+export function billAmount(bill: Bill, dueOn: LocalDate): Money {
+  const took = (payment: BillPayment): Money | null =>
+    payment.paid?.currency === bill.amount.currency ? payment.paid : null;
+  const own = bill.payments.find((payment) => payment.dueOn === dueOn);
+  const ownPaid = own === undefined ? null : took(own);
+  if (ownPaid !== null) return ownPaid;
+  if (bill.variable !== true) return bill.amount;
+  let latest: BillPayment | undefined;
+  for (const payment of bill.payments) {
+    if (payment.dueOn >= dueOn || took(payment) === null) continue;
+    if (latest === undefined || payment.dueOn > latest.dueOn) latest = payment;
+  }
+  return (latest === undefined ? null : took(latest)) ?? bill.amount;
+}
 
 /** Days from `from` up to, not including, `to`. */
 export type DateWindow = Readonly<{ from: LocalDate; to: LocalDate }>;
@@ -83,7 +103,7 @@ export const reserveAtPayday: BillsStrategy = {
           (payment) => payment.dueOn === due && payment.paidOn <= date,
         );
         if (paid) continue;
-        const { currency, amountMinor } = bill.amount;
+        const { currency, amountMinor } = billAmount(bill, due);
         totals.set(
           currency,
           (totals.get(currency) ?? 0n) + BigInt(amountMinor),

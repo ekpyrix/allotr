@@ -1,6 +1,15 @@
 import {
+  convert,
+  convertInverse,
+  currencyCode,
+  impliedRate,
+  minorUnit,
+  money,
   MoneyError,
   parseMoney,
+  type BillView,
+  type ExchangeRateView,
+  type LocalDate,
   type Money,
   type TodayView,
 } from '@allotr/shared';
@@ -45,4 +54,58 @@ export function dueThisCycle(
   cycleBills: readonly CycleBill[],
 ): CycleBill[] {
   return cycleBills.filter((bill) => bill.billId === billId);
+}
+
+// One whole unit of a currency: $1.00 is 100 minor units, ¥1 is 1.
+function oneOf(currency: string): Money {
+  const code = currencyCode(currency);
+  return money(10 ** minorUnit(code), code);
+}
+
+/** What one unit of the price's currency cost in a payment: paid ÷ price. */
+export function paidUnit(paid: Money, price: Money): Money {
+  return convert(
+    oneOf(price.currency),
+    impliedRate(price, paid),
+    paid.currency,
+  );
+}
+
+/**
+ * The latest stored rate between two currencies, quoted either way round,
+ * as what one unit of `from` buys in `to`; null without one.
+ */
+export function storedUnit(
+  rates: readonly ExchangeRateView[],
+  from: string,
+  to: string,
+): { unit: Money; asOf: LocalDate } | null {
+  let latest: ExchangeRateView | undefined;
+  for (const rate of rates) {
+    const pair =
+      (rate.base === from && rate.quote === to) ||
+      (rate.base === to && rate.quote === from);
+    if (pair && (latest === undefined || rate.asOf > latest.asOf)) {
+      latest = rate;
+    }
+  }
+  if (latest === undefined) return null;
+  const unit =
+    latest.base === from
+      ? convert(oneOf(from), latest.rate, to)
+      : convertInverse(oneOf(from), latest.rate, to);
+  return { unit, asOf: latest.asOf };
+}
+
+export type BillPayment = BillView['payments'][number];
+
+/** The latest payment that recorded both what it took and its price. */
+export function lastPricedPayment(
+  bill: BillView,
+): (BillPayment & { paid: Money; price: Money }) | null {
+  for (const payment of [...bill.payments].reverse()) {
+    const { paid, price } = payment;
+    if (paid !== null && price !== null) return { ...payment, paid, price };
+  }
+  return null;
 }

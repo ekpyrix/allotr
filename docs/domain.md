@@ -109,7 +109,17 @@ live_daily       = available(now) / days_left
 - A bill is reserved from the day its cycle opens until the day it is
   paid; payments name the due date they settle. A payment mark is not a
   ledger entry: it may link the entry that paid it, and undoing the mark
-  reserves the bill again.
+  reserves the bill again. Marking it paid with an amount also records
+  that entry, an expense from the bill's account under the bill's
+  category; undoing such a mark undoes its entry too.
+- A bill may have a **price** in another currency than its account's, such
+  as a subscription priced at $12.50 and paid from a THB account: the
+  card's rate and fees change what each month takes. Such a bill reserves
+  what the latest payment for an earlier due date took from the account,
+  or its own amount, an estimate, until a payment has taken one. A payment
+  whose entry was undone takes nothing. The price is shown, never
+  converted into the reserve, and the paying entry records it as its
+  foreign amount (FR-X3).
 - A bill is *due* once a due date in the cycle is today or past and it is
   not paid; the Today view lists it until it is marked paid.
 - `cycle_spent` is `spent_today` summed from the day the cycle opened through
@@ -261,8 +271,9 @@ postings(id, user_id, transaction_id, account_id, amount_minor, currency,
          category_id, position)
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)
 allocations(id, cycle_id, kind, amount_minor, currency)
-bills(id, user_id, name, amount_minor, currency, account_id, cadence, due_day, active)
-bill_payments(id, user_id, bill_id, due_on, paid_on, transaction_id)
+bills(id, user_id, name, amount_minor, currency, price_minor, price_currency,
+      account_id, category_id, cadence, due_day, active)
+bill_payments(id, user_id, bill_id, due_on, paid_on, transaction_id, recorded)
 recurring(id, user_id, template, schedule, mode, next_due)
 goals(id, user_id, name, target_minor, earmarked_minor, currency)
 counterparties(id, user_id, name)

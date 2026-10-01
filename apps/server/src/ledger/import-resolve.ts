@@ -281,6 +281,9 @@ export function resolveBundle(
   const linked = new Set<string>();
   bundle.bills.forEach((bill, index) => {
     checkAccount(['bills', index, 'account'], bill.account);
+    if (bill.category !== undefined) {
+      checkCategory(['bills', index, 'category'], bill.category, 'expense');
+    }
     bill.payments.forEach((payment, p) => {
       const ref = payment.transaction;
       if (ref === undefined) return;

@@ -441,7 +441,11 @@ export async function importBundle(
           {
             name: bill.name,
             amount: bill.amount,
+            ...(bill.price === undefined ? {} : { price: bill.price }),
             accountId: account(bill.account),
+            ...(bill.category === undefined
+              ? {}
+              : { categoryId: category(bill.category) }),
             dueDay: bill.dueDay,
             active: bill.active,
           },
@@ -452,7 +456,10 @@ export async function importBundle(
         const link =
           payment.transaction === undefined
             ? {}
-            : { transactionId: lookup(refs, payment.transaction) };
+            : {
+                transactionId: lookup(refs, payment.transaction),
+                recorded: payment.recorded === true,
+              };
         await at(`/bills/${String(index)}/payments/${String(p)}`, () =>
           insertBillPayment(
             trx,

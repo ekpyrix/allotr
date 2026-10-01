@@ -43,12 +43,15 @@ export type SnapshotBill = Readonly<{
   name: string;
   accountId: string;
   amount: Money;
+  price: Money | null;
+  categoryId: string | null;
   dueDay: number;
   active: boolean;
   payments: readonly Readonly<{
     dueOn: LocalDate;
     paidOn: LocalDate;
     transactionId: string | null;
+    recorded: boolean;
   }>[];
 }>;
 
@@ -141,6 +144,9 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         'account_id',
         'amount_minor',
         'currency',
+        'price_minor',
+        'price_currency',
+        'category_id',
         'due_day',
         'active',
       ])
@@ -151,7 +157,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       .execute(),
     db
       .selectFrom('bill_payments')
-      .select(['bill_id', 'due_on', 'paid_on', 'transaction_id'])
+      .select(['bill_id', 'due_on', 'paid_on', 'transaction_id', 'recorded'])
       .where('user_id', '=', userId)
       .orderBy('due_on')
       .execute(),
@@ -227,6 +233,11 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     name: row.name,
     accountId: row.account_id,
     amount: money(row.amount_minor, row.currency),
+    price:
+      row.price_minor === null || row.price_currency === null
+        ? null
+        : money(row.price_minor, row.price_currency),
+    categoryId: row.category_id,
     dueDay: row.due_day,
     active: row.active === 1,
     payments: paymentRows
@@ -235,6 +246,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
         dueOn: p.due_on as LocalDate,
         paidOn: p.paid_on as LocalDate,
         transactionId: p.transaction_id,
+        recorded: p.recorded === 1,
       })),
   }));
 

@@ -165,6 +165,8 @@ const viewArb = fc
     billDay: fc.integer({ min: 1, max: 31 }),
     billAmount: amountArb,
     paidOffset: fc.option(fc.integer({ min: 0, max: 10 })),
+    variable: fc.boolean(),
+    paidAmounts: fc.array(fc.option(amountArb), { maxLength: 6 }),
     startedOn: dayArb,
   })
   .map(
@@ -175,6 +177,8 @@ const viewArb = fc
       billDay,
       billAmount,
       paidOffset,
+      variable,
+      paidAmounts,
       startedOn,
     }): LedgerView => ({
       chart,
@@ -199,10 +203,15 @@ const viewArb = fc
                   .filter((d) =>
                     d.endsWith(`-${String(billDay).padStart(2, '0')}`),
                   )
-                  .map((dueOn) => ({
-                    dueOn,
-                    paidOn: addDays(dueOn, -paidOffset),
-                  })),
+                  .map((dueOn, at) => {
+                    const paid = paidAmounts[at] ?? null;
+                    return {
+                      dueOn,
+                      paidOn: addDays(dueOn, -paidOffset),
+                      paid: paid === null ? null : money(paid, 'USD'),
+                    };
+                  }),
+          variable,
         },
       ],
       rates,
@@ -500,6 +509,20 @@ describe('archive impact properties', () => {
         expect(
           leftTodayDrop(view, today, move(accountId('cash-USD'))).amountMinor,
         ).toBe(0);
+      }),
+    );
+  });
+});
+
+describe('bill properties', () => {
+  it("reserves exactly the cycle's bills not yet paid, at their listed amounts", () => {
+    fc.assert(
+      fc.property(viewArb, todayArb, (view, today) => {
+        const { reserved, cycleBills } = dailyFiguresOn(view, today);
+        const unpaid = cycleBills
+          .filter((bill) => bill.paidOn === null || bill.paidOn > today)
+          .reduce((sum, bill) => sum + bill.amount.amountMinor, 0);
+        expect(reserved.amountMinor).toBe(unpaid);
       }),
     );
   });

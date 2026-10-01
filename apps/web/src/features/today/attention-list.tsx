@@ -74,7 +74,13 @@ export function AttentionList({
           </Item>
         ))}
         {billsDue.map((bill) => {
-          const amount = formatMoney(bill.amount, locale);
+          const amount =
+            bill.price === null
+              ? formatMoney(bill.amount, locale)
+              : t('today.attention.pricedAmount', {
+                  price: formatMoney(bill.price, locale),
+                  amount: formatMoney(bill.amount, locale),
+                });
           return (
             <Item
               key={`${bill.billId}:${bill.dueOn}`}
