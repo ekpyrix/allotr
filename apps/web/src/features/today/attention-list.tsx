@@ -49,7 +49,7 @@ export function AttentionList({
       <h2 id={heading} className="text-title">
         {t('today.attention.title')}
       </h2>
-      <ul className="mt-3 overflow-hidden rounded-lg bg-card">
+      <ul className="mt-3 overflow-hidden border-y border-outline-variant">
         {overdue ? (
           <Item
             action={

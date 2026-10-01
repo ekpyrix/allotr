@@ -77,7 +77,10 @@ export function Figures({
       className="mt-6 grid grid-cols-2 gap-3 medium:grid-cols-4"
     >
       {items.map(([term, amount, testId]) => (
-        <div key={term} className="rounded-md bg-card p-4">
+        <div
+          key={term}
+          className="rounded-md border border-outline-variant p-4"
+        >
           <dt className="text-sm text-text-muted">{term}</dt>
           <dd
             data-testid={testId}
@@ -143,7 +146,7 @@ export function MissingRates({
       {currencies.map((currency) => (
         <li
           key={currency}
-          className="flex gap-3 rounded-md bg-card p-3 text-sm"
+          className="flex gap-3 rounded-md border border-outline-variant p-3 text-sm"
         >
           <TriangleAlert
             aria-hidden

@@ -1,11 +1,11 @@
 import { formatMoney } from '@allotr/shared';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
+import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { useQuickEntry } from '@/features/quick-entry/quick-entry-provider';
 import { useDeleteEntry } from '@/features/ledger/use-delete-entry';
 import { errorMessage } from '@/lib/problem';
-import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import type { EntryRow } from './entries.ts';
 
@@ -45,7 +45,6 @@ function EntryItem({
   const confirmId = useId();
   const confirmButton = useRef<HTMLButtonElement>(null);
   const deleteButton = useRef<HTMLButtonElement>(null);
-  const amount = amountText(row, locale);
   const mine = deletion.variables?.id === row.id;
   const pending = deletion.isPending && mine;
   const remove = () => {
@@ -73,15 +72,12 @@ function EntryItem({
             </p>
           ) : null}
         </div>
-        {amount === null ? null : (
-          <p
-            className={cn(
-              'font-mono tabular-nums',
-              row.kind === 'income' && 'text-positive',
-            )}
-          >
-            {amount}
-          </p>
+        {row.amount === null ? null : (
+          <Amount
+            amount={row.amount}
+            locale={locale}
+            kind={row.kind === 'transfer' ? 'transfer' : undefined}
+          />
         )}
         <div className="flex w-24 shrink-0 justify-end">
           <Button
@@ -179,7 +175,7 @@ export function TodaysEntries({
         {t('today.entries.title')}
       </h2>
       {rows.length === 0 ? (
-        <div className="mt-3 grid justify-items-start gap-3 rounded-lg bg-card p-4">
+        <div className="mt-3 grid justify-items-start gap-3 rounded-lg border border-outline-variant p-4">
           <p className="text-body-lg">{t('today.entries.empty')}</p>
           <Button
             variant="tonal"
@@ -192,7 +188,7 @@ export function TodaysEntries({
           </Button>
         </div>
       ) : (
-        <ul className="mt-3 overflow-hidden rounded-lg bg-card">
+        <ul className="mt-3 overflow-hidden border-y border-outline-variant">
           {rows.map((row) => (
             <EntryItem
               key={row.id}

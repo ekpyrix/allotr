@@ -9,7 +9,7 @@ import { formatDay } from './format.ts';
 // card and named for where it goes; the value stays plain text.
 
 const tileClass =
-  'relative rounded-lg bg-card p-4 transition-colors duration-(--dur-fade) has-[a:hover,button:hover]:bg-card-raised';
+  'relative rounded-lg border border-outline-variant p-4 transition-colors duration-(--dur-fade) has-[a:hover,button:hover]:bg-card-raised';
 const stretched =
   'absolute inset-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 

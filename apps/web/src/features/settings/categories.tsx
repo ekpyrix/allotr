@@ -555,7 +555,7 @@ export function CategoriesSection({
               {t('settings.categories.none')}
             </p>
           ) : (
-            <ul className="mt-2 divide-y rounded-md bg-card px-4">
+            <ul className="mt-2 divide-y border-y border-outline-variant px-4">
               {tree[kind].map(({ category, children }) => (
                 <CategoryItem
                   key={category.id}

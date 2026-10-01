@@ -1,4 +1,4 @@
-import { formatMoney, type TransactionListView } from '@allotr/shared';
+import { type TransactionListView } from '@allotr/shared';
 import { Link } from '@tanstack/react-router';
 import {
   ArrowDownLeft,
@@ -10,10 +10,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
-import { formatLongDay, rowAmount, rowTitle } from './format.ts';
+import { formatLongDay, rowTitle } from './format.ts';
 import { byDay, type LedgerRow } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
 
@@ -36,7 +37,6 @@ function Row({
   locale: string;
   search: LedgerSearch;
 }) {
-  const amount = rowAmount(row, locale);
   const Icon = kindIcons[row.kind];
   const muted = row.undone || row.kind === 'reversal';
   const details = [
@@ -50,40 +50,40 @@ function Row({
         search={{ ...search, entry: row.id }}
         data-entry-id={row.id}
         aria-current={search.entry === row.id ? 'true' : undefined}
-        className="flex min-h-(--row-h) items-center gap-4 px-4 py-2 transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring aria-[current=true]:bg-card-raised"
+        className="flex min-h-(--row-h) items-center gap-3 px-4 py-1.5 transition-colors duration-(--dur-fade) hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring aria-[current=true]:bg-card"
       >
         <span
           aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-card-raised text-text-muted"
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center',
+            row.moves && !muted ? 'text-info' : 'text-text-muted',
+          )}
         >
           <Icon className="size-5 stroke-[1.75]" />
         </span>
         <span className={cn('min-w-0 flex-1', muted && 'text-text-muted')}>
           <span
             className={cn(
-              'block text-body-lg wrap-anywhere',
+              'block text-body wrap-anywhere',
               row.undone && 'line-through',
             )}
           >
             {rowTitle(row)}
           </span>
           {details.length > 0 ? (
-            <span className="block truncate text-body text-text-muted">
+            <span className="block truncate text-caption text-text-muted">
               {details.join(' · ')}
             </span>
           ) : null}
         </span>
-        {amount === null ? null : (
-          <span
-            className={cn(
-              'shrink-0 font-mono text-body-lg tabular-nums',
-              muted && 'text-text-muted',
-              row.undone && 'line-through',
-              !muted && row.kind === 'income' && 'text-positive',
-            )}
-          >
-            {amount}
-          </span>
+        {row.amount === null ? null : (
+          <Amount
+            amount={row.amount}
+            locale={locale}
+            kind={row.moves ? 'transfer' : undefined}
+            muted={muted}
+            className={cn('shrink-0 text-body', row.undone && 'line-through')}
+          />
         )}
         {row.undone ? (
           <span className="shrink-0 text-body text-text-muted">
@@ -142,15 +142,13 @@ export function LedgerList({
             >
               <span>{formatLongDay(group.day, locale)}</span>
               {total === undefined ? null : (
-                <span className="font-mono tabular-nums">
+                <span>
                   <span className="sr-only">{t('ledger.dayNet')} </span>
-                  {formatMoney(total.net, locale, {
-                    signDisplay: 'exceptZero',
-                  })}
+                  <Amount amount={total.net} locale={locale} />
                 </span>
               )}
             </h2>
-            <ul className="overflow-hidden rounded-lg bg-card">
+            <ul className="overflow-hidden border-y border-outline-variant">
               {group.rows.map((row) => (
                 <Row key={row.id} row={row} locale={locale} search={search} />
               ))}

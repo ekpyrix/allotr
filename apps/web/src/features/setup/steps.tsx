@@ -283,7 +283,7 @@ function AddedList({ items }: { items: readonly [string, ReactNode][] }) {
         {items.map(([key, content]) => (
           <li
             key={key}
-            className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-md bg-card p-3"
+            className="flex flex-wrap items-baseline justify-between gap-x-4 rounded-md border border-outline-variant p-3"
           >
             {content}
           </li>

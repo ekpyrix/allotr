@@ -27,7 +27,7 @@ export const DEVICE_PREFS = {
   density: {
     key: 'allotr.density',
     schema: z.enum(['comfortable', 'compact']),
-    fallback: 'comfortable',
+    fallback: 'compact',
   },
 } as const;
 
@@ -91,7 +91,7 @@ export function applyPrefs(
   const root = doc.documentElement;
   if (prefs.motion === 'system') delete root.dataset.motion;
   else root.dataset.motion = prefs.motion;
-  if (prefs.density === 'comfortable') delete root.dataset.density;
+  if (prefs.density === 'compact') delete root.dataset.density;
   else root.dataset.density = prefs.density;
 }
 

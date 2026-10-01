@@ -42,8 +42,10 @@ import {
   MenuTrigger,
 } from '@/components/ui/menu';
 import { LinearProgress, RingProgress } from '@/components/ui/progress';
-import { Segmented } from '@/components/ui/segmented';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Amount } from '@/components/ui/amount';
+import { OverflowMenu } from '@/components/ui/overflow-menu';
+import { ToggleGroup } from '@/components/ui/toggle-group';
+import { Skeleton, SkeletonCard, SkeletonRows } from '@/components/ui/skeleton';
 import { useSnackbar } from '@/components/ui/snackbar';
 import { StatusChip } from '@/components/ui/status-chip';
 import { Switch } from '@/components/ui/switch';
@@ -166,6 +168,18 @@ function Panel({ theme }: { theme: PaletteTheme }) {
         />
       </List>
 
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <Amount amount={money(-2450, 'USD')} locale="en-US" />
+        <Amount amount={money(310000, 'USD')} locale="en-US" />
+        <Amount amount={money(50000, 'USD')} locale="en-US" kind="transfer" />
+        <Amount amount={money(-18000, 'USD')} locale="en-US" negativeOnly />
+        <OverflowMenu label="More actions for Everyday">
+          <MenuItem>Rename</MenuItem>
+          <MenuItem>Move off budget</MenuItem>
+          <MenuItem variant="danger">Archive</MenuItem>
+        </OverflowMenu>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <FilterChip selected={filter} onSelectedChange={setFilter}>
           Food
@@ -182,7 +196,7 @@ function Panel({ theme }: { theme: PaletteTheme }) {
         <AssistChip icon={<Plus aria-hidden="true" />}>New category</AssistChip>
       </div>
 
-      <Segmented
+      <ToggleGroup
         label="Range"
         value={range}
         onValueChange={setRange}
@@ -296,6 +310,8 @@ function Panel({ theme }: { theme: PaletteTheme }) {
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-6 w-1/2" />
         </div>
+        <SkeletonRows rows={2} />
+        <SkeletonCard />
       </div>
 
       <h3 className="text-title-lg">Motion</h3>

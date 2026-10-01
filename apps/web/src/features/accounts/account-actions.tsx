@@ -206,7 +206,7 @@ function BeforeAfter({
     };
   }, [after]);
   return (
-    <p className="grid gap-1 rounded-lg bg-card p-4">
+    <p className="grid gap-1 rounded-lg border border-outline-variant p-4">
       <span className="text-label text-text-muted">
         {t('accounts.archiveFlow.leftToday')}
       </span>

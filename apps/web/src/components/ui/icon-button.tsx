@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // Always give it an accessible name (`aria-label`).
 
 const iconButtonVariants = cva(
-  "pressable group relative inline-flex size-12 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:relative [&_svg:not([class*='size-'])]:size-6 [&_svg]:stroke-[1.75]",
+  "pressable group relative inline-flex size-12 shrink-0 items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:relative [&_svg:not([class*='size-'])]:size-6 [&_svg]:stroke-[1.75]",
   {
     variants: {
       variant: {
@@ -50,7 +50,7 @@ function IconButton({
       <span
         aria-hidden="true"
         className={cn(
-          'absolute size-10 rounded-full transition-colors duration-(--dur-fade)',
+          'absolute size-10 rounded-md transition-colors duration-(--dur-fade)',
           visual[variant ?? 'standard'],
         )}
       />

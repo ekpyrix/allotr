@@ -23,7 +23,7 @@
   }
   if (motion === 'full' || motion === 'reduced' || motion === 'off')
     root.dataset.motion = motion;
-  if (density === 'compact') root.dataset.density = density;
+  if (density === 'comfortable') root.dataset.density = density;
   const dark =
     mode === 'dark' ||
     (mode === 'system' &&

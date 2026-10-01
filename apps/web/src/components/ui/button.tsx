@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Slot } from 'radix-ui';
 
-// Pill buttons (spec §8.2). Every fill is an opaque role the resolver fits
+// Buttons (ADR 0022): 6 px radius, 44 px touch target. Every fill is an opaque role the resolver fits
 // the label on; hover and press change tone or add a ring, never a tint
 // over the label (see "Interaction states" in styles.css).
 
@@ -11,7 +11,7 @@ const ring =
   'hover:outline-2 hover:outline-offset-2 hover:outline-outline-variant';
 
 const buttonVariants = cva(
-  "pressable inline-flex shrink-0 items-center justify-center gap-2 rounded-full text-[0.9375rem] leading-5 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:outline-2 aria-invalid:outline-negative [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
+  "pressable inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-[0.9375rem] leading-5 font-medium whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-invalid:outline-2 aria-invalid:outline-negative [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
   {
     variants: {
       variant: {
@@ -24,9 +24,9 @@ const buttonVariants = cva(
         link: 'h-auto rounded-xs px-0 text-text underline underline-offset-4 hover:decoration-2 active:transform-none',
       },
       size: {
-        default: 'h-12 px-6 has-[>svg]:px-5',
-        dense: 'h-10 px-4 has-[>svg]:px-3.5',
-        icon: 'size-12',
+        default: 'h-11 px-5 has-[>svg]:px-4',
+        dense: 'h-10 px-3.5 has-[>svg]:px-3',
+        icon: 'size-11',
       },
     },
     compoundVariants: [
