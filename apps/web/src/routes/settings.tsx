@@ -1,6 +1,6 @@
 import type { SessionView } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
-import { useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
@@ -14,7 +14,9 @@ import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
+import { ReportsSection } from '@/features/settings/reports';
 import { SecuritySection } from '@/features/settings/security';
+import { SettingsGroup } from '@/features/settings/section';
 import { TagsSection } from '@/features/settings/tags';
 import {
   allCategoriesQuery,
@@ -103,7 +105,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
     ledger = <LoadingBlock label={t('settings.loading')} />;
   else
     ledger = (
-      <>
+      <SettingsGroup id="money" title={t('settings.groups.money')}>
         <LedgerSettingsSection settings={settings.data} today={today.data} />
         <CategoriesSection categories={categories.data.categories} />
         <TagsSection tags={tags.data.tags} />
@@ -113,19 +115,56 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
           defaultCurrency={settings.data.defaultCurrency}
           locale={locale}
         />
-        <ExportSection />
-      </>
+      </SettingsGroup>
     );
+
+  const groups = [
+    ...(ledger === null || failed !== undefined ? [] : (['money'] as const)),
+    ...(enabled ? (['app'] as const) : []),
+    'account',
+    ...(enabled ? (['data'] as const) : []),
+  ] as const;
 
   return (
     <Page title={t('settings.title')}>
+      <nav aria-label={t('settings.groups.label')} className="mt-4">
+        <ul className="flex flex-wrap gap-x-4 gap-y-1">
+          {groups.map((group) => (
+            <li key={group}>
+              <Link
+                to="/settings"
+                hash={group}
+                className="flex min-h-11 items-center text-label underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {t(`settings.groups.${group}`)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
       {ledger}
-      {enabled ? <AppearanceSection userId={session.user.id} /> : null}
-      <SecuritySection session={session} locale={locale} timeZone={timeZone} />
-      {enabled && session.user.role === 'admin' ? (
-        <InstanceSection locale={locale} timeZone={timeZone} />
+      {enabled ? (
+        <SettingsGroup id="app" title={t('settings.groups.app')}>
+          <AppearanceSection userId={session.user.id} />
+          <ReportsSection />
+        </SettingsGroup>
       ) : null}
-      <DeleteAccountSection session={session} />
+      <SettingsGroup id="account" title={t('settings.groups.account')}>
+        <SecuritySection
+          session={session}
+          locale={locale}
+          timeZone={timeZone}
+        />
+        {enabled && session.user.role === 'admin' ? (
+          <InstanceSection locale={locale} timeZone={timeZone} />
+        ) : null}
+        <DeleteAccountSection session={session} />
+      </SettingsGroup>
+      {enabled ? (
+        <SettingsGroup id="data" title={t('settings.groups.data')}>
+          <ExportSection />
+        </SettingsGroup>
+      ) : null}
     </Page>
   );
 }

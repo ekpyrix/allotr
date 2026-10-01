@@ -70,7 +70,7 @@ const formats = [
 test('the export section passes the accessibility checks', async ({ page }) => {
   await page.goto('/settings#export');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Export' }),
+    page.getByRole('heading', { level: 3, name: 'Export' }),
   ).toBeFocused();
   await expectAccessible(page);
 });

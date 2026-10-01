@@ -760,3 +760,27 @@ test('two-factor authentication turns on with a code and stays on while required
   ).toBeVisible();
   await expectAccessible(page);
 });
+
+test('settings are grouped, and a group is one link away', async ({ page }) => {
+  await page.goto('/settings');
+  const nav = page.getByRole('navigation', { name: 'Settings sections' });
+  for (const name of ['Money', 'App', 'Account and security', 'Data'])
+    await expect(nav.getByRole('link', { name })).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: 'Money' }).getByRole('heading', {
+      level: 3,
+      name: 'Categories',
+    }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole('group', { name: 'Data' })
+      .getByRole('heading', { level: 3, name: 'Export' }),
+  ).toBeVisible();
+  await nav.getByRole('link', { name: 'Data' }).click();
+  await expect(page).toHaveURL(/#data$/);
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Data' }),
+  ).toBeFocused();
+  await expectAccessible(page);
+});

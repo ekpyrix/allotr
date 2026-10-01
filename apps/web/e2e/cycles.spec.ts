@@ -281,3 +281,54 @@ test('Today links to the current cycle', async ({ page }) => {
     page.getByRole('heading', { level: 1, name: 'Reports' }),
   ).toBeVisible();
 });
+
+test('category cards roll subcategories up and expand', async ({ page }) => {
+  type Group = {
+    categoryId: string | null;
+    amount: Money;
+    children: { categoryId: string | null }[];
+  };
+  const summary = (await (
+    await page.request.get('/v1/reports/categories?cycle=2026-03-01')
+  ).json()) as { spending: Group[] };
+  const [first] = summary.spending;
+  if (first === undefined) throw new Error('the fixture spends in March');
+
+  await page.goto('/reports?start=2026-03-01');
+  const cards = page.getByTestId('category-card');
+  await expect(cards.first()).toHaveAttribute(
+    'data-category-id',
+    first.categoryId ?? '',
+  );
+  await expect(cards.first()).toContainText(formatMoney(first.amount, locale));
+  await expectAccessible(page);
+
+  // A card with more than two subcategories opens to show them all.
+  const wide = summary.spending.findIndex((g) => g.children.length > 2);
+  if (wide >= 0) {
+    const card = cards.nth(wide);
+    const toggle = card.getByRole('button', { name: /^Show all/ });
+    await expect(card.getByRole('listitem')).toHaveCount(2);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(card.getByRole('listitem')).toHaveCount(
+      summary.spending[wide]?.children.length ?? 0,
+    );
+  }
+});
+
+test('the calendar-month setting changes the period of the cards', async ({
+  page,
+}) => {
+  await page.goto('/settings#reports');
+  await page
+    .getByRole('radio', { name: 'Calendar month' })
+    .check({ force: true });
+  await page.goto('/reports?start=2026-03-01');
+  await expect(
+    page.getByRole('heading', { name: /^Spending per category/ }),
+  ).toBeVisible();
+  const month = await page.request.get('/v1/reports/categories?period=month');
+  expect(month.ok()).toBe(true);
+  await expectAccessible(page);
+});

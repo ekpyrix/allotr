@@ -29,7 +29,7 @@ import { loadView } from './today.ts';
 const TOP_CATEGORIES = 6;
 
 /** Each merged category and the live category it ended up in. */
-async function mergeTargets(
+export async function mergeTargets(
   db: Db,
   userId: string,
 ): Promise<Map<CategoryId, CategoryId>> {

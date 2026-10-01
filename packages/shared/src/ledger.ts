@@ -548,6 +548,44 @@ export type TodayView = z.infer<typeof todaySchema>;
 
 export const cycleParamSchema = z.object({ openedOn: localDateSchema });
 
+export const categorySummaryQuerySchema = z.object({
+  /** `cycle` (the default) follows paydays; `month` is a calendar month. */
+  period: z.enum(['cycle', 'month']).default('cycle'),
+  /** For `cycle`: the day the cycle opened. Defaults to the open cycle. */
+  cycle: localDateSchema.optional(),
+  /** For `month`: `YYYY-MM`. Defaults to the current month. */
+  month: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .optional(),
+});
+
+const categoryAmountSchema = z.object({
+  categoryId: idSchema.nullable(),
+  amount: moneySchema,
+});
+
+const categoryGroupSchema = categoryAmountSchema.extend({
+  /** Subcategories with figures, largest first; what was booked on the parent itself is listed under the parent's own id. */
+  children: z.array(categoryAmountSchema),
+});
+
+/**
+ * Spending and income per top-level category for a period, subcategories
+ * rolled up (FR-W2). Amounts are in the default currency at the rate on
+ * `to`; groups and their children are largest first.
+ */
+export const categorySummarySchema = z.object({
+  period: z.enum(['cycle', 'month']),
+  from: localDateSchema,
+  to: localDateSchema,
+  spending: z.array(categoryGroupSchema),
+  income: z.array(categoryGroupSchema),
+  /** Currencies without a rate on `to`, left out of the figures. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CategorySummaryView = z.infer<typeof categorySummarySchema>;
+
 const groupTotalsSchema = z.object({ on: moneySchema, off: moneySchema });
 
 /**

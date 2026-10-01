@@ -73,6 +73,29 @@ export function cycleQuery(openedOn: LocalDate | undefined) {
   });
 }
 
+/**
+ * Spending and income per top-level category for a cycle or a calendar
+ * month, rolled up by the server. Under ['today'] so any new entry
+ * refreshes it.
+ */
+export function categorySummaryQuery(
+  period: 'cycle' | 'month',
+  openedOn: LocalDate | undefined,
+) {
+  return queryOptions({
+    queryKey: ['today', 'category-summary', period, openedOn],
+    queryFn: () =>
+      call(endpoints.categorySummary, {
+        query: {
+          period,
+          ...(period === 'cycle' && openedOn !== undefined
+            ? { cycle: openedOn }
+            : {}),
+        },
+      }),
+  });
+}
+
 /** An account's end-of-day balances; waits until `enabled` (on screen). */
 export function accountHistoryQuery(id: string, days = 30) {
   return queryOptions({

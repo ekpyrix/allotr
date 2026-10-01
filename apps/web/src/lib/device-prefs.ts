@@ -24,6 +24,16 @@ export const DEVICE_PREFS = {
     schema: z.enum(['on', 'off']),
     fallback: 'on',
   },
+  reportPeriod: {
+    key: 'allotr.report-period',
+    schema: z.enum(['cycle', 'month']),
+    fallback: 'cycle',
+  },
+  categoryCards: {
+    key: 'allotr.category-cards',
+    schema: z.enum(['top', 'all']),
+    fallback: 'top',
+  },
   density: {
     key: 'allotr.density',
     schema: z.enum(['comfortable', 'compact']),
