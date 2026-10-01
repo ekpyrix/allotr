@@ -214,21 +214,25 @@ describe('daily figures', () => {
       expect(rent).toMatchObject({ amount: usd(30000), active: true });
       expect((await today(h.alice)).available).toEqual(usd(137500));
 
+      // Paying records the expense as it releases the reserve, so what is
+      // available stays the same.
       const paid = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
         dueOn: '2026-03-20',
+        paid: usd(30000),
+        categoryId: groceries,
       });
       expect(paid.status).toBe(201);
-      expect((paid.body as Bill).payments).toEqual([
-        {
-          dueOn: '2026-03-20',
-          paidOn: '2026-03-15',
-          transactionId: null,
-          recorded: false,
-          paid: null,
-          price: null,
-        },
-      ]);
-      expect((await today(h.alice)).available).toEqual(usd(167500));
+      const [payment] = (paid.body as Bill).payments;
+      expect(payment).toEqual({
+        dueOn: '2026-03-20',
+        paidOn: '2026-03-15',
+        transactionId: payment?.transactionId,
+        recorded: true,
+        paid: usd(30000),
+        price: null,
+      });
+      expect(payment?.transactionId).toMatch(/./);
+      expect((await today(h.alice)).available).toEqual(usd(137500));
       expect((await today(h.alice)).cycleBills).toEqual([
         {
           billId: rent.id,
@@ -240,6 +244,8 @@ describe('daily figures', () => {
 
       const again = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
         dueOn: '2026-03-20',
+        paid: usd(30000),
+        categoryId: groceries,
       });
       expect(again.status).toBe(409);
       expect(code(again)).toBe('bill_already_paid');
@@ -275,6 +281,9 @@ describe('daily figures', () => {
         ]);
         const paid = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
           dueOn: '2026-03-20',
+          paidOn: '2026-03-15',
+          paid: usd(30000),
+          categoryId: groceries,
         });
         expect(paid.status).toBe(201);
         expect((await today(h.alice)).billsDue).toEqual([]);
@@ -290,6 +299,8 @@ describe('daily figures', () => {
     it('only accepts payments for real due dates and entries', async () => {
       const wrongDay = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
         dueOn: '2026-03-21',
+        paid: usd(30000),
+        categoryId: groceries,
       });
       expect(wrongDay.status).toBe(400);
       expect(code(wrongDay)).toBe('not_a_due_date');
@@ -306,6 +317,77 @@ describe('daily figures', () => {
       );
       expect(notPaid.status).toBe(404);
       expect(code(notPaid)).toBe('payment_not_found');
+    });
+
+    it('records or links an entry with every payment', async () => {
+      const markOnly = await h.alice.post(`/v1/bills/${rent.id}/payments`, {
+        dueOn: '2026-03-20',
+      });
+      expect(markOnly.status).toBe(400);
+      expect((await today(h.alice)).available).toEqual(usd(137500));
+    });
+
+    it('links only an entry in effect that paid from the account', async () => {
+      const spare = await openAccount(h.alice, 'Spare', usd(0));
+      const link = (transactionId: string, dueOn = '2026-03-20') =>
+        h.alice.post(`/v1/bills/${rent.id}/payments`, { dueOn, transactionId });
+      const idOf = (response: TestResponse) =>
+        (response.body as { id: string }).id;
+
+      // Moving money into the account does not pay the bill.
+      const topUp = await h.alice.post('/v1/transactions', {
+        kind: 'transfer',
+        fromAccountId: spare,
+        toAccountId: everyday,
+        sent: usd(30000),
+      });
+      expect(topUp.status).toBe(201);
+      const notPayment = await link(idOf(topUp));
+      expect(notPayment.status).toBe(400);
+      expect(code(notPayment)).toBe('not_a_bill_payment');
+
+      const undone = await spend(30000, '2026-03-14');
+      expect(
+        (await h.alice.post(`/v1/transactions/${idOf(undone)}/reverse`, {}))
+          .status,
+      ).toBe(201);
+      const gone = await link(idOf(undone));
+      expect(gone.status).toBe(409);
+      expect(code(gone)).toBe('transaction_undone');
+
+      const payment = await spend(30000, '2026-03-14');
+      const linked = await link(idOf(payment));
+      expect(linked.status).toBe(201);
+      expect((linked.body as Bill).payments).toEqual([
+        {
+          dueOn: '2026-03-20',
+          paidOn: '2026-03-14',
+          transactionId: idOf(payment),
+          recorded: false,
+          paid: usd(30000),
+          price: null,
+        },
+      ]);
+      const twice = await link(idOf(payment), '2026-04-20');
+      expect(twice.status).toBe(409);
+      expect(code(twice)).toBe('transaction_already_linked');
+
+      // Undoing a linked mark keeps its entry.
+      expect(
+        (await h.alice.delete(`/v1/bills/${rent.id}/payments/2026-03-20`))
+          .status,
+      ).toBe(200);
+      expect(
+        (await h.alice.get(`/v1/transactions/${idOf(payment)}`)).body,
+      ).toMatchObject({ reversedById: null });
+      expect(
+        (await h.alice.post(`/v1/transactions/${idOf(payment)}/reverse`, {}))
+          .status,
+      ).toBe(201);
+      expect(
+        (await h.alice.post(`/v1/transactions/${idOf(topUp)}/reverse`, {}))
+          .status,
+      ).toBe(201);
     });
 
     it("refuses an amount outside the account's currency", async () => {

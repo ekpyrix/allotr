@@ -12,6 +12,7 @@ import {
   type LocalDate,
   type Money,
   type TodayView,
+  type TransactionView,
 } from '@allotr/shared';
 
 // Turning the bill and rate forms' text into API values. The server still
@@ -108,4 +109,32 @@ export function lastPricedPayment(
     if (paid !== null && price !== null) return { ...payment, paid, price };
   }
   return null;
+}
+
+/** An entry a payment can link, and what it took from the bill's account. */
+export type LinkCandidate = { entry: TransactionView; took: Money };
+
+/**
+ * The entries a bill's payment can link, newest first: those in effect
+ * that took money out of `accountId` and pay no bill yet (`linked`). The
+ * server checks the same.
+ */
+export function linkCandidates(
+  entries: readonly TransactionView[],
+  accountId: string,
+  linked: ReadonlySet<string>,
+): LinkCandidate[] {
+  const candidates: LinkCandidate[] = [];
+  for (const entry of entries) {
+    if (entry.reversesId !== null || entry.reversedById !== null) continue;
+    if (linked.has(entry.id)) continue;
+    const out = entry.postings.filter(
+      (p) => p.accountId === accountId && p.amount.amountMinor < 0,
+    );
+    const first = out[0];
+    if (first === undefined) continue;
+    const minor = out.reduce((sum, p) => sum - p.amount.amountMinor, 0);
+    candidates.push({ entry, took: money(minor, first.amount.currency) });
+  }
+  return candidates;
 }

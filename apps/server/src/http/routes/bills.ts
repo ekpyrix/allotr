@@ -112,7 +112,7 @@ const payRoute = createRoute({
   tags,
   summary: 'Mark a due date paid',
   description:
-    "Releases the reserve for that due date from `paidOn` (today when omitted). Either link the entry that paid it with `transactionId`, or give `paid` to record it: an expense of that amount from the bill's account, dated `paidOn`, with the bill's price (or `price`) and category (or `categoryId`).",
+    "Releases the reserve for that due date from `paidOn`. Give `paid` to record the payment: an expense of that amount from the bill's account, dated `paidOn` (today when omitted), with the bill's price (or `price`) and category (or `categoryId`). Or link the entry that already paid it with `transactionId`: one in effect that took money out of the bill's account and pays no other due date; `paidOn` is then the entry's date when omitted.",
   request: {
     params: idParamSchema,
     body: {
@@ -122,12 +122,12 @@ const payRoute = createRoute({
   responses: {
     201: json(billSchema, 'The bill with the payment.'),
     400: problemResponse(
-      "The request is invalid, the bill is not due that day (`not_a_due_date`), `paid` is not in the account's currency (`currency_mismatch`), or there is no category to record it under (`category_required`).",
+      "The request is invalid, the bill is not due that day (`not_a_due_date`), `paid` is not in the account's currency (`currency_mismatch`), there is no category to record it under (`category_required`), or the linked entry took nothing from the bill's account (`not_a_bill_payment`).",
     ),
     ...signedIn,
     404: problemResponse('There is no such bill or entry.'),
     409: problemResponse(
-      'That due date is already paid (`bill_already_paid`).',
+      'That due date is already paid (`bill_already_paid`), or the linked entry was undone (`transaction_undone`) or already pays a bill (`transaction_already_linked`).',
     ),
   },
 });

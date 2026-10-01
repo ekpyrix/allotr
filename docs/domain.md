@@ -108,10 +108,14 @@ live_daily       = available(now) / days_left
   left out and flagged.
 - A bill is reserved from the day its cycle opens until the day it is
   paid; payments name the due date they settle. A payment mark is not a
-  ledger entry: it may link the entry that paid it, and undoing the mark
-  reserves the bill again. Marking it paid with an amount also records
-  that entry, an expense from the bill's account under the bill's
-  category; undoing such a mark undoes its entry too.
+  ledger entry, but it always comes with one, so the reserve and the
+  balance move together. Paying either records the entry, an expense of
+  the amount paid from the bill's account under the bill's category and
+  dated the day paid, or links an entry already in the ledger: one in
+  effect that took money out of the bill's account and pays no other due
+  date, whose date the payment then takes. Undoing the mark reserves the
+  bill again; it undoes an entry it recorded, and keeps one it linked.
+  Marks made before this rule may have no entry and stay as they are.
 - A bill may have a **price** in another currency than its account's, such
   as a subscription priced at $12.50 and paid from a THB account: the
   card's rate and fees change what each month takes. Such a bill reserves

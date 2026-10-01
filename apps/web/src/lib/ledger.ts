@@ -111,6 +111,24 @@ export function entriesOnQuery(day: LocalDate | undefined) {
   });
 }
 
+/**
+ * An account's entries in effect dated `from` through `to`, newest first,
+ * such as those a bill's payment can link.
+ */
+export function accountEntriesQuery(
+  accountId: string,
+  from: LocalDate,
+  to: LocalDate,
+) {
+  return queryOptions({
+    queryKey: ['transactions', 'account', { accountId, from, to }],
+    queryFn: () =>
+      call(endpoints.transactions, {
+        query: { accountId, from, to, undone: 'hide', limit: 200 },
+      }),
+  });
+}
+
 export interface LedgerFilter {
   accountId?: string | undefined;
   categoryId?: string | undefined;

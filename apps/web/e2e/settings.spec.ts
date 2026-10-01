@@ -272,9 +272,12 @@ test('a category nobody uses is deleted at once, and tags can be renamed', async
   await expectAccessible(page);
 });
 
-test('a bill due this cycle is set aside until it is marked paid', async ({
+test('a bill due this cycle is set aside until it is paid', async ({
   page,
+  baseURL,
 }) => {
+  // Two bills, each paid and undone, with accessibility checks.
+  test.setTimeout(90_000);
   const before = await today(page);
   const dueDay = Number(before.today.slice(8));
   await page.goto('/settings#bills');
@@ -305,19 +308,71 @@ test('a bill due this cycle is set aside until it is marked paid', async ({
   expect(reserved.cycleBills).toHaveLength(1);
   expect(reserved.cycleBills[0]?.paidOn).toBeNull();
 
-  await bill.getByRole('button', { name: /^Mark paid/ }).click();
+  // Paying records the expense as it releases the reserve, so what is
+  // available stays the same.
+  await bill.getByRole('button', { name: /^Pay/ }).click();
+  const pay = page.getByRole('dialog', { name: 'Pay Phone' });
+  await expect(pay.getByLabel('Charged in USD')).toHaveValue('35.00');
+  await expect(pay.getByLabel('Paid on')).toHaveValue(reserved.today);
+  await pay.getByRole('button', { name: 'Record payment' }).click();
+  await expect(pay.getByText('Choose a category.')).toBeVisible();
+  await pay
+    .getByLabel('Category for payments')
+    .selectOption({ label: 'Bills and subscriptions' });
+  await expectAccessible(page);
+  await pay.getByRole('button', { name: 'Record payment' }).click();
+  await expect(pay).toBeHidden();
   await expect(bill).toContainText('paid');
+  await expect(bill).toContainText('$35.00');
   await expect(bill.getByRole('button', { name: /^Undo paid/ })).toBeVisible();
   const paid = await today(page);
   expect(paid.cycleBills[0]?.paidOn).toBe(paid.today);
-  expect(paid.available.amountMinor - reserved.available.amountMinor).toBe(
-    3_500,
-  );
-  await expectAccessible(page);
+  expect(paid.available).toEqual(reserved.available);
 
+  // Undoing the payment undoes the expense it recorded.
   await bill.getByRole('button', { name: /^Undo paid/ }).click();
-  await expect(bill.getByRole('button', { name: /^Mark paid/ })).toBeVisible();
-  expect((await today(page)).cycleBills[0]?.paidOn).toBeNull();
+  await expect(bill.getByRole('button', { name: /^Pay/ })).toBeVisible();
+  const unpaid = await today(page);
+  expect(unpaid.cycleBills[0]?.paidOn).toBeNull();
+  expect(unpaid.available).toEqual(reserved.available);
+
+  // A payment already logged, say from chat, is linked instead.
+  const bills = (await (await page.request.get('/v1/bills')).json()) as {
+    bills: { name: string; accountId: string }[];
+  };
+  const categories = (await (
+    await page.request.get('/v1/categories')
+  ).json()) as { categories: CategoryView[] };
+  const logged = await page.request.post('/v1/transactions', {
+    data: {
+      kind: 'expense',
+      accountId: bills.bills.find((b) => b.name === 'Phone')?.accountId,
+      amount: { amountMinor: 3_500, currency: 'USD' },
+      categoryId: categories.categories.find(
+        (c) => c.name === 'Bills and subscriptions',
+      )?.id,
+      note: 'Phone plan',
+    },
+    headers: { origin: baseURL ?? '' },
+  });
+  expect(logged.ok()).toBe(true);
+  await bill.getByRole('button', { name: /^Pay/ }).click();
+  await pay.getByLabel('Link an entry I already logged').check();
+  await pay.getByRole('button', { name: 'Link payment' }).click();
+  await expect(pay.getByText('Choose the entry that paid it.')).toBeVisible();
+  await pay.getByRole('radio', { name: /Phone plan/ }).check();
+  await expectAccessible(page);
+  await pay.getByRole('button', { name: 'Link payment' }).click();
+  await expect(pay).toBeHidden();
+  await expect(bill.getByRole('button', { name: /^Undo paid/ })).toBeVisible();
+  expect((await today(page)).available).toEqual(reserved.available);
+
+  // Undoing a linked payment keeps the entry; the bill is set aside again.
+  await bill.getByRole('button', { name: /^Undo paid/ }).click();
+  await expect(bill.getByRole('button', { name: /^Pay/ })).toBeVisible();
+  expect(
+    reserved.available.amountMinor - (await today(page)).available.amountMinor,
+  ).toBe(3_500);
 
   await bill.getByRole('button', { name: 'Edit Phone' }).click();
   const edit = page.getByRole('dialog', { name: 'Edit Phone' });
