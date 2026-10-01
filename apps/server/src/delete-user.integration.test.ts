@@ -159,6 +159,21 @@ describe('POST /v1/user/delete', () => {
       bobId = await userIdOf(h.bob);
       const imported = await h.bob.post('/v1/import', bundle);
       expect(imported.status, JSON.stringify(imported.body)).toBe(201);
+      // A pool move, so every per-user table has a row.
+      const pool = await h.bob.post('/v1/pools', {
+        name: 'Spare',
+        kind: 'spending',
+      });
+      const accounts = await h.bob.get('/v1/accounts');
+      const first = (accounts.body as { accounts: { id: string }[] })
+        .accounts[0];
+      expect(
+        (
+          await h.bob.put(`/v1/accounts/${first?.id ?? ''}/pool`, {
+            poolId: (pool.body as { id: string }).id,
+          })
+        ).status,
+      ).toBe(200);
       ({ totpURI } = await enrolTwoFactor(h.bob));
       expect(
         (await h.bob.put('/v1/settings/appearance', { mode: 'dark' })).status,

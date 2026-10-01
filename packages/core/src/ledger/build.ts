@@ -407,12 +407,19 @@ export function budgetSwitch(
   ledger: readonly Transaction[],
   meta: EntryMeta,
   input: Readonly<{ accountId: AccountId; budgetGroup: BudgetGroup }>,
+  /**
+   * The group the account counts toward on that date, when pools decide it
+   * (docs/domain.md "Pools"); the switches in the ledger otherwise.
+   */
+  current: BudgetGroup | null = budgetGroupOn(
+    chart,
+    ledger,
+    input.accountId,
+    meta.occurredOn,
+  ),
 ): Transaction {
   userAccount(chart, input.accountId);
-  if (
-    budgetGroupOn(chart, ledger, input.accountId, meta.occurredOn) ===
-    input.budgetGroup
-  ) {
+  if (current === input.budgetGroup) {
     throw new LedgerError(
       'ledger.budget_group_unchanged',
       `The account is already ${input.budgetGroup} budget on that date.`,

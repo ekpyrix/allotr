@@ -8,14 +8,15 @@ when they disagree, fix one of them in the same PR. All amounts are made up.
 | Term | Meaning |
 |---|---|
 | **Account** | A place money sits: a bank account, e-wallet or cash. Has one currency. |
-| **On-budget account** | Spendable money. Counts toward the daily number. |
-| **Off-budget account** | Savings. Never counts toward the daily number. |
+| **Pool** | A named group of accounts with a switch for whether it counts toward the daily number. Every account is in one pool. The defaults are *Budget* (counts) and *Savings* (does not). |
+| **Counted account** | An account whose pool counts toward the daily number (the *on-budget* group in the API). Spendable money. |
+| **Savings** | Money in pools that do not count. Never in the daily number unless the user turns on `countSavingsInDaily` and the pool's own switch. |
 | **Envelope** | A purpose for on-budget money: available budget or reserved bills. |
 | **Ready to assign** | Income not yet allocated to an envelope. |
 | **Cycle** | The period from one paycheck to the next (or a fixed period). |
 | **Allocation** | The split of a paycheck into bills, allowance, savings and goals. |
 | **Daily usable** | Available budget ÷ days left in the cycle. |
-| **Goal** | An earmark on the off-budget total, e.g. an emergency fund. |
+| **Goal** | An earmark on the savings total, e.g. an emergency fund. |
 | **Reconcile** | Compare an account with the bank's balance and post any difference. |
 | **Posting** | One leg of a double-entry transaction. |
 | **Proposal** | A transaction waiting for confirmation (from AI, import or a scoped token). |
@@ -80,6 +81,30 @@ User-facing accounts are assets; `receivable` and `payable` kinds hold IOUs.
 | Income into an on-budget account | Per the extra-income policy |
 | IOU: paid $60, $30 owed to you | Lowers it by $30 (your share); $30 sits in an off-budget receivable |
 
+## Pools
+
+A pool (ADR 0021) is a named group of accounts. It has a kind, `spending`
+or `savings`, and a `countsTowardDaily` switch. Every user starts with two
+default pools: *Budget* (spending, counts) and *Savings* (savings, does not).
+Users may add more, such as *Emergency*.
+
+- An account is in exactly one pool on any day. Accounts follow the
+  default pool of their budget group until moved into another pool.
+- A move is effective from a date and recorded as a dated row, like the
+  budget switch; it changes no entry. The latest change on or before a day
+  decides that day's pool, whether it is a move or an on/off-budget switch.
+  A back-dated move corrects past days through the same functions.
+- A pool counts toward the daily number when its switch is on and, if it is
+  a savings pool, the per-user setting `countSavingsInDaily` is on too
+  (default off). One switch is never enough: savings are not counted by
+  accident. The Budget pool always counts.
+- An account counted on a day is *on-budget* for that day in every figure:
+  the daily number, spending, cycle snapshots and the account totals.
+  Switching an account on or off budget moves it into the default Budget
+  or Savings pool.
+- A pool holding accounts cannot be archived; the default pools cannot be
+  archived at all.
+
 ## Daily usable
 
 ```
@@ -91,6 +116,7 @@ left_today       = today_allowance − spent_today
 live_daily       = available(now) / days_left
 ```
 
+- `on_budget_balance` is the balance of the counted accounts (see Pools).
 - "Today" is the user's local calendar day (home timezone by default).
 - `today_allowance` is derived by entry date, not stored. A back-dated entry
   logged this morning corrects today's figure.
@@ -182,6 +208,7 @@ Per-user settings. The default is listed first.
 
 | Policy | Default | Alternatives |
 |---|---|---|
+| Savings in the daily number | Off: savings pools never count | On: a savings pool whose own switch is on counts too |
 | Bills | Reserve at payday | No reservation · dedicated off-budget bills account |
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
 | Overspend at payday | Carry the deficit into the next cycle | Cover from savings · ask |
@@ -214,7 +241,8 @@ open.
 | Reversing the paycheck that opened the cycle | The cycle merges back into the previous one after a confirmation listing what is undone; the old snapshot is marked superseded. |
 | Back-dated entry into a closed cycle | It belongs to the cycle of its date. That snapshot is recomputed and marked amended; the difference carries into the current cycle. Completed sweeps are not redone. |
 | Archiving an account with a balance | Not allowed; the user transfers the balance or writes it off first. A write-off from an on-budget account counts as spending and a transfer to an off-budget account lowers the allowance, like any other entry; before either, the user is told how much today's figure drops, worked out by the same projection with the entry added. |
-| Switching an account on/off-budget | Effective today, recorded as a dated system transaction. |
+| Switching an account on/off-budget | Effective today, recorded as a dated system transaction; the account moves into the default Budget or Savings pool. |
+| Moving an account into a pool | Effective from the chosen date (today by default), recorded as a dated row. No entry changes. |
 | Deleting a category in use | Must be merged into another category. |
 | Editing any past entry | Reversal plus a new entry. |
 | Deleting an entry | A reversal. The app calls it delete and hides the entry and its reversal from lists unless the user asks to see deleted entries. |
@@ -264,6 +292,10 @@ identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
          conversion], budget_group[on|off], currency, counterparty_id, archived)
+pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
+      default_for[on|off], position, archived)
+pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)
+                                        -- append-only
 categories(id, user_id, name, kind[expense|income|transfer], parent_id,
            default_account_id, is_paycheck, merged_into_id)
 tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)

@@ -6,6 +6,7 @@ import {
   type Money,
 } from '@allotr/shared';
 import { budgetGroupBalances, type GroupBalances } from '../ledger/balances.ts';
+import { groupsOn } from './pools.ts';
 import type { AccountId, CategoryId } from '../ledger/types.ts';
 import { cyclesOf } from './cycles.ts';
 import { availableSums, policiesOf } from './daily.ts';
@@ -113,8 +114,14 @@ export function cycleSnapshot(
         : [];
     }),
     openingDay,
+    groupsOn(view, openingDay),
   );
-  const closing = budgetGroupBalances(view.chart, view.ledger, lastDay);
+  const closing = budgetGroupBalances(
+    view.chart,
+    view.ledger,
+    lastDay,
+    groupsOn(view, lastDay),
+  );
   const policies = policiesOf(view);
   const leftover = [...availableSums(view, cycles, lastDay)]
     .sort(([a], [b]) => a.localeCompare(b))

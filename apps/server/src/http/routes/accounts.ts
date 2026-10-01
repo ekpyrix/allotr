@@ -94,7 +94,7 @@ const updateRoute = createRoute({
   tags,
   summary: 'Rename an account or move it on or off budget',
   description:
-    'A change of budget group takes effect today and is recorded as a dated system transaction.',
+    'A change of budget group takes effect today and is recorded as a dated system transaction. It moves the account into the default Budget (on) or Savings (off) pool.',
   request: {
     params: idParamSchema,
     body: {

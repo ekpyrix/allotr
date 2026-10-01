@@ -8,8 +8,8 @@ import { migrate } from './migrate.ts';
 import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
-// 0004_bill_payments.sql, 0005_reconciliations.sql and 0006_bill_prices.sql
-// against real SQLite.
+// 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql and
+// 0007_pools.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -46,6 +46,7 @@ function migrationsUpTo(last: string): string {
     '0003_ledger.sql',
     '0004_bill_payments.sql',
     '0005_reconciliations.sql',
+    '0006_bill_prices.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -438,6 +439,7 @@ describe('migration 0005_reconciliations', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0005_reconciliations',
       '0006_bill_prices',
+      '0007_pools',
     ]);
 
     insertReconciliation('r1');
@@ -522,7 +524,10 @@ describe('migration 0006_bill_prices', () => {
       )
       .run(at);
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0006_bill_prices']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0006_bill_prices',
+      '0007_pools',
+    ]);
 
     expect(
       sqlite
@@ -583,6 +588,131 @@ describe('migration 0006_bill_prices', () => {
       expect(sqlite.prepare('SELECT category_id FROM bills').get()).toEqual({
         category_id: null,
       });
+    });
+  });
+});
+
+describe('migration 0007_pools', () => {
+  const pools = () =>
+    sqlite
+      .prepare(
+        `SELECT user_id, name, kind, counts_toward_daily AS counts, default_for
+         FROM pools ORDER BY user_id, position`,
+      )
+      .all();
+
+  it('gives users from before it the two default pools', () => {
+    migrateFrom(migrationsUpTo('0006'));
+    insertUser('u1');
+    insertUser('u2');
+    insertAccount('card', 'u1', 'USD');
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0007_pools']);
+
+    expect(pools()).toEqual([
+      {
+        user_id: 'u1',
+        name: 'Budget',
+        kind: 'spending',
+        counts: 1,
+        default_for: 'on',
+      },
+      {
+        user_id: 'u1',
+        name: 'Savings',
+        kind: 'savings',
+        counts: 0,
+        default_for: 'off',
+      },
+      {
+        user_id: 'u2',
+        name: 'Budget',
+        kind: 'spending',
+        counts: 1,
+        default_for: 'on',
+      },
+      {
+        user_id: 'u2',
+        name: 'Savings',
+        kind: 'savings',
+        counts: 0,
+        default_for: 'off',
+      },
+    ]);
+    // Accounts stay with their budget group: no move rows are made.
+    expect(count('SELECT count(*) FROM pool_moves')).toBe(0);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertAccount('card', 'u1', 'USD');
+    });
+
+    it('seeds the default pools for a new user', () => {
+      expect(pools()).toHaveLength(2);
+    });
+
+    it('keeps a pool kind and its default role fixed', () => {
+      expect(() => {
+        sqlite.prepare("UPDATE pools SET kind = 'savings'").run();
+      }).toThrow(/fixed/);
+      expect(() => {
+        sqlite.prepare('UPDATE pools SET default_for = NULL').run();
+      }).toThrow(/fixed/);
+    });
+
+    it('refuses a second default pool or an archived default', () => {
+      expect(() => {
+        sqlite
+          .prepare(
+            `INSERT INTO pools (id, user_id, name, kind, counts_toward_daily,
+               default_for, created_at, updated_at)
+             VALUES ('x', 'u1', 'Other', 'spending', 1, 'on', ?, ?)`,
+          )
+          .run(at, at);
+      }).toThrow(/UNIQUE/);
+      expect(() => {
+        sqlite
+          .prepare("UPDATE pools SET archived = 1 WHERE default_for = 'on'")
+          .run();
+      }).toThrow(/CHECK/);
+    });
+
+    it("keeps moves in the owner's accounts and pools, append-only", () => {
+      insertUser('u2');
+      const pool = sqlite
+        .prepare("SELECT id FROM pools WHERE user_id = 'u2' LIMIT 1")
+        .get() as { id: string };
+      expect(() => {
+        sqlite
+          .prepare(
+            `INSERT INTO pool_moves (id, user_id, account_id, pool_id, effective_on, created_at)
+             VALUES ('m1', 'u1', 'card', ?, '2026-01-02', ?)`,
+          )
+          .run(pool.id, at);
+      }).toThrow(/FOREIGN KEY/);
+      const own = sqlite
+        .prepare("SELECT id FROM pools WHERE user_id = 'u1' LIMIT 1")
+        .get() as { id: string };
+      sqlite
+        .prepare(
+          `INSERT INTO pool_moves (id, user_id, account_id, pool_id, effective_on, created_at)
+           VALUES ('m1', 'u1', 'card', ?, '2026-01-02', ?)`,
+        )
+        .run(own.id, at);
+      expect(() => {
+        sqlite
+          .prepare("UPDATE pool_moves SET effective_on = '2026-02-01'")
+          .run();
+      }).toThrow(/append-only/);
+      expect(() => {
+        sqlite.prepare('DELETE FROM pool_moves').run();
+      }).toThrow(/append-only/);
+      // Deleting the user still clears their rows.
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM pool_moves')).toBe(0);
     });
   });
 });

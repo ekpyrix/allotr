@@ -534,6 +534,7 @@ describe('ledger settings', () => {
       paydayRule: 'fixed',
       paydayDay: 1,
       paydayOverride: null,
+      countSavingsInDaily: false,
     });
   });
 

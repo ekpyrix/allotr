@@ -23,6 +23,7 @@ export const defaultPaydayRule: PaydayRule = 'fixed';
 const paydayRuleKey = 'payday_rule';
 const paydayDayKey = 'payday_day';
 const paydayOverrideKey = 'payday_override';
+const countSavingsKey = 'count_savings_in_daily';
 
 const paydayDaySchema = z.int().min(1).max(31);
 const paydayOverrideSchema = localDateSchema.nullable();
@@ -53,7 +54,12 @@ export async function readLedgerSettings(
       .selectFrom('user_settings')
       .select(['key', 'value'])
       .where('user_id', '=', userId)
-      .where('key', 'in', [paydayRuleKey, paydayDayKey, paydayOverrideKey])
+      .where('key', 'in', [
+        paydayRuleKey,
+        paydayDayKey,
+        paydayOverrideKey,
+        countSavingsKey,
+      ])
       .execute(),
   ]);
   const stored = new Map(rows.map((row) => [row.key, row.value]));
@@ -66,6 +72,8 @@ export async function readLedgerSettings(
     paydayDay:
       parsed(paydayDaySchema, stored.get(paydayDayKey)) ?? defaultPaydayDay,
     paydayOverride: parsed(paydayOverrideSchema, stored.get(paydayOverrideKey)),
+    countSavingsInDaily:
+      parsed(z.boolean(), stored.get(countSavingsKey)) ?? false,
   };
 }
 
@@ -136,6 +144,7 @@ export type LedgerSettingsPatch = Readonly<{
   paydayRule?: PaydayRule | undefined;
   paydayDay?: number | undefined;
   paydayOverride?: LocalDate | null | undefined;
+  countSavingsInDaily?: boolean | undefined;
 }>;
 
 function canonicalLocale(locale: string): string {
@@ -197,6 +206,14 @@ export async function applyLedgerSettings(
           {
             key: paydayOverrideKey,
             value: JSON.stringify(patch.paydayOverride),
+          },
+        ]),
+    ...(patch.countSavingsInDaily === undefined
+      ? []
+      : [
+          {
+            key: countSavingsKey,
+            value: JSON.stringify(patch.countSavingsInDaily),
           },
         ]),
   ];

@@ -12,7 +12,7 @@ import type { DB } from '../db/schema.ts';
 import { loadBills } from './bills.ts';
 import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
-import { loadChart, loadLedger, type Db } from './store.ts';
+import { loadChart, loadLedger, loadPoolSetup, type Db } from './store.ts';
 
 // Today's figures (FR-C4, FR-C5): everything core's projections read,
 // loaded in one read transaction and computed fresh on every request, so a
@@ -73,6 +73,7 @@ export async function loadView(
     rates,
     importedFrom,
     adjustments,
+    pools,
   ] = await Promise.all([
     loadChart(db, userId),
     readLedgerSettings(db, userId),
@@ -86,6 +87,7 @@ export async function loadView(
     loadRates(db, userId),
     readLedgerStart(db, userId),
     reconcileAdjustments(db, userId),
+    loadPoolSetup(db, userId),
   ]);
   const joinedOn = localDateIn(new Date(user.created_at), settings.timeZone);
   const view: LedgerView = {
@@ -104,7 +106,9 @@ export async function loadView(
       paydayRule: settings.paydayRule,
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
+      countSavingsInDaily: settings.countSavingsInDaily,
     },
+    pools,
     bills,
     rates,
     reconcileAdjustments: adjustments,
