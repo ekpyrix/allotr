@@ -29,7 +29,22 @@ export type SnapshotAccount = Readonly<{
   createdOn: LocalDate;
 }>;
 
-export type SystemRole = 'expenses' | 'income' | 'opening' | 'conversion';
+export type SystemRole =
+  'expenses' | 'income' | 'opening' | 'conversion' | 'receivables' | 'payables';
+
+export type SnapshotIou = Readonly<{
+  id: string;
+  direction: 'owed-to-me' | 'owed-by-me';
+  person: string;
+  amount: Money;
+  originId: string;
+  dueOn: LocalDate | null;
+  settlements: readonly Readonly<{
+    transactionId: string;
+    kind: 'repayment' | 'write-off';
+    amount: Money;
+  }>[];
+}>;
 
 export type SnapshotCategory = Readonly<{
   id: string;
@@ -81,6 +96,7 @@ export type Snapshot = Readonly<{
   rates: readonly ExchangeRate[];
   bills: readonly SnapshotBill[];
   reconciliations: readonly SnapshotReconciliation[];
+  ious: readonly SnapshotIou[];
 }>;
 
 export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
@@ -95,6 +111,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     billRows,
     paymentRows,
     reconciliationRows,
+    iouRows,
+    settlementRows,
   ] = await Promise.all([
     db
       .selectFrom('accounts')
@@ -179,6 +197,28 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       .where('user_id', '=', userId)
       .orderBy('on_date')
       .orderBy('created_at')
+      .execute(),
+    db
+      .selectFrom('ious')
+      .select([
+        'id',
+        'direction',
+        'person',
+        'amount_minor',
+        'currency',
+        'origin_transaction_id',
+        'due_on',
+      ])
+      .where('user_id', '=', userId)
+      .orderBy('created_at')
+      .orderBy('id')
+      .execute(),
+    db
+      .selectFrom('iou_settlements')
+      .select(['iou_id', 'transaction_id', 'kind', 'amount_minor', 'currency'])
+      .where('user_id', '=', userId)
+      .orderBy('created_at')
+      .orderBy('id')
       .execute(),
   ]);
 
@@ -267,6 +307,25 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     }),
   );
 
+  const ious = iouRows.map((row): SnapshotIou => ({
+    id: row.id,
+    direction: row.direction === 'owed-by-me' ? 'owed-by-me' : 'owed-to-me',
+    person: row.person,
+    amount: money(row.amount_minor, row.currency),
+    originId: row.origin_transaction_id,
+    dueOn: row.due_on === null ? null : (row.due_on as LocalDate),
+    settlements: settlementRows
+      .filter((s) => s.iou_id === row.id)
+      .map((s) => ({
+        transactionId: s.transaction_id,
+        kind:
+          s.kind === 'write-off'
+            ? ('write-off' as const)
+            : ('repayment' as const),
+        amount: money(s.amount_minor, s.currency),
+      })),
+  }));
+
   return {
     settings,
     accounts,
@@ -277,6 +336,7 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     rates,
     bills,
     reconciliations,
+    ious,
   };
 }
 

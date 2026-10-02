@@ -8,7 +8,11 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type { Snapshot, SnapshotCategory } from './export-snapshot.ts';
+import type {
+  Snapshot,
+  SnapshotCategory,
+  SnapshotIou,
+} from './export-snapshot.ts';
 
 // The native JSON export (FR-U3): a bundle that `POST /v1/import` takes
 // back on an empty ledger. It holds the ledger as it stands: undone entries
@@ -122,6 +126,30 @@ export function toBundle(snapshot: Snapshot): Bundle {
     }
   }
 
+  // IOUs whose entry stands, by the entry that lent or borrowed, and the
+  // payments that settle them, by the entry that paid (ADR 0024). Their
+  // entries are not plain transfers or expenses, so they are written as the
+  // bundle's IOU kinds.
+  const iousByOrigin = new Map<string, SnapshotIou[]>();
+  const settlements = new Map<
+    string,
+    { iou: SnapshotIou; kind: 'repayment' | 'write-off'; amount: Money }[]
+  >();
+  for (const iou of snapshot.ious) {
+    if (!liveIds.has(iou.originId)) continue;
+    iousByOrigin.set(iou.originId, [
+      ...(iousByOrigin.get(iou.originId) ?? []),
+      iou,
+    ]);
+    for (const s of iou.settlements) {
+      if (!liveIds.has(s.transactionId)) continue;
+      settlements.set(s.transactionId, [
+        ...(settlements.get(s.transactionId) ?? []),
+        { iou, kind: s.kind, amount: s.amount },
+      ]);
+    }
+  }
+
   const accounts = new Map<string, BundleAccount>(
     snapshot.accounts.map((a) => [
       a.id,
@@ -144,6 +172,61 @@ export function toBundle(snapshot: Snapshot): Bundle {
       ...(entry.note === null ? {} : { note: entry.note }),
       ...tagsOf(snapshot, entry.id),
     };
+    const lent = iousByOrigin.get(entry.id);
+    const settled = settlements.get(entry.id);
+    const [first] = lent ?? [];
+    if (lent !== undefined && first !== undefined) {
+      const [leg] = own;
+      if (leg === undefined) continue;
+      const share = entry.postings.find(
+        (p) =>
+          snapshot.systemRoles.get(p.accountId) === 'expenses' &&
+          p.categoryId !== null,
+      );
+      transactions.push({
+        kind: 'iou',
+        direction: first.direction,
+        account: accountName(leg.accountId),
+        people: lent.map((iou) => ({
+          ref: iou.id,
+          person: iou.person,
+          amount: iou.amount,
+          ...(iou.dueOn === null ? {} : { dueOn: iou.dueOn }),
+        })),
+        ...(share === undefined || share.categoryId === null
+          ? {}
+          : {
+              ownShare: {
+                amount: share.amount,
+                category: path(share.categoryId),
+              },
+            }),
+        ...common,
+      });
+      continue;
+    }
+    if (settled !== undefined) {
+      const [leg] = own;
+      const [line] = settled;
+      if (line === undefined) continue;
+      if (line.kind === 'write-off') {
+        if (entry.categoryId === null) continue;
+        transactions.push({
+          kind: 'iou_write_off',
+          iou: line.iou.id,
+          category: path(entry.categoryId),
+          ...common,
+        });
+      } else if (leg !== undefined) {
+        transactions.push({
+          kind: 'iou_payment',
+          account: accountName(leg.accountId),
+          settles: settled.map((x) => ({ iou: x.iou.id, amount: x.amount })),
+          ...common,
+        });
+      }
+      continue;
+    }
     switch (entry.kind) {
       case 'opening': {
         const [leg] = own;
@@ -295,6 +378,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
       paydayRule: settings.paydayRule,
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
+      iouWriteOffAfterDays: settings.iouWriteOffAfterDays,
     },
     categories,
     accounts: [...accounts.values()],

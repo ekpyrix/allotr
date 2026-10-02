@@ -20,8 +20,13 @@ export type BudgetGroup = 'on' | 'off';
 
 export type UserAccountKind = 'asset' | 'liability' | 'receivable' | 'payable';
 
-/** Balancing accounts, one per user, role and currency. */
-export type SystemRole = 'expenses' | 'income' | 'opening' | 'conversion';
+/**
+ * Balancing accounts, one per user, role and currency. `receivables` and
+ * `payables` hold what people owe the user and what the user owes them
+ * (ADR 0024).
+ */
+export type SystemRole =
+  'expenses' | 'income' | 'opening' | 'conversion' | 'receivables' | 'payables';
 
 export type Account = Readonly<
   {
@@ -36,7 +41,7 @@ export type Account = Readonly<
         budgetGroup: BudgetGroup;
       }
     | {
-        kind: 'expense' | 'income' | 'equity';
+        kind: 'expense' | 'income' | 'equity' | 'receivable' | 'payable';
         systemRole: SystemRole;
         budgetGroup: null;
       }

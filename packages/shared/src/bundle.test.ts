@@ -90,6 +90,49 @@ describe('bundleSchema', () => {
     ).toMatchObject({ lines: split.lines });
   });
 
+  it('accepts IOU entries and refuses nonsense in them', () => {
+    const iou = {
+      kind: 'iou',
+      direction: 'owed-to-me',
+      account: 'Wallet',
+      people: [
+        { ref: 'sam', person: 'Sam Example', amount: eur(3_000) },
+        { person: 'Alex Example', amount: eur(3_000), dueOn: '2026-04-05' },
+      ],
+      ownShare: { amount: eur(3_000), category: 'Food' },
+      occurredOn: '2026-03-04',
+    };
+    const payment = {
+      kind: 'iou_payment',
+      account: 'Wallet',
+      settles: [{ iou: 'sam', amount: eur(1_000) }],
+      occurredOn: '2026-03-09',
+    };
+    const writeOff = {
+      kind: 'iou_write_off',
+      iou: 'sam',
+      category: 'Other',
+      occurredOn: '2026-06-09',
+    };
+    const ok = bundleSchema.safeParse({
+      ...full,
+      settings: { ...full.settings, iouWriteOffAfterDays: 30 },
+      transactions: [iou, payment, writeOff],
+    });
+    expect(ok.success, JSON.stringify(ok.error?.issues)).toBe(true);
+    for (const bad of [
+      { ...iou, people: [] },
+      { ...iou, people: [{ person: 'Sam Example', amount: eur(0) }] },
+      { ...payment, settles: [] },
+      { ...writeOff, iou: '' },
+      { ...iou, unknown: true },
+    ]) {
+      expect(
+        bundleSchema.safeParse({ ...full, transactions: [bad] }).success,
+      ).toBe(false);
+    }
+  });
+
   it('accepts a bundle with only the header', () => {
     expect(
       bundleSchema.parse({ format: 'allotr.bundle', version: 1 }),

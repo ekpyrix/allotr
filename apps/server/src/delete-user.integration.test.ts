@@ -193,6 +193,36 @@ describe('POST /v1/user/delete', () => {
           })
         ).status,
       ).toBe(204);
+      // An IOU and a payment, so every per-user table has a row.
+      const firstAccount = (
+        (await h.bob.get('/v1/accounts')).body as {
+          accounts: { id: string }[];
+        }
+      ).accounts[0];
+      const lent = await h.bob.post('/v1/ious', {
+        direction: 'owed-to-me',
+        accountId: firstAccount?.id ?? '',
+        people: [
+          {
+            person: 'Sam Example',
+            amount: { amountMinor: 500, currency: defaultCurrency },
+          },
+        ],
+      });
+      expect(lent.status, JSON.stringify(lent.body)).toBe(201);
+      expect(
+        (
+          await h.bob.post('/v1/ious/repayments', {
+            accountId: firstAccount?.id ?? '',
+            settles: [
+              {
+                iouId: (lent.body as { ious: { id: string }[] }).ious[0]?.id,
+                amount: { amountMinor: 200, currency: defaultCurrency },
+              },
+            ],
+          })
+        ).status,
+      ).toBe(201);
       ({ totpURI } = await enrolTwoFactor(h.bob));
       expect(
         (await h.bob.put('/v1/settings/appearance', { mode: 'dark' })).status,

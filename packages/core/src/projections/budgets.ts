@@ -13,6 +13,7 @@ import type {
   TransactionId,
 } from '../ledger/types.ts';
 import { cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
+import { iouReturns, loanKey } from './ious.ts';
 import { groupsOn } from './pools.ts';
 import { convertOn } from './rates.ts';
 import type { LedgerView } from './types.ts';
@@ -178,6 +179,11 @@ export type SpendLine = Readonly<{
   amount: bigint;
   /** The budget it counts toward, or null. At most one, never two. */
   budgetId: BudgetId | null;
+  /**
+   * Money lent to people (ADR 0024): covered like spending, but never
+   * spending itself, so it is left out of spent figures and reports.
+   */
+  loan: boolean;
   /** The part its own budget had left, paid from it. */
   own: bigint;
   /** What the shortfall took from each source, in the order taken. */
@@ -270,6 +276,8 @@ export type CountedSpend = Readonly<{
   at: string;
   categoryId: CategoryId | null;
   amount: bigint;
+  /** Money lent to people, not spending. */
+  loan: boolean;
 }>;
 
 // The expense lines of every entry that was paid from a counted account and
@@ -290,6 +298,11 @@ export function countedSpendLines(
       .filter((a) => a.systemRole === 'expenses')
       .map((a) => a.id),
   );
+  const receivables = new Set(
+    [...view.chart.values()]
+      .filter((a) => a.systemRole === 'receivables')
+      .map((a) => a.id),
+  );
   const groups = new Map<LocalDate, ReturnType<typeof groupsOn>>();
   const raw: CountedSpend[] = [];
   for (const t of [...view.ledger].sort(ordered)) {
@@ -304,7 +317,16 @@ export function countedSpendLines(
     const lines = t.postings.filter(
       (p) => expenses.has(p.accountId) && p.amount.amountMinor > 0,
     );
-    if (lines.length === 0) continue;
+    const lent = new Map<CurrencyCode, number>();
+    for (const p of t.postings) {
+      if (receivables.has(p.accountId) && p.amount.amountMinor > 0) {
+        lent.set(
+          p.amount.currency,
+          (lent.get(p.amount.currency) ?? 0) + p.amount.amountMinor,
+        );
+      }
+    }
+    if (lines.length === 0 && lent.size === 0) continue;
     let counted = groups.get(t.occurredOn);
     if (counted === undefined) {
       counted = groupsOn(view, t.occurredOn);
@@ -335,6 +357,27 @@ export function countedSpendLines(
         at: t.createdAt,
         categoryId: line.categoryId,
         amount: BigInt(converted.amountMinor),
+        loan: false,
+      });
+    }
+    for (const [currency, amountMinor] of lent) {
+      const converted = convertOn(
+        view.rates,
+        money(amountMinor, currency),
+        view.settings.defaultCurrency,
+        today,
+      );
+      if (converted === null) {
+        missing.add(currency);
+        continue;
+      }
+      raw.push({
+        entryId: t.id,
+        date: t.occurredOn,
+        at: t.createdAt,
+        categoryId: null,
+        amount: BigInt(converted.amountMinor),
+        loan: true,
       });
     }
   }
@@ -499,7 +542,8 @@ export function foldBudgets(
     missing,
   );
   const periods = budgetPeriods(view, since, today);
-  const returns = [...(setup.returns ?? [])]
+  // Repayments of loans refill what the loan's cover took (ADR 0024).
+  const returns = [...(setup.returns ?? []), ...iouReturns(view)]
     .filter((r) => r.on <= today)
     .sort(
       (a, b) =>
@@ -603,7 +647,9 @@ export function foldBudgets(
       }
 
       const { line } = event;
-      const budget = pick(setup, active, line.entryId, line.categoryId);
+      const budget = line.loan
+        ? null
+        : pick(setup, active, line.entryId, line.categoryId);
       const own = budget === null ? undefined : state.get(budget.id);
       const ownPart =
         own === undefined ? 0n : min(line.amount, positive(left(own)));
@@ -612,7 +658,7 @@ export function foldBudgets(
       const heldBefore = holds();
       const cash = cashOfEntry.get(line.entryId) ?? 0n;
       if (own === undefined) {
-        unbudgeted += line.amount;
+        if (!line.loan) unbudgeted += line.amount;
       } else {
         own.spent += line.amount;
         own.overflow += line.amount - ownPart;
@@ -667,9 +713,12 @@ export function foldBudgets(
       }
       for (const source of order) draw(source, shortfall);
 
-      const list = takesBy.get(line.entryId) ?? [];
+      // A loan's cover is refilled by its own repayments only, never by a
+      // refund of the expense share of the same entry.
+      const takeKey = line.loan ? loanKey(line.entryId) : line.entryId;
+      const list = takesBy.get(takeKey) ?? [];
       for (const t of taken) list.push({ ...t, refilled: 0n });
-      takesBy.set(line.entryId, list);
+      takesBy.set(takeKey, list);
       cashOfEntry.set(line.entryId, cash + line.amount);
       spend.push({
         entryId: line.entryId,
@@ -677,6 +726,7 @@ export function foldBudgets(
         categoryId: line.categoryId,
         amount: line.amount,
         budgetId: budget === null ? null : budget.id,
+        loan: line.loan,
         own: ownPart,
         covers: taken,
         uncovered: shortfall,

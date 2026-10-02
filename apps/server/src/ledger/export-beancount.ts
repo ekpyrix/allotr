@@ -87,6 +87,8 @@ function accountNames(snapshot: Snapshot): Names {
     conversion: 'Equity:Conversion',
     expenses: 'Expenses:Write-off',
     income: 'Income:Uncategorised',
+    receivables: 'Assets:Receivables-IOU',
+    payables: 'Liabilities:Payables-IOU',
   } as const;
   for (const name of Object.values(fixed)) unique(name);
 

@@ -144,6 +144,8 @@ export type BudgetCover = Readonly<{
   entryId: TransactionId;
   date: LocalDate;
   budgetId: BudgetId | null;
+  /** Money lent to people, covered like spending but not spending. */
+  loan: boolean;
   amount: Money;
   /** What its own budget paid. */
   own: Money;
@@ -177,6 +179,7 @@ export function budgetCovers(
       entryId: l.entryId,
       date: l.date,
       budgetId: l.budgetId,
+      loan: l.loan,
       amount: m(l.amount),
       own: m(l.own),
       covers: l.covers.map((c) => ({ source: c.source, amount: m(c.amount) })),

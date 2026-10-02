@@ -15,6 +15,7 @@ entry     := amount ws category [ws "@" account [ws number]] [ws date]
 amount    := ("+" | "-") [symbol] number [ws code]     # -12.50 · -€45 · -45 EUR
 split     := amount ws (category ws number)+           # -80 groceries 60 home 20
 iou       := entry ws "owe:" name ws number            # part of an entry owed to me
+                                                       # (a split bill: the rest is mine)
 repay     := "+" number ws "from:" name [ws "@" account]
 transfer  := "=" number [ws code] ws account ">" account [ws number] [ws date]
 balance   := "bal" [ws account [ws number]]            # query or reconcile
@@ -27,6 +28,12 @@ code      := ISO 4217 alphabetic code, case-insensitive
 ```
 
 - `-` is spending, `+` is income.
+- `owe:` records an IOU (domain.md "IOUs"): the entry is the whole payment,
+  the number after the name is what that person owes, and the rest is the
+  user's own share, an expense in the entry's category. `owe:` may repeat for
+  more people. Which IOU `from:` settles when a name has several is not
+  decided yet. Lending and borrowing without a bill have no grammar form
+  yet; the parser is not built, and the API (`/v1/ious`) is the only way in.
 - Names (accounts, categories) resolve through the user's aliases,
   case-insensitively.
 - The number in `bal` is the bank's balance; for an account holding a debt

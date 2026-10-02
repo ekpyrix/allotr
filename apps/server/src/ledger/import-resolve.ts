@@ -247,9 +247,62 @@ export function resolveBundle(
   });
 
   const refs = new Set<string>();
+  // IOUs a later payment or write-off may name, with the way each goes.
+  const iouRefs = new Map<string, 'owed-to-me' | 'owed-by-me'>();
+  const checkIou = (path: readonly PropertyKey[], ref: string) => {
+    const direction = iouRefs.get(ref);
+    if (direction === undefined) {
+      report(path, `No earlier entry has an IOU with the ref "${ref}".`);
+    }
+    return direction;
+  };
   bundle.transactions.forEach((entry, index) => {
     const at = ['transactions', index] as const;
-    if (entry.kind === 'write_off') {
+    if (entry.kind === 'iou') {
+      checkAccount([...at, 'account'], entry.account);
+      if (entry.ownShare !== undefined) {
+        if (entry.direction !== 'owed-to-me') {
+          report(
+            [...at, 'ownShare'],
+            'Only money owed to you can be a split bill.',
+          );
+        }
+        checkCategory(
+          [...at, 'ownShare', 'category'],
+          entry.ownShare.category,
+          'expense',
+        );
+      }
+      entry.people.forEach((person, p) => {
+        if (person.ref === undefined) return;
+        if (iouRefs.has(person.ref)) {
+          report(
+            [...at, 'people', p, 'ref'],
+            `The IOU ref "${person.ref}" is used twice.`,
+          );
+        }
+        iouRefs.set(person.ref, entry.direction);
+      });
+    } else if (entry.kind === 'iou_payment') {
+      checkAccount([...at, 'account'], entry.account);
+      const ways = new Set<string>();
+      entry.settles.forEach((line, l) => {
+        const way = checkIou([...at, 'settles', l, 'iou'], line.iou);
+        if (way !== undefined) ways.add(way);
+      });
+      if (ways.size > 1) {
+        report(
+          [...at, 'settles'],
+          'Settle money owed to you and money you owe in separate entries.',
+        );
+      }
+    } else if (entry.kind === 'iou_write_off') {
+      const way = checkIou([...at, 'iou'], entry.iou);
+      if (way === 'owed-by-me') {
+        report([...at, 'iou'], 'Only money owed to you can be written off.');
+      }
+      checkCategory([...at, 'category'], entry.category, 'expense');
+    } else if (entry.kind === 'write_off') {
       checkAccount([...at, 'account'], entry.account);
     } else if (entry.kind === 'transfer') {
       checkAccount([...at, 'from'], entry.from);

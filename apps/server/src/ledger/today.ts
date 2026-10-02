@@ -13,6 +13,7 @@ import { loadBills } from './bills.ts';
 import { readLedgerSettings, readLedgerStart } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
 import { loadBudgetSetup } from './budgets.ts';
+import { loadIouSetup } from './iou-setup.ts';
 import { loadChart, loadLedger, loadPoolSetup, type Db } from './store.ts';
 
 // Today's figures (FR-C4, FR-C5): everything core's projections read,
@@ -92,6 +93,7 @@ export async function loadView(
     loadPoolSetup(db, userId),
     loadBudgetSetup(db, userId),
   ]);
+  const ious = await loadIouSetup(db, userId, settings.iouWriteOffAfterDays);
   const joinedOn = localDateIn(new Date(user.created_at), settings.timeZone);
   const view: LedgerView = {
     chart,
@@ -117,6 +119,7 @@ export async function loadView(
     },
     pools,
     budgets,
+    ious,
     bills,
     rates,
     reconcileAdjustments: adjustments,

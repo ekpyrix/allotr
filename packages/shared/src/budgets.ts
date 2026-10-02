@@ -160,6 +160,8 @@ export const coverLineSchema = z.object({
   entryId: idSchema,
   date: localDateSchema,
   budgetId: idSchema.nullable(),
+  /** Money lent to people (ADR 0024): covered like spending, but not spent. */
+  loan: z.boolean(),
   amount: moneySchema,
   /** What its own budget paid. */
   own: moneySchema,

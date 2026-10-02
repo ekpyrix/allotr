@@ -210,6 +210,13 @@ function toCreateBody(
   if (t.kind === 'write_off') {
     throw new Error('A replay step cannot post a write-off; archive instead.');
   }
+  if (
+    t.kind === 'iou' ||
+    t.kind === 'iou_payment' ||
+    t.kind === 'iou_write_off'
+  ) {
+    throw new Error('A replay step cannot post an IOU entry; use /v1/ious.');
+  }
   if (t.kind === 'transfer') {
     return {
       kind: 'transfer',

@@ -12,6 +12,7 @@ import {
   type LocalDate,
   type PaydayRule,
 } from '@allotr/shared';
+import { defaultWriteOffAfterDays } from '@allotr/core';
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
 import type { DB } from '../db/schema.ts';
@@ -34,6 +35,8 @@ const budgetPeriodKey = 'budget_period';
 const dailyModeKey = 'daily_mode';
 const payFirstKey = 'pay_yourself_first';
 const emergencyKey = 'emergency_months';
+const iouWriteOffKey = 'iou_write_off_after_days';
+const iouWriteOffSchema = z.int().min(1).max(3650);
 
 const paydayDaySchema = z.int().min(1).max(31);
 const paydayOverrideSchema = localDateSchema.nullable();
@@ -73,6 +76,7 @@ export async function readLedgerSettings(
         dailyModeKey,
         payFirstKey,
         emergencyKey,
+        iouWriteOffKey,
       ])
       .execute(),
   ]);
@@ -95,6 +99,9 @@ export async function readLedgerSettings(
       parsed(payYourselfFirstSchema, stored.get(payFirstKey)) ?? null,
     emergencyMonths:
       parsed(z.int().min(1).max(24), stored.get(emergencyKey)) ?? 3,
+    iouWriteOffAfterDays:
+      parsed(iouWriteOffSchema, stored.get(iouWriteOffKey)) ??
+      defaultWriteOffAfterDays,
   };
 }
 
@@ -170,6 +177,7 @@ export type LedgerSettingsPatch = Readonly<{
   dailyMode?: DailyMode | undefined;
   payYourselfFirst?: PayYourselfFirstSetting | null | undefined;
   emergencyMonths?: number | undefined;
+  iouWriteOffAfterDays?: number | undefined;
 }>;
 
 function canonicalLocale(locale: string): string {
@@ -258,6 +266,14 @@ export async function applyLedgerSettings(
     ...(patch.emergencyMonths === undefined
       ? []
       : [{ key: emergencyKey, value: JSON.stringify(patch.emergencyMonths) }]),
+    ...(patch.iouWriteOffAfterDays === undefined
+      ? []
+      : [
+          {
+            key: iouWriteOffKey,
+            value: JSON.stringify(patch.iouWriteOffAfterDays),
+          },
+        ]),
   ];
   if (Object.keys(user).length > 0) {
     await db

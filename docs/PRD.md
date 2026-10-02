@@ -107,7 +107,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-L3 | Each account has one ISO 4217 currency, fixed at creation. | M | M1 |
 | FR-L4 | Correcting or deleting an entry posts a reversal (plus a new entry for edits); nothing is removed from the ledger. A deleted entry is hidden from lists and can be restored as a copy. | M | M1 |
 | FR-L5 | Split one transaction across several categories. | M | M2 |
-| FR-L6 | Track money owed to or by a person (IOUs) without affecting the daily number. | S | M7 |
+| FR-L6 | Track money owed to or by a person (IOUs), with free-text names and autocomplete. A split bill is one entry: the user's share is an expense, each other person's share is owed. Money owed to the user lowers free money but is never spending, is covered like a shortfall and refilled by repayments; money the user owes is reserved like a bill until paid. Due dates, and a write-off after a configurable time that turns the remainder into an expense in a chosen category. | S | v2 |
 | FR-L7 | Categories: editable starter set with two levels; free-form tags. Each category has a colour (a chart series role, so every theme fits its contrast) and a Lucide icon from a fixed set; a subcategory follows its parent unless it has its own. The web app shows them in entry rows, the category chart and the settings list. | M | M1 |
 | FR-L8 | Archive an account only at zero balance, offering a transfer or write-off. | M | M1 |
 | FR-L9 | Reconcile any account against the bank's balance, with a one-tap adjustment for the difference. | M | M2 |

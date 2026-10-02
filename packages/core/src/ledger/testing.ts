@@ -44,6 +44,8 @@ const kinds = {
   income: 'income',
   opening: 'equity',
   conversion: 'equity',
+  receivables: 'receivable',
+  payables: 'payable',
 } as const;
 
 export function systemAccounts(currency: CurrencyCode): Account[] {
