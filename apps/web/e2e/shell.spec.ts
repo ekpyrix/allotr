@@ -130,7 +130,7 @@ test('the keyboard reaches every nav item with a visible focus ring', async ({
     to: item.to,
   }));
   const add = {
-    stop: nav.getByRole('button', { name: t('quickEntry.add'), exact: true }),
+    stop: page.getByRole('button', { name: t('quickEntry.add'), exact: true }),
     to: 'add',
   };
   const wide = (page.viewportSize()?.width ?? 0) >= 600;
