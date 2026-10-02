@@ -328,9 +328,10 @@ describe('write-off', () => {
     expect(iouStatuses(v, day('2026-04-01'))[0]).toMatchObject({
       overdue: true,
       daysOverdue: 12,
-      canWriteOff: false,
+      writeOffOffered: false,
+      writeOffOfferedOn: '2026-06-18',
     });
-    expect(iouStatuses(v, day('2026-06-18'))[0]?.canWriteOff).toBe(true);
+    expect(iouStatuses(v, day('2026-06-18'))[0]?.writeOffOffered).toBe(true);
   });
 
   it('turns the remainder into an expense without moving cash', () => {

@@ -45,9 +45,9 @@ export const iouSchema = z.object({
   /** Past its due date and not settled. */
   overdue: z.boolean(),
   daysOverdue: z.int(),
-  /** The first day a debt to the user may be written off. */
-  writeOffFrom: localDateSchema.nullable(),
-  canWriteOff: z.boolean(),
+  /** The first day a write-off is offered; one may be made any time. */
+  writeOffOfferedOn: localDateSchema.nullable(),
+  writeOffOffered: z.boolean(),
   settlements: z.array(iouSettlementSchema),
 });
 export type IouView = z.infer<typeof iouSchema>;
@@ -122,16 +122,36 @@ export const createdIousSchema = z.object({
   ious: z.array(iouSchema),
 });
 
-export const repaymentBodySchema = z.object({
-  /** Where the money arrived, or left. */
-  accountId: idSchema,
-  /** The IOUs this settles, each with what it takes off. One direction. */
-  settles: z
-    .array(z.object({ iouId: idSchema, amount: positiveMoney }))
-    .min(1)
-    .max(20),
-  ...entryFields,
-});
+export const repaymentBodySchema = z
+  .object({
+    /** Where the money arrived, or left. */
+    accountId: idSchema,
+    /** The IOUs this settles, each with what it takes off. One direction. */
+    settles: z
+      .array(z.object({ iouId: idSchema, amount: positiveMoney }))
+      .min(1)
+      .max(20)
+      .optional(),
+    /**
+     * Instead of `settles`: a person and an amount. It settles that person's
+     * oldest open IOU first, then the next one with any surplus.
+     */
+    person: personSchema.optional(),
+    amount: positiveMoney.optional(),
+    /** With `person`: which way the money goes; owed to the user by default. */
+    direction: iouDirectionSchema.default('owed-to-me'),
+    ...entryFields,
+  })
+  .refine(
+    (body) =>
+      body.settles !== undefined
+        ? body.person === undefined && body.amount === undefined
+        : body.person !== undefined && body.amount !== undefined,
+    {
+      error: 'Give either settles, or person and amount',
+      path: ['settles'],
+    },
+  );
 export type RepaymentBody = z.output<typeof repaymentBodySchema>;
 
 export const settledIousSchema = z.object({

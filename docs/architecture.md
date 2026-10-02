@@ -150,8 +150,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
 - IOUs (ADR 0024) are served under `/v1/ious`: `GET` lists them with
   totals, `POST` lends, borrows or splits a bill (one entry, one IOU per
   person), `POST /v1/ious/repayments` records a payment that names the IOUs it
-  settles, `POST /v1/ious/{id}/write-off` writes off what is left once the
-  `iouWriteOffAfterDays` setting allows, `PATCH /v1/ious/{id}` corrects a name
+  settles, `POST /v1/ious/{id}/write-off` writes off what is left (any time the
+  user asks; `iouWriteOffAfterDays` sets when it is offered), `PATCH /v1/ious/{id}` corrects a name
   or due date, `GET /v1/ious/people` suggests earlier names and
   `POST /v1/ious/cover-preview` tells the entry sheet what lending would take.
   Undo goes through `POST /v1/transactions/{id}/reverse`. Figures are

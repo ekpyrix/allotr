@@ -11642,14 +11642,14 @@
                           "daysOverdue": {
                             "type": "integer"
                           },
-                          "writeOffFrom": {
+                          "writeOffOfferedOn": {
                             "type": [
                               "string",
                               "null"
                             ],
                             "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           },
-                          "canWriteOff": {
+                          "writeOffOffered": {
                             "type": "boolean"
                           },
                           "settlements": {
@@ -11723,8 +11723,8 @@
                           "dueOn",
                           "overdue",
                           "daysOverdue",
-                          "writeOffFrom",
-                          "canWriteOff",
+                          "writeOffOfferedOn",
+                          "writeOffOffered",
                           "settlements"
                         ]
                       }
@@ -12339,14 +12339,14 @@
                           "daysOverdue": {
                             "type": "integer"
                           },
-                          "writeOffFrom": {
+                          "writeOffOfferedOn": {
                             "type": [
                               "string",
                               "null"
                             ],
                             "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           },
-                          "canWriteOff": {
+                          "writeOffOffered": {
                             "type": "boolean"
                           },
                           "settlements": {
@@ -12420,8 +12420,8 @@
                           "dueOn",
                           "overdue",
                           "daysOverdue",
-                          "writeOffFrom",
-                          "canWriteOff",
+                          "writeOffOfferedOn",
+                          "writeOffOffered",
                           "settlements"
                         ]
                       }
@@ -12741,14 +12741,14 @@
                           "daysOverdue": {
                             "type": "integer"
                           },
-                          "writeOffFrom": {
+                          "writeOffOfferedOn": {
                             "type": [
                               "string",
                               "null"
                             ],
                             "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           },
-                          "canWriteOff": {
+                          "writeOffOffered": {
                             "type": "boolean"
                           },
                           "settlements": {
@@ -12822,8 +12822,8 @@
                           "dueOn",
                           "overdue",
                           "daysOverdue",
-                          "writeOffFrom",
-                          "canWriteOff",
+                          "writeOffOfferedOn",
+                          "writeOffOffered",
                           "settlements"
                         ]
                       }
@@ -13805,7 +13805,7 @@
           "IOUs"
         ],
         "summary": "Record a payment that settles IOUs",
-        "description": "One entry that names every IOU it settles and by how much (never more than is left). All IOUs go the same way and are in the account's currency. Money paid back to the user refills what the loan's cover took, in reverse order, and the rest is free money again; money the user pays releases the reserve. Neither is spending. Undo the entry with `POST /v1/transactions/{id}/reverse` and the IOUs are owed again.",
+        "description": "One entry that either names every IOU it settles and by how much (`settles`, never more than is left) or names a `person` and an `amount`, which settles that person's oldest open IOU first (by the day it was recorded), the surplus going to the next. All IOUs go the same way and are in the account's currency. Money paid back to the user refills what the loan's cover took, in reverse order, and the rest is free money again; money the user pays releases the reserve. Neither is spending. Undo the entry with `POST /v1/transactions/{id}/reverse` and the IOUs are owed again.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -13852,6 +13852,35 @@
                     "minItems": 1,
                     "maxItems": 20
                   },
+                  "person": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "owed-to-me",
+                      "owed-by-me"
+                    ],
+                    "default": "owed-to-me"
+                  },
                   "occurredOn": {
                     "type": "string",
                     "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
@@ -13872,8 +13901,7 @@
                   }
                 },
                 "required": [
-                  "accountId",
-                  "settles"
+                  "accountId"
                 ]
               }
             }
@@ -14186,14 +14214,14 @@
                           "daysOverdue": {
                             "type": "integer"
                           },
-                          "writeOffFrom": {
+                          "writeOffOfferedOn": {
                             "type": [
                               "string",
                               "null"
                             ],
                             "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           },
-                          "canWriteOff": {
+                          "writeOffOffered": {
                             "type": "boolean"
                           },
                           "settlements": {
@@ -14267,8 +14295,8 @@
                           "dueOn",
                           "overdue",
                           "daysOverdue",
-                          "writeOffFrom",
-                          "canWriteOff",
+                          "writeOffOfferedOn",
+                          "writeOffOffered",
                           "settlements"
                         ]
                       }
@@ -14912,14 +14940,14 @@
                         "daysOverdue": {
                           "type": "integer"
                         },
-                        "writeOffFrom": {
+                        "writeOffOfferedOn": {
                           "type": [
                             "string",
                             "null"
                           ],
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
-                        "canWriteOff": {
+                        "writeOffOffered": {
                           "type": "boolean"
                         },
                         "settlements": {
@@ -14993,8 +15021,8 @@
                         "dueOn",
                         "overdue",
                         "daysOverdue",
-                        "writeOffFrom",
-                        "canWriteOff",
+                        "writeOffOfferedOn",
+                        "writeOffOffered",
                         "settlements"
                       ]
                     }
@@ -15228,7 +15256,7 @@
             }
           },
           "409": {
-            "description": "Not yet (`write_off_not_yet`), already settled, or money the user owes.",
+            "description": "Already settled, or money the user owes.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -15439,14 +15467,14 @@
                     "daysOverdue": {
                       "type": "integer"
                     },
-                    "writeOffFrom": {
+                    "writeOffOfferedOn": {
                       "type": [
                         "string",
                         "null"
                       ],
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
-                    "canWriteOff": {
+                    "writeOffOffered": {
                       "type": "boolean"
                     },
                     "settlements": {
@@ -15520,8 +15548,8 @@
                     "dueOn",
                     "overdue",
                     "daysOverdue",
-                    "writeOffFrom",
-                    "canWriteOff",
+                    "writeOffOfferedOn",
+                    "writeOffOffered",
                     "settlements"
                   ]
                 }

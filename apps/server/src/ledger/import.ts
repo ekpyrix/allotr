@@ -450,6 +450,7 @@ export async function importBundle(
               userId,
               {
                 accountId: account(entry.account),
+                direction: 'owed-to-me' as const,
                 settles: entry.settles.map((line) => ({
                   iouId: lookup(iouIds, line.iou),
                   amount: line.amount,

@@ -111,7 +111,7 @@ const repayRoute = createRoute({
   tags,
   summary: 'Record a payment that settles IOUs',
   description:
-    "One entry that names every IOU it settles and by how much (never more than is left). All IOUs go the same way and are in the account's currency. Money paid back to the user refills what the loan's cover took, in reverse order, and the rest is free money again; money the user pays releases the reserve. Neither is spending. Undo the entry with `POST /v1/transactions/{id}/reverse` and the IOUs are owed again.",
+    "One entry that either names every IOU it settles and by how much (`settles`, never more than is left) or names a `person` and an `amount`, which settles that person's oldest open IOU first (by the day it was recorded), the surplus going to the next. All IOUs go the same way and are in the account's currency. Money paid back to the user refills what the loan's cover took, in reverse order, and the rest is free money again; money the user pays releases the reserve. Neither is spending. Undo the entry with `POST /v1/transactions/{id}/reverse` and the IOUs are owed again.",
   request: {
     body: { content: { 'application/json': { schema: repaymentBodySchema } } },
   },
@@ -140,9 +140,7 @@ const writeOffRoute = createRoute({
     400: invalid,
     ...signedIn,
     404: notFound,
-    409: problemResponse(
-      'Not yet (`write_off_not_yet`), already settled, or money the user owes.',
-    ),
+    409: problemResponse('Already settled, or money the user owes.'),
   },
 });
 

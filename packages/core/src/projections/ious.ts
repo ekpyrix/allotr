@@ -53,7 +53,7 @@ export type IouSetup = Readonly<{
   ious: readonly Iou[];
   /**
    * Days after the due date (or the day it was recorded, without one)
-   * from which a debt to the user may be written off.
+   * from which a write-off is offered.
    */
   writeOffAfterDays: number;
 }>;
@@ -92,9 +92,12 @@ export type IouStatus = Readonly<{
   /** Past its due date and not settled. */
   overdue: boolean;
   daysOverdue: number;
-  /** The first day a debt to the user may be written off. */
-  writeOffFrom: LocalDate | null;
-  canWriteOff: boolean;
+  /**
+   * The first day Allotr offers to write off a debt to the user (and
+   * reminds). Writing off is allowed at any time the user asks.
+   */
+  writeOffOfferedOn: LocalDate | null;
+  writeOffOffered: boolean;
 }>;
 
 function sumMinor(settlements: readonly IouSettlement[]): number {
@@ -121,7 +124,7 @@ export function iouStatus(
   const settled = active && outstanding === 0;
   const overdue = active && !settled && iou.dueOn !== null && today > iou.dueOn;
   const base = iou.dueOn ?? iou.recordedOn;
-  const writeOffFrom =
+  const writeOffOfferedOn =
     iou.direction === 'owed-to-me'
       ? addDays(base, iousOf(view).writeOffAfterDays)
       : null;
@@ -135,9 +138,12 @@ export function iouStatus(
     overdue,
     daysOverdue:
       iou.dueOn === null || !overdue ? 0 : daysBetween(iou.dueOn, today),
-    writeOffFrom,
-    canWriteOff:
-      writeOffFrom !== null && active && !settled && today >= writeOffFrom,
+    writeOffOfferedOn,
+    writeOffOffered:
+      writeOffOfferedOn !== null &&
+      active &&
+      !settled &&
+      today >= writeOffOfferedOn,
   };
 }
 

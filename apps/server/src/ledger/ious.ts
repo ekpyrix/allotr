@@ -20,6 +20,7 @@ import {
 import {
   localDate,
   money,
+  type Money,
   type CoverPreviewView,
   type CreateIouBody,
   type IouListView,
@@ -86,8 +87,8 @@ function iouView(status: IouStatus, view: LedgerView): IouView {
     dueOn: iou.dueOn,
     overdue: status.overdue,
     daysOverdue: status.daysOverdue,
-    writeOffFrom: status.writeOffFrom,
-    canWriteOff: status.canWriteOff,
+    writeOffOfferedOn: status.writeOffOfferedOn,
+    writeOffOffered: status.writeOffOffered,
     settlements: iou.settlements.map((s) => ({
       id: s.id,
       transactionId: s.transactionId,
@@ -447,6 +448,51 @@ export async function previewIouCover(
 }
 
 /**
+ * A payment from or to a person without naming an IOU settles their oldest
+ * open IOU first (by the day it was recorded), the surplus going to the next.
+ * More than they owe is refused.
+ */
+function oldestFirst(
+  byId: ReadonlyMap<string, IouStatus>,
+  body: RepaymentBody,
+  currency: string,
+): { iouId: string; amount: Money }[] {
+  const person = (body.person ?? '').toLowerCase();
+  const open = [...byId.values()]
+    .filter(
+      (s) =>
+        s.iou.person.toLowerCase() === person &&
+        s.iou.direction === body.direction &&
+        s.iou.amount.currency === currency &&
+        !s.settled,
+    )
+    .sort(
+      (a, b) =>
+        a.iou.recordedOn.localeCompare(b.iou.recordedOn) ||
+        a.iou.id.localeCompare(b.iou.id),
+    );
+  let rest = body.amount?.amountMinor ?? 0;
+  const lines: { iouId: string; amount: Money }[] = [];
+  for (const status of open) {
+    if (rest <= 0) break;
+    const take = Math.min(rest, status.outstanding.amountMinor);
+    lines.push({ iouId: status.iou.id, amount: money(take, currency) });
+    rest -= take;
+  }
+  if (lines.length === 0) {
+    throw problem(
+      404,
+      'iou_not_found',
+      `Nothing in ${currency} is open with ${body.person ?? 'that person'}.`,
+    );
+  }
+  if (rest > 0) {
+    throw problem(409, 'over_settled', 'That is more than is still owed.');
+  }
+  return lines;
+}
+
+/**
  * Records a payment that settles IOUs, each by the amount named. Money paid
  * back to the user refills what the loan's cover took; money the user pays
  * releases the reserve.
@@ -464,14 +510,15 @@ export async function recordRepaymentIn(
   if (currency === undefined)
     throw problem(404, 'account_not_found', 'There is no such account.');
   const date = body.occurredOn ?? (await userToday(trx, userId, now));
-  const ids = body.settles.map((s) => s.iouId);
+  const byId = new Map(iouStatuses(view, endOfTime).map((s) => [s.iou.id, s]));
+  const settles = body.settles ?? oldestFirst(byId, body, currency);
+  const ids = settles.map((s) => s.iouId);
   if (new Set(ids).size !== ids.length) {
     throw problem(400, 'duplicate_iou', 'Name each IOU once.');
   }
-  const byId = new Map(iouStatuses(view, endOfTime).map((s) => [s.iou.id, s]));
   let direction: IouDirection | undefined;
   let total = 0;
-  for (const [i, line] of body.settles.entries()) {
+  for (const [i, line] of settles.entries()) {
     const status = byId.get(iouId(line.iouId));
     const path = `/settles/${String(i)}`;
     if (status === undefined) {
@@ -534,7 +581,7 @@ export async function recordRepaymentIn(
   await trx
     .insertInto('iou_settlements')
     .values(
-      body.settles.map((line) => ({
+      settles.map((line) => ({
         id: randomUUID(),
         user_id: userId,
         iou_id: line.iouId,
@@ -592,14 +639,11 @@ export async function writeOffIouIn(
   if (status.settled) {
     throw problem(409, 'iou_settled', 'This IOU is already settled.');
   }
-  // A bundle's history was written off under the setting of its day.
-  const eligible =
-    source === 'import' || iouStatus(view, found, date).canWriteOff;
-  if (date < found.recordedOn || !eligible) {
+  if (date < found.recordedOn) {
     throw problem(
-      409,
-      'write_off_not_yet',
-      `Money owed to you can be written off from ${status.writeOffFrom ?? ''}.`,
+      400,
+      'before_iou',
+      'A write-off cannot be dated before the IOU.',
     );
   }
   const remainder = status.outstanding;

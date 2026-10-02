@@ -196,13 +196,20 @@ with autocomplete from earlier ones, not contacts.
   reserve as the cash leaves, with no effect on spending.
 - **Settling.** A repayment names every IOU it settles with an amount of at
   most what is left, all one way and in the paying account's currency. An
-  IOU is settled when nothing is left. Undoing a repayment owes the amount
-  again; an entry that lent or borrowed cannot be undone while a live payment
-  settles it, and cannot be edited or restored (undo it and record a new one).
+  IOU is settled when nothing is left. A repayment that names a person but no
+  IOU settles that person's oldest open IOU first (by the day it was
+  recorded), the surplus going to the next one; more than they owe in total is
+  refused. Undoing a repayment owes the amount again; an entry that lent or
+  borrowed cannot be undone while a live payment settles it, and cannot be
+  edited (undo it and record a new one). Restoring an undone lend or borrow
+  brings its people back as new IOUs; restoring an undone repayment or
+  write-off settles the same IOUs again, and is refused if one has since been
+  undone or paid.
 - **Due date and write-off.** An IOU may have a due date, and is overdue the
-  day after it. A debt to the user may be written off from `due date +
+  day after it. Allotr *offers* to write off a debt to the user from `due date +
   iouWriteOffAfterDays` (default 90; the day it was recorded when there is no
-  due date): the remainder becomes an expense in a chosen category through
+  due date), the day `writeOffOfferedOn` reports, and reminds then. The user
+  may write one off at any time. The remainder becomes an expense in a chosen category through
   Receivables. No cash moves, so it is not spending against the day and not
   covered, but it is an expense for category reports, and it lowers net
   worth. Reminders come with the scheduler (ADR 0024).

@@ -18,8 +18,8 @@ type Iou = {
   originId: string;
   dueOn: string | null;
   overdue: boolean;
-  writeOffFrom: string | null;
-  canWriteOff: boolean;
+  writeOffOfferedOn: string | null;
+  writeOffOffered: boolean;
   settlements: { transactionId: string; kind: string; undone: boolean }[];
 };
 type Entry = {
@@ -265,9 +265,117 @@ describe('a split bill', () => {
     const list = await open();
     expect(list.ious).toHaveLength(2);
     expect(list.totals.owedToMe).toEqual(usd(6_000));
-    // And an undone payment cannot be restored as a plain entry either.
+    // Restoring the payment settles the same IOU again.
     const restore = await h.alice.post(`/v1/transactions/${paying}/restore`);
-    expect(restore.status).toBe(409);
+    expect(restore.status, JSON.stringify(restore.body)).toBe(201);
+    const after = await open();
+    expect(after.ious).toHaveLength(1);
+    expect(after.totals.owedToMe).toEqual(usd(3_000));
+    // Undo it again so the next tests start from two open IOUs.
+    const copy = (restore.body as { id: string }).id;
+    expect(
+      (await h.alice.post(`/v1/transactions/${copy}/reverse`, {})).status,
+    ).toBe(201);
+    expect((await open()).ious).toHaveLength(2);
+  });
+
+  it('restores an undone lend with its people, and refuses to restore a payment whose IOU is gone', async () => {
+    const lent = await h.alice.post('/v1/ious', {
+      direction: 'owed-to-me',
+      accountId: everyday,
+      people: [{ person: 'Quinn Example', amount: usd(400) }],
+    });
+    const origin = lent.body as { transaction: Entry; ious: Iou[] };
+    const iou = origin.ious[0];
+    const paid = await h.alice.post('/v1/ious/repayments', {
+      accountId: everyday,
+      settles: [{ iouId: iou?.id, amount: usd(400) }],
+    });
+    const payment = (paid.body as { transaction: Entry }).transaction.id;
+    expect(
+      (await h.alice.post(`/v1/transactions/${payment}/reverse`, {})).status,
+    ).toBe(201);
+    expect(
+      (
+        await h.alice.post(
+          `/v1/transactions/${origin.transaction.id}/reverse`,
+          {},
+        )
+      ).status,
+    ).toBe(201);
+    // The payment's IOU is undone, so the payment cannot come back.
+    const refused = await h.alice.post(`/v1/transactions/${payment}/restore`);
+    expect(refused.status).toBe(409);
+    expect((refused.body as { code?: string }).code ?? '').toContain(
+      'iou_changed',
+    );
+    // The lend itself comes back with its person.
+    const back = await h.alice.post(
+      `/v1/transactions/${origin.transaction.id}/restore`,
+    );
+    expect(back.status, JSON.stringify(back.body)).toBe(201);
+    const list = (await open()).ious.filter(
+      (i) => i.person === 'Quinn Example',
+    );
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ outstanding: usd(400), settled: false });
+    expect(list[0]?.originId).toBe((back.body as { id: string }).id);
+    // Clean up so later tests are unaffected.
+    expect(
+      (
+        await h.alice.post(
+          `/v1/transactions/${(back.body as { id: string }).id}/reverse`,
+          {},
+        )
+      ).status,
+    ).toBe(201);
+  });
+
+  it("settles a person's oldest IOU first when no IOU is named, and the surplus goes on", async () => {
+    await h.alice.post('/v1/ious', {
+      direction: 'owed-to-me',
+      accountId: everyday,
+      people: [{ person: 'Jo Example', amount: usd(1_000) }],
+      occurredOn: '2026-03-01',
+    });
+    const second = await h.alice.post('/v1/ious', {
+      direction: 'owed-to-me',
+      accountId: everyday,
+      people: [{ person: 'jo example', amount: usd(500) }],
+      occurredOn: '2026-03-02',
+    });
+    expect(second.status).toBe(201);
+    const paid = await h.alice.post('/v1/ious/repayments', {
+      accountId: everyday,
+      person: 'JO EXAMPLE',
+      amount: usd(1_200),
+    });
+    expect(paid.status, JSON.stringify(paid.body)).toBe(201);
+    const [oldest, newer] = (paid.body as { ious: Iou[] }).ious;
+    expect(oldest).toMatchObject({ settled: true, repaid: usd(1_000) });
+    expect(newer).toMatchObject({ repaid: usd(200), outstanding: usd(300) });
+    const tooMuch = await h.alice.post('/v1/ious/repayments', {
+      accountId: everyday,
+      person: 'Jo Example',
+      amount: usd(301),
+    });
+    expect(tooMuch.status).toBe(409);
+    const nobody = await h.alice.post('/v1/ious/repayments', {
+      accountId: everyday,
+      person: 'Nobody Example',
+      amount: usd(1),
+    });
+    expect(nobody.status).toBe(404);
+    // Settle the rest to leave nothing open for Jo.
+    expect(
+      (
+        await h.alice.post('/v1/ious/repayments', {
+          accountId: everyday,
+          person: 'Jo Example',
+          amount: usd(300),
+        })
+      ).status,
+    ).toBe(201);
   });
 });
 
@@ -364,28 +472,22 @@ describe('borrowing', () => {
 });
 
 describe('write-off', () => {
-  it('is offered after the configured time and turns the remainder into an expense', async () => {
+  it('is offered after the configured time and turns the remainder into an expense, whenever the user asks', async () => {
     const alex = (await open()).ious.find((i) => i.person === 'Alex Example');
     expect(alex?.direction).toBe('owed-to-me');
-    const early = await h.alice.post(`/v1/ious/${alex?.id ?? ''}/write-off`, {
-      categoryId: other,
-    });
-    expect(early.status).toBe(409);
-    expect((early.body as { code?: string }).code ?? '').toContain(
-      'write_off_not_yet',
-    );
-
-    // One day after the due date is enough once the setting says so.
+    // The offer starts one day after the due date once the setting says so.
     expect(
       (await h.alice.patch('/v1/settings/ledger', { iouWriteOffAfterDays: 1 }))
         .status,
     ).toBe(200);
+    expect(alex?.writeOffOffered).toBe(false);
     const due = await h.alice.patch(`/v1/ious/${alex?.id ?? ''}`, {
       dueOn: '2026-03-10',
     });
     expect(due.status).toBe(200);
     expect((due.body as Iou).overdue).toBe(true);
-    expect((due.body as Iou).canWriteOff).toBe(true);
+    expect((due.body as Iou).writeOffOffered).toBe(true);
+    expect((due.body as Iou).writeOffOfferedOn).toBe('2026-03-11');
 
     const before = await today();
     const written = await h.alice.post(`/v1/ious/${alex?.id ?? ''}/write-off`, {
@@ -418,6 +520,24 @@ describe('write-off', () => {
       categoryId: other,
     });
     expect(again.status).toBe(409);
+  });
+
+  it('can be written off the day it is lent, when the user asks', async () => {
+    const lent = await h.alice.post('/v1/ious', {
+      direction: 'owed-to-me',
+      accountId: everyday,
+      people: [{ person: 'Drew Example', amount: usd(700) }],
+    });
+    const iou = (lent.body as { ious: Iou[] }).ious[0];
+    expect(iou?.writeOffOffered).toBe(false);
+    const written = await h.alice.post(`/v1/ious/${iou?.id ?? ''}/write-off`, {
+      categoryId: other,
+    });
+    expect(written.status, JSON.stringify(written.body)).toBe(201);
+    expect((written.body as { iou: Iou }).iou).toMatchObject({
+      settled: true,
+      writtenOff: usd(700),
+    });
   });
 
   it('does not write off money the user owes', async () => {

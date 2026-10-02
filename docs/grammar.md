@@ -31,8 +31,9 @@ code      := ISO 4217 alphabetic code, case-insensitive
 - `owe:` records an IOU (domain.md "IOUs"): the entry is the whole payment,
   the number after the name is what that person owes, and the rest is the
   user's own share, an expense in the entry's category. `owe:` may repeat for
-  more people. Which IOU `from:` settles when a name has several is not
-  decided yet. Lending and borrowing without a bill have no grammar form
+  more people. `from:` names a person, not an IOU: it settles that person's oldest
+  open IOU first, the surplus going to the next, and fails if the amount is
+  more than they owe. Lending and borrowing without a bill have no grammar form
   yet; the parser is not built, and the API (`/v1/ious`) is the only way in.
 - Names (accounts, categories) resolve through the user's aliases,
   case-insensitively.
