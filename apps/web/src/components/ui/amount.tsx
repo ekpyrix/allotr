@@ -52,12 +52,24 @@ function Amount({
       data-tone={plain ? 'neutral' : tone}
       className={cn(
         'inline-flex items-center justify-end gap-1 font-mono tabular-nums',
-        plain ? 'text-text' : muted ? 'text-text-muted' : toneClass[tone],
+        // `info` is fitted for non-text contrast only, so a transfer keeps
+        // plain text and shows its blue on the arrow.
+        plain || (tone === 'info' && !muted)
+          ? 'text-text'
+          : muted
+            ? 'text-text-muted'
+            : toneClass[tone],
         className,
       )}
     >
       {plain || Arrow === null ? null : (
-        <Arrow aria-hidden="true" className="size-3.5 shrink-0 stroke-2" />
+        <Arrow
+          aria-hidden="true"
+          className={cn(
+            'size-3.5 shrink-0 stroke-2',
+            tone === 'info' && !muted && 'text-info',
+          )}
+        />
       )}
       {text}
     </span>

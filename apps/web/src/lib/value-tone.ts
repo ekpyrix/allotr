@@ -17,6 +17,7 @@ export function valueTone(amountMinor: number, kind?: ValueKind): ValueTone {
 export const toneClass: Readonly<Record<ValueTone, string>> = {
   positive: 'text-positive',
   negative: 'text-negative',
-  info: 'text-info',
+  // Blue is fitted for non-text contrast only: the arrow carries it.
+  info: 'text-text',
   neutral: 'text-text',
 };
