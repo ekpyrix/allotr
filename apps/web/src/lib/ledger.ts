@@ -96,6 +96,17 @@ export function categorySummaryQuery(
   });
 }
 
+/**
+ * Spending per day and what falls due, from `from` through `to`. Under
+ * ['today'] so any new entry refreshes it.
+ */
+export function calendarQuery(from: LocalDate, to: LocalDate) {
+  return queryOptions({
+    queryKey: ['today', 'calendar', from, to],
+    queryFn: () => call(endpoints.calendar, { query: { from, to } }),
+  });
+}
+
 /** An account's end-of-day balances; waits until `enabled` (on screen). */
 export function accountHistoryQuery(id: string, days = 30) {
   return queryOptions({

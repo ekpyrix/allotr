@@ -903,3 +903,49 @@ export const reconcileResultSchema = z.object({
   adjustment: transactionSchema.nullable(),
 });
 export type ReconcileResultView = z.infer<typeof reconcileResultSchema>;
+
+/**
+ * The calendar's range: `from` through `to`, at most 62 days. Both or
+ * neither; the current calendar month when neither is given.
+ */
+export const calendarQuerySchema = z
+  .object({ from: localDateSchema.optional(), to: localDateSchema.optional() })
+  .refine((q) => (q.from === undefined) === (q.to === undefined), {
+    error: 'Give both from and to, or neither',
+    path: ['from'],
+  });
+
+export const calendarDaySchema = z.object({
+  date: localDateSchema,
+  /** Spending dated that day, linked bill payments left out; null after today. */
+  spent: moneySchema.nullable(),
+  /** 0 for nothing spent up to 4 for the busiest day of the range; null after today. */
+  heat: z.int().min(0).max(4).nullable(),
+  /** Bills due that day. */
+  bills: z.array(
+    z.object({ billId: idSchema, amount: moneySchema, paid: z.boolean() }),
+  ),
+  /** A paycheck is expected, or arrived, that day. */
+  payday: z.boolean(),
+  /** Unsettled IOUs that fall due that day. */
+  ious: z.array(
+    z.object({
+      iouId: idSchema,
+      person: z.string(),
+      direction: z.enum(['owed-to-me', 'owed-by-me']),
+      outstanding: moneySchema,
+    }),
+  ),
+});
+
+export const calendarSchema = z.object({
+  from: localDateSchema,
+  to: localDateSchema,
+  today: localDateSchema,
+  days: z.array(calendarDaySchema),
+  /** The most spent on one day in the range. */
+  peak: moneySchema,
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CalendarView = z.infer<typeof calendarSchema>;
+export type CalendarDayView = z.infer<typeof calendarDaySchema>;

@@ -43,6 +43,7 @@ import {
 import type { CycleTab } from '@/features/cycles/search';
 import { formatLongDay, formatMoment } from '@/features/ledger/format';
 import {
+  allAccountsQuery,
   allCategoriesQuery,
   cycleDaysQuery,
   cycleQuery,
@@ -52,6 +53,7 @@ import {
 } from '@/lib/ledger';
 import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
 import { CategorySummarySection } from '@/features/reports/category-summary-section';
+import { CalendarTab } from '@/features/calendar/calendar-tab';
 import { PlanTab } from '@/features/reports/plan-tab';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
@@ -517,6 +519,7 @@ export function CyclePage({
   const cycle = useQuery(cycleQuery(openedOn));
   const series = useQuery(cycleDaysQuery(openedOn));
   const cycles = useQuery(cyclesQuery);
+  const accounts = useQuery(allAccountsQuery);
   const all = [settings, today, categories, cycle];
   const current = start === undefined || start === today.data?.cycle.openedOn;
   const bills = useQuery({ ...billsQuery, enabled: current });
@@ -552,6 +555,7 @@ export function CyclePage({
     ...(open
       ? [{ value: 'bills' as const, label: t('cycle.tabs.bills') }]
       : []),
+    { value: 'calendar', label: t('cycle.tabs.calendar') },
     { value: 'plan', label: t('cycle.tabs.plan') },
   ];
   const shownTab = !open && tab === 'bills' ? 'overview' : tab;
@@ -653,6 +657,14 @@ export function CyclePage({
               empty={t('cycle.noIncome')}
               totals={data.incomeByCategory}
               names={names}
+              locale={locale}
+            />
+          </TabsPanel>
+          <TabsPanel value="calendar">
+            <CalendarTab
+              today={today.data.today}
+              accounts={accounts.data?.accounts ?? []}
+              categories={categories.data.categories}
               locale={locale}
             />
           </TabsPanel>

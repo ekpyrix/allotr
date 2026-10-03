@@ -11,6 +11,7 @@ export const cycleTabs = [
   'categories',
   'bills',
   'plan',
+  'calendar',
 ] as const;
 export type CycleTab = (typeof cycleTabs)[number];
 

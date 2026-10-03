@@ -272,6 +272,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   merged into. The web app shows the top two children per card, expands to
   the rest, and takes the period and "always expand" from device settings
   (`allotr.report-period`, `allotr.category-cards`).
+- `GET /v1/reports/calendar?from=&to=` gives one row per day (at most 62;
+  the current month when both are left out): pace spending (linked bill
+  payments left out), a heat level from 0 to 4 against the busiest day, bills
+  due, payday and unsettled IOU due dates. It is the `calendar` projection in
+  `packages/core`, computed on every request. The web calendar toggles the
+  spending and dues layers and shows a table of the same days.
 - `GET /v1/accounts/{id}/history?days=30` gives an account's end-of-day
   balance for the last 7 to 365 days, in its own currency.
 - `POST /v1/import` fills an empty ledger from a JSON bundle (see
