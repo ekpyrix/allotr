@@ -43,6 +43,9 @@ function PlanForm({ settings }: { settings: LedgerSettingsView }) {
     initialPayText(settings.payYourselfFirst, settings.locale),
   );
   const [months, setMonths] = useState(String(settings.emergencyMonths));
+  const [writeOff, setWriteOff] = useState(
+    String(settings.iouWriteOffAfterDays),
+  );
   const [invalid, setInvalid] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const save = useMutation({
@@ -74,8 +77,14 @@ function PlanForm({ settings }: { settings: LedgerSettingsView }) {
       setInvalid('months');
       return;
     }
+    const days = Number(writeOff);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+      setInvalid('writeOff');
+      return;
+    }
     setInvalid(null);
     save.mutate({
+      iouWriteOffAfterDays: days,
       budgetPeriod: period,
       dailyMode: mode,
       countSavingsInDaily: countSavings,
@@ -218,6 +227,30 @@ function PlanForm({ settings }: { settings: LedgerSettingsView }) {
             className="h-11 text-base"
             onChange={(e) => {
               setMonths(e.currentTarget.value);
+              changed();
+            }}
+          />
+        )}
+      </FieldControl>
+      <FieldControl
+        label={t('settings.plan.writeOff')}
+        hint={t('settings.plan.writeOffHint')}
+        error={
+          invalid === 'writeOff'
+            ? t('settings.plan.writeOffInvalid')
+            : undefined
+        }
+      >
+        {(props) => (
+          <Input
+            {...props}
+            name="iouWriteOffAfterDays"
+            inputMode="numeric"
+            autoComplete="off"
+            value={writeOff}
+            className="h-11 text-base"
+            onChange={(e) => {
+              setWriteOff(e.currentTarget.value);
               changed();
             }}
           />

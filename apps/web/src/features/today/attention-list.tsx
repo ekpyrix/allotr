@@ -1,4 +1,4 @@
-import { formatMoney, type TodayView } from '@allotr/shared';
+import { formatMoney, type IouView, type TodayView } from '@allotr/shared';
 import { Link } from '@tanstack/react-router';
 import { TriangleAlert } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
@@ -35,13 +35,25 @@ const linkClass = 'w-fit font-medium underline underline-offset-4';
 export function AttentionList({
   figures,
   locale,
+  ious = [],
 }: {
   figures: TodayView;
   locale: string;
+  /** Open IOUs; the overdue ones and write-offs on offer need a look. */
+  ious?: readonly IouView[] | undefined;
 }) {
   const heading = useId();
   const { overdue, missingRates, billsDue, today } = figures;
-  if (!overdue && missingRates.length === 0 && billsDue.length === 0)
+  const iouItems = ious.filter(
+    (iou) =>
+      iou.overdue || (iou.direction === 'owed-to-me' && iou.writeOffOffered),
+  );
+  if (
+    !overdue &&
+    missingRates.length === 0 &&
+    billsDue.length === 0 &&
+    iouItems.length === 0
+  )
     return null;
 
   return (
@@ -96,6 +108,36 @@ export function AttentionList({
                     name: bill.name,
                     amount,
                     date: formatDay(bill.dueOn, locale),
+                  })}
+            </Item>
+          );
+        })}
+        {iouItems.map((iou) => {
+          const amount = formatMoney(iou.outstanding, locale);
+          return (
+            <Item
+              key={iou.id}
+              action={
+                <Link to="/budget" hash="ious" className={linkClass}>
+                  {t('today.attention.iouAction')}
+                </Link>
+              }
+            >
+              {iou.overdue
+                ? iou.direction === 'owed-to-me'
+                  ? t('today.attention.iouOverdue', {
+                      person: iou.person,
+                      amount,
+                      count: iou.daysOverdue,
+                    })
+                  : t('today.attention.iouOwedBy', {
+                      person: iou.person,
+                      amount,
+                      count: iou.daysOverdue,
+                    })
+                : t('today.attention.iouWriteOff', {
+                    person: iou.person,
+                    amount,
                   })}
             </Item>
           );
