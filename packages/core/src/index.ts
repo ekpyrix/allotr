@@ -236,6 +236,12 @@ export {
   type CalendarDay,
   type CalendarIou,
 } from './projections/calendar.ts';
+export {
+  BILL_LEAD_DAYS,
+  dueReminders,
+  type DueReminder,
+  type ReminderKind,
+} from './projections/reminders.ts';
 export { savingsRate } from './projections/savings-rate.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {

@@ -12,6 +12,7 @@ import { DeleteAccountSection } from '@/features/settings/delete-account';
 import { hashTarget } from '@/features/settings/hash-target';
 import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
+import { RemindersSection } from '@/features/reminders/feed-section';
 import { PlanSettingsSection } from '@/features/settings/plan-settings';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
@@ -148,6 +149,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
       {enabled ? (
         <SettingsGroup id="app" title={t('settings.groups.app')}>
           <AppearanceSection userId={session.user.id} />
+          <RemindersSection locale={locale} timeZone={timeZone} />
           <ReportsSection />
         </SettingsGroup>
       ) : null}

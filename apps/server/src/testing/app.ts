@@ -5,6 +5,7 @@ import type { Config } from '../config.ts';
 import type { DB } from '../db/schema.ts';
 import { createApp } from '../http/app.ts';
 import { createLogger } from '../logger.ts';
+import { createPushService } from '../push/service.ts';
 
 export const testConfig: Config = {
   databasePath: ':memory:',
@@ -12,6 +13,7 @@ export const testConfig: Config = {
   secretKey: 'fake-secret-key-for-tests-0123456789',
   host: '127.0.0.1',
   port: 0,
+  reminderIntervalSeconds: 900,
   logLevel: 'silent',
   trustedProxies: [],
 };
@@ -32,6 +34,10 @@ export function createTestApp(
     limits,
     logger,
     now,
+    // No network in tests: a push never leaves the process.
+    push: createPushService(db, testConfig.baseUrl, now, () =>
+      Promise.resolve('failed'),
+    ),
     ...(options.webDir === undefined ? {} : { webDir: options.webDir }),
   });
 }

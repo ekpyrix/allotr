@@ -21,6 +21,13 @@ export const serverEnvSchema = z.object({
         .filter((entry) => entry.length > 0),
     )
     .pipe(z.array(z.union([z.ipv4(), z.ipv6(), z.cidrv4(), z.cidrv6()]))),
+  // How often the reminder job looks for bills and IOUs that are due.
+  ALLOTR_REMINDER_INTERVAL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(86_400)
+    .default(900),
   ALLOTR_LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),

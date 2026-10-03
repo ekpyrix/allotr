@@ -19,6 +19,8 @@ const server = spawn(
       ALLOTR_SECRET_KEY: 'fake-secret-key-for-e2e-tests-0123456789',
       ALLOTR_PORT: port,
       ALLOTR_LOG_LEVEL: 'warn',
+      // Reminders appear within a second, so specs need not wait a quarter hour.
+      ALLOTR_REMINDER_INTERVAL_SECONDS: '1',
     },
   },
 );
