@@ -74,7 +74,7 @@ test('signs in with a backup code', async ({ page }) => {
 
   await page.getByLabel('Code').fill(code);
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
 });
 
 test('refuses a backup code that has been used', async ({ page }) => {
@@ -92,5 +92,5 @@ test('refuses a backup code that has been used', async ({ page }) => {
 
   await page.getByLabel('Code').fill(unused);
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
 });

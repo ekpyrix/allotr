@@ -2,18 +2,26 @@ import { navItems } from '../nav-items.ts';
 
 /** Routes outside the shell; everything else requires a session. */
 export const publicPaths = [
-  '/',
   '/sign-in',
   '/onboarding',
   '/invite/$token',
 ] as const;
 
-/** Signed-in routes that are not in the nav but still get axe checks. */
-export const extraShellPaths = [
+/** Old addresses that only redirect to a renamed route (ADR 0023). */
+export const renamedPaths = [
+  '/today',
+  '/ledger',
   '/cycle',
   '/history',
   '/savings',
-  // Redirects to Today once finished, as in the shell spec; setup.spec runs
+] as const;
+
+/** Signed-in routes that are not in the nav but still get axe checks. */
+export const extraShellPaths = [
+  '/settings',
+  '/reports/history',
+  '/accounts/savings',
+  // Redirects to the Dashboard once finished, as in the shell spec; setup.spec runs
   // axe on every step.
   '/setup',
   '/settings/themes/new',

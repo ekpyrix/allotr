@@ -80,7 +80,7 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
     headers: origin,
   });
   expect(wallet.ok()).toBe(true);
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page).toHaveURL(/\/setup$/);
   await expect(stepHeading(page, 1, 'Currency and region')).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -112,7 +112,7 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
   const context = await browser.newContext();
   const again = await context.newPage();
   await again.goto(new URL('/', baseURL).href);
-  await expect(again).toHaveURL(/\/sign-in$/);
+  await expect(again).toHaveURL(/\/sign-in(\?redirect=%2F)?$/);
   await again.getByLabel('Email').fill(account.email);
   await again.getByLabel('Password').fill(account.password);
   await again.getByRole('button', { name: 'Sign in' }).click();
@@ -125,13 +125,13 @@ test('leaving mid-way and signing in again resumes at the same step', async ({
   // Other views stay reachable; Today brings setup back until it is done.
   await again.goto(new URL('/accounts', baseURL).href);
   await expect(again).toHaveURL(/\/accounts$/);
-  await again.goto(new URL('/today', baseURL).href);
+  await again.goto(new URL('/', baseURL).href);
   await expect(again).toHaveURL(/\/setup$/);
 
   await again.getByRole('button', { name: 'Skip the rest of setup' }).click();
-  await expect(again).toHaveURL(/\/today$/);
+  await expect(again).toHaveURL(/\/$/);
   await again.goto(new URL('/setup', baseURL).href);
-  await expect(again).toHaveURL(/\/today$/);
+  await expect(again).toHaveURL(/\/$/);
   await context.close();
 });
 
@@ -217,7 +217,7 @@ test('a new user reaches a first daily number in about three minutes', async ({
   await expectAccessible(page);
 
   await page.getByRole('button', { name: 'Go to Today' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId('left-today')).toHaveText(number);
   await expectAccessible(page);
 

@@ -104,7 +104,7 @@ const entry = (page: Page, text: string) =>
 test('filtering by a parent category includes its subcategories', async ({
   page,
 }) => {
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await expect(entry(page, 'Transport')).toHaveCount(1);
 
   await page.getByLabel('Category').selectOption({ label: 'Food' });
@@ -120,7 +120,7 @@ test('filtering by a parent category includes its subcategories', async ({
 });
 
 test('searching notes finds the matching entry', async ({ page }) => {
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await page.getByRole('searchbox', { name: 'Search notes' }).fill('noodle');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(page).toHaveURL(/q=noodle/);
@@ -132,7 +132,7 @@ test('editing an entry shows its undo and the new entry, and the balance matches
   page,
 }) => {
   const before = await everyday(page);
-  await page.goto(`/ledger?account=${ids.everyday}`);
+  await page.goto(`/transactions?account=${ids.everyday}`);
   const balance = page.getByTestId('account-balance');
   await expect(balance).toHaveText(
     `Balance of Everyday: ${formatMoney(before.balance, 'en-US')}`,
@@ -207,7 +207,7 @@ test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) =>
   const original = (await seeded.json()) as TransactionView;
   const before = await figures(page);
 
-  await page.goto(`/ledger?entry=${original.id}`);
+  await page.goto(`/transactions?entry=${original.id}`);
   const dialog = entryView(page, 'Groceries');
   await dialog.getByRole('button', { name: 'Edit' }).click();
   const form = entryView(page, 'Edit entry');
@@ -231,14 +231,14 @@ test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) =>
     money(before.available.amountMinor - 1_500, 'USD'),
   );
   expect(after.leftToday).not.toEqual(before.leftToday);
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByTestId('left-today')).toHaveText(
     formatMoney(after.leftToday, 'en-US'),
   );
 });
 
 test('a filter for a tag that no longer exists drops out', async ({ page }) => {
-  await page.goto('/ledger?tag=gone');
+  await page.goto('/transactions?tag=gone');
   await expect(page).not.toHaveURL(/tag=/);
   await expect(entry(page, 'Eating out')).toHaveCount(1);
 });
@@ -250,7 +250,7 @@ test('closing an entry that the filters hide returns focus to the page', async (
     await page.request.get('/v1/transactions?limit=1&undone=hide')
   ).json()) as { transactions: TransactionView[] };
   const id = list.transactions[0]?.id ?? '';
-  await page.goto(`/ledger?q=nothing-matches&entry=${id}`);
+  await page.goto(`/transactions?q=nothing-matches&entry=${id}`);
   await expect(entryView(page)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page).not.toHaveURL(/entry=/);
@@ -267,7 +267,7 @@ test('day headers carry the server’s net total for the day', async ({
   const first = body.dayTotals[0];
   expect(first).toBeDefined();
   if (first === undefined) return;
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await expect(
     page
       .getByRole('heading', { level: 2 })
@@ -287,7 +287,7 @@ test('a deep link opens the entry beside the list or over it', async ({
     await page.request.get('/v1/transactions?limit=1&undone=hide')
   ).json()) as { transactions: TransactionView[] };
   const id = list.transactions[0]?.id ?? '';
-  await page.goto(`/ledger?entry=${id}`);
+  await page.goto(`/transactions?entry=${id}`);
   const view = isMobile
     ? page.getByRole('dialog')
     : page.locator('[data-slot="entry-pane"]');

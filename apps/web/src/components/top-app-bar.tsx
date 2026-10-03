@@ -5,8 +5,7 @@ import type { ReactNode } from 'react';
 // title inline while the large title scrolls away. Driven by a scroll
 // timeline where the browser has one; elsewhere it stays chrome. The
 // inline title repeats the page's h1, so it is hidden from assistive
-// technology. It slides up into view rather than fading, so it is never
-// shown half-transparent.
+// technology.
 export function TopAppBar({
   title,
   actions,

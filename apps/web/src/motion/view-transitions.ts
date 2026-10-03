@@ -1,31 +1,16 @@
 import { effectiveMotion, readPref } from '@/lib/device-prefs';
-import { navItems } from '@/nav-items';
 
-// Route changes as same-document view transitions (ADR 0019), typed so the
-// stylesheet can pick the motion: `tab` between top-level destinations
-// fades through, `push` into a deeper page and `pop` back out slide 24 px.
-// With reduced or no motion there is no transition at all. Browsers
-// without view transitions, or without transition types, just navigate.
+// Route changes as same-document view transitions (ADR 0019, amended by
+// 0023), typed so the stylesheet can pick the motion: `push` into a deeper
+// page and `pop` back out slide 24 px. Switching between top-level
+// destinations is instant: no transition at all. With reduced or no motion
+// there is no transition either. Browsers without view transitions, or
+// without transition types, just navigate.
 
-export type TransitionType = 'tab' | 'push' | 'pop';
-
-const tabs: readonly string[] = navItems.map((item) => item.to);
-
-// Views that hang off a destination rather than the nav move as if they
-// sat under it, so Today's hero card can grow into the cycle's header.
-const subViews: Readonly<Record<string, string>> = {
-  '/cycle': '/today',
-  '/history': '/today',
-  '/savings': '/accounts',
-};
+export type TransitionType = 'push' | 'pop';
 
 function topLevel(path: string): string {
   return `/${path.split('/')[1] ?? ''}`;
-}
-
-function placed(path: string): string {
-  const parent = subViews[topLevel(path)];
-  return parent === undefined ? path : `${parent}${path}`;
 }
 
 /** The kind of move between two paths, or null for none. */
@@ -34,12 +19,10 @@ export function transitionType(
   to: string,
 ): TransitionType | null {
   if (from === undefined || from === to) return null;
-  from = placed(from);
-  to = placed(to);
-  if (to.startsWith(`${from}/`)) return 'push';
-  if (from.startsWith(`${to}/`)) return 'pop';
-  if (tabs.includes(topLevel(from)) && tabs.includes(topLevel(to)))
-    return topLevel(from) === topLevel(to) ? 'push' : 'tab';
+  if (to.startsWith(`${from}/`) && from !== '/') return 'push';
+  if (from.startsWith(`${to}/`) && to !== '/') return 'pop';
+  const place = topLevel(to);
+  if (place !== '/' && place === topLevel(from)) return 'push';
   return null;
 }
 

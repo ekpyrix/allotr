@@ -84,7 +84,7 @@ const lines = (entry: TransactionView) =>
 const title = 'Split: Groceries, Eating out';
 
 test('splits one expense across two categories', async ({ page }) => {
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await page.getByRole('button', { name: 'Add' }).click();
   const form = page.getByRole('dialog', { name: 'Add an entry' });
   await form.getByLabel('Amount in USD').fill('80');
@@ -132,7 +132,7 @@ test('splits one expense across two categories', async ({ page }) => {
 });
 
 test('edits one line of a split', async ({ page }) => {
-  await page.goto('/ledger');
+  await page.goto('/transactions');
   await page
     .locator('main')
     .getByRole('link', { name: new RegExp(title) })
@@ -170,7 +170,7 @@ test('edits one line of a split', async ({ page }) => {
 test('splits from the keyboard only, keeping focus as lines come and go', async ({
   page,
 }) => {
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('n');
   const form = page.getByRole('dialog', { name: 'Add an entry' });
@@ -217,7 +217,7 @@ test('splits from the keyboard only, keeping focus as lines come and go', async 
 });
 
 test('going back to one category keeps the first line’s', async ({ page }) => {
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.keyboard.press('n');
   const form = page.getByRole('dialog', { name: 'Add an entry' });

@@ -157,9 +157,9 @@ Milestones refer to [§9](#9-release-plan).
 
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
-| FR-W1 | Today view: hero number, pace bar, "needs attention" items, today's entries. | M | M2 |
-| FR-W2 | Views for ledger, accounts, cycle, savings and goals, history and settings. | M | M2 |
-| FR-W3 | Responsive layouts for phone, foldable, tablet and desktop; installable PWA. | M | M2 |
+| FR-W1 | Dashboard (the home view, `/`): today card with the hero number, pace bar, "needs attention" items, today's entries. | M | M2 |
+| FR-W2 | Destinations Dashboard, Accounts, Transactions, Budget (bills for now) and Reports (the cycle, with history), plus Settings from the header gear or the sidebar foot; Savings under Accounts. Old addresses (`/today`, `/ledger`, `/cycle`, `/history`, `/savings`, `/settings#bills`) redirect. | M | M2 |
+| FR-W3 | Responsive layouts for phone, foldable, tablet and desktop; installable PWA. On phones a floating flat pill tab bar with a separate round add button; from 600 px an ordinary sidebar. Tab switches are instant. | M | M2 |
 | FR-W4 | Entries made offline are queued and synced later. | S | M7 |
 | FR-W5 | Palette themes with a role map, fitted to WCAG 2.2 AA contrast; shipped palette families; custom themes by editor or import from common palette and terminal colour formats. | S | M2 |
 | FR-W6 | Read-only kiosk view and a small embeddable card, accessed with a summary-only token. | S | M6 |

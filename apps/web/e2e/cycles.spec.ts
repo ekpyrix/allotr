@@ -72,7 +72,7 @@ const marchRow = (page: Page) => page.locator('[data-cycle="2026-03-01"]');
 test('history shows the past cycle as the replay worked it out', async ({
   page,
 }) => {
-  await page.goto('/history');
+  await page.goto('/reports/history');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Past cycles' }),
   ).toBeVisible();
@@ -93,9 +93,9 @@ test('history shows the past cycle as the replay worked it out', async ({
 });
 
 test('a past cycle shows its categories and balances', async ({ page }) => {
-  await page.goto('/history');
+  await page.goto('/reports/history');
   await marchRow(page).getByRole('link').click();
-  await expect(page).toHaveURL(/\/cycle\?start=2026-03-01$/u);
+  await expect(page).toHaveURL(/\/reports\?start=2026-03-01$/u);
   await expect(
     page.getByRole('heading', { level: 1, name: /^Cycle Mar 1/u }),
   ).toBeVisible();
@@ -136,7 +136,7 @@ test('every cycle chart has a table of the server’s figures', async ({
   const series = (await (
     await page.request.get('/v1/cycles/2026-03-01/days')
   ).json()) as CycleDayListView;
-  await page.goto('/cycle?start=2026-03-01');
+  await page.goto('/reports?start=2026-03-01');
 
   const chart = page.getByRole('region', { name: 'Spending against pace' });
   await chart.getByRole('button', { name: 'Show as table' }).click();
@@ -182,7 +182,7 @@ test('arrow keys move between a chart’s points', async ({ page }) => {
   const [first, second] = series.days;
   if (first === undefined || second === undefined)
     throw new Error('the March cycle has fewer than two days');
-  await page.goto('/cycle?start=2026-03-01');
+  await page.goto('/reports?start=2026-03-01');
   const chart = page.getByRole('region', { name: 'Spending against pace' });
   const surface = chart.getByRole('application');
   await surface.focus();
@@ -226,7 +226,7 @@ test('a back-dated entry marks the past cycle as amended', async ({
   });
   expect(late.status(), await late.text()).toBe(201);
 
-  await page.goto('/history');
+  await page.goto('/reports/history');
   const row = marchRow(page);
   await expect(row.getByTestId('amended')).toBeVisible();
   await expect(row.getByTestId('history-spending')).toHaveText(
@@ -242,15 +242,15 @@ test('a back-dated entry marks the past cycle as amended', async ({
   await expect(amendments).toContainText('Forgotten ticket');
   await expectAccessible(page);
   await amendments.getByRole('link', { name: /Show in the ledger/u }).click();
-  await expect(page).toHaveURL(/\/ledger\?entry=/u);
+  await expect(page).toHaveURL(/\/transactions\?entry=/u);
 });
 
 test('Today links to the current cycle', async ({ page }) => {
-  await page.goto('/today');
+  await page.goto('/');
   await page.getByRole('link', { name: 'See this cycle' }).click();
-  await expect(page).toHaveURL(/\/cycle$/u);
+  await expect(page).toHaveURL(/\/reports$/u);
   await expect(
-    page.getByRole('heading', { level: 1, name: 'This cycle' }),
+    page.getByRole('heading', { level: 1, name: 'Reports' }),
   ).toBeVisible();
   // The fixture's last paycheck is long past, so payday is overdue.
   await expect(page.locator('main')).toContainText(
@@ -274,10 +274,10 @@ test('Today links to the current cycle', async ({ page }) => {
   await expectAccessible(page);
 
   await page.getByRole('link', { name: /^Previous cycle/u }).click();
-  await expect(page).toHaveURL(/\/cycle\?start=/u);
+  await expect(page).toHaveURL(/\/reports\?start=/u);
   await expect(page.getByRole('tab', { name: 'Bills' })).toHaveCount(0);
   await page.getByRole('link', { name: /^Next cycle/u }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'This cycle' }),
+    page.getByRole('heading', { level: 1, name: 'Reports' }),
   ).toBeVisible();
 });

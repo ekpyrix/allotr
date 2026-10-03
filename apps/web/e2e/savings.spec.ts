@@ -55,7 +55,7 @@ test('without off-budget accounts it says how to add one', async ({ page }) => {
     totals: { off: { amount: Money } };
   };
   expect(totals.off.amount.amountMinor).toBe(0);
-  await page.goto('/savings');
+  await page.goto('/accounts/savings');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Savings' }),
   ).toBeVisible();
@@ -83,7 +83,7 @@ test('shows the total, its growth and each cycle’s change', async ({
 
   await page.goto('/accounts');
   await page.getByRole('link', { name: 'See savings over time' }).click();
-  await expect(page).toHaveURL(/\/savings$/u);
+  await expect(page).toHaveURL(/\/accounts\/savings$/u);
   const total = formatMoney(eur(310000), locale);
   await expect(page.getByTestId('savings-total')).toHaveText(total);
   await expect(
@@ -104,7 +104,7 @@ test('both charts have a table of the server’s figures', async ({ page }) => {
   ).json()) as CycleListView;
   // Oldest first on the charts; the list is newest first.
   const shown = cycles.slice(0, 12).reverse();
-  await page.goto('/savings');
+  await page.goto('/accounts/savings');
   for (const name of ['Savings over time', 'Change per cycle']) {
     const chart = page.getByRole('region', { name });
     await chart.getByRole('button', { name: 'Show as table' }).click();

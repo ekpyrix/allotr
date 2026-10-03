@@ -74,7 +74,7 @@ test('onboarding, sign-in with two-factor and Today', async ({
   // Setup has its own spec; skipping it lands on Today.
   await expect(page).toHaveURL(/\/setup$/);
   await page.getByRole('button', { name: 'Skip the rest of setup' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { name: 'Left today' })).toBeVisible();
   await expectAccessible(page);
 
@@ -151,7 +151,7 @@ test('onboarding, sign-in with two-factor and Today', async ({
 
   await page.getByLabel('Code').fill(totpFromUri(totpURI));
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page).toHaveURL(/\/today$/);
+  await expect(page).toHaveURL(/\/$/);
   await expect(
     page.getByText(`Hello ${account.name}.`, { exact: false }),
   ).toBeVisible();

@@ -58,7 +58,7 @@ packages/shared`. Nothing depends on an app.
 | Query layer | Kysely, forward-only `.sql` migrations, generated types | [0004](adr/0004-sqlite-kysely.md) |
 | API | Hono, Zod schemas → OpenAPI 3.1, SSE | [0008](adr/0008-api-contract.md) |
 | Auth | Better Auth: local accounts, TOTP, OIDC, API tokens | [0006](adr/0006-auth.md) |
-| Web | React + Vite, TanStack Router/Query, shadcn/ui on Radix, Tailwind with generated role tokens, cmdk command palette, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0018](adr/0018-visual-language.md) (superseded by 0022, flat and compact, see #161), [0020](adr/0020-ui-foundation.md) |
+| Web | React + Vite, TanStack Router/Query, shadcn/ui on Radix, Tailwind with generated role tokens, cmdk command palette, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0018](adr/0018-visual-language.md) (superseded by 0022, flat and compact, see #161), [0020](adr/0020-ui-foundation.md); navigation and motion per 0023 (see #161) |
 | Charts / motion | Recharts (lazy, charts only) plus custom SVG; CSS spring easings, View Transitions, and Motion (lazy, for gestures) | [0019](adr/0019-motion-system.md), [0020](adr/0020-ui-foundation.md) |
 | AI | Vercel AI SDK (OpenAI-compatible default), MCP TypeScript SDK | [0008](adr/0008-api-contract.md) |
 | Chat | discord.js, grammY | [0007](adr/0007-deployment-and-gateways.md) |

@@ -31,7 +31,7 @@ export function InvitePage({ token }: { token: string }) {
         password: textField(form, 'password'),
       });
       await queryClient.invalidateQueries();
-      await navigate({ to: '/today' });
+      await navigate({ to: '/' });
     } catch (caught) {
       setError(errorMessage(caught));
       setPending(false);

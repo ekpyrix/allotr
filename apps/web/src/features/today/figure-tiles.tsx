@@ -57,7 +57,7 @@ export function FigureTiles({
         term={t('today.spentToday')}
         value={formatMoney(figures.spentToday, locale)}
         action={
-          <Link to="/ledger" className={stretched}>
+          <Link to="/transactions" className={stretched}>
             <span className="sr-only">{t('today.tiles.spentToday')}</span>
           </Link>
         }
@@ -66,7 +66,7 @@ export function FigureTiles({
         term={t('today.daysLeft')}
         value={String(figures.daysLeft)}
         action={
-          <Link to="/cycle" className={stretched}>
+          <Link to="/reports" className={stretched}>
             <span className="sr-only">{t('today.tiles.daysLeft')}</span>
           </Link>
         }

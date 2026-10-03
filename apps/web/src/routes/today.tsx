@@ -5,7 +5,7 @@ import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton, SkeletonCard, SkeletonRows } from '@/components/ui/skeleton';
 import { AttentionList } from '@/features/today/attention-list';
 import { entryRows } from '@/features/today/entries';
 import {
@@ -66,12 +66,19 @@ export function TodayPage({ user }: { user: SessionUser }) {
   if (today.data === undefined || settings.data === undefined)
     return (
       <Page title={t('today.heading')}>
-        <Card variant="hero" className="mt-4 grid gap-4" aria-busy="true">
+        <div role="status" aria-busy="true" className="mt-4 grid gap-4">
           <p className="sr-only">{t('today.loading')}</p>
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-16 w-48" />
-          <Skeleton className="h-6 w-40" />
-        </Card>
+          <Card variant="hero" className="grid gap-4" aria-hidden="true">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-16 w-48" />
+            <Skeleton className="h-6 w-40" />
+          </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+          <SkeletonRows rows={3} />
+        </div>
       </Page>
     );
 

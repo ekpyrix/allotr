@@ -26,7 +26,7 @@ test.beforeEach(async ({ page, baseURL }) => {
     headers: { origin: baseURL ?? '' },
   });
   expect(response.ok()).toBe(true);
-  await page.goto('/today');
+  await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
@@ -58,7 +58,7 @@ test('/ opens it to search entries in the ledger', async ({ page }) => {
   });
   await expect(search).toBeVisible();
   await search.click();
-  await expect(page).toHaveURL(/\/ledger\?q=coffee$/);
+  await expect(page).toHaveURL(/\/transactions\?q=coffee$/);
 });
 
 test('New entry hands off to quick entry', async ({ page }) => {
@@ -71,9 +71,8 @@ test('New entry hands off to quick entry', async ({ page }) => {
 });
 
 test('Escape closes it and focus goes back', async ({ page }) => {
-  const settings = page
-    .getByRole('navigation', { name: 'Main' })
-    .getByRole('link', { name: 'Settings' });
+  // The header gear on phones, the sidebar link from 600 px.
+  const settings = page.getByRole('link', { name: 'Settings', exact: true });
   await settings.focus();
   await page.keyboard.press('Control+k');
   await expect(palette(page)).toBeVisible();

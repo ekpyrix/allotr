@@ -4,9 +4,9 @@ import { useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
+import { LoadingBlock } from '@/components/route-skeleton';
 import { Button } from '@/components/ui/button';
 import { AppearanceSection } from '@/features/settings/appearance';
-import { BillsSection } from '@/features/settings/bills';
 import { CategoriesSection } from '@/features/settings/categories';
 import { DeleteAccountSection } from '@/features/settings/delete-account';
 import { hashTarget } from '@/features/settings/hash-target';
@@ -17,7 +17,6 @@ import { RatesSection } from '@/features/settings/rates';
 import { SecuritySection } from '@/features/settings/security';
 import { TagsSection } from '@/features/settings/tags';
 import {
-  allAccountsQuery,
   allCategoriesQuery,
   ledgerSettingsQuery,
   tagsQuery,
@@ -25,7 +24,7 @@ import {
 } from '@/lib/ledger';
 import { errorMessage } from '@/lib/problem';
 import { sessionQuery } from '@/lib/session';
-import { billsQuery, ratesQuery } from '@/lib/settings';
+import { ratesQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
 // Once the sections have rendered, `/settings#rates` scrolls to rates and
@@ -64,11 +63,8 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
   // Merged categories too: they name the merge targets of older merges.
   const categories = useQuery({ ...allCategoriesQuery, enabled });
   const tags = useQuery({ ...tagsQuery, enabled });
-  const bills = useQuery({ ...billsQuery, enabled });
   const rates = useQuery({ ...ratesQuery, enabled });
-  // Archived too: a bill can still name one.
-  const accounts = useQuery({ ...allAccountsQuery, enabled });
-  const all = [settings, today, categories, tags, bills, rates, accounts];
+  const all = [settings, today, categories, tags, rates];
   // Wait for every answer, data or error, so a hash lower down does not
   // move when the ledger sections above it appear.
   const settled = all.every((q) => q.data !== undefined || q.isError);
@@ -102,29 +98,15 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
     today.data === undefined ||
     categories.data === undefined ||
     tags.data === undefined ||
-    bills.data === undefined ||
-    rates.data === undefined ||
-    accounts.data === undefined
+    rates.data === undefined
   )
-    ledger = (
-      <p role="status" className="mt-6 text-text-muted">
-        {t('settings.loading')}
-      </p>
-    );
+    ledger = <LoadingBlock label={t('settings.loading')} />;
   else
     ledger = (
       <>
         <LedgerSettingsSection settings={settings.data} today={today.data} />
         <CategoriesSection categories={categories.data.categories} />
         <TagsSection tags={tags.data.tags} />
-        <BillsSection
-          bills={bills.data.bills}
-          accounts={accounts.data.accounts}
-          categories={categories.data.categories}
-          rates={rates.data.rates}
-          today={today.data}
-          locale={locale}
-        />
         <RatesSection
           rates={rates.data.rates}
           today={today.data}

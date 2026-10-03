@@ -32,7 +32,7 @@ test.beforeEach(async ({ page, baseURL }) => {
 
 /** Opens Today and waits until the service worker controls the page. */
 async function openControlled(page: Page) {
-  await page.goto('/today');
+  await page.goto('/');
   await expect(
     page.getByRole('heading', { name: t('today.title') }),
   ).toBeVisible();

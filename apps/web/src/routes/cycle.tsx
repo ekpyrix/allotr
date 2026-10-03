@@ -146,7 +146,7 @@ function CycleNav({
     >
       {older === undefined ? null : (
         <Button asChild variant="tonal" size="dense">
-          <Link to="/cycle" search={link(older)}>
+          <Link to="/reports" search={link(older)}>
             <ChevronLeft aria-hidden />
             {t('cycle.previous')}
             <span className="sr-only">
@@ -158,7 +158,7 @@ function CycleNav({
       )}
       {newer === undefined ? null : (
         <Button asChild variant="tonal" size="dense">
-          <Link to="/cycle" search={link(newer)}>
+          <Link to="/reports" search={link(newer)}>
             {t('cycle.next')}
             <span className="sr-only">
               {' '}
@@ -169,7 +169,7 @@ function CycleNav({
         </Button>
       )}
       <Button asChild variant="text" size="dense">
-        <Link to="/history">
+        <Link to="/reports/history">
           <History aria-hidden />
           {t('cycle.history')}
         </Link>
@@ -265,7 +265,7 @@ function Amendments({
               })}
             </span>
             <Link
-              to="/ledger"
+              to="/transactions"
               search={{ entry: entry.transactionId }}
               className={linkClass}
             >
@@ -488,7 +488,7 @@ function Bills({
           ))}
         </List>
       )}
-      <Link to="/settings" hash="bills" className={linkClass}>
+      <Link to="/budget" className={linkClass}>
         {t('cycle.bills.manage')}
       </Link>
     </section>
@@ -529,7 +529,7 @@ export function CyclePage({
         loading={t('cycle.loading')}
         queries={all}
       >
-        <Link to="/history" className={linkClass}>
+        <Link to="/reports/history" className={linkClass}>
           {t('cycle.history')}
         </Link>
       </PageState>
@@ -598,7 +598,7 @@ export function CyclePage({
           value={shownTab}
           onValueChange={(next) => {
             void navigate({
-              to: '/cycle',
+              to: '/reports',
               search: {
                 start,
                 tab: next === 'overview' ? undefined : next,

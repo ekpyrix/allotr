@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { TriangleAlert } from 'lucide-react';
 import { useId, type ReactNode } from 'react';
 import { FormError } from '@/components/field';
+import { LoadingBlock } from '@/components/route-skeleton';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { List, ListRow } from '@/components/ui/list';
@@ -55,9 +56,7 @@ export function PageState({
     );
   return (
     <Page title={title}>
-      <p role="status" className="mt-6 text-text-muted">
-        {loading}
-      </p>
+      <LoadingBlock label={loading} />
     </Page>
   );
 }

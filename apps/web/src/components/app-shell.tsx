@@ -35,7 +35,7 @@ export function AppShell({
 
   return (
     <QuickEntryProvider>
-      <div className="min-h-dvh medium:grid medium:grid-cols-[5rem_1fr] large:grid-cols-[17.5rem_1fr]">
+      <div className="min-h-dvh medium:grid medium:grid-cols-[14rem_1fr]">
         <a
           href="#content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-30 focus:rounded-md focus:bg-card-raised focus:px-4 focus:py-2 focus:outline-2 focus:outline-ring"
