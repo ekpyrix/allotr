@@ -50,6 +50,7 @@ import {
   ledgerSettingsQuery,
   todayQuery,
 } from '@/lib/ledger';
+import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
@@ -392,14 +393,16 @@ function DailyFrame({
 function CategoryFrame({
   cycle,
   names,
+  styles,
   locale,
 }: {
   cycle: CycleDetailView;
   names: ReadonlyMap<string, string>;
+  styles: ReadonlyMap<string, CategoryStyle>;
   locale: string;
 }) {
   const title = t('cycle.categoryChart.title');
-  const bars = categoryBars(cycle.spendingTop, names);
+  const bars = categoryBars(cycle.spendingTop, names, styles);
   const [first] = bars;
   if (first === undefined)
     return (
@@ -539,6 +542,7 @@ export function CyclePage({
   const data = cycle.data;
   const open = data.closedOn === null;
   const names = categoryNames(categories.data.categories);
+  const styles = categoryStyles(categories.data.categories);
   const tabs: { value: CycleTab; label: string }[] = [
     { value: 'overview', label: t('cycle.tabs.overview') },
     { value: 'days', label: t('cycle.tabs.days') },
@@ -621,7 +625,12 @@ export function CyclePage({
             <DailyFrame series={series.data} locale={locale} />
           </TabsPanel>
           <TabsPanel value="categories" className="grid gap-4">
-            <CategoryFrame cycle={data} names={names} locale={locale} />
+            <CategoryFrame
+              cycle={data}
+              names={names}
+              styles={styles}
+              locale={locale}
+            />
             {data.spendingTop.other === null ? null : (
               <CategoryTotals
                 title={t('cycle.categoryChart.every')}

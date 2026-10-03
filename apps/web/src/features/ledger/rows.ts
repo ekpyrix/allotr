@@ -6,7 +6,8 @@ import {
   type Money,
   type TransactionView,
 } from '@allotr/shared';
-import { categoryTitle } from '@/lib/entry-categories';
+import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
+import { categoryTitle, entryCategoryIds } from '@/lib/entry-categories';
 
 // The ledger as rows. Unlike Today, undos are rows of their own: the
 // ledger shows what was recorded, and an edit is an undo plus a new entry.
@@ -32,6 +33,8 @@ export interface LedgerRow {
   originalKind: LedgerKind | null;
   /** For a budget switch, where the account moved. */
   budgetGroup: 'on' | 'off' | null;
+  /** The category's colour and icon; null for a split or none. */
+  style: CategoryStyle | null;
 }
 
 const negate = (m: Money) => money(-m.amountMinor, m.currency);
@@ -52,6 +55,17 @@ function sides(entry: TransactionView) {
   };
 }
 
+/** The one category's style; a split or an entry without one has none. */
+export function singleStyle(
+  entry: TransactionView,
+  styles: ReadonlyMap<string, CategoryStyle>,
+): CategoryStyle | null {
+  const [only, ...rest] = entryCategoryIds(entry);
+  return only === undefined || rest.length > 0
+    ? null
+    : (styles.get(only) ?? null);
+}
+
 export function ledgerRows(
   transactions: readonly TransactionView[],
   accounts: readonly AccountView[],
@@ -60,6 +74,7 @@ export function ledgerRows(
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
   const categoryName = new Map(categories.map((c) => [c.id, c.name]));
   const byId = new Map(transactions.map((t) => [t.id, t]));
+  const styles = categoryStyles(categories);
   const name = (id: string) => accountName.get(id) ?? '';
 
   return transactions.map((entry) => {
@@ -94,6 +109,7 @@ export function ledgerRows(
       reversesId: entry.reversesId,
       originalKind: original?.kind ?? null,
       budgetGroup: entry.budgetSwitch?.budgetGroup ?? null,
+      style: singleStyle(original ?? entry, styles),
     };
   });
 }

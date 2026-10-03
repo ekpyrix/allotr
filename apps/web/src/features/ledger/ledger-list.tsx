@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
+import { CategoryIcon } from '@/components/ui/category-icon';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 import { formatLongDay, rowTitle } from './format.ts';
@@ -59,7 +60,11 @@ function Row({
             row.moves && !muted ? 'text-info' : 'text-text-muted',
           )}
         >
-          <Icon className="size-5 stroke-[1.75]" />
+          {row.style === null || muted ? (
+            <Icon className="size-5 stroke-[1.75]" />
+          ) : (
+            <CategoryIcon style={row.style} fallback={Icon} />
+          )}
         </span>
         <span className={cn('min-w-0 flex-1', muted && 'text-text-muted')}>
           <span

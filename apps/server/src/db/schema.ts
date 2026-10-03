@@ -91,8 +91,10 @@ export interface Budgets {
 }
 
 export interface Categories {
+  colour: string | null;
   created_at: string;
   default_account_id: string | null;
+  icon: string | null;
   id: string;
   is_paycheck: Generated<number>;
   kind: string;
@@ -212,6 +214,8 @@ export interface SignInFailures {
 }
 
 export interface StarterCategories {
+  colour: string | null;
+  icon: string | null;
   is_paycheck: number;
   kind: string;
   name: string;

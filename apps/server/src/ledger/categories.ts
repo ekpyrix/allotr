@@ -19,6 +19,8 @@ type Row = {
   parent_id: string | null;
   is_paycheck: number;
   position: number;
+  colour: string | null;
+  icon: string | null;
   merged_into_id: string | null;
 };
 
@@ -29,6 +31,8 @@ const columns = [
   'parent_id',
   'is_paycheck',
   'position',
+  'colour',
+  'icon',
   'merged_into_id',
 ] as const;
 
@@ -40,6 +44,8 @@ function toView(row: Row): CategoryView {
     parentId: row.parent_id,
     isPaycheck: row.is_paycheck === 1,
     position: row.position,
+    colour: row.colour as CategoryView['colour'],
+    icon: row.icon as CategoryView['icon'],
     mergedIntoId: row.merged_into_id,
   };
 }
@@ -190,6 +196,8 @@ export type CreateCategory = Readonly<{
   parentId?: string | undefined;
   isPaycheck: boolean;
   position?: number | undefined;
+  colour?: CategoryView['colour'] | undefined;
+  icon?: CategoryView['icon'] | undefined;
 }>;
 
 /** Inserts a category inside the caller's database transaction. */
@@ -235,6 +243,8 @@ export async function insertCategory(
           parent_id: input.parentId ?? null,
           is_paycheck: input.isPaycheck ? 1 : 0,
           position: input.position ?? last.position + 1,
+          colour: input.colour ?? null,
+          icon: input.icon ?? null,
           created_at: at,
           updated_at: at,
         })
@@ -261,6 +271,8 @@ export type UpdateCategory = Readonly<{
   parentId?: string | null | undefined;
   isPaycheck?: boolean | undefined;
   position?: number | undefined;
+  colour?: CategoryView['colour'] | undefined;
+  icon?: CategoryView['icon'] | undefined;
 }>;
 
 export async function updateCategory(
@@ -298,6 +310,8 @@ export async function updateCategory(
             ...(input.position === undefined
               ? {}
               : { position: input.position }),
+            ...(input.colour === undefined ? {} : { colour: input.colour }),
+            ...(input.icon === undefined ? {} : { icon: input.icon }),
             updated_at: now.toISOString(),
           })
           .where('user_id', '=', userId)

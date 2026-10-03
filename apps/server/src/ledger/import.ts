@@ -339,6 +339,8 @@ export async function importBundle(
           {
             name: category.name,
             isPaycheck: category.isPaycheck ?? false,
+            colour: category.colour,
+            icon: category.icon,
             ...placement,
           },
           now,

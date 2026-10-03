@@ -31,6 +31,8 @@ type Category = {
   kind: string;
   parentId: string | null;
   isPaycheck: boolean;
+  colour: string | null;
+  icon: string | null;
   mergedIntoId: string | null;
 };
 
@@ -345,6 +347,62 @@ describe('categories', () => {
     });
     expect(moved.status).toBe(200);
     expect(moved.body).toMatchObject({ name: 'Vet', parentId: health?.id });
+  });
+
+  it('gives the starter set a colour and an icon, children following the parent', async () => {
+    const all = await categories(h.alice);
+    const food = all.find((c) => c.name === 'Food');
+    expect(food).toMatchObject({ colour: 'series-6', icon: 'utensils' });
+    const groceries = all.find((c) => c.name === 'Groceries');
+    expect(groceries).toMatchObject({ colour: null, icon: 'shopping-basket' });
+    expect(all.find((c) => c.name === 'Rent')).toMatchObject({
+      colour: null,
+      icon: null,
+    });
+  });
+
+  it('creates, restyles and clears a category colour and icon', async () => {
+    const created = await h.alice.post('/v1/categories', {
+      name: 'Pets',
+      kind: 'expense',
+      colour: 'series-4',
+      icon: 'paw-print',
+    });
+    expect(created.status).toBe(201);
+    const id = (created.body as Category).id;
+    expect(created.body).toMatchObject({
+      colour: 'series-4',
+      icon: 'paw-print',
+    });
+
+    const changed = await h.alice.patch(`/v1/categories/${id}`, {
+      colour: 'series-2',
+    });
+    expect(changed.body).toMatchObject({
+      colour: 'series-2',
+      icon: 'paw-print',
+    });
+
+    const cleared = await h.alice.patch(`/v1/categories/${id}`, {
+      colour: null,
+      icon: null,
+    });
+    expect(cleared.body).toMatchObject({ colour: null, icon: null });
+  });
+
+  it('refuses a colour or icon outside the fixed sets', async () => {
+    const badColour = await h.alice.post('/v1/categories', {
+      name: 'Bad colour',
+      kind: 'expense',
+      colour: '#ff0000',
+    });
+    expect(badColour.status).toBe(400);
+    const badIcon = await h.alice.post('/v1/categories', {
+      name: 'Bad icon',
+      kind: 'expense',
+      icon: 'rocket-launcher',
+    });
+    expect(badIcon.status).toBe(400);
   });
 
   it('deletes an unused category', async () => {

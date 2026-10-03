@@ -584,6 +584,11 @@ export const en = {
       none: 'None yet.',
       paycheck: 'Paycheck',
       paycheckHint: 'Income in this category starts a new cycle.',
+      colour: 'Colour',
+      automatic: 'Automatic',
+      colourOption: 'Colour {number}',
+      icon: 'Icon',
+      noIcon: 'None',
       paycheckBadge: 'Paycheck',
       deleteIntro:
         'If entries use it, you choose a category to merge it into; the entries move there.',

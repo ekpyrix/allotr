@@ -16,8 +16,8 @@ const accounts = [
   { id: 'a-savings', name: 'Savings' },
 ] as AccountView[];
 const categories = [
-  { id: 'c-food', name: 'Food' },
-  { id: 'c-fun', name: 'Fun' },
+  { id: 'c-food', name: 'Food', colour: 'series-6', icon: 'utensils' },
+  { id: 'c-fun', name: 'Fun', colour: null, icon: null },
 ] as CategoryView[];
 
 function entry(overrides: Partial<TransactionView>): TransactionView {
@@ -108,6 +108,7 @@ describe('ledgerRows', () => {
         reversesId: 'e-1',
         originalKind: 'expense',
         budgetGroup: null,
+        style: { colour: 'series-6', icon: 'utensils' },
       },
       {
         id: 'e-1',
@@ -122,6 +123,7 @@ describe('ledgerRows', () => {
         reversesId: null,
         originalKind: null,
         budgetGroup: null,
+        style: { colour: 'series-6', icon: 'utensils' },
       },
     ]);
   });

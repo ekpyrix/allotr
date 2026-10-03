@@ -27,12 +27,24 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 });
 
 test.beforeEach(async ({ page, baseURL }) => {
-  const response = await page.request.post('/v1/auth/sign-in/email', {
+  // Sign-in is rate limited per minute and every test here signs in, so wait
+  // out a refusal instead of failing on it.
+  test.setTimeout(90_000);
+  let response = await signIn(page, baseURL);
+  for (let tries = 0; response.status() === 429 && tries < 3; tries += 1) {
+    const wait = Number(response.headers()['x-retry-after'] ?? 20);
+    await page.waitForTimeout(Math.min(Math.max(wait, 1), 60) * 1000);
+    response = await signIn(page, baseURL);
+  }
+  expect(response.ok()).toBe(true);
+});
+
+function signIn(page: Page, baseURL: string | undefined) {
+  return page.request.post('/v1/auth/sign-in/email', {
     data: { email: account.email, password: account.password },
     headers: { origin: baseURL ?? '' },
   });
-  expect(response.ok()).toBe(true);
-});
+}
 
 async function today(page: Page): Promise<TodayView> {
   return (await (await page.request.get('/v1/today')).json()) as TodayView;
@@ -269,6 +281,36 @@ test('a category nobody uses is deleted at once, and tags can be renamed', async
   await expect(
     page.getByRole('heading', { name: 'Categories', exact: true }),
   ).toBeFocused();
+  await expectAccessible(page);
+});
+
+test('a category gets a colour and an icon that show in its row', async ({
+  page,
+  baseURL,
+}) => {
+  const made = await post(page, baseURL, '/v1/categories', {
+    name: 'Pets',
+    kind: 'expense',
+  });
+  expect(made.ok()).toBe(true);
+  await page.goto('/settings#categories');
+  const region = section(page, 'Categories');
+  await region.getByRole('button', { name: 'Rename Pets' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Rename Pets' });
+  // The radios are visually hidden; their labels are the targets.
+  await dialog.getByRole('radio', { name: 'Colour 4' }).check({ force: true });
+  await dialog.getByRole('radio', { name: 'Paw print' }).check({ force: true });
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(dialog).toBeHidden();
+
+  expect((await categories(page)).find((c) => c.name === 'Pets')).toMatchObject(
+    { colour: 'series-4', icon: 'paw-print' },
+  );
+  await expect(
+    region
+      .getByRole('listitem', { name: 'Pets' })
+      .locator('[data-slot="category-icon"]'),
+  ).toBeVisible();
   await expectAccessible(page);
 });
 
@@ -615,7 +657,7 @@ test('two-factor authentication turns on with a code and stays on while required
   baseURL,
 }) => {
   // Two browser contexts and several sign-ins: slow under a full run.
-  test.setTimeout(60_000);
+  test.setTimeout(150_000);
   await page.goto('/settings#security');
   const region = section(page, 'Security');
   await region

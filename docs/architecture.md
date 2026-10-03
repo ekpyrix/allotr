@@ -298,7 +298,9 @@ off budget (its `budgetGroup` is the group it started in), and
 `archived: true`, applied last and only at a zero balance
 (`account_not_empty`). `reconciliations: [{account, on, stated, computed,
 adjustment?}]` restore last-reconciled dates. A category that matches an
-existing one takes the bundle's `isPaycheck`.
+existing one takes the bundle's `isPaycheck`. A new category may carry
+`colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
+`packages/shared/src/category-style.ts`); a match keeps its own style.
 Unknown fields are refused. Other apps' exports are converted to this
 bundle rather than imported directly.
 

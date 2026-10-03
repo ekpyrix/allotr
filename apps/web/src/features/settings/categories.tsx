@@ -1,12 +1,19 @@
-import type { CategoryView } from '@allotr/shared';
+import type {
+  CategoryColour,
+  CategoryIcon as CategoryIconName,
+  CategoryView,
+  UpdateCategoryBody,
+} from '@allotr/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useId, useState, type ReactNode, type SubmitEvent } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
+import { CategoryIcon } from '@/components/ui/category-icon';
 import { Input } from '@/components/ui/input';
 import { Sheet } from '@/features/accounts/sheet';
 import { ApiError } from '@/lib/api';
+import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
 import { describeProblem } from '@/lib/problem';
 import {
   categoryQueryKeys,
@@ -23,6 +30,7 @@ import {
   mergeTargets,
   type CategoryKind,
 } from './categories-model.ts';
+import { CategoryStylePicker } from './category-style-picker.tsx';
 import { Section } from './section.tsx';
 import { useBusy } from './use-busy.ts';
 
@@ -89,6 +97,8 @@ function CreateCategoryForm({
   const [parentId, setParentId] = useState(initialParent ?? '');
   const [kind, setKind] = useState<CategoryKind>('expense');
   const [isPaycheck, setIsPaycheck] = useState(false);
+  const [colour, setColour] = useState<CategoryColour | null>(null);
+  const [icon, setIcon] = useState<CategoryIconName | null>(null);
   const kindName = useId();
   const create = useCategoryChange(createCategory);
   useBusy(create.isPending, onBusyChange);
@@ -106,6 +116,8 @@ function CreateCategoryForm({
         name: name.trim(),
         ...(parent === undefined ? { kind } : { parentId: parent.id }),
         isPaycheck: effectiveKind === 'income' && isPaycheck,
+        ...(colour === null ? {} : { colour }),
+        ...(icon === null ? {} : { icon }),
       },
       {
         onSuccess: (created) => {
@@ -182,6 +194,12 @@ function CreateCategoryForm({
       {effectiveKind === 'income' ? (
         <PaycheckBox checked={isPaycheck} onChange={setIsPaycheck} />
       ) : null}
+      <CategoryStylePicker
+        colour={colour}
+        icon={icon}
+        onColourChange={setColour}
+        onIconChange={setIcon}
+      />
       <FormError message={problem?.message ?? null} />
       <Button type="submit" className="h-11" disabled={create.isPending}>
         {create.isPending
@@ -205,9 +223,10 @@ function EditCategoryForm({
 }) {
   const [name, setName] = useState(category.name);
   const [isPaycheck, setIsPaycheck] = useState(category.isPaycheck);
-  const update = useCategoryChange(
-    (body: { name?: string; isPaycheck?: boolean }) =>
-      updateCategory(category.id, body),
+  const [colour, setColour] = useState(category.colour);
+  const [icon, setIcon] = useState(category.icon);
+  const update = useCategoryChange((body: UpdateCategoryBody) =>
+    updateCategory(category.id, body),
   );
   useBusy(update.isPending, onBusyChange);
   const problem = update.isError ? describeProblem(update.error) : null;
@@ -217,6 +236,8 @@ function EditCategoryForm({
     const body = {
       ...(name.trim() === category.name ? {} : { name: name.trim() }),
       ...(isPaycheck === category.isPaycheck ? {} : { isPaycheck }),
+      ...(colour === category.colour ? {} : { colour }),
+      ...(icon === category.icon ? {} : { icon }),
     };
     if (Object.keys(body).length === 0) {
       onCancel();
@@ -254,6 +275,12 @@ function EditCategoryForm({
       {category.kind === 'income' ? (
         <PaycheckBox checked={isPaycheck} onChange={setIsPaycheck} />
       ) : null}
+      <CategoryStylePicker
+        colour={colour}
+        icon={icon}
+        onColourChange={setColour}
+        onIconChange={setIcon}
+      />
       <FormError message={problem?.message ?? null} />
       <div className="flex flex-wrap gap-3">
         <Button type="submit" className="h-11" disabled={update.isPending}>
@@ -432,10 +459,12 @@ function DeleteCategoryFlow({
 
 function CategoryItem({
   category,
+  style,
   onOpen,
   children,
 }: {
   category: CategoryView;
+  style: CategoryStyle | undefined;
   onOpen: (open: Open) => void;
   children?: ReactNode;
 }) {
@@ -443,7 +472,8 @@ function CategoryItem({
   return (
     <li aria-labelledby={nameId} data-category-id={category.id}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
-        <p className="min-w-0 wrap-anywhere">
+        <p className="flex min-w-0 items-center gap-2 wrap-anywhere">
+          {style === undefined ? null : <CategoryIcon style={style} />}
           <span id={nameId} className="font-medium">
             {category.name}
           </span>
@@ -505,6 +535,7 @@ export function CategoriesSection({
   const [busy, setBusy] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const tree = categoryTree(categories);
+  const styles = categoryStyles(categories);
   const close = () => {
     setOpen(null);
   };
@@ -560,6 +591,7 @@ export function CategoriesSection({
                 <CategoryItem
                   key={category.id}
                   category={category}
+                  style={styles.get(category.id)}
                   onOpen={opening}
                 >
                   {children.length === 0 ? null : (
@@ -568,6 +600,7 @@ export function CategoriesSection({
                         <CategoryItem
                           key={child.id}
                           category={child}
+                          style={styles.get(child.id)}
                           onOpen={opening}
                         />
                       ))}

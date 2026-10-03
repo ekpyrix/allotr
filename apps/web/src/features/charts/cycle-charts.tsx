@@ -4,6 +4,7 @@ import {
   type CycleDayView,
   type LocalDate,
 } from '@allotr/shared';
+import { colourVar } from '@/lib/category-style';
 import {
   Area,
   Bar,
@@ -294,9 +295,18 @@ export function CategoryChart({
       <Bar
         dataKey="value"
         fill={chartColors.series}
-        radius={[0, 8, 8, 0]}
+        radius={[0, 4, 4, 0]}
         maxBarSize={32}
         isAnimationActive={false}
+        shape={(props: BarShapeProps) => {
+          const colour = bars[props.index]?.colour ?? null;
+          return (
+            <Rectangle
+              {...props}
+              fill={colour === null ? chartColors.series : colourVar(colour)}
+            />
+          );
+        }}
       />
       <Tooltip
         trigger={trigger}
