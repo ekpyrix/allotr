@@ -528,6 +528,98 @@ describe('bill properties', () => {
   });
 });
 
+describe('paying a reserved bill', () => {
+  const slots = Array.from({ length: 25 }, (_, i) =>
+    addDays(localDate('2026-03-01'), i),
+  );
+  const entryMeta = (id: string, occurredOn: LocalDate) => ({
+    id: transactionId(id),
+    occurredOn,
+    createdAt: '2026-03-01T00:00:00.000Z',
+  });
+
+  it('leaves todayAllowance and leftToday unchanged, and so does its undo', () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...slots),
+        fc.integer({ min: 1, max: 5e6 }),
+        fc.integer({ min: 1, max: 5e6 }),
+        (today, billMinor, spentMinor) => {
+          const rent: Bill = {
+            id: billId('rent'),
+            amount: money(billMinor, 'USD'),
+            dueDay: 5,
+            payments: [],
+          };
+          const viewOf = (ledger: Transaction[], bill: Bill): LedgerView => ({
+            chart,
+            ledger,
+            paycheckCategories: new Set([salary]),
+            settings: {
+              defaultCurrency: usd,
+              startedOn: localDate('2026-02-18'),
+              paydayRule: 'fixed',
+              paydayDay: 1,
+              paydayOverride: null,
+            },
+            bills: [bill],
+            rates: [],
+          });
+          const base = [
+            opening(chart, entryMeta('open', localDate('2026-02-20')), {
+              accountId: card,
+              amount: money(1e8, 'USD'),
+            }),
+            income(chart, entryMeta('pay', localDate('2026-03-01')), {
+              accountId: card,
+              amount: money(1e8, 'USD'),
+              categoryId: salary,
+            }),
+            expense(chart, entryMeta('lunch', today), {
+              accountId: card,
+              amount: money(spentMinor, 'USD'),
+              categoryId: food,
+            }),
+          ];
+          const payment = expense(chart, entryMeta('rent', today), {
+            accountId: card,
+            amount: money(billMinor, 'USD'),
+            categoryId: food,
+          });
+          const paid: Bill = {
+            ...rent,
+            payments: [
+              {
+                dueOn: localDate('2026-03-05'),
+                paidOn: today,
+                transactionId: payment.id,
+              },
+            ],
+          };
+          const before = dailyFiguresOn(viewOf(base, rent), today);
+          const ledger = [...base, payment];
+          const after = dailyFiguresOn(viewOf(ledger, paid), today);
+          // The reserve left the budget when the cycle opened, so paying
+          // moves neither today's allowance nor what is left today.
+          expect(after.todayAllowance).toEqual(before.todayAllowance);
+          expect(after.leftToday).toEqual(before.leftToday);
+          expect(after.spentToday).toEqual(before.spentToday);
+          // An undo of the payment is left out too (the mark stays here,
+          // so the reserve is the only thing the undo cannot touch).
+          const undo = reverse(
+            chart,
+            ledger,
+            payment.id,
+            entryMeta('undo', today),
+          );
+          const undone = dailyFiguresOn(viewOf([...ledger, undo], paid), today);
+          expect(undone.spentToday).toEqual(before.spentToday);
+        },
+      ),
+    );
+  });
+});
+
 describe('chart series properties', () => {
   it('splits available into on-budget money less reserved bills', () => {
     fc.assert(

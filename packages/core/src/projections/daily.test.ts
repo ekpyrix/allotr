@@ -291,6 +291,32 @@ describe('cycle spending', () => {
     expect(figures.paceSpent).toEqual(usd(2500));
   });
 
+  it('leaves a linked bill payment out of today, so it moves nothing', () => {
+    const base = [paycheck('2026-03-01', 310000), spend('2026-03-06', 1200)];
+    const rentPaid = spend('2026-03-06', 20000);
+    const paid: Bill = {
+      ...rent,
+      payments: [
+        {
+          dueOn: day('2026-03-05'),
+          paidOn: day('2026-03-06'),
+          transactionId: rentPaid.id,
+        },
+      ],
+    };
+    const before = dailyFiguresOn(
+      view(base, { bills: [rent] }),
+      day('2026-03-06'),
+    );
+    const after = dailyFiguresOn(
+      view([...base, rentPaid], { bills: [paid] }),
+      day('2026-03-06'),
+    );
+    expect(after.spentToday).toEqual(usd(1200));
+    expect(after.todayAllowance).toEqual(before.todayAllowance);
+    expect(after.leftToday).toEqual(before.leftToday);
+  });
+
   it('counts an unlinked bill payment toward pace', () => {
     const rentPaid = spend('2026-03-05', 20000);
     const paid: Bill = {
