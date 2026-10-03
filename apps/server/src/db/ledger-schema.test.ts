@@ -9,8 +9,8 @@ import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql,
-// 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql and
-// 0010_category_style.sql against real SQLite.
+// 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
+// 0010_category_style.sql and 0012_ious.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -51,6 +51,7 @@ function migrationsUpTo(last: string): string {
     '0007_pools.sql',
     '0008_budgets.sql',
     '0009_budget_cover.sql',
+    '0010_category_style.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -447,6 +448,7 @@ describe('migration 0005_reconciliations', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0012_ious',
     ]);
 
     insertReconciliation('r1');
@@ -537,6 +539,7 @@ describe('migration 0006_bill_prices', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0012_ious',
     ]);
 
     expect(
@@ -622,6 +625,7 @@ describe('migration 0007_pools', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0012_ious',
     ]);
 
     expect(pools()).toEqual([
@@ -773,6 +777,7 @@ describe('migration 0008_budgets', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0012_ious',
     ]);
 
     expect(
@@ -932,6 +937,7 @@ describe('migration 0009_budget_cover', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0009_budget_cover',
       '0010_category_style',
+      '0012_ious',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -992,7 +998,10 @@ describe('migration 0010_category_style', () => {
       )
       .run(at, at);
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0010_category_style']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0010_category_style',
+      '0012_ious',
+    ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
     expect(style('Groceries')).toEqual({
@@ -1022,5 +1031,161 @@ describe('migration 0010_category_style', () => {
     expect(() => set('colour', '#ff0000')).toThrow(/CHECK/);
     expect(() => set('icon', 'Not An Icon')).toThrow(/CHECK/);
     expect(() => set('colour', 'series-3')).not.toThrow();
+  });
+});
+
+describe('migration 0012_ious', () => {
+  function insertIou(
+    id: string,
+    fields: { due?: string | null; minor?: number; person?: string } = {},
+  ) {
+    return sqlite
+      .prepare(
+        `INSERT INTO ious
+           (id, user_id, direction, person, amount_minor, currency,
+            origin_transaction_id, due_on, created_at, updated_at)
+         VALUES (?, 'u1', 'owed-to-me', ?, ?, 'USD', 't1', ?, ?, ?)`,
+      )
+      .run(
+        id,
+        fields.person ?? 'Sam Example',
+        fields.minor ?? 3000,
+        fields.due === undefined ? null : fields.due,
+        at,
+        at,
+      );
+  }
+  const insertSettlement = (id: string, kind = 'repayment') =>
+    sqlite
+      .prepare(
+        `INSERT INTO iou_settlements
+           (id, user_id, iou_id, transaction_id, kind, amount_minor, currency, created_at)
+         VALUES (?, 'u1', 'i1', 't2', ?, 1000, 'USD', ?)`,
+      )
+      .run(id, kind, at);
+
+  it('keeps the data of a database at 0010 when accounts is rebuilt', () => {
+    migrateFrom(migrationsUpTo('0010'));
+    insertUser('u1');
+    insertAccount('card', 'u1', 'USD');
+    insertAccount('expenses', 'u1', 'USD', {
+      kind: 'expense',
+      systemRole: 'expenses',
+      group: null,
+    });
+    insertTransaction('t1', 'u1');
+    insertPosting('p1', 't1', 'card', -500, 'USD', 'u1', 0);
+    insertPosting('p2', 't1', 'expenses', 500, 'USD', 'u1', 1);
+    sqlite
+      .prepare(
+        `INSERT INTO bills (id, user_id, name, amount_minor, currency, account_id, due_day, created_at, updated_at)
+         VALUES ('b1', 'u1', 'Rent', 100000, 'USD', 'card', 1, ?, ?)`,
+      )
+      .run(at, at);
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0012_ious']);
+
+    expect(count('SELECT count(*) FROM accounts')).toBe(2);
+    expect(count('SELECT count(*) FROM postings')).toBe(2);
+    expect(count('SELECT count(*) FROM bills')).toBe(1);
+    expect(sqlite.pragma('foreign_key_check')).toEqual([]);
+    expect(sqlite.pragma('integrity_check', { simple: true })).toBe('ok');
+    // The rebuilt table still keeps postings in their account's currency.
+    expect(() => {
+      insertPosting('p3', 't1', 'card', 1, 'EUR', 'u1', 2);
+    }).toThrow(/FOREIGN KEY/);
+    // And still refuses to change an account's currency.
+    expect(() =>
+      sqlite.prepare("UPDATE accounts SET currency = 'EUR'").run(),
+    ).toThrow(/fixed/);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertUser('u2');
+      insertAccount('card', 'u1', 'USD');
+      insertAccount('receivables', 'u1', 'USD', {
+        kind: 'receivable',
+        systemRole: 'receivables',
+        group: null,
+      });
+      insertTransaction('t1', 'u1');
+      insertTransaction('t2', 'u1');
+    });
+
+    it('allows one Receivables and one Payables account per currency', () => {
+      expect(() => {
+        insertAccount('receivables2', 'u1', 'USD', {
+          kind: 'receivable',
+          systemRole: 'receivables',
+          group: null,
+        });
+      }).toThrow(/UNIQUE/);
+      insertAccount('payables', 'u1', 'USD', {
+        kind: 'payable',
+        systemRole: 'payables',
+        group: null,
+      });
+      expect(() => {
+        insertAccount('bad', 'u1', 'EUR', {
+          kind: 'equity',
+          systemRole: 'payables',
+          group: null,
+        });
+      }).toThrow(/CHECK/);
+    });
+
+    it('stores an IOU and what settled it, and refuses nonsense', () => {
+      insertIou('i1', { due: '2026-02-01' });
+      insertSettlement('s1');
+      insertSettlement('s2', 'write-off');
+      expect(count('SELECT count(*) FROM iou_settlements')).toBe(2);
+      expect(() => insertIou('i2', { minor: 0 })).toThrow(/CHECK/);
+      expect(() => insertIou('i3', { person: '  ' })).toThrow(/CHECK/);
+      expect(() => insertIou('i4', { due: '2026-02-30' })).toThrow(/CHECK/);
+      expect(() => insertSettlement('s3', 'gift')).toThrow(/CHECK/);
+    });
+
+    it('only lets the name and due date change, and never deletes', () => {
+      insertIou('i1');
+      sqlite
+        .prepare(
+          "UPDATE ious SET person = 'Alex Example', due_on = '2026-05-01'",
+        )
+        .run();
+      expect(() =>
+        sqlite.prepare('UPDATE ious SET amount_minor = 1').run(),
+      ).toThrow(/keeps its direction/);
+      expect(() => sqlite.prepare('DELETE FROM ious').run()).toThrow(
+        /never deleted/,
+      );
+      insertSettlement('s1');
+      expect(() =>
+        sqlite.prepare('UPDATE iou_settlements SET amount_minor = 1').run(),
+      ).toThrow(/append-only/);
+      expect(() => sqlite.prepare('DELETE FROM iou_settlements').run()).toThrow(
+        /append-only/,
+      );
+    });
+
+    it("keeps an IOU in its owner's entries and goes with the user", () => {
+      expect(() =>
+        sqlite
+          .prepare(
+            `INSERT INTO ious
+               (id, user_id, direction, person, amount_minor, currency,
+                origin_transaction_id, created_at, updated_at)
+             VALUES ('x', 'u2', 'owed-by-me', 'Sam Example', 100, 'USD', 't1', ?, ?)`,
+          )
+          .run(at, at),
+      ).toThrow(/FOREIGN KEY/);
+      insertIou('i1');
+      insertSettlement('s1');
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM ious')).toBe(0);
+      expect(count('SELECT count(*) FROM iou_settlements')).toBe(0);
+    });
   });
 });

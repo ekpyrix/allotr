@@ -313,6 +313,8 @@ export const en = {
         income: 'Income ({currency})',
         opening: 'Opening balances ({currency})',
         conversion: 'Currency exchange ({currency})',
+        receivables: 'Owed to you ({currency})',
+        payables: 'You owe ({currency})',
       },
       rate: 'Exchange rate',
       rateValue: '1 {from} = {rate} {to}',

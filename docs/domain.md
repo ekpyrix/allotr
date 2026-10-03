@@ -22,6 +22,7 @@ when they disagree, fix one of them in the same PR. All amounts are made up.
 | **Reconcile** | Compare an account with the bank's balance and post any difference. |
 | **Posting** | One leg of a double-entry transaction. |
 | **Proposal** | A transaction waiting for confirmation (from AI, import or a scoped token). |
+| **IOU** | Money a person owes the user, or the user owes them, recorded by an entry and settled by repayments or a write-off. |
 
 ## Invariants
 
@@ -72,7 +73,10 @@ transfer $100.00 from USD Card to EUR Wallet, received €91.50
 
 Balancing accounts follow standard double-entry practice
 (`Income:Salary`, `Expenses:Food`, `Equity:Opening`, `Equity:Conversion`).
-User-facing accounts are assets; `receivable` and `payable` kinds hold IOUs.
+User-facing accounts are assets; `receivable` and `payable` kinds hold
+debts the user has recorded as accounts. What people owe the user, and what
+the user owes them, sit in the `Receivables` and `Payables` system accounts
+(see IOUs).
 
 | Action | Effect on daily usable |
 |---|---|
@@ -81,7 +85,11 @@ User-facing accounts are assets; `receivable` and `payable` kinds hold IOUs.
 | Transfer on-budget → off-budget (saving) | Lowers it |
 | Transfer off-budget → on-budget (savings withdrawal) | Raises it; flagged |
 | Income into an on-budget account | Per the extra-income policy |
-| IOU: paid $60, $30 owed to you | Lowers it by $30 (your share); $30 sits in an off-budget receivable |
+| Split bill: paid $90, your share $30, $60 owed to you | Spending is $30; the whole $90 leaves the counted accounts, so the day's start drops by $60 and $30 is spent. The $60 sits in Receivables |
+| Lend $50 | Lowers the day's start by $50 (like saving it); not spending |
+| Someone repays you $50 | Raises it by $50; not income |
+| Borrow $50 | None: the cash is reserved until it is paid |
+| Pay back $50 you owe | None: the reserve is released as the cash leaves |
 
 ## Pools
 
@@ -158,6 +166,58 @@ aside with $100 spent, $50 spent outside any budget. Available is $4,730,
 Travel still holds $200, free money is $4,530, and with 22 days left the
 daily number is $205.90.
 
+## IOUs
+
+Money owed to or by a person (ADR 0024, FR-L6). People are free-text names,
+with autocomplete from earlier ones, not contacts.
+
+- **Ledger.** Lending posts to the `Receivables` system account (one per
+  currency), borrowing to `Payables`, one posting per person. A split bill is
+  one entry: the paying account pays the whole bill, the user's share is an
+  expense in its category, and each other person's share is a receivable
+  posting naming them. A repayment posts against the same accounts and names
+  the IOUs it settles, and by how much, so postings still balance per
+  currency. Entries stay `transfer` (lend, borrow, repay) and `expense`
+  (split) in the ledger; the `ious` and `iou_settlements` tables say who owes
+  what.
+- **Owed to the user** lowers free money from the day it is lent (the cash is
+  gone, as with a transfer to savings) but is never spending: it is not in
+  `spent_today`, not in `cycle_spent` or pace, not in the weekly review and not
+  in category reports. Only the user's own share of a split bill is spending.
+- **Cover.** What was lent is covered like a shortfall (free money, then the
+  Buffer, then budgets, see Cover and refill), as spending counted by no
+  budget. A repayment is a refill against the loan: it restores what the loan
+  took from budgets in reverse order, never more than was taken or repaid,
+  and the rest is free money again. A refund of the expense share never
+  refills a loan's cover, and a repayment never refills the share's.
+- **Owed by the user** is reserved like a bill from the day it is recorded
+  until it is paid: `available` is also reduced by the Payables balance, so
+  borrowing leaves free money where it was, and paying it back releases the
+  reserve as the cash leaves, with no effect on spending.
+- **Settling.** A repayment names every IOU it settles with an amount of at
+  most what is left, all one way and in the paying account's currency. An
+  IOU is settled when nothing is left. A repayment that names a person but no
+  IOU settles that person's oldest open IOU first (by the day it was
+  recorded), the surplus going to the next one; more than they owe in total is
+  refused. Undoing a repayment owes the amount again; an entry that lent or
+  borrowed cannot be undone while a live payment settles it, and cannot be
+  edited (undo it and record a new one). Restoring an undone lend or borrow
+  brings its people back as new IOUs; restoring an undone repayment or
+  write-off settles the same IOUs again, and is refused if one has since been
+  undone or paid.
+- **Due date and write-off.** An IOU may have a due date, and is overdue the
+  day after it. Allotr *offers* to write off a debt to the user from `due date +
+  iouWriteOffAfterDays` (default 90; the day it was recorded when there is no
+  due date), the day `writeOffOfferedOn` reports, and reminds then. The user
+  may write one off at any time. The remainder becomes an expense in a chosen category through
+  Receivables. No cash moves, so it is not spending against the day and not
+  covered, but it is an expense for category reports, and it lowers net
+  worth. Reminders come with the scheduler (ADR 0024).
+- **Net worth** counts receivables and payables by their sign.
+- **Consistency.** For every currency the Receivables balance equals what the
+  IOUs owed to the user have outstanding, and Payables equals what the user
+  owes. All figures are computed from the ledger and these rows on read.
+
 ## Cover and refill
 
 When spending passes what its budget has left, the shortfall is **covered**
@@ -188,9 +248,9 @@ the cover order each time it is read; it is never stored, and no money moves.
   any shortfall left goes down the cover order, so an override can never
   create money.
 - **Refill.** Money coming back against an entry (a refund, an IOU
-  repayment) restores what that entry's cover took from budgets, in reverse
-  order, never more than was taken; the rest goes to free money. An undone
-  entry is simply gone: neither it nor its cover counts.
+  repayment, see IOUs) restores what that entry's cover took from budgets, in
+  reverse order, never more than was taken; the rest goes to free money. An
+  undone entry is simply gone: neither it nor its cover counts.
 - **Preview.** Before saving, the entry sheet asks what an entry would take
   (`POST /v1/budgets/cover-preview`). Cover that reaches a set-aside budget or
   the Buffer, or is uncovered, is shown in a warning colour and needs a second
@@ -239,7 +299,7 @@ All of these are computed from the ledger and settings when read.
 
 ```
 days_left        = max(1, cycle_end − today)          # today counts, payday doesn't
-available(d)     = on_budget_balance(end of d) − unpaid_reserved_bills(d)
+available(d)     = on_budget_balance(end of d) − unpaid_reserved_bills(d) − owed_by_me(d)
 start_of_day     = available(today) + spent_today
 today_allowance  = start_of_day / days_left
 left_today       = today_allowance − spent_today
@@ -247,6 +307,8 @@ live_daily       = available(now) / days_left
 ```
 
 - `on_budget_balance` is the balance of the counted accounts (see Pools).
+  `owed_by_me` is what the user owes people (see IOUs), reserved like a bill.
+- `spent_today` of a split bill leaves out what people owe back.
 - The daily-number mode decides what is divided. With budgets, the default
   *free money* mode replaces `available` by `free = available − held`, and
   spending paid out of a set-aside budget's hold is neither part of the start
@@ -415,7 +477,8 @@ Logical model; the SQL schema lives in `migrations/`.
 
 - System accounts balance the other side of an entry: one per user, role
   and currency (`Expenses`, `Income`, `Equity:Opening`,
-  `Equity:Conversion`). They have no budget group and are not shown as
+  `Equity:Conversion`, and `Receivables` and `Payables`, created the first
+  time an IOU needs them). They have no budget group and are not shown as
   accounts. The balancing posting carries the category. A split (FR-L5)
   has one balancing posting per line, each with its category, in the
   currency of the category side; the lines add up to that side exactly,
@@ -438,12 +501,17 @@ api_tokens(id, user_id, name, scopes[], hash, last_used_at)
 identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
-         conversion], budget_group[on|off], currency, counterparty_id, archived)
+         conversion|receivables|payables], budget_group[on|off], currency,
+         counterparty_id, archived)
 budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
         mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
 budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)
 cover_overrides(id, user_id, transaction_id, position, source, amount_minor,
                 currency)               -- a setting on the entry, not the ledger
+ious(id, user_id, direction[owed-to-me|owed-by-me], person, amount_minor,
+     currency, origin_transaction_id, due_on)   -- name and due date editable
+iou_settlements(id, user_id, iou_id, transaction_id, kind[repayment|write-off],
+                amount_minor, currency)         -- append-only
 pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
       default_for[on|off], position, archived)
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)

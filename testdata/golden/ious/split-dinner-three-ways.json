@@ -1,0 +1,98 @@
+{
+  "description": "A $90 dinner paid in full and split three ways: $30 is the user's own Food share, Sam Example and Alex Example owe $30 each. Only the $30 is spending; all $90 left the card, and the $60 owed is covered from free money.",
+  "today": "2026-03-10",
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "dinner",
+      "kind": "split",
+      "on": "2026-03-05",
+      "account": "card-USD",
+      "category": "food",
+      "ownMinor": 3000,
+      "owed": [
+        {
+          "person": "Sam Example",
+          "amountMinor": 3000
+        },
+        {
+          "person": "Alex Example",
+          "amountMinor": 3000,
+          "due": "2026-03-20"
+        }
+      ]
+    }
+  ],
+  "budgets": [
+    {
+      "id": "food",
+      "target": {
+        "kind": "category",
+        "category": "food"
+      },
+      "mode": "daily",
+      "leftover": "free",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 10000]]
+    },
+    {
+      "id": "buffer",
+      "target": {
+        "kind": "buffer"
+      },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "onBudget": 141000,
+    "available": 141000,
+    "reserved": 0,
+    "free": 121000,
+    "cycleSpent": 3000,
+    "spentToday": 0,
+    "netWorth": 147000,
+    "owedToMe": 6000,
+    "owedByMe": 0,
+    "fromFree": 6000,
+    "fromBuffer": 0,
+    "unbudgeted": 0,
+    "budgets": {
+      "food": {
+        "spent": 3000,
+        "left": 7000
+      },
+      "buffer": {
+        "left": 20000
+      }
+    },
+    "ious": {
+      "dinner:0": {
+        "outstanding": 3000,
+        "overdue": false
+      },
+      "dinner:1": {
+        "outstanding": 3000,
+        "overdue": false
+      }
+    },
+    "categoryTotals": {
+      "food": 3000
+    }
+  }
+}

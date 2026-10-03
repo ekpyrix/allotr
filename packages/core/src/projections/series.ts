@@ -14,6 +14,7 @@ import {
   add,
   lessReserved,
   onBudgetSums,
+  owedSums,
   paceExclusions,
   perDay,
   spentSums,
@@ -119,6 +120,7 @@ export function cycleDays(
       cycles,
       date,
       onBudgetSums(view, date, balances),
+      owedSums(view, date, balances),
     );
     // The start of the day counts everything dated that day but spending,
     // as today's allowance does.

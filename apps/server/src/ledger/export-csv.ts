@@ -25,6 +25,8 @@ export const systemAccountNames: Record<SystemRole, string> = {
   income: 'Income',
   opening: 'Equity:Opening',
   conversion: 'Equity:Conversion',
+  receivables: 'Receivables',
+  payables: 'Payables',
 };
 
 // A spreadsheet runs a cell that starts with one of these as a formula.

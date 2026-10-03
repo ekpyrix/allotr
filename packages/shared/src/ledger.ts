@@ -230,7 +230,14 @@ export const postingSchema = z.object({
   accountId: idSchema,
   /** Set for balancing accounts: expenses, income, opening, conversion. */
   systemRole: z
-    .enum(['expenses', 'income', 'opening', 'conversion'])
+    .enum([
+      'expenses',
+      'income',
+      'opening',
+      'conversion',
+      'receivables',
+      'payables',
+    ])
     .nullable(),
   amount: moneySchema,
   categoryId: idSchema.nullable(),
@@ -432,6 +439,11 @@ export const ledgerSettingsSchema = z.object({
   payYourselfFirst: payYourselfFirstSchema.nullable(),
   /** Months of average expenses the emergency fund aims at. */
   emergencyMonths: z.int().min(1).max(24),
+  /**
+   * Days after an IOU's due date (or the day it was recorded, without one)
+   * from which money owed to you may be written off.
+   */
+  iouWriteOffAfterDays: z.int().min(1).max(3650),
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -450,6 +462,7 @@ export const updateLedgerSettingsBodySchema = z
     /** null clears it. */
     payYourselfFirst: payYourselfFirstSchema.nullable().optional(),
     emergencyMonths: z.int().min(1).max(24).optional(),
+    iouWriteOffAfterDays: z.int().min(1).max(3650).optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

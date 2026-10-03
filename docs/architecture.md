@@ -147,6 +147,15 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   tells the entry sheet what an expense would take before it is saved, and
   `PUT`/`DELETE /v1/transactions/{id}/cover` set or clear a per-entry
   override, a setting that changes no ledger row.
+- IOUs (ADR 0024) are served under `/v1/ious`: `GET` lists them with
+  totals, `POST` lends, borrows or splits a bill (one entry, one IOU per
+  person), `POST /v1/ious/repayments` records a payment that names the IOUs it
+  settles, `POST /v1/ious/{id}/write-off` writes off what is left (any time the
+  user asks; `iouWriteOffAfterDays` sets when it is offered), `PATCH /v1/ious/{id}` corrects a name
+  or due date, `GET /v1/ious/people` suggests earlier names and
+  `POST /v1/ious/cover-preview` tells the entry sheet what lending would take.
+  Undo goes through `POST /v1/transactions/{id}/reverse`. Figures are
+  computed on read; the money is in the ledger.
 - The payday plan and insights are read-only projections: `GET /v1/payday-plan`
   (the sheet) and `POST /v1/payday-plan/confirm` (budget amounts plus one
   savings transfer, idempotent per cycle), `GET /v1/insights/emergency-fund`,
@@ -300,7 +309,13 @@ off budget (its `budgetGroup` is the group it started in), and
 adjustment?}]` restore last-reconciled dates. A category that matches an
 existing one takes the bundle's `isPaycheck`. A new category may carry
 `colour` (`series-1` to `series-8`) and `icon` (a name from the fixed set in
-`packages/shared/src/category-style.ts`); a match keeps its own style.
+`packages/shared/src/category-style.ts`); a match keeps its own style. IOUs travel as their own entry
+kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
+dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`
+(`account`, `settles: [{iou, amount}]`) and `iou_write_off` (`iou`,
+`category`), where `iou` is the `ref` of a person line of an earlier entry.
+Settings may carry `iouWriteOffAfterDays`. A bundle without them is still
+valid.
 Unknown fields are refused. Other apps' exports are converted to this
 bundle rather than imported directly.
 

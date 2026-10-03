@@ -16,6 +16,7 @@ import { registerLedgerAccountRoutes } from './routes/accounts.ts';
 import { registerAppearanceRoutes } from './routes/appearance.ts';
 import { registerBillRoutes } from './routes/bills.ts';
 import { registerBudgetRoutes } from './routes/budgets.ts';
+import { registerIouRoutes } from './routes/ious.ts';
 import { registerCategoryRoutes } from './routes/categories.ts';
 import { registerCycleRoutes } from './routes/cycles.ts';
 import { registerOnboardingRoutes } from './routes/onboarding.ts';
@@ -104,6 +105,7 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
   registerLedgerAccountRoutes(app, deps);
   registerPoolRoutes(app, deps);
   registerBudgetRoutes(app, deps);
+  registerIouRoutes(app, deps);
   registerPlanRoutes(app, deps);
   registerCategoryRoutes(app, deps);
   registerTagRoutes(app, deps);

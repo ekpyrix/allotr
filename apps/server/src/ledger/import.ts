@@ -19,6 +19,7 @@ import {
 import { insertAccount } from './accounts.ts';
 import { insertBill, insertBillPayment } from './bills.ts';
 import { insertCategory } from './categories.ts';
+import { createIouIn, recordRepaymentIn, writeOffIouIn } from './ious.ts';
 import {
   categoryKey,
   nameKey,
@@ -103,7 +104,10 @@ function earliestDay(bundle: Bundle): LocalDate | undefined {
   return bundle.transactions.map((t) => t.occurredOn).sort()[0];
 }
 
-type SpendOrTransfer = Exclude<BundleTransaction, { kind: 'write_off' }>;
+type SpendOrTransfer = Exclude<
+  BundleTransaction,
+  { kind: 'write_off' | 'iou' | 'iou_payment' | 'iou_write_off' }
+>;
 
 function toBody(
   entry: SpendOrTransfer,
@@ -392,14 +396,89 @@ export async function importBundle(
     const account = (name: string) => lookup(accountIds, nameKey(name));
     const category = (path: string) => lookup(categoryIds, categoryKey(path));
     const refs = new Map<string, string>();
+    // IOU refs to the IOUs they stand for, as the entries are recorded.
+    const iouIds = new Map<string, string>();
+    let ious = 0;
     for (const [index, entry] of bundle.transactions.entries()) {
       const tags = [
         ...new Set(
           (entry.tags ?? []).map((name) => lookup(tagIds, nameKey(name))),
         ),
       ];
-      const id = await at(`/transactions/${String(index)}`, () =>
-        entry.kind === 'write_off'
+      const id = await at(`/transactions/${String(index)}`, async () => {
+        if (entry.kind === 'iou') {
+          const created = await createIouIn(
+            trx,
+            userId,
+            {
+              direction: entry.direction,
+              accountId: account(entry.account),
+              people: entry.people.map((p) => ({
+                person: p.person,
+                amount: p.amount,
+                ...(p.dueOn === undefined ? {} : { dueOn: p.dueOn }),
+              })),
+              ...(entry.ownShare === undefined
+                ? {}
+                : {
+                    ownShare: {
+                      amount: entry.ownShare.amount,
+                      categoryId: category(entry.ownShare.category),
+                    },
+                  }),
+              occurredOn: entry.occurredOn,
+              ...(entry.note === undefined ? {} : { note: entry.note }),
+              ...(tags.length === 0 ? {} : { tagIds: tags }),
+            },
+            null,
+            'import',
+            now,
+          );
+          entry.people.forEach((p, i) => {
+            const made = created.ious[i];
+            if (p.ref !== undefined && made !== undefined) {
+              iouIds.set(p.ref, made);
+            }
+          });
+          ious += entry.people.length;
+          return created.id;
+        }
+        if (entry.kind === 'iou_payment') {
+          return (
+            await recordRepaymentIn(
+              trx,
+              userId,
+              {
+                accountId: account(entry.account),
+                direction: 'owed-to-me' as const,
+                settles: entry.settles.map((line) => ({
+                  iouId: lookup(iouIds, line.iou),
+                  amount: line.amount,
+                })),
+                occurredOn: entry.occurredOn,
+                ...(entry.note === undefined ? {} : { note: entry.note }),
+                ...(tags.length === 0 ? {} : { tagIds: tags }),
+              },
+              'import',
+              now,
+            )
+          ).id;
+        }
+        if (entry.kind === 'iou_write_off') {
+          return writeOffIouIn(
+            trx,
+            userId,
+            lookup(iouIds, entry.iou),
+            {
+              categoryId: category(entry.category),
+              occurredOn: entry.occurredOn,
+              ...(entry.note === undefined ? {} : { note: entry.note }),
+            },
+            'import',
+            now,
+          );
+        }
+        return entry.kind === 'write_off'
           ? recordWriteOff(
               trx,
               userId,
@@ -414,8 +493,8 @@ export async function importBundle(
               toBody(entry, account, category, tags),
               'import',
               now,
-            ),
-      );
+            );
+      });
       if (entry.ref !== undefined) refs.set(entry.ref, id);
     }
 
@@ -512,6 +591,7 @@ export async function importBundle(
       bills: bundle.bills.length,
       billPayments,
       reconciliations: bundle.reconciliations.length,
+      ious,
     };
   });
 }

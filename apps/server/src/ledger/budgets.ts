@@ -16,7 +16,9 @@ import {
   type CategoryNode,
   type CoverRequest,
   type CoverSource,
+  type LedgerView,
   type TagId,
+  type Transaction,
   type TransactionId,
 } from '@allotr/core';
 import {
@@ -556,6 +558,7 @@ export function listCovers(db: Kysely<DB>, userId: string, now: Date) {
         entryId: cover.entryId,
         date: cover.date,
         budgetId: cover.budgetId,
+        loan: cover.loan,
         amount: cover.amount,
         own: cover.own,
         covers: cover.covers.map((c) => ({
@@ -711,13 +714,18 @@ export async function previewCover(
     amount: input.amount,
     categoryId: categoryId(input.categoryId),
   });
+  return coverPreviewView({ ...view, chart }, today, entry, tagIds);
+}
+
+/** What recording `entry` would take, with the names the entry sheet shows. */
+export function coverPreviewView(
+  view: LedgerView,
+  today: LocalDate,
+  entry: Transaction,
+  tagIds: readonly string[],
+): CoverPreviewView {
   const names = namesOf(view.budgets);
-  const preview = coverPreview(
-    { ...view, chart },
-    today,
-    entry,
-    tagIds.map(tagId),
-  );
+  const preview = coverPreview(view, today, entry, tagIds.map(tagId));
   return {
     ...preview,
     budgetId: preview.budgetId,

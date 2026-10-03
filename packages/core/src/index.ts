@@ -20,11 +20,24 @@ export {
 } from './ledger/types.ts';
 export {
   accountIn,
+  baseSystemRoles,
   chartOf,
+  iouSystemRoles,
   systemAccount,
   systemAccountsNeeded,
   type Chart,
 } from './ledger/chart.ts';
+export {
+  borrow,
+  lend,
+  repayment,
+  writeOffReceivable,
+  type BorrowInput,
+  type IouDirection,
+  type IouWriteOffInput,
+  type LendInput,
+  type RepaymentInput,
+} from './ledger/ious.ts';
 export {
   budgetSwitch,
   commit,
@@ -164,6 +177,24 @@ export {
   type PoolInputs,
   type PoolSetup,
 } from './projections/pools.ts';
+export {
+  defaultWriteOffAfterDays,
+  iouBalanceGaps,
+  iouId,
+  iouReturns,
+  iouStatus,
+  iouStatuses,
+  iouTotals,
+  iousOf,
+  loanKey,
+  type Iou,
+  type IouId,
+  type IouSettlement,
+  type IouSettlementKind,
+  type IouSetup,
+  type IouStatus,
+  type IouTotals,
+} from './projections/ious.ts';
 export { convertOn, totalOn } from './projections/rates.ts';
 export {
   billAmount,

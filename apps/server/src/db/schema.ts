@@ -144,6 +144,30 @@ export interface Invites {
   used_by: string | null;
 }
 
+export interface Ious {
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  direction: string;
+  due_on: string | null;
+  id: string;
+  origin_transaction_id: string;
+  person: string;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface IouSettlements {
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  id: string;
+  iou_id: string;
+  kind: string;
+  transaction_id: string;
+  user_id: string;
+}
+
 export interface PoolMoves {
   account_id: string;
   created_at: string;
@@ -306,6 +330,8 @@ export interface DB {
   fx_rates: FxRates;
   instance_settings: InstanceSettings;
   invites: Invites;
+  iou_settlements: IouSettlements;
+  ious: Ious;
   pool_moves: PoolMoves;
   pools: Pools;
   postings: Postings;

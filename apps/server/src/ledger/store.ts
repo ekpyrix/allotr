@@ -43,6 +43,8 @@ const systemAccountKinds = {
   income: 'income',
   opening: 'equity',
   conversion: 'equity',
+  receivables: 'receivable',
+  payables: 'payable',
 } as const satisfies Record<SystemRole, string>;
 
 const systemAccountNames = {
@@ -50,6 +52,8 @@ const systemAccountNames = {
   income: 'Income',
   opening: 'Equity:Opening',
   conversion: 'Equity:Conversion',
+  receivables: 'Receivables',
+  payables: 'Payables',
 } as const satisfies Record<SystemRole, string>;
 
 type AccountRow = {
@@ -167,9 +171,10 @@ function plannedSystemAccounts(
   chart: Chart,
   currencies: Iterable<CurrencyCode>,
   now: Date,
+  roles?: readonly SystemRole[],
 ) {
   const at = now.toISOString();
-  const rows = systemAccountsNeeded(chart, currencies).map(
+  const rows = systemAccountsNeeded(chart, currencies, roles).map(
     ({ role, currency }) => ({
       id: randomUUID(),
       user_id: userId,
@@ -201,8 +206,9 @@ export function withSystemAccounts(
   chart: Chart,
   currencies: Iterable<CurrencyCode>,
   now: Date,
+  roles?: readonly SystemRole[],
 ): Chart {
-  return plannedSystemAccounts('', chart, currencies, now).chart;
+  return plannedSystemAccounts('', chart, currencies, now, roles).chart;
 }
 
 /**
@@ -215,8 +221,9 @@ export async function ensureSystemAccounts(
   chart: Chart,
   currencies: Iterable<CurrencyCode>,
   now: Date,
+  roles?: readonly SystemRole[],
 ): Promise<Chart> {
-  const planned = plannedSystemAccounts(userId, chart, currencies, now);
+  const planned = plannedSystemAccounts(userId, chart, currencies, now, roles);
   if (planned.rows.length === 0) return chart;
   await db.insertInto('accounts').values(planned.rows).execute();
   return planned.chart;

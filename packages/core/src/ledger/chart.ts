@@ -36,12 +36,26 @@ export function systemAccount(
   );
 }
 
+/** The roles every entry may need; IOU roles are created when asked for. */
+export const baseSystemRoles: readonly SystemRole[] = [
+  'expenses',
+  'income',
+  'opening',
+  'conversion',
+];
+
+/** The roles an IOU entry needs (ADR 0024). */
+export const iouSystemRoles: readonly SystemRole[] = [
+  'receivables',
+  'payables',
+];
+
 /** The system accounts a transaction in these currencies may need. */
 export function systemAccountsNeeded(
   chart: Chart,
   currencies: Iterable<CurrencyCode>,
+  roles: readonly SystemRole[] = baseSystemRoles,
 ): { role: SystemRole; currency: CurrencyCode }[] {
-  const roles: SystemRole[] = ['expenses', 'income', 'opening', 'conversion'];
   return [...new Set(currencies)].flatMap((currency) =>
     roles
       .filter(

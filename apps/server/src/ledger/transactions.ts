@@ -21,6 +21,11 @@ import type {
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { atPath, RequestProblem } from '../http/domain-errors.ts';
+import {
+  refuseIouEdit,
+  refuseUndoWithPayments,
+  restoreIouRows,
+} from './iou-links.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
@@ -473,7 +478,7 @@ const categoryKinds = {
 
 // The category an entry is filed under. A merged category files under the
 // one it was merged into, so a queued offline entry still lands.
-async function resolveCategory(
+export async function resolveCategory(
   db: Db,
   userId: string,
   id: string,
@@ -499,7 +504,7 @@ async function resolveCategory(
   return row.id;
 }
 
-async function checkTags(
+export async function checkTags(
   db: Db,
   userId: string,
   tagIds: readonly string[],
@@ -639,7 +644,7 @@ export async function recordTransaction(
   return transaction.id;
 }
 
-async function byIdempotencyKey(
+export async function byIdempotencyKey(
   db: Db,
   userId: string,
   key: string,
@@ -700,6 +705,7 @@ export async function insertReversal(
   note: string | undefined,
   now: Date,
 ): Promise<string> {
+  await refuseUndoWithPayments(db, userId, id);
   const chart = await loadChart(db, userId);
   const ledger = await loadLedger(db, userId, chart);
   const reversal = reverse(chart, ledger, transactionId(id), {
@@ -771,6 +777,7 @@ export async function restoreTransaction(
       key,
       'api',
     );
+    await restoreIouRows(trx, userId, id, copy.id, now);
     return copy.id;
   });
   return getTransaction(db, userId, copyId);
@@ -787,6 +794,7 @@ export async function editTransaction(
   const [reversalId, replacementId] = await db
     .transaction()
     .execute(async (trx) => {
+      await refuseIouEdit(trx, userId, id, 'edit');
       const built = await build(trx, userId, body, now);
       const ledger = await loadLedger(trx, userId, built.chart);
       const [reversal, replacement] = edit(

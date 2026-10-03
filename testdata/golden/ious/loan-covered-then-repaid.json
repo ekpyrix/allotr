@@ -1,0 +1,89 @@
+{
+  "description": "A $1,400 loan passes the $1,300 of free money, so the Buffer covers $100. A $400 repayment refills the Buffer first ($100) and the rest is free money again. The loan is never spending.",
+  "today": "2026-03-10",
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "loan",
+      "kind": "lend",
+      "on": "2026-03-06",
+      "account": "card-USD",
+      "owed": [
+        {
+          "person": "Sam Example",
+          "amountMinor": 140000
+        }
+      ]
+    },
+    {
+      "id": "back",
+      "kind": "repayment",
+      "on": "2026-03-08",
+      "account": "card-USD",
+      "settles": [
+        {
+          "iou": "loan:0",
+          "amountMinor": 40000
+        }
+      ]
+    }
+  ],
+  "budgets": [
+    {
+      "id": "buffer",
+      "target": {
+        "kind": "buffer"
+      },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "onBudget": 50000,
+    "available": 50000,
+    "reserved": 0,
+    "free": 30000,
+    "cycleSpent": 0,
+    "spentToday": 0,
+    "netWorth": 150000,
+    "owedToMe": 100000,
+    "owedByMe": 0,
+    "fromFree": 130000,
+    "fromBuffer": 10000,
+    "unbudgeted": 0,
+    "budgets": {
+      "buffer": {
+        "left": 20000
+      }
+    },
+    "ious": {
+      "loan:0": {
+        "outstanding": 100000,
+        "overdue": false
+      }
+    },
+    "refills": {
+      "back:0": {
+        "restored": {
+          "buffer": 10000
+        },
+        "toFree": 30000
+      }
+    }
+  }
+}

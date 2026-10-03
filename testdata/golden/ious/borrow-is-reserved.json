@@ -1,0 +1,55 @@
+{
+  "description": "Pat Example lends the user $60. The cash arrives, but it is reserved like a bill from that day: free money does not move and nothing is spent. Net worth is unchanged.",
+  "today": "2026-03-10",
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "loan",
+      "kind": "borrow",
+      "on": "2026-03-06",
+      "account": "card-USD",
+      "owed": [
+        { "person": "Pat Example", "amountMinor": 6000, "due": "2026-03-09" }
+      ]
+    }
+  ],
+  "budgets": [
+    {
+      "id": "buffer",
+      "target": { "kind": "buffer" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "onBudget": 156000,
+    "available": 150000,
+    "reserved": 6000,
+    "free": 130000,
+    "cycleSpent": 0,
+    "spentToday": 0,
+    "netWorth": 150000,
+    "owedToMe": 0,
+    "owedByMe": 6000,
+    "fromFree": 0,
+    "fromBuffer": 0,
+    "unbudgeted": 0,
+    "budgets": { "buffer": { "left": 20000 } },
+    "ious": { "loan:0": { "outstanding": 6000, "overdue": true } }
+  }
+}

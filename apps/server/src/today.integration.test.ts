@@ -539,6 +539,7 @@ describe('ledger settings', () => {
       dailyMode: 'free',
       payYourselfFirst: null,
       emergencyMonths: 3,
+      iouWriteOffAfterDays: 90,
     });
   });
 

@@ -63,14 +63,38 @@ export function onBudgetSums(
   return sums;
 }
 
-/** On-budget sums less the bills reserved and unpaid at the end of `date`. */
+/**
+ * What the user owes, per currency: the Payables accounts' balances turned
+ * positive. Reserved like a bill from the day it is recorded until it is
+ * paid (ADR 0024), and read from the ledger so it can never drift from it.
+ */
+export function owedSums(
+  view: LedgerView,
+  date: LocalDate,
+  balances: ReadonlyMap<AccountId, Money> = accountBalances(view.ledger, date),
+): Sums {
+  const sums: Sums = new Map();
+  for (const [id, balance] of balances) {
+    if (view.chart.get(id)?.systemRole === 'payables') {
+      add(sums, balance.currency, -BigInt(balance.amountMinor));
+    }
+  }
+  return sums;
+}
+
+/**
+ * On-budget sums less the bills reserved and unpaid, and less what the user
+ * owes, at the end of `date`.
+ */
 export function lessReserved(
   view: LedgerView,
   cycles: readonly Cycle[],
   date: LocalDate,
   onBudget: Sums,
+  owed: Sums = owedSums(view, date),
 ): Sums {
   const sums: Sums = new Map(onBudget);
+  for (const [currency, amount] of owed) add(sums, currency, -amount);
   const reserved = policiesOf(view).bills.reserved(
     view.bills,
     billWindow(cycleOn(cycles, date)),
@@ -86,7 +110,14 @@ export function availableSums(
   cycles: readonly Cycle[],
   date: LocalDate,
 ): Sums {
-  return lessReserved(view, cycles, date, onBudgetSums(view, date));
+  const balances = accountBalances(view.ledger, date);
+  return lessReserved(
+    view,
+    cycles,
+    date,
+    onBudgetSums(view, date, balances),
+    owedSums(view, date, balances),
+  );
 }
 
 /**
@@ -139,6 +170,11 @@ export function spentSums(
       .filter((a) => a.systemRole === 'expenses')
       .map((a) => a.id),
   );
+  const receivables = new Set(
+    [...view.chart.values()]
+      .filter((a) => a.systemRole === 'receivables')
+      .map((a) => a.id),
+  );
   const spent: Sums = new Map();
   const kept: Sums = new Map();
   for (const t of view.ledger) {
@@ -146,12 +182,23 @@ export function spentSums(
     if (!t.postings.some((p) => expenseAccounts.has(p.accountId))) continue;
     const groups = groupsByDate(t.occurredOn);
     const keep = !excluded.has(t.id);
+    // The cash side of a split bill includes what people owe back; that
+    // part is a loan, not spending (ADR 0024). Money paid from savings is
+    // not counted at all, so the loan part is only taken off what was.
+    const cash: Sums = new Map();
+    const lent: Sums = new Map();
     for (const p of t.postings) {
+      const amount = BigInt(p.amount.amountMinor);
       if (groups.get(p.accountId) === 'on') {
-        const amount = -BigInt(p.amount.amountMinor);
-        add(spent, p.amount.currency, amount);
-        if (keep) add(kept, p.amount.currency, amount);
+        add(cash, p.amount.currency, -amount);
+      } else if (receivables.has(p.accountId)) {
+        add(lent, p.amount.currency, amount);
       }
+    }
+    for (const [currency, paid] of cash) {
+      const amount = paid === 0n ? 0n : paid - (lent.get(currency) ?? 0n);
+      add(spent, currency, amount);
+      if (keep) add(kept, currency, amount);
     }
   }
   return { spent, kept };
@@ -260,9 +307,12 @@ function availableBeforeEntries(
   cycles: readonly Cycle[],
   today: LocalDate,
 ): Map<TransactionId, bigint> {
+  // A loan needs cover too, so entries that lend are looked at as well.
   const expenses = new Set(
     [...view.chart.values()]
-      .filter((a) => a.systemRole === 'expenses')
+      .filter(
+        (a) => a.systemRole === 'expenses' || a.systemRole === 'receivables',
+      )
       .map((a) => a.id),
   );
   const running = new Map<AccountId, bigint>();
@@ -289,7 +339,14 @@ function availableBeforeEntries(
           add(counted, currency, balance);
         }
       }
-      const sums = lessReserved(view, cycles, t.occurredOn, counted);
+      const owed: Sums = new Map();
+      for (const [id, balance] of running) {
+        const account = view.chart.get(id);
+        if (account?.systemRole === 'payables') {
+          add(owed, account.currency, -balance);
+        }
+      }
+      const sums = lessReserved(view, cycles, t.occurredOn, counted, owed);
       before.set(t.id, BigInt(toFigure(view, sums, today).amount.amountMinor));
     }
     for (const p of t.postings) {
@@ -360,7 +417,11 @@ function dailyBase(
   const lines = fold?.lines ?? [];
   const held = lines.reduce((sum, line) => sum + heldBy(line), 0n);
   const free = money(figures.available.amountMinor - Number(held), currency);
-  const todays = (fold?.spend ?? []).filter((line) => line.date === today);
+  // A loan lowers the day's start like a transfer to savings (ADR 0024); it
+  // is not spending, so it never counts against the day.
+  const todays = (fold?.spend ?? []).filter(
+    (line) => line.date === today && !line.loan,
+  );
   const fromHolds = todays.reduce((sum, line) => sum + line.fromHold, 0n);
   const common = { mode, fold, held: money(Number(held), currency), free };
   if (mode === 'pool-minus-bills') {

@@ -289,10 +289,17 @@ export type NetWorth = Readonly<{
   missingRates: readonly CurrencyCode[];
 }>;
 
+// Every user account, and what people owe the user and the user owes them
+// (ADR 0024): receivables add, payables subtract, by their sign.
+function countsInNetWorth(view: LedgerView, id: AccountId): boolean {
+  const role = view.chart.get(id)?.systemRole;
+  return role === null || role === 'receivables' || role === 'payables';
+}
+
 /** Net worth at the end of `date`: all accounts, in the default currency. */
 export function netWorthOn(view: LedgerView, date: LocalDate): NetWorth {
   const balances = accountBalances(view.ledger, date);
-  const user = (id: AccountId) => view.chart.get(id)?.systemRole === null;
+  const user = (id: AccountId) => countsInNetWorth(view, id);
   const figure = totalOn(
     view.rates,
     [...balances].flatMap(([id, balance]) => (user(id) ? [balance] : [])),
@@ -314,7 +321,7 @@ export function netWorthSeries(
   for (const t of view.ledger) {
     if (t.occurredOn > to) continue;
     for (const p of t.postings) {
-      if (view.chart.get(p.accountId)?.systemRole !== null) continue;
+      if (!countsInNetWorth(view, p.accountId)) continue;
       const amount = BigInt(p.amount.amountMinor);
       if (t.occurredOn < from) {
         sums.set(
@@ -378,8 +385,12 @@ export function weeklyReview(view: LedgerView, today: LocalDate): WeeklyReview {
   // Like the pace figures: linked bill payments and reconcile adjustments
   // are not spending of the week.
   const lines = countedSpendLines(view, today, paceExclusions(view), missing);
-  const week = lines.filter((l) => l.date >= from);
-  const before = lines.filter((l) => l.date >= previousFrom && l.date < from);
+  // Money lent is not spending of the week.
+  const spending = lines.filter((l) => !l.loan);
+  const week = spending.filter((l) => l.date >= from);
+  const before = spending.filter(
+    (l) => l.date >= previousFrom && l.date < from,
+  );
   const sum = (rows: readonly { amount: bigint }[]) =>
     rows.reduce((total, row) => total + row.amount, 0n);
   const byCategory = new Map<CategoryId | null, bigint>();

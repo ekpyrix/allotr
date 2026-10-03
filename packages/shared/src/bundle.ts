@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema } from './dates.ts';
+import { iouDirectionSchema } from './ious.ts';
 import {
   budgetGroupSchema,
   categoryKindSchema,
@@ -35,6 +36,7 @@ const settingsSchema = z.strictObject({
   paydayRule: paydayRuleSchema.optional(),
   paydayDay: z.int().min(1).max(31).optional(),
   paydayOverride: localDateSchema.nullable().optional(),
+  iouWriteOffAfterDays: z.int().min(1).max(3650).optional(),
 });
 
 const categorySchema = z.strictObject({
@@ -113,7 +115,49 @@ const oneCategorySideError = {
   path: ['category'],
 };
 
+const positiveMoney = moneySchema.refine((m) => m.amountMinor > 0, {
+  error: 'The amount must be greater than zero',
+});
+
+/** One person's line of an IOU entry. */
+const iouPersonSchema = z.strictObject({
+  /** Lets a later payment or write-off name this IOU; unique in the bundle. */
+  ref: refSchema.optional(),
+  person: nameSchema,
+  amount: positiveMoney,
+  dueOn: localDateSchema.optional(),
+});
+
 const transactionSchema = z.discriminatedUnion('kind', [
+  // Lends, borrows or splits a bill (ADR 0024): the account pays or receives
+  // the people's amounts, plus `ownShare` when it is a split bill.
+  z.strictObject({
+    kind: z.literal('iou'),
+    direction: iouDirectionSchema,
+    account: nameSchema,
+    people: z.array(iouPersonSchema).min(1).max(20),
+    ownShare: z
+      .strictObject({ amount: positiveMoney, category: categoryPathSchema })
+      .optional(),
+    ...entryFields,
+  }),
+  // A payment that settles IOUs, each by the amount named.
+  z.strictObject({
+    kind: z.literal('iou_payment'),
+    account: nameSchema,
+    settles: z
+      .array(z.strictObject({ iou: refSchema, amount: positiveMoney }))
+      .min(1)
+      .max(20),
+    ...entryFields,
+  }),
+  // The remainder of an IOU owed to the user, written off as an expense.
+  z.strictObject({
+    kind: z.literal('iou_write_off'),
+    iou: refSchema,
+    category: categoryPathSchema,
+    ...entryFields,
+  }),
   z.strictObject({
     kind: z.literal('write_off'),
     account: nameSchema,
@@ -217,5 +261,7 @@ export const importResultSchema = z.object({
   bills: z.int(),
   billPayments: z.int(),
   reconciliations: z.int(),
+  /** IOUs created from `iou` entries, one per person. */
+  ious: z.int().default(0),
 });
 export type ImportResult = z.infer<typeof importResultSchema>;

@@ -11,6 +11,7 @@ import type {
   Transaction,
   TransactionId,
 } from '../ledger/types.ts';
+import type { IouSetup } from './ious.ts';
 import type { Policies } from './policies.ts';
 import type { BudgetPeriodRule, BudgetSetup, DailyMode } from './budgets.ts';
 import type { PayYourselfFirst } from './plan.ts';
@@ -101,6 +102,8 @@ export type LedgerView = Readonly<{
   pools?: PoolSetup;
   /** The user's budgets (ADR 0021). None when omitted. */
   budgets?: BudgetSetup;
+  /** Who owes whom (ADR 0024). None when omitted. */
+  ious?: IouSetup;
   /**
    * Entries posted by reconciling to make up a difference; pace leaves
    * them out. None when omitted.

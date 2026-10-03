@@ -1,0 +1,97 @@
+{
+  "description": "Sam Example repays $25 of a $40 loan and the last $15 is written off under Other months later. The write-off moves no cash, so balances and spending that day are unchanged, but it is an expense for reports and lowers net worth.",
+  "today": "2026-06-25",
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "loan",
+      "kind": "lend",
+      "on": "2026-03-02",
+      "account": "card-USD",
+      "owed": [
+        {
+          "person": "Sam Example",
+          "amountMinor": 4000,
+          "due": "2026-03-20"
+        }
+      ]
+    },
+    {
+      "id": "part",
+      "kind": "repayment",
+      "on": "2026-04-02",
+      "account": "card-USD",
+      "settles": [
+        {
+          "iou": "loan:0",
+          "amountMinor": 2500
+        }
+      ]
+    },
+    {
+      "id": "gone",
+      "kind": "write_off",
+      "on": "2026-06-20",
+      "category": "other",
+      "settles": [
+        {
+          "iou": "loan:0",
+          "amountMinor": 1500
+        }
+      ]
+    }
+  ],
+  "budgets": [
+    {
+      "id": "buffer",
+      "target": {
+        "kind": "buffer"
+      },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "onBudget": 148500,
+    "available": 148500,
+    "reserved": 0,
+    "free": 128500,
+    "cycleSpent": 0,
+    "spentToday": 0,
+    "netWorth": 148500,
+    "owedToMe": 0,
+    "owedByMe": 0,
+    "fromFree": 4000,
+    "fromBuffer": 0,
+    "unbudgeted": 0,
+    "budgets": {
+      "buffer": {
+        "left": 20000
+      }
+    },
+    "ious": {
+      "loan:0": {
+        "outstanding": 0,
+        "overdue": false
+      }
+    },
+    "categoryTotals": {
+      "other": 1500
+    }
+  }
+}
