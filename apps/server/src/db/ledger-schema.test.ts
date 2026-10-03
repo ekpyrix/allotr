@@ -10,7 +10,8 @@ import { openSqlite } from './sqlite.ts';
 // Integration tests for migrations/0003_ledger.sql,
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql,
 // 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
-// 0010_category_style.sql and 0012_ious.sql against real SQLite.
+// 0010_category_style.sql, 0011_income_categories.sql and 0012_ious.sql
+// against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -52,6 +53,7 @@ function migrationsUpTo(last: string): string {
     '0008_budgets.sql',
     '0009_budget_cover.sql',
     '0010_category_style.sql',
+    '0011_income_categories.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -155,6 +157,8 @@ const starterTree = [
   'Other',
   'Paycheck',
   'Other income',
+  'Interest',
+  'Tax refund',
 ];
 
 describe('migration 0003_ledger', () => {
@@ -448,6 +452,7 @@ describe('migration 0005_reconciliations', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
 
@@ -539,6 +544,7 @@ describe('migration 0006_bill_prices', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
 
@@ -625,6 +631,7 @@ describe('migration 0007_pools', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
 
@@ -777,6 +784,7 @@ describe('migration 0008_budgets', () => {
       '0008_budgets',
       '0009_budget_cover',
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
 
@@ -937,6 +945,7 @@ describe('migration 0009_budget_cover', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0009_budget_cover',
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
@@ -1000,6 +1009,7 @@ describe('migration 0010_category_style', () => {
 
     expect(migrateFrom(repoMigrations)).toEqual([
       '0010_category_style',
+      '0011_income_categories',
       '0012_ious',
     ]);
 
@@ -1064,8 +1074,8 @@ describe('migration 0012_ious', () => {
       )
       .run(id, kind, at);
 
-  it('keeps the data of a database at 0010 when accounts is rebuilt', () => {
-    migrateFrom(migrationsUpTo('0010'));
+  it('keeps the data of a database at 0011 when accounts is rebuilt', () => {
+    migrateFrom(migrationsUpTo('0011'));
     insertUser('u1');
     insertAccount('card', 'u1', 'USD');
     insertAccount('expenses', 'u1', 'USD', {
@@ -1187,5 +1197,97 @@ describe('migration 0012_ious', () => {
       expect(count('SELECT count(*) FROM ious')).toBe(0);
       expect(count('SELECT count(*) FROM iou_settlements')).toBe(0);
     });
+  });
+});
+
+describe('migration 0011_income_categories', () => {
+  const incomeRow = (userId: string, name: string) =>
+    sqlite
+      .prepare(
+        `SELECT kind, is_paycheck, parent_id, merged_into_id FROM categories
+         WHERE user_id = ? AND name = ?`,
+      )
+      .all(userId, name);
+
+  const addCategory = (
+    id: string,
+    userId: string,
+    name: string,
+    kind: string,
+    mergedInto: string | null = null,
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO categories
+           (id, user_id, name, kind, merged_into_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(id, userId, name, kind, mergedInto, at, at);
+
+  it('adds Interest and Tax refund to users from before it', () => {
+    migrateFrom(migrationsUpTo('0010'));
+    insertUser('u1');
+    insertUser('u2');
+    // Already has an income category with that name, in other case.
+    sqlite
+      .prepare(
+        "UPDATE categories SET name = 'interest' WHERE user_id = 'u2' AND name = 'Other income'",
+      )
+      .run();
+    // A merged category does not count as having the name.
+    addCategory('into', 'u1', 'Windfall', 'income');
+    addCategory('gone', 'u1', 'Tax refund', 'income', 'into');
+
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0011_income_categories',
+      '0012_ious',
+    ]);
+
+    expect(incomeRow('u1', 'Interest')).toEqual([
+      { kind: 'income', is_paycheck: 0, parent_id: null, merged_into_id: null },
+    ]);
+    expect(incomeRow('u1', 'Tax refund')).toHaveLength(2);
+    expect(incomeRow('u2', 'Tax refund')).toHaveLength(1);
+    // u2 kept its own lower-case one and did not get a second.
+    expect(
+      count(
+        "SELECT count(*) FROM categories WHERE user_id = 'u2' AND lower(name) = 'interest'",
+      ),
+    ).toBe(1);
+  });
+
+  it('skips a name held by an expense category', () => {
+    migrateFrom(migrationsUpTo('0010'));
+    insertUser('u1');
+    addCategory('x', 'u1', 'Interest', 'expense');
+
+    migrateFrom(repoMigrations);
+
+    expect(incomeRow('u1', 'Interest')).toEqual([
+      {
+        kind: 'expense',
+        is_paycheck: 0,
+        parent_id: null,
+        merged_into_id: null,
+      },
+    ]);
+    expect(incomeRow('u1', 'Tax refund')).toHaveLength(1);
+  });
+
+  it('gives every new user the same set, with no paycheck among them', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    expect(categoryTree('u1')).toEqual(starterTree);
+    expect(
+      sqlite
+        .prepare(
+          "SELECT name FROM categories WHERE user_id = 'u1' AND is_paycheck = 1",
+        )
+        .pluck()
+        .all(),
+    ).toEqual(['Paycheck']);
+    expect(incomeRow('u1', 'Tax refund')).toEqual([
+      { kind: 'income', is_paycheck: 0, parent_id: null, merged_into_id: null },
+    ]);
   });
 });

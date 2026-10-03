@@ -293,11 +293,17 @@ describe('categories', () => {
       'Other',
       'Paycheck',
       'Other income',
+      'Interest',
+      'Tax refund',
     ]);
     const paycheck = (await categories(h.alice)).find(
       (c) => c.name === 'Paycheck',
     );
     expect(paycheck).toMatchObject({ kind: 'income', isPaycheck: true });
+    const interest = (await categories(h.alice)).find(
+      (c) => c.name === 'Interest',
+    );
+    expect(interest).toMatchObject({ kind: 'income', isPaycheck: false });
   });
 
   it('adds a subcategory of its parent’s kind, two levels deep', async () => {
