@@ -1,6 +1,6 @@
 # 0018. Visual language: tonal surfaces, large radii, mono accents
 
-- Status: Accepted
+- Status: Superseded by 0022
 - Date: 2026-09-30
 
 ## Context

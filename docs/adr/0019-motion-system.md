@@ -1,6 +1,7 @@
 # 0019. Motion system: spring tokens across CSS, View Transitions and Motion
 
 - Status: Accepted
+- Amended by: 0023 (tab switches)
 - Date: 2026-09-30
 
 ## Context
