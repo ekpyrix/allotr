@@ -1,7 +1,11 @@
 import {
+  budgetPeriodRuleSchema,
   currencyCode,
+  dailyModeSchema,
   localDateSchema,
   paydayRuleSchema,
+  type BudgetPeriodRule,
+  type DailyMode,
   type LedgerSettingsView,
   type LocalDate,
   type PaydayRule,
@@ -24,6 +28,8 @@ const paydayRuleKey = 'payday_rule';
 const paydayDayKey = 'payday_day';
 const paydayOverrideKey = 'payday_override';
 const countSavingsKey = 'count_savings_in_daily';
+const budgetPeriodKey = 'budget_period';
+const dailyModeKey = 'daily_mode';
 
 const paydayDaySchema = z.int().min(1).max(31);
 const paydayOverrideSchema = localDateSchema.nullable();
@@ -59,6 +65,8 @@ export async function readLedgerSettings(
         paydayDayKey,
         paydayOverrideKey,
         countSavingsKey,
+        budgetPeriodKey,
+        dailyModeKey,
       ])
       .execute(),
   ]);
@@ -74,6 +82,9 @@ export async function readLedgerSettings(
     paydayOverride: parsed(paydayOverrideSchema, stored.get(paydayOverrideKey)),
     countSavingsInDaily:
       parsed(z.boolean(), stored.get(countSavingsKey)) ?? false,
+    budgetPeriod:
+      parsed(budgetPeriodRuleSchema, stored.get(budgetPeriodKey)) ?? 'cycle',
+    dailyMode: parsed(dailyModeSchema, stored.get(dailyModeKey)) ?? 'free',
   };
 }
 
@@ -145,6 +156,8 @@ export type LedgerSettingsPatch = Readonly<{
   paydayDay?: number | undefined;
   paydayOverride?: LocalDate | null | undefined;
   countSavingsInDaily?: boolean | undefined;
+  budgetPeriod?: BudgetPeriodRule | undefined;
+  dailyMode?: DailyMode | undefined;
 }>;
 
 function canonicalLocale(locale: string): string {
@@ -216,6 +229,12 @@ export async function applyLedgerSettings(
             value: JSON.stringify(patch.countSavingsInDaily),
           },
         ]),
+    ...(patch.budgetPeriod === undefined
+      ? []
+      : [{ key: budgetPeriodKey, value: JSON.stringify(patch.budgetPeriod) }]),
+    ...(patch.dailyMode === undefined
+      ? []
+      : [{ key: dailyModeKey, value: JSON.stringify(patch.dailyMode) }]),
   ];
   if (Object.keys(user).length > 0) {
     await db

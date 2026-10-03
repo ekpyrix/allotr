@@ -12,6 +12,7 @@ import type {
   TransactionId,
 } from '../ledger/types.ts';
 import type { Policies } from './policies.ts';
+import type { BudgetPeriodRule, BudgetSetup, DailyMode } from './budgets.ts';
 import type { PoolSetup } from './pools.ts';
 
 // Inputs and results of the projections: cycles and the daily figures
@@ -73,6 +74,10 @@ export type LedgerSettings = Readonly<{
    * (ADR 0021). Off when omitted: savings are never included.
    */
   countSavingsInDaily?: boolean;
+  /** Budgets follow the cycle (default) or calendar months. */
+  budgetPeriod?: BudgetPeriodRule;
+  /** What the daily number divides; free money when omitted. */
+  dailyMode?: DailyMode;
 }>;
 
 /** Everything the projections read. */
@@ -89,6 +94,8 @@ export type LedgerView = Readonly<{
    * (Budget, Savings) follow each account's budget group and its switches.
    */
   pools?: PoolSetup;
+  /** The user's budgets (ADR 0021). None when omitted. */
+  budgets?: BudgetSetup;
   /**
    * Entries posted by reconciling to make up a difference; pace leaves
    * them out. None when omitted.
@@ -164,6 +171,18 @@ export type DailyFigures = Readonly<{
   billsDue: readonly BillDue[];
   /** Every due date the cycle reserves, paid or not, earliest first. */
   cycleBills: readonly CycleBill[];
+  /** Set-aside budgets' holds: money kept out of the daily number. Zero without budgets. */
+  held: Money;
+  /** `available` less `held`: what the daily number divides by default. */
+  free: Money;
+  /** What the daily number divides (docs/domain.md "Daily usable"). */
+  dailyMode: DailyMode;
+  /**
+   * The part of `spentToday` that counted against the daily number: not
+   * what was paid out of a set-aside budget's hold. Equals `spentToday`
+   * without budgets.
+   */
+  dailySpentToday: Money;
   /** Currencies without a rate to the default one, left out of the figures. */
   missingRates: readonly CurrencyCode[];
 }>;

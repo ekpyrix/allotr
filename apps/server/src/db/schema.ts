@@ -65,6 +65,31 @@ export interface Bills {
   user_id: string;
 }
 
+export interface BudgetAmounts {
+  amount_minor: number;
+  budget_id: string;
+  created_at: string;
+  currency: string;
+  effective_on: string;
+  id: string;
+  user_id: string;
+}
+
+export interface Budgets {
+  category_id: string | null;
+  created_at: string;
+  ended_on: string | null;
+  id: string;
+  kind: string;
+  leftover: string;
+  mode: string;
+  name: string;
+  started_on: string;
+  tag_id: string | null;
+  updated_at: string;
+  user_id: string;
+}
+
 export interface Categories {
   created_at: string;
   default_account_id: string | null;
@@ -259,6 +284,8 @@ export interface DB {
   auth_accounts: AuthAccounts;
   bill_payments: BillPayments;
   bills: Bills;
+  budget_amounts: BudgetAmounts;
+  budgets: Budgets;
   categories: Categories;
   fx_rates: FxRates;
   instance_settings: InstanceSettings;

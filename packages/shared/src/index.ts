@@ -55,5 +55,6 @@ export {
 } from './money/schemas.ts';
 export * from './ledger.ts';
 export * from './pools.ts';
+export * from './budgets.ts';
 export * from './bundle.ts';
 export * from './theme/index.ts';

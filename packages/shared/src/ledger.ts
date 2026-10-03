@@ -397,6 +397,13 @@ export const ledgerSettingsSchema = z.object({
    * is on (ADR 0021). Off by default: savings are never included.
    */
   countSavingsInDaily: z.boolean(),
+  /** Whether budgets follow the cycle (default) or calendar months. */
+  budgetPeriod: z.enum(['cycle', 'month']),
+  /**
+   * What the daily number divides: free money (default), counted pools
+   * less bills, or what the daily budgets have left.
+   */
+  dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']),
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -410,6 +417,8 @@ export const updateLedgerSettingsBodySchema = z
     /** null clears the override. */
     paydayOverride: localDateSchema.nullable().optional(),
     countSavingsInDaily: z.boolean().optional(),
+    budgetPeriod: z.enum(['cycle', 'month']).optional(),
+    dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']).optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

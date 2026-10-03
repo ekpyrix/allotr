@@ -9,7 +9,7 @@ import { openSqlite } from './sqlite.ts';
 
 // Integration tests for migrations/0003_ledger.sql,
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql and
-// 0007_pools.sql against real SQLite.
+// 0007_pools.sql and 0008_budgets.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -47,6 +47,7 @@ function migrationsUpTo(last: string): string {
     '0004_bill_payments.sql',
     '0005_reconciliations.sql',
     '0006_bill_prices.sql',
+    '0007_pools.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -440,6 +441,7 @@ describe('migration 0005_reconciliations', () => {
       '0005_reconciliations',
       '0006_bill_prices',
       '0007_pools',
+      '0008_budgets',
     ]);
 
     insertReconciliation('r1');
@@ -527,6 +529,7 @@ describe('migration 0006_bill_prices', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0006_bill_prices',
       '0007_pools',
+      '0008_budgets',
     ]);
 
     expect(
@@ -607,7 +610,7 @@ describe('migration 0007_pools', () => {
     insertUser('u2');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0007_pools']);
+    expect(migrateFrom(repoMigrations)).toEqual(['0007_pools', '0008_budgets']);
 
     expect(pools()).toEqual([
       {
@@ -713,6 +716,170 @@ describe('migration 0007_pools', () => {
       // Deleting the user still clears their rows.
       sqlite.exec("DELETE FROM users WHERE id = 'u1'");
       expect(count('SELECT count(*) FROM pool_moves')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0008_budgets', () => {
+  const insertBudget = (
+    id: string,
+    fields: {
+      name?: string;
+      kind?: string;
+      category?: string | null;
+      tag?: string | null;
+      mode?: string;
+      leftover?: string;
+      endedOn?: string | null;
+    } = {},
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO budgets
+           (id, user_id, name, kind, category_id, tag_id, mode, leftover,
+            started_on, ended_on, created_at, updated_at)
+         VALUES (?, 'u1', ?, ?, ?, ?, ?, ?, '2026-03-01', ?, ?, ?)`,
+      )
+      .run(
+        id,
+        fields.name ?? id,
+        fields.kind ?? 'category',
+        fields.category === undefined ? 'food' : fields.category,
+        fields.tag ?? null,
+        fields.mode ?? 'daily',
+        fields.leftover ?? 'free',
+        fields.endedOn ?? null,
+        at,
+        at,
+      );
+
+  it('gives users from before it an empty Buffer', () => {
+    migrateFrom(migrationsUpTo('0007'));
+    insertUser('u1');
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0008_budgets']);
+
+    expect(
+      sqlite
+        .prepare(
+          `SELECT b.name, b.kind, b.mode, b.leftover, a.amount_minor, a.currency
+           FROM budgets AS b JOIN budget_amounts AS a ON a.budget_id = b.id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        name: 'Buffer',
+        kind: 'buffer',
+        mode: 'set-aside',
+        leftover: 'carry',
+        amount_minor: 0,
+        currency: 'USD',
+      },
+    ]);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      sqlite
+        .prepare(
+          `INSERT INTO categories (id, user_id, name, kind, created_at, updated_at)
+           VALUES ('food', 'u1', 'Dining', 'expense', ?, ?),
+                  ('fun', 'u1', 'Fun stuff', 'expense', ?, ?)`,
+        )
+        .run(at, at, at, at);
+    });
+
+    it('seeds one Buffer for a new user', () => {
+      expect(count("SELECT count(*) FROM budgets WHERE kind = 'buffer'")).toBe(
+        1,
+      );
+      expect(() => {
+        insertBudget('b2', {
+          name: 'Second buffer',
+          kind: 'buffer',
+          category: null,
+          mode: 'set-aside',
+          leftover: 'carry',
+        });
+      }).toThrow(/UNIQUE/);
+    });
+
+    it('needs exactly the target its kind names', () => {
+      expect(() => {
+        insertBudget('b1', { category: null });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertBudget('b2', { kind: 'tag', category: null, tag: null });
+      }).toThrow(/CHECK/);
+      expect(() => {
+        insertBudget('b3', { kind: 'category', category: 'food', tag: 'x' });
+      }).toThrow(/CHECK/);
+    });
+
+    it('allows one budget in use per category, but a new one after it ends', () => {
+      insertBudget('b1', { name: 'Dining' });
+      expect(() => {
+        insertBudget('b2', { name: 'Dining again' });
+      }).toThrow(/UNIQUE/);
+      sqlite
+        .prepare("UPDATE budgets SET ended_on = '2026-03-31' WHERE id = 'b1'")
+        .run();
+      insertBudget('b2', { name: 'Dining again' });
+      expect(
+        count("SELECT count(*) FROM budgets WHERE category_id = 'food'"),
+      ).toBe(2);
+    });
+
+    it('keeps the target and start fixed after creation', () => {
+      insertBudget('b1');
+      expect(() => {
+        sqlite
+          .prepare("UPDATE budgets SET category_id = 'fun' WHERE id = 'b1'")
+          .run();
+      }).toThrow(/fixed/);
+      expect(() => {
+        sqlite
+          .prepare(
+            "UPDATE budgets SET started_on = '2026-01-01' WHERE id = 'b1'",
+          )
+          .run();
+      }).toThrow(/fixed/);
+    });
+
+    it('keeps the Buffer set aside and carried over', () => {
+      expect(() => {
+        sqlite
+          .prepare("UPDATE budgets SET mode = 'daily' WHERE kind = 'buffer'")
+          .run();
+      }).toThrow(/CHECK/);
+    });
+
+    it('refuses a negative amount and a second amount on a day', () => {
+      insertBudget('b1');
+      const insertAmount = (id: string, minor: number, on: string) =>
+        sqlite
+          .prepare(
+            `INSERT INTO budget_amounts
+               (id, user_id, budget_id, effective_on, amount_minor, currency, created_at)
+             VALUES (?, 'u1', 'b1', ?, ?, 'USD', ?)`,
+          )
+          .run(id, on, minor, at);
+      expect(() => {
+        insertAmount('a1', -1, '2026-03-01');
+      }).toThrow(/CHECK/);
+      insertAmount('a1', 90000, '2026-03-01');
+      expect(() => {
+        insertAmount('a2', 80000, '2026-03-01');
+      }).toThrow(/UNIQUE/);
+    });
+
+    it('goes with its user', () => {
+      insertBudget('b1');
+      sqlite.exec("DELETE FROM users WHERE id = 'u1'");
+      expect(count('SELECT count(*) FROM budgets')).toBe(0);
+      expect(count('SELECT count(*) FROM budget_amounts')).toBe(0);
     });
   });
 });

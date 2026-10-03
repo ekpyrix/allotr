@@ -113,6 +113,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-L9 | Reconcile any account against the bank's balance, with a one-tap adjustment for the difference. | M | M2 |
 | FR-L10 | Recurring transactions with remind (default), auto-post or off. | S | M4 |
 | FR-L11 | Pools: named groups of accounts, each with a switch for counting toward the daily number. Defaults are Budget (counts) and Savings (does not); an account is in one pool, effective from a date. A savings pool counts only when the user also turns on a setting, off by default. | M | v2 |
+| FR-L12 | Budgets: a planned amount per period (cycle by default, calendar month by setting) on a category, a parent category or a tag. Virtual: tied to no account, nothing moved. Each is daily or set aside, with its leftover returned to free money or carried over. An entry counts toward at most one budget (tag, then child category, then parent). A Buffer budget exists by default. | M | v2 |
 
 ### 6.2 Cycles and daily budget
 
@@ -121,13 +122,14 @@ Milestones refer to [§9](#9-release-plan).
 | FR-C1 | A paycheck opens a new cycle; the previous cycle is closed and snapshotted. | M | M1 |
 | FR-C2 | Next payday is predicted from a configured day of month and can be overridden at any time. | M | M1 |
 | FR-C3 | Fixed-period cycle mode (monthly, every two weeks, weekly) for irregular income. | S | M4 |
-| FR-C4 | Daily usable = (on-budget balance − unpaid reserved bills) ÷ days left, derived from the ledger by entry date. | M | M1 |
+| FR-C4 | Daily usable = (on-budget balance − unpaid reserved bills) ÷ days left, derived from the ledger by entry date. With budgets, the default divides free money instead (FR-C11). | M | M1 |
 | FR-C5 | Show "left today" (based on the allowance at the start of the day) and the live daily figure. | M | M1 |
 | FR-C6 | Back-dated entries, including into closed cycles, correct all affected figures automatically. | M | M1 |
 | FR-C7 | Payday allocation: bills, spending allowance, savings and goals must add up to the income before confirming. | M | M4 |
 | FR-C8 | Allocation strategies: fixed allowance (default), fixed savings amount, percentage. | M | M4 |
 | FR-C9 | Configurable policies for bills, leftover, overspending, savings withdrawals, extra income, second paychecks and reconciliation (see [domain.md](domain.md#policies)). | M | M4 |
 | FR-C10 | Savings goals as earmarks on the off-budget total, with progress. | S | M4 |
+| FR-C11 | The daily number has three modes: free money ÷ days left (default), counted accounts − bills ÷ days left, or daily budgets left ÷ days left. | M | v2 |
 
 ### 6.3 Input and chat
 

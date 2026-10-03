@@ -11,11 +11,13 @@ when they disagree, fix one of them in the same PR. All amounts are made up.
 | **Pool** | A named group of accounts with a switch for whether it counts toward the daily number. Every account is in one pool. The defaults are *Budget* (counts) and *Savings* (does not). |
 | **Counted account** | An account whose pool counts toward the daily number (the *on-budget* group in the API). Spendable money. |
 | **Savings** | Money in pools that do not count. Never in the daily number unless the user turns on `countSavingsInDaily` and the pool's own switch. |
-| **Envelope** | A purpose for on-budget money: available budget or reserved bills. |
-| **Ready to assign** | Income not yet allocated to an envelope. |
+| **Budget** | A planned amount per period on a category (a parent covers its children) or a tag. Virtual: tied to no account, nothing is moved. *Daily* budgets stay in the daily number; *set-aside* ones are held out of it. |
+| **Buffer** | A set-aside budget with no category that only holds money and carries over. Every user has one. |
+| **Free money** | Counted accounts less unpaid bills and less what set-aside budgets still hold. The daily number divides it by default. |
+| **Ready to assign** | Income not yet allocated to a bill, a budget or savings. |
 | **Cycle** | The period from one paycheck to the next (or a fixed period). |
 | **Allocation** | The split of a paycheck into bills, allowance, savings and goals. |
-| **Daily usable** | Available budget ÷ days left in the cycle. |
+| **Daily usable** | Free money ÷ days left in the cycle (the default mode). |
 | **Goal** | An earmark on the savings total, e.g. an emergency fund. |
 | **Reconcile** | Compare an account with the bank's balance and post any difference. |
 | **Posting** | One leg of a double-entry transaction. |
@@ -105,6 +107,54 @@ Users may add more, such as *Emergency*.
 - A pool holding accounts cannot be archived; the default pools cannot be
   archived at all.
 
+## Budgets
+
+A budget (ADR 0021) is a planned amount per period on an expense category,
+or on a tag. A budget on a parent category covers its children. Budgets are
+**virtual**: they are tied to no account, nothing is ever moved between
+accounts for them, and no posting carries a budget. Spent and left are
+derived from the entries every time they are read, so a back-dated entry
+corrects past and present figures through the same function.
+
+- **One budget per entry.** An entry counts toward at most one budget: a tag
+  budget wins over a category budget, and a child category over its parent.
+  If an entry has two tags that both have a budget, the budget planned first
+  wins. Each line of a split counts by its own category; a tag budget takes
+  the whole entry. A merged category counts as the one it was merged into.
+- **What counts.** Spending counted by a budget is the expense side of an
+  entry paid from a counted account, less its undo (an undone entry counts as
+  if it never happened). Spending paid from a savings account is a withdrawal,
+  not budget spending. Foreign amounts are converted to the default currency
+  at the rate of the day asked about, as for the daily number, and a currency
+  without a rate is left out and flagged. Entries that pace leaves out (linked
+  bill payments, reconcile adjustments) do not count: a bill was already
+  reserved, and an adjustment makes up for entries never recorded.
+- **Daily or set aside.** A daily budget stays in the daily number; its
+  figures only show how the month is going. A set-aside budget holds what it
+  has left out of free money, so planning one lowers the daily number by its
+  amount and spending inside it leaves the daily number alone. New budgets
+  are daily.
+- **Periods.** Each budget has an amount per period. A period is the cycle
+  (default) or a calendar month (a setting). `left = planned + carried in −
+  spent`. An amount changed during a period applies to all of it and to later
+  periods; periods that are over keep theirs. A budget counts from the period
+  that holds the day it was started, until the period that holds the day it
+  was ended.
+- **Leftover.** At the end of a period a budget's leftover either returns to
+  free money (default for daily budgets) or carries into the next period
+  (default for set-aside budgets). A carried leftover is never below zero: an
+  overspend is not a debt of the budget.
+- **Buffer.** Created for every user; set aside and carried over, and fixed
+  that way. It starts with an amount of zero, and it only holds money.
+- **Free money** = `available − Σ held`, where `held` is what each set-aside
+  budget has left, floored at zero, and `available` is counted accounts less
+  unpaid reserved bills.
+
+Example: counted $5,000, Food $900 daily with $120 spent, Travel $300 set
+aside with $100 spent, $50 spent outside any budget. Available is $4,730,
+Travel still holds $200, free money is $4,530, and with 22 days left the
+daily number is $205.90.
+
 ## Daily usable
 
 ```
@@ -117,6 +167,14 @@ live_daily       = available(now) / days_left
 ```
 
 - `on_budget_balance` is the balance of the counted accounts (see Pools).
+- The daily-number mode decides what is divided. With budgets, the default
+  *free money* mode replaces `available` by `free = available − held`, and
+  spending paid out of a set-aside budget's hold is neither part of the start
+  of the day nor of `spent_today`, since that money was never in the daily
+  number. *Counted − bills* keeps the formulas above and ignores budgets.
+  *Daily budgets left* divides what the daily budgets have left, and only
+  spending in those budgets counts against it. Without budgets the Buffer is
+  empty and the first two modes give the same figures as before.
 - "Today" is the user's local calendar day (home timezone by default).
 - `today_allowance` is derived by entry date, not stored. A back-dated entry
   logged this morning corrects today's figure.
@@ -212,6 +270,8 @@ Per-user settings. The default is listed first.
 
 | Policy | Default | Alternatives |
 |---|---|---|
+| Daily-number mode | Free money ÷ days left | Counted accounts − bills ÷ days left (ignores budgets) · daily budgets left ÷ days left |
+| Budget period | Follows the cycle | Calendar month |
 | Savings in the daily number | Off: savings pools never count | On: a savings pool whose own switch is on counts too |
 | Bills | Reserve at payday | No reservation · dedicated off-budget bills account |
 | Leftover at payday | Ask, default sweep to savings | Always carry · always sweep |
@@ -296,6 +356,9 @@ identities(id, user_id, platform, platform_user_id)
 accounts(id, user_id, name, kind[asset|liability|receivable|payable|
          expense|income|equity], system_role[expenses|income|opening|
          conversion], budget_group[on|off], currency, counterparty_id, archived)
+budgets(id, user_id, name, kind[category|tag|buffer], category_id, tag_id,
+        mode[daily|set-aside], leftover[free|carry], started_on, ended_on)
+budget_amounts(id, user_id, budget_id, effective_on, amount_minor, currency)
 pools(id, user_id, name, kind[spending|savings], counts_toward_daily,
       default_for[on|off], position, archived)
 pool_moves(id, user_id, account_id, pool_id, effective_on, created_at)

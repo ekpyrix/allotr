@@ -1,5 +1,4 @@
 import {
-  addDays,
   daysBetween,
   localDateIn,
   money,
@@ -10,15 +9,17 @@ import {
 import type { AccountId, TransactionId } from '../ledger/types.ts';
 import { accountBalances } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
-import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
+import { billWindow, cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
 import {
   billAmount,
   defaultPolicies,
   dueDates,
   type Policies,
 } from './policies.ts';
+import { foldBudgets, heldBy, leftOf, type BudgetFold } from './budgets.ts';
 import { groupsOn } from './pools.ts';
 import { totalOn } from './rates.ts';
+import type { DailyMode } from './budgets.ts';
 import type {
   BillDue,
   Cycle,
@@ -241,15 +242,6 @@ export function minus(a: Money, b: Money): Money {
   return money(a.amountMinor - b.amountMinor, a.currency);
 }
 
-/**
- * The day after the cycle's last day as seen on `date`: the payday, or,
- * from payday on until a paycheck arrives, the next day (the cycle runs
- * one day at a time, and is overdue the day after payday).
- */
-export function cycleEndOn(cycle: Cycle, date: LocalDate): LocalDate {
-  return date >= cycle.payday ? addDays(date, 1) : cycle.payday;
-}
-
 /** Today's figures for the user's local day at `now`. */
 export function dailyFigures(
   view: LedgerView,
@@ -257,6 +249,96 @@ export function dailyFigures(
   timeZone: string,
 ): DailyFigures {
   return dailyFiguresOn(view, localDateIn(now, timeZone));
+}
+
+/**
+ * The budget figures for the period holding `today`, leaving out the entries
+ * pace leaves out (linked bill payments, reconcile adjustments). Null when
+ * the view has no budgets.
+ */
+export function budgetFold(
+  view: LedgerView,
+  today: LocalDate,
+): BudgetFold | null {
+  return foldBudgets(view, today, paceExclusions(view));
+}
+
+type DailyBase = Readonly<{
+  mode: DailyMode;
+  /** Set-aside holds, and available less them. */
+  held: Money;
+  free: Money;
+  /** What the daily number divides after today's spending, and before. */
+  available: Money;
+  startOfDay: Money;
+  /** Today's spending that counts against the daily number. */
+  spentToday: Money;
+  fold: BudgetFold | null;
+}>;
+
+/**
+ * What the daily number divides, by the daily-number mode (docs/domain.md
+ * "Daily usable"). Without budgets every mode but the daily-budgets one
+ * gives the same figures as before budgets existed.
+ */
+function dailyBase(
+  view: LedgerView,
+  today: LocalDate,
+  figures: Readonly<{
+    available: Money;
+    startOfDay: Money;
+    spentToday: Money;
+    fold: BudgetFold | null;
+  }>,
+): DailyBase {
+  const { fold } = figures;
+  const currency = view.settings.defaultCurrency;
+  const mode = view.settings.dailyMode ?? 'free';
+  const lines = fold?.lines ?? [];
+  const held = lines.reduce((sum, line) => sum + heldBy(line), 0n);
+  const free = money(figures.available.amountMinor - Number(held), currency);
+  const todays = (fold?.spend ?? []).filter((line) => line.date === today);
+  const fromHolds = todays.reduce((sum, line) => sum + line.fromHold, 0n);
+  const common = { mode, fold, held: money(Number(held), currency), free };
+  if (mode === 'pool-minus-bills') {
+    return {
+      ...common,
+      available: figures.available,
+      startOfDay: figures.startOfDay,
+      spentToday: figures.spentToday,
+    };
+  }
+  if (mode === 'free') {
+    // Money paid out of a set-aside hold was never in free money, so it is
+    // neither spending against the daily number nor part of its start.
+    const dailySpent = BigInt(figures.spentToday.amountMinor) - fromHolds;
+    return {
+      ...common,
+      available: free,
+      startOfDay: money(
+        figures.startOfDay.amountMinor - Number(held) - Number(fromHolds),
+        currency,
+      ),
+      spentToday: money(Number(dailySpent), currency),
+    };
+  }
+  // Daily budgets only: what the daily budgets have left, spending outside
+  // them leaves the number alone.
+  const daily = new Set(
+    lines.filter((l) => l.budget.mode === 'daily').map((l) => l.budget.id),
+  );
+  const left = lines
+    .filter((l) => l.budget.mode === 'daily')
+    .reduce((sum, line) => sum + leftOf(line), 0n);
+  const spent = todays
+    .filter((line) => line.budgetId !== null && daily.has(line.budgetId))
+    .reduce((sum, line) => sum + line.amount, 0n);
+  return {
+    ...common,
+    available: money(Number(left), currency),
+    startOfDay: money(Number(left + spent), currency),
+    spentToday: money(Number(spent), currency),
+  };
 }
 
 export function dailyFiguresOn(
@@ -295,7 +377,13 @@ export function dailyFiguresOn(
   const spentToday = toFigure(view, spentNative, today);
   const cycleSpent = toFigure(view, cycleSpentNative, today);
   const paceSpent = toFigure(view, paceSpentNative, today);
-  const todayAllowance = perDay(startOfDay.amount, daysLeft);
+  const base = dailyBase(view, today, {
+    available: available.amount,
+    startOfDay: startOfDay.amount,
+    spentToday: spentToday.amount,
+    fold: budgetFold(view, today),
+  });
+  const todayAllowance = perDay(base.startOfDay, daysLeft);
 
   return {
     today,
@@ -308,17 +396,22 @@ export function dailyFiguresOn(
     // The difference rather than its own conversion, so the split always
     // adds up exactly in the default currency.
     reserved: minus(onBudget.amount, available.amount),
-    startOfDay: startOfDay.amount,
+    startOfDay: base.startOfDay,
     spentToday: spentToday.amount,
     todayAllowance,
-    leftToday: minus(todayAllowance, spentToday.amount),
-    liveDaily: perDay(available.amount, daysLeft),
+    leftToday: minus(todayAllowance, base.spentToday),
+    liveDaily: perDay(base.available, daysLeft),
     cycleSpent: cycleSpent.amount,
     paceSpent: paceSpent.amount,
     billsDue: billsDueOn(view, cycle, today),
     cycleBills: billsInCycle(view, cycle),
+    held: base.held,
+    free: base.free,
+    dailyMode: base.mode,
+    dailySpentToday: base.spentToday,
     missingRates: [
       ...new Set([
+        ...(base.fold?.missingRates ?? []),
         ...onBudget.missingRates,
         ...available.missingRates,
         ...startOfDay.missingRates,

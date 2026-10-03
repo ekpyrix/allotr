@@ -1,0 +1,95 @@
+{
+  "description": "Travel $300 set aside and carried: $100 spent in March leaves $200 that carries into April, so April holds $500. Food $900 returns its leftover to free money.",
+  "today": "2026-04-02",
+  "settings": { "dailyMode": "free" },
+  "categories": { "food": null, "travel": null },
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 300000
+    },
+    {
+      "id": "pay1",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 200000
+    },
+    {
+      "id": "e1",
+      "kind": "expense",
+      "on": "2026-03-05",
+      "account": "card-USD",
+      "amountMinor": 10000,
+      "category": "travel"
+    },
+    {
+      "id": "e2",
+      "kind": "expense",
+      "on": "2026-03-12",
+      "account": "card-USD",
+      "amountMinor": 40000,
+      "category": "food"
+    },
+    {
+      "id": "pay2",
+      "kind": "paycheck",
+      "on": "2026-04-01",
+      "account": "card-USD",
+      "amountMinor": 200000
+    },
+    {
+      "id": "e3",
+      "kind": "expense",
+      "on": "2026-04-02",
+      "account": "card-USD",
+      "amountMinor": 7000,
+      "category": "food"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "food",
+      "target": { "kind": "category", "category": "food" },
+      "mode": "daily",
+      "leftover": "free",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 90000]]
+    },
+    {
+      "id": "travel",
+      "target": { "kind": "category", "category": "travel" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 30000]]
+    }
+  ],
+  "expected": {
+    "available": 643000,
+    "held": 50000,
+    "free": 593000,
+    "dailyLeft": 83000,
+    "unbudgeted": 0,
+    "dailyNumber": 20448,
+    "budgets": {
+      "food": {
+        "planned": 90000,
+        "carriedIn": 0,
+        "spent": 7000,
+        "left": 83000,
+        "held": 0
+      },
+      "travel": {
+        "planned": 30000,
+        "carriedIn": 20000,
+        "spent": 0,
+        "left": 50000,
+        "held": 50000
+      }
+    }
+  }
+}

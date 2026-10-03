@@ -1,0 +1,108 @@
+{
+  "description": "Food $900 daily, Travel $300 set aside, Buffer empty; one cycle from 1 March, looked at on 10 March with 22 days left.",
+  "today": "2026-03-10",
+  "settings": { "dailyMode": "free" },
+  "categories": {
+    "food": null,
+    "groceries": "food",
+    "travel": null,
+    "other": null
+  },
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 300000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 200000
+    },
+    {
+      "id": "e1",
+      "kind": "expense",
+      "on": "2026-03-03",
+      "account": "card-USD",
+      "amountMinor": 12000,
+      "category": "groceries"
+    },
+    {
+      "id": "e2",
+      "kind": "expense",
+      "on": "2026-03-05",
+      "account": "card-USD",
+      "amountMinor": 10000,
+      "category": "travel"
+    },
+    {
+      "id": "e3",
+      "kind": "expense",
+      "on": "2026-03-06",
+      "account": "cash-USD",
+      "amountMinor": 5000,
+      "category": "other"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "food",
+      "target": { "kind": "category", "category": "food" },
+      "mode": "daily",
+      "leftover": "free",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 90000]]
+    },
+    {
+      "id": "travel",
+      "target": { "kind": "category", "category": "travel" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 30000]]
+    },
+    {
+      "id": "buffer",
+      "target": { "kind": "buffer" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 0]]
+    }
+  ],
+  "expected": {
+    "available": 473000,
+    "held": 20000,
+    "free": 453000,
+    "dailyLeft": 78000,
+    "unbudgeted": 5000,
+    "dailyNumber": 20590,
+    "budgets": {
+      "food": {
+        "planned": 90000,
+        "carriedIn": 0,
+        "spent": 12000,
+        "left": 78000,
+        "held": 0
+      },
+      "travel": {
+        "planned": 30000,
+        "carriedIn": 0,
+        "spent": 10000,
+        "left": 20000,
+        "held": 20000
+      },
+      "buffer": {
+        "planned": 0,
+        "carriedIn": 0,
+        "spent": 0,
+        "left": 0,
+        "held": 0
+      }
+    }
+  }
+}
