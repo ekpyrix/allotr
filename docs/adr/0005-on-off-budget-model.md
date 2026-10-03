@@ -1,6 +1,6 @@
 # 0005. On-budget / off-budget account model
 
-- Status: Accepted
+- Status: Superseded by 0021
 - Date: 2026-09-27
 
 ## Context
