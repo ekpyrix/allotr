@@ -2,9 +2,9 @@ import * as React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Grouped lists (spec §8.2): a card holding rows, with dividers inset past
-// the leading icon. Rows are 56 px for one line, 72 for two, and trailing
-// figures are right-aligned mono. A row that does something is a button or
+// Grouped lists (ADR 0022): rows on the page between two hairlines, with
+// dividers inset past the leading icon. Rows are --row-h tall (compact by
+// default) and trailing figures are right-aligned mono. A row that does something is a button or
 // a link, and steps up a tier on hover and press (no scale: rows only get
 // the tonal state).
 
@@ -12,7 +12,10 @@ function List({ className, ...props }: React.ComponentProps<'ul'>) {
   return (
     <ul
       data-slot="list"
-      className={cn('overflow-hidden rounded-lg bg-card', className)}
+      className={cn(
+        'overflow-hidden border-y border-outline-variant',
+        className,
+      )}
       {...props}
     />
   );
@@ -39,22 +42,22 @@ function RowBody({
       {leading === undefined ? null : (
         <span
           aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-card-raised text-text [&_svg]:size-5 [&_svg]:stroke-[1.75]"
+          className="flex size-6 shrink-0 items-center justify-center text-text-muted [&_svg]:size-5 [&_svg]:stroke-[1.75]"
         >
           {leading}
         </span>
       )}
       <span className="flex min-w-0 flex-1 items-center gap-3 self-stretch border-b border-outline-variant py-2 group-last/row:border-b-0">
         <span className="min-w-0 flex-1">
-          <span className="block text-body-lg wrap-anywhere">{title}</span>
+          <span className="block text-body wrap-anywhere">{title}</span>
           {supporting === undefined ? null : (
-            <span className="block text-body text-text-muted wrap-anywhere">
+            <span className="block text-caption text-text-muted wrap-anywhere">
               {supporting}
             </span>
           )}
         </span>
         {trailing === undefined ? null : (
-          <span className="shrink-0 text-right font-mono text-body-lg">
+          <span className="shrink-0 text-right font-mono text-body">
             {trailing}
           </span>
         )}
@@ -70,7 +73,7 @@ function RowBody({
 }
 
 const rowClass =
-  'flex min-h-(--row-h) w-full items-center gap-4 pl-4 pr-4 text-left';
+  'flex min-h-(--row-h) w-full items-center gap-3 pl-4 pr-4 text-left';
 
 /** A row that only shows something. */
 function ListRow({
@@ -106,7 +109,7 @@ function ListRowButton({
 }) {
   const interactive = cn(
     rowClass,
-    ' transition-colors duration-(--dur-fade) hover:bg-card-raised focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring active:bg-card-raised',
+    ' transition-colors duration-(--dur-fade) hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring active:bg-card',
   );
   const children = <RowBody {...content} chevron />;
   return (

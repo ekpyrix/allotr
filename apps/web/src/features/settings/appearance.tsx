@@ -22,7 +22,7 @@ import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Segmented } from '@/components/ui/segmented';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { Switch } from '@/components/ui/switch';
 import { Sheet } from '@/features/accounts/sheet';
 import { checkDraft, draftFromFile } from '@/features/themes/draft';
@@ -226,7 +226,7 @@ function Customise({ custom }: { custom: readonly PaletteTheme[] }) {
       all.findIndex((other) => other.id === theme.id) === at,
   );
   return (
-    <details className="mt-4 rounded-lg bg-card p-4">
+    <details className="mt-4 rounded-lg border border-outline-variant p-4">
       <summary className="cursor-pointer font-medium">
         {t('settings.appearance.customise')}
       </summary>
@@ -291,7 +291,7 @@ function DeviceSettings() {
         <span className="text-label">
           {t('settings.appearance.device.motion')}
         </span>
-        <Segmented
+        <ToggleGroup
           label={t('settings.appearance.device.motion')}
           value={motion}
           onValueChange={setMotion}
@@ -311,7 +311,7 @@ function DeviceSettings() {
         <span className="text-label">
           {t('settings.appearance.device.density')}
         </span>
-        <Segmented
+        <ToggleGroup
           label={t('settings.appearance.device.density')}
           value={density}
           onValueChange={setDensity}
@@ -718,7 +718,7 @@ export function AppearanceSection({ userId }: { userId: string }) {
           <p className="text-text-muted">{t('settings.appearance.noThemes')}</p>
         ) : (
           <>
-            <ul className="overflow-hidden rounded-lg bg-card">
+            <ul className="overflow-hidden border-y border-outline-variant">
               {custom.map((theme) => (
                 <CustomThemeItem
                   key={theme.id}

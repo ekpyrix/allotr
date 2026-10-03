@@ -357,7 +357,7 @@ function Devices({ locale, timeZone }: { locale: string; timeZone: string }) {
         <>
           <ul
             aria-labelledby="devices-title"
-            className="mt-2 divide-y rounded-md bg-card px-4"
+            className="mt-2 divide-y border-y border-outline-variant px-4"
           >
             {[...devices.data.sessions]
               .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())

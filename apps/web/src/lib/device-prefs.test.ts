@@ -36,9 +36,9 @@ const throwing = {
 describe('readPref', () => {
   it('reads a stored value', () => {
     expect(readPref('motion', memory({ 'allotr.motion': 'off' }))).toBe('off');
-    expect(readPref('density', memory({ 'allotr.density': 'compact' }))).toBe(
-      'compact',
-    );
+    expect(
+      readPref('density', memory({ 'allotr.density': 'comfortable' })),
+    ).toBe('comfortable');
   });
 
   it.each(Object.keys(DEVICE_PREFS) as (keyof typeof DEVICE_PREFS)[])(
@@ -85,12 +85,12 @@ describe('effectiveMotion', () => {
 describe('applyPrefs', () => {
   it('sets data attributes only for non-default choices', () => {
     const doc = { documentElement: { dataset: {} as DOMStringMap } };
-    applyPrefs(doc, { motion: 'off', density: 'compact' });
+    applyPrefs(doc, { motion: 'off', density: 'comfortable' });
     expect(doc.documentElement.dataset).toEqual({
       motion: 'off',
-      density: 'compact',
+      density: 'comfortable',
     });
-    applyPrefs(doc, { motion: 'system', density: 'comfortable' });
+    applyPrefs(doc, { motion: 'system', density: 'compact' });
     expect(doc.documentElement.dataset).toEqual({});
   });
 });

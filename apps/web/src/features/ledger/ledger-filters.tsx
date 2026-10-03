@@ -62,7 +62,7 @@ export function LedgerFilters({
                 type="search"
                 maxLength={100}
                 autoComplete="off"
-                className="rounded-full pl-11"
+                className="rounded-md pl-11"
                 value={q}
                 onChange={(e) => {
                   setQ(e.currentTarget.value);

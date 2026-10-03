@@ -261,7 +261,7 @@ export function RatesSection({
       intro={t('settings.rates.intro', { currency: defaultCurrency })}
     >
       {today.missingRates.length === 0 ? null : (
-        <p className="mt-4 flex gap-3 rounded-md bg-card p-3 text-sm">
+        <p className="mt-4 flex gap-3 rounded-md border border-outline-variant p-3 text-sm">
           <TriangleAlert
             aria-hidden
             className="mt-0.5 size-4 shrink-0 text-negative"
@@ -289,7 +289,7 @@ export function RatesSection({
       ) : (
         <ul
           aria-label={t('settings.rates.listLabel')}
-          className="mt-6 divide-y rounded-md bg-card px-4"
+          className="mt-6 divide-y border-y border-outline-variant px-4"
         >
           {rates.map((rate) => (
             <RateItem

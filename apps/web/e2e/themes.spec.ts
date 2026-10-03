@@ -277,9 +277,12 @@ test('device settings: motion, density and celebrations', async ({ page }) => {
   );
   await page
     .getByRole('radiogroup', { name: 'Density' })
-    .getByRole('radio', { name: 'Compact' })
+    .getByRole('radio', { name: 'Comfortable' })
     .click();
-  await expect(page.locator('html')).toHaveAttribute('data-density', 'compact');
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-density',
+    'comfortable',
+  );
   await expectAccessible(page);
 
   await page.reload();

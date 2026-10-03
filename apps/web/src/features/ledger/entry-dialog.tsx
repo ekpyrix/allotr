@@ -1,5 +1,5 @@
+import { Amount } from '@/components/ui/amount';
 import {
-  formatMoney,
   type AccountView,
   type CategoryView,
   type TransactionView,
@@ -202,8 +202,8 @@ function EntryDetail({
                     ? ` · ${categoryPath(p.categoryId) ?? ''}`
                     : null}
                 </td>
-                <td className="py-1.5 text-right font-mono tabular-nums">
-                  {formatMoney(p.amount, locale, { signDisplay: 'exceptZero' })}
+                <td className="py-1.5 text-right">
+                  <Amount amount={p.amount} locale={locale} />
                 </td>
               </tr>
             ))}
@@ -308,7 +308,10 @@ function EntryDetail({
         </div>
       ) : null}
       {confirming && confirm !== null && canUndo ? (
-        <div id={confirmId} className="grid gap-3 rounded-md bg-card p-4">
+        <div
+          id={confirmId}
+          className="grid gap-3 rounded-md border border-outline-variant p-4"
+        >
           <p>
             {confirm === 'paycheck'
               ? t('ledger.entry.confirmPaycheck')

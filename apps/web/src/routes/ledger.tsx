@@ -148,7 +148,7 @@ export function LedgerPage({
           {t('ledger.loading')}
         </p>
       ) : rows.length === 0 ? (
-        <div className="mt-6 grid justify-items-start gap-3 rounded-lg bg-card p-4">
+        <div className="mt-6 grid justify-items-start gap-3 rounded-lg border border-outline-variant p-4">
           <p className="text-body-lg">
             {isFiltered(search) ? t('ledger.emptyFiltered') : t('ledger.empty')}
           </p>

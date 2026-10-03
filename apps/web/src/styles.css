@@ -17,28 +17,36 @@
  * public/theme-init.js before first paint and by ThemeProvider after.
  * data-theme on <html> is always light or dark.
  *
- * Depth is tone only: canvas → card → card-raised, with chrome for
- * persistent navigation. There are no shadows.
+ * Surfaces are flat (ADR 0022): grouped lists with hairline separators
+ * on the canvas; the card tone is for the hero and overlays. There are no
+ * shadows, no translucency and no blur.
  */
 :root {
   /* Spacing a density setting changes. */
+  --card-pad: 12px;
+  --row-h: 44px;
+}
+
+@media (width >= 840px) and (pointer: fine) {
+  :root {
+    --row-h: 40px;
+  }
+}
+
+:root[data-density='comfortable'] {
   --card-pad: 16px;
   --row-h: 56px;
 }
 
-:root[data-density='compact'] {
-  --card-pad: 12px;
-  --row-h: 48px;
-}
-
 @theme {
-  /* Shape: plain large radii, pills for buttons and chips (spec §3). */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 24px;
-  --radius-2xl: 28px;
+  /* Shape (ADR 0022): 4/6/8/12 px; pills only for the tab bar, the add
+     button and chips. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
 
   /* Window size classes (spec §6); sm/md/lg stay until the cleanup. */
   --breakpoint-medium: 600px;

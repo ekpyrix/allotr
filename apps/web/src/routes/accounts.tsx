@@ -12,7 +12,8 @@ import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Segmented } from '@/components/ui/segmented';
+import { Amount } from '@/components/ui/amount';
+import { ToggleGroup } from '@/components/ui/toggle-group';
 import { StatusChip } from '@/components/ui/status-chip';
 import { Burst } from '@/motion/burst';
 import { Sparkline } from '@/features/accounts/sparkline';
@@ -110,7 +111,7 @@ function AccountRow({
     <li
       aria-labelledby={nameId}
       data-account-id={account.id}
-      className="grid gap-3 rounded-lg bg-card p-(--card-pad) medium:rounded-xl medium:p-5"
+      className="grid gap-3 rounded-lg border border-outline-variant p-(--card-pad) medium:p-4"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -131,7 +132,7 @@ function AccountRow({
             data-testid="account-row-balance"
             className="mt-1 font-mono text-title-lg tabular-nums wrap-anywhere"
           >
-            {formatMoney(account.balance, locale)}
+            <Amount amount={account.balance} locale={locale} negativeOnly />
           </p>
         </div>
         <Sparkline
@@ -448,7 +449,7 @@ export function AccountsPage() {
       ) : (
         <>
           <SummaryCard figures={today.data} locale={locale} />
-          <Segmented
+          <ToggleGroup
             className="mt-6"
             label={t('accounts.show.label')}
             value={show}
@@ -473,7 +474,7 @@ export function AccountsPage() {
               />
             ))}
           {groups.archived.length === 0 ? null : (
-            <details className="mt-8 rounded-lg bg-card p-4">
+            <details className="mt-8 rounded-lg border border-outline-variant p-4">
               <summary className="cursor-pointer text-title">
                 {t('accounts.archived.title', {
                   count: groups.archived.length,

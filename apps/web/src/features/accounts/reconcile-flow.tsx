@@ -282,7 +282,7 @@ function Difference({
       ref={ref}
       tabIndex={-1}
       data-testid="reconcile-difference"
-      className="grid gap-3 rounded-md bg-card p-4 focus-visible:outline-2 focus-visible:outline-ring"
+      className="grid gap-3 rounded-md border border-outline-variant p-4 focus-visible:outline-2 focus-visible:outline-ring"
     >
       <p className="font-medium">{summary}</p>
       <dl className="grid gap-1">
