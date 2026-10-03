@@ -210,6 +210,29 @@ export const en = {
       save: 'Save the split',
       empty: 'Enter an amount for at least one source.',
     },
+    payday: {
+      title: 'Payday plan',
+      intro: 'Savings first, then what each budget gets this period.',
+      open: 'Plan this payday',
+      sheetTitle: 'Plan this payday',
+      loading: 'Loading the plan',
+      noIncome:
+        'No paycheck has arrived in this cycle yet. Record it, then plan.',
+      income: 'Paycheck this cycle: {amount}',
+      savings: 'Savings first',
+      savingsLine: 'Move {amount} to savings.',
+      noSavingsLine:
+        'No savings line is set. Choose a fixed amount or a share of your paycheck in Settings.',
+      noSavingsAccount: 'Add a savings account to move it.',
+      from: 'From',
+      to: 'To',
+      toPlan: 'Left to plan after savings: {amount}',
+      budgets: 'Budgets',
+      noLines: 'There is nothing to plan yet. Add a budget first.',
+      planned: 'Planned now: {amount}',
+      suggested: 'Suggested from past cycles: {amount}',
+      confirm: 'Confirm the plan',
+    },
     dashboard: {
       budgets: 'Budgets',
       budgetsLabel: 'Budgets this period',
@@ -257,6 +280,36 @@ export const en = {
     restored: 'Restored {entry}.',
   },
   today: {
+    review: {
+      title: 'Your week, {from} to {to}',
+      dismiss: 'Dismiss the weekly review',
+      spent: 'You spent {spent}, against {previous} the week before.',
+      top: 'Most went to {list}.',
+      over: {
+        one: '{count} budget went over this period.',
+        other: '{count} budgets went over this period.',
+      },
+      covered: 'Cover paid {amount} of shortfalls this period.',
+      uncategorised: 'No category',
+      more: 'See the plan and trends',
+    },
+    fund: {
+      title: 'Emergency fund',
+      noHistory: 'The target needs one closed cycle of spending to work from.',
+      saved: '{saved} saved of {target}, which is {months} months of expenses.',
+      progress: 'Emergency fund progress',
+      range: 'The usual range is {low} to {high}.',
+    },
+    netWorth: {
+      title: 'Net worth',
+      hint: 'Every account, savings and debts included.',
+      over: 'See it over time',
+    },
+    paydayCard: {
+      title: 'Payday',
+      body: 'A paycheck arrived this cycle. Plan savings and budgets.',
+      open: 'Plan this payday',
+    },
     heading: 'Dashboard',
     title: 'Left today',
     status: {
@@ -624,6 +677,44 @@ export const en = {
     },
   },
   settings: {
+    plan: {
+      title: 'Budget rules',
+      intro: 'How budgets are counted, and the savings line at payday.',
+      period: 'Budget period',
+      periodHint: 'Budgets and category summaries follow this.',
+      periods: { cycle: 'Payday cycle', month: 'Calendar month' },
+      mode: 'The daily number divides',
+      modes: {
+        free: 'Free money',
+        'pool-minus-bills': 'Counted pools less bills',
+        'daily-budgets': 'What daily budgets have left',
+      },
+      modeHint: {
+        free: 'Counted pools, less bills, less what set-aside budgets hold.',
+        'pool-minus-bills': 'Ignores budgets.',
+        'daily-budgets': 'Only the daily budgets count.',
+      },
+      countSavings: 'Let savings pools count toward the daily number',
+      countSavingsHint:
+        'Off by default: savings are never included unless you turn this on and the pool counts.',
+      payKind: 'Pay yourself first',
+      payHint: 'The savings line comes first on the payday sheet.',
+      payKinds: {
+        none: 'No savings line',
+        fixed: 'A fixed amount',
+        percent: 'A share of the paycheck',
+      },
+      payFixed: 'Amount per paycheck',
+      payPercent: 'Percent of the paycheck',
+      payInvalid:
+        'Enter a number such as 10 or 12.5 for a percent, or an amount.',
+      months: 'Emergency fund target (months)',
+      monthsHint:
+        'Months of average expenses. Three and six are the usual range.',
+      monthsInvalid: 'Enter a whole number from 1 to 24.',
+      save: 'Save',
+      saved: 'Saved.',
+    },
     groups: {
       label: 'Settings sections',
       money: 'Money',
@@ -1158,6 +1249,7 @@ export const en = {
       days: 'Days',
       categories: 'Categories',
       bills: 'Bills',
+      plan: 'Plan',
     },
     spendingChart: {
       title: 'Spending against pace',
@@ -1218,6 +1310,36 @@ export const en = {
     },
   },
   reports: {
+    plan: {
+      budgets: {
+        title: 'Budget against actual',
+        caption: 'Each budget this period: planned, spent and left',
+        empty: 'No budgets are planned yet.',
+        budget: 'Budget',
+        planned: 'Planned',
+        spent: 'Spent',
+        left: 'Left',
+      },
+      rate: {
+        title: 'Savings rate',
+        intro: 'The change in savings over the paycheck income, per cycle.',
+        caption: 'Savings rate per cycle',
+        cycle: 'Cycle',
+        income: 'Income',
+        saved: 'Saved',
+        rate: 'Rate',
+        none: 'No income',
+      },
+      netWorth: {
+        title: 'Net worth over time',
+        range: 'Show',
+        days: { one: 'Last {count} day', other: 'Last {count} days' },
+        summary: 'From {start} on {from} to {end} now.',
+        caption: 'Net worth by day',
+        day: 'Day',
+        total: 'Net worth',
+      },
+    },
     loading: 'Loading category totals',
     spendingTitle: 'Spending per category, {range}',
     incomeTitle: 'Income per category, {range}',

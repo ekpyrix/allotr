@@ -129,6 +129,7 @@ describe('savingsCycles', () => {
       spending: usd(0),
       leftover: usd(0),
       savingsNetChange: usd(total - 100_000),
+      savingsRate: null,
       offBudgetClosing: usd(total),
       amended: false,
       missingRates: [],

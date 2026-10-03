@@ -7,6 +7,7 @@ import {
   type CategoryId,
   type CycleReport,
   type LedgerView,
+  savingsRate,
 } from '@allotr/core';
 import {
   localDateIn,
@@ -83,6 +84,7 @@ function summary(report: CycleReport): CycleSummaryView {
     spending: report.spending,
     leftover: report.leftover,
     savingsNetChange: report.savingsNetChange,
+    savingsRate: savingsRate(report.income, report.savingsNetChange),
     offBudgetClosing: report.closing.off,
     amended: report.amendments.length > 0,
     missingRates: [...report.missingRates],

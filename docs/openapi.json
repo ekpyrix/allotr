@@ -25717,6 +25717,12 @@
                               "currency"
                             ]
                           },
+                          "savingsRate": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
                           "offBudgetClosing": {
                             "type": "object",
                             "properties": {
@@ -25754,6 +25760,7 @@
                           "spending",
                           "leftover",
                           "savingsNetChange",
+                          "savingsRate",
                           "offBudgetClosing",
                           "amended",
                           "missingRates"
@@ -26337,6 +26344,12 @@
                         "currency"
                       ]
                     },
+                    "savingsRate": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
                     "offBudgetClosing": {
                       "type": "object",
                       "properties": {
@@ -26651,6 +26664,7 @@
                     "spending",
                     "leftover",
                     "savingsNetChange",
+                    "savingsRate",
                     "offBudgetClosing",
                     "amended",
                     "missingRates",

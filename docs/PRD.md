@@ -171,6 +171,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-W7 | Onboarding reaches a first daily number in about three minutes. | M | M2 |
 | FR-W8 | Flat, compact visual language: hairline grouped lists, 4/6/8/12 px radii, toggle groups for choices, an overflow menu for rare actions, skeleton loading, and value colour (negative red, positive green, transfers blue) always shown with a sign and an arrow. | M | M2 |
 | FR-W9 | Budget tab: budgets with spent and left bars (daily or set aside), the cover order as a list that can be dragged or moved from the keyboard, pools with their daily switch, and bills. The entry sheet shows the cover ("takes $X from Food") in the warning colour and asks for a second tap when it reaches set-aside money or the Buffer; an expense's cover split can be changed afterwards. The Dashboard shows budgets, pools and what cover paid this period. The web app only displays the server's figures. | M | v2 |
+| FR-W10 | Payday sheet (savings line first, budgets prefilled or suggested, one tap to confirm), a weekly review card shown once a week and dismissible, emergency fund and net worth cards, and a Plan tab in Reports with budget against actual, savings rate per cycle and net worth over time. Settings for the budget period, daily-number mode, pay yourself first and the fund target. | S | v2 |
 
 ### 6.6 Currency
 

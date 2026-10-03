@@ -5,7 +5,13 @@ import { z } from 'zod';
 // which tab is open, so each tab has its own link. Anything malformed is
 // dropped rather than sent to the server.
 
-export const cycleTabs = ['overview', 'days', 'categories', 'bills'] as const;
+export const cycleTabs = [
+  'overview',
+  'days',
+  'categories',
+  'bills',
+  'plan',
+] as const;
 export type CycleTab = (typeof cycleTabs)[number];
 
 export interface CycleSearch {

@@ -6,6 +6,12 @@ import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton, SkeletonCard, SkeletonRows } from '@/components/ui/skeleton';
+import {
+  EmergencyFundCard,
+  NetWorthCard,
+  PaydayCard,
+  WeeklyReviewCard,
+} from '@/features/today/insight-cards';
 import { BudgetCards } from '@/features/today/budget-cards';
 import { AttentionList } from '@/features/today/attention-list';
 import { entryRows } from '@/features/today/entries';
@@ -28,6 +34,12 @@ import {
   ledgerSettingsQuery,
   todayQuery,
 } from '@/lib/ledger';
+import {
+  emergencyFundQuery,
+  netWorthQuery,
+  paydayPlanQuery,
+  weeklyReviewQuery,
+} from '@/lib/plan';
 import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 import { LazySheet } from '@/motion/lazy-sheet';
@@ -47,6 +59,10 @@ export function TodayPage({ user }: { user: SessionUser }) {
   // Cards that add to the page, so a failure here never blocks it.
   const budgets = useQuery(budgetsQuery);
   const pools = useQuery(poolsQuery);
+  const review = useQuery(weeklyReviewQuery);
+  const fund = useQuery(emergencyFundQuery);
+  const worth = useQuery(netWorthQuery(30));
+  const plan = useQuery(paydayPlanQuery);
   const [explaining, setExplaining] = useState(false);
   const all = [today, settings, accounts, categories, entries];
 
@@ -144,6 +160,17 @@ export function TodayPage({ user }: { user: SessionUser }) {
             <FirstPaycheck />
           ) : null}
           <AttentionList figures={figures} locale={locale} />
+          {plan.data !== undefined && plan.data.income.amountMinor > 0 ? (
+            <PaydayCard />
+          ) : null}
+          {review.data === undefined || categories.data === undefined ? null : (
+            <WeeklyReviewCard
+              review={review.data}
+              categories={categories.data.categories}
+              today={figures.today}
+              locale={locale}
+            />
+          )}
           <BudgetCards
             status={budgets.data}
             pools={pools.data}
@@ -163,6 +190,12 @@ export function TodayPage({ user }: { user: SessionUser }) {
               locale={locale}
               cycleOpenedBy={figures.cycle.openedBy}
             />
+          )}
+          {fund.data === undefined ? null : (
+            <EmergencyFundCard fund={fund.data} locale={locale} />
+          )}
+          {worth.data === undefined ? null : (
+            <NetWorthCard worth={worth.data} locale={locale} />
           )}
           <Card className="hidden expanded:block">
             <h2 className="text-title">{t('today.waterfall.title')}</h2>
