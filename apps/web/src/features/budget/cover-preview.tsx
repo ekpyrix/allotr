@@ -34,6 +34,9 @@ export const coverPreviewOptions = (request: CoverPreviewBody) => ({
   queryKey: ['today', 'budgets', 'cover-preview', coverKey(request)],
   queryFn: () => previewCover(request),
   staleTime: 10_000,
+  // The preview is advice: offline or failing, saving must not wait on retries.
+  retry: false,
+  networkMode: 'always' as const,
 });
 
 /**
