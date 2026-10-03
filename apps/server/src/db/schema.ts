@@ -104,6 +104,17 @@ export interface Categories {
   user_id: string;
 }
 
+export interface CoverOverrides {
+  amount_minor: number;
+  created_at: string;
+  currency: string;
+  id: string;
+  position: number;
+  source: string;
+  transaction_id: string;
+  user_id: string;
+}
+
 export interface FxRates {
   as_of: string;
   base: string;
@@ -287,6 +298,7 @@ export interface DB {
   budget_amounts: BudgetAmounts;
   budgets: Budgets;
   categories: Categories;
+  cover_overrides: CoverOverrides;
   fx_rates: FxRates;
   instance_settings: InstanceSettings;
   invites: Invites;

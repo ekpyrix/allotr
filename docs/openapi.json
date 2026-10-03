@@ -6798,6 +6798,1971 @@
         }
       }
     },
+    "/v1/budgets/cover-order": {
+      "put": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "Set the cover order",
+        "description": "Who pays when spending passes what a budget has left, first to last: `free` for free money and budget IDs, the Buffer included. Bills are never used. What is left out is placed by default: free money first, the Buffer next, new budgets last.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "order"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The budgets with the new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "today": {
+                      "type": "string",
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
+                    "period": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ]
+                    },
+                    "periodRule": {
+                      "type": "string",
+                      "enum": [
+                        "cycle",
+                        "month"
+                      ]
+                    },
+                    "daysLeft": {
+                      "type": "integer"
+                    },
+                    "budgets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "category"
+                                    ]
+                                  },
+                                  "categoryId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "categoryId"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tag"
+                                    ]
+                                  },
+                                  "tagId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "tagId"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "buffer"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ]
+                              }
+                            ]
+                          },
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "daily",
+                              "set-aside"
+                            ]
+                          },
+                          "leftover": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "carry"
+                            ]
+                          },
+                          "startedOn": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "planned": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "carriedIn": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "spent": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "left": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "overflow": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "coveredOut": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "restored": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "held": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "target",
+                          "mode",
+                          "leftover",
+                          "startedOn",
+                          "amount",
+                          "planned",
+                          "carriedIn",
+                          "spent",
+                          "left",
+                          "overflow",
+                          "coveredOut",
+                          "restored",
+                          "held"
+                        ]
+                      }
+                    },
+                    "available": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "held": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "free": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dailyLeft": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "unbudgeted": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "dailyMode": {
+                      "type": "string",
+                      "enum": [
+                        "free",
+                        "pool-minus-bills",
+                        "daily-budgets"
+                      ]
+                    },
+                    "dailyNumber": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "coverOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "buffer",
+                              "budget"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "kind"
+                        ]
+                      }
+                    },
+                    "covered": {
+                      "type": "object",
+                      "properties": {
+                        "shortfall": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromFree": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBuffer": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBudgets": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "uncovered": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "shortfall",
+                        "fromFree",
+                        "fromBuffer",
+                        "fromBudgets",
+                        "uncovered"
+                      ]
+                    },
+                    "missingRates": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    }
+                  },
+                  "required": [
+                    "today",
+                    "period",
+                    "periodRule",
+                    "daysLeft",
+                    "budgets",
+                    "available",
+                    "held",
+                    "free",
+                    "dailyLeft",
+                    "unbudgeted",
+                    "dailyMode",
+                    "dailyNumber",
+                    "coverOrder",
+                    "covered",
+                    "missingRates"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budgets/covers": {
+      "get": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "Entries covered this period",
+        "description": "Every entry in the current period that went past what its budget had left, newest first, with what its own budget paid and who covered the rest. Computed from the ledger on each read, so a back-dated entry changes the figures at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. Budgets are virtual: they are tied to no account and nothing is moved. Cover is computed, never stored; no money moves.",
+        "responses": {
+          "200": {
+            "description": "The covered entries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "object",
+                      "properties": {
+                        "from": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to"
+                      ]
+                    },
+                    "covers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "entryId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "date": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "budgetId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "own": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "covers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 64
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "name",
+                                "amount"
+                              ]
+                            }
+                          },
+                          "uncovered": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "overridden": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "entryId",
+                          "date",
+                          "budgetId",
+                          "amount",
+                          "own",
+                          "covers",
+                          "uncovered",
+                          "overridden"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "period",
+                    "covers"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budgets/cover-preview": {
+      "post": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "Preview the cover for an expense",
+        "description": "Works out, without recording anything, what an expense would take from its budget and from each cover source. `needsConfirmation` is true when the cover reaches a set-aside budget or the Buffer, or part of it is uncovered: show it in a warning colour and ask for a second tap. The entry is saved with `POST /v1/transactions`; nothing about the cover is sent with it.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amountMinor": {
+                        "type": "integer"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "pattern": "^[A-Z]{3}$"
+                      }
+                    },
+                    "required": [
+                      "amountMinor",
+                      "currency"
+                    ]
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "tagIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "maxItems": 20
+                  },
+                  "occurredOn": {
+                    "type": "string",
+                    "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "amount",
+                  "categoryId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The cover the entry would get.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "counted": {
+                      "type": "boolean"
+                    },
+                    "budgetId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "own": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "covers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "setAside": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "source",
+                          "name",
+                          "amount",
+                          "setAside"
+                        ]
+                      }
+                    },
+                    "uncovered": {
+                      "type": "object",
+                      "properties": {
+                        "amountMinor": {
+                          "type": "integer"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        }
+                      },
+                      "required": [
+                        "amountMinor",
+                        "currency"
+                      ]
+                    },
+                    "reachesSetAside": {
+                      "type": "boolean"
+                    },
+                    "overspend": {
+                      "type": "boolean"
+                    },
+                    "needsConfirmation": {
+                      "type": "boolean"
+                    },
+                    "leftToday": {
+                      "type": "object",
+                      "properties": {
+                        "before": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "after": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "before",
+                        "after"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "counted",
+                    "budgetId",
+                    "amount",
+                    "own",
+                    "covers",
+                    "uncovered",
+                    "reachesSetAside",
+                    "overspend",
+                    "needsConfirmation",
+                    "leftToday"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The account is archived.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/{id}/cover": {
+      "put": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "Choose how an entry is covered",
+        "description": "A setting on the entry, not a ledger change: the entry and its postings stay as recorded. Each requested source covers at most what it had, and any shortfall left goes down the cover order, so an override cannot create money.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "covers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "source",
+                        "amount"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 20
+                  }
+                },
+                "required": [
+                  "covers"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The request is invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such entry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Budgets"
+        ],
+        "summary": "Go back to the cover order for an entry",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cleared."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/budgets": {
       "get": {
         "tags": [
@@ -7013,6 +8978,54 @@
                               "currency"
                             ]
                           },
+                          "overflow": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "coveredOut": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "restored": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "held": {
                             "type": "object",
                             "properties": {
@@ -7042,6 +9055,9 @@
                           "carriedIn",
                           "spent",
                           "left",
+                          "overflow",
+                          "coveredOut",
+                          "restored",
                           "held"
                         ]
                       }
@@ -7150,6 +9166,127 @@
                         "currency"
                       ]
                     },
+                    "coverOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "buffer",
+                              "budget"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "kind"
+                        ]
+                      }
+                    },
+                    "covered": {
+                      "type": "object",
+                      "properties": {
+                        "shortfall": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromFree": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBuffer": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBudgets": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "uncovered": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "shortfall",
+                        "fromFree",
+                        "fromBuffer",
+                        "fromBudgets",
+                        "uncovered"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -7171,6 +9308,8 @@
                     "unbudgeted",
                     "dailyMode",
                     "dailyNumber",
+                    "coverOrder",
+                    "covered",
                     "missingRates"
                   ]
                 }
@@ -7598,6 +9737,54 @@
                               "currency"
                             ]
                           },
+                          "overflow": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "coveredOut": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "restored": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "held": {
                             "type": "object",
                             "properties": {
@@ -7627,6 +9814,9 @@
                           "carriedIn",
                           "spent",
                           "left",
+                          "overflow",
+                          "coveredOut",
+                          "restored",
                           "held"
                         ]
                       }
@@ -7735,6 +9925,127 @@
                         "currency"
                       ]
                     },
+                    "coverOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "buffer",
+                              "budget"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "kind"
+                        ]
+                      }
+                    },
+                    "covered": {
+                      "type": "object",
+                      "properties": {
+                        "shortfall": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromFree": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBuffer": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBudgets": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "uncovered": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "shortfall",
+                        "fromFree",
+                        "fromBuffer",
+                        "fromBudgets",
+                        "uncovered"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -7756,6 +10067,8 @@
                     "unbudgeted",
                     "dailyMode",
                     "dailyNumber",
+                    "coverOrder",
+                    "covered",
                     "missingRates"
                   ]
                 }
@@ -8313,6 +10626,54 @@
                               "currency"
                             ]
                           },
+                          "overflow": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "coveredOut": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
+                          "restored": {
+                            "type": "object",
+                            "properties": {
+                              "amountMinor": {
+                                "type": "integer"
+                              },
+                              "currency": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            },
+                            "required": [
+                              "amountMinor",
+                              "currency"
+                            ]
+                          },
                           "held": {
                             "type": "object",
                             "properties": {
@@ -8342,6 +10703,9 @@
                           "carriedIn",
                           "spent",
                           "left",
+                          "overflow",
+                          "coveredOut",
+                          "restored",
                           "held"
                         ]
                       }
@@ -8450,6 +10814,127 @@
                         "currency"
                       ]
                     },
+                    "coverOrder": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "buffer",
+                              "budget"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "kind"
+                        ]
+                      }
+                    },
+                    "covered": {
+                      "type": "object",
+                      "properties": {
+                        "shortfall": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromFree": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBuffer": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "fromBudgets": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "uncovered": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "shortfall",
+                        "fromFree",
+                        "fromBuffer",
+                        "fromBudgets",
+                        "uncovered"
+                      ]
+                    },
                     "missingRates": {
                       "type": "array",
                       "items": {
@@ -8471,6 +10956,8 @@
                     "unbudgeted",
                     "dailyMode",
                     "dailyNumber",
+                    "coverOrder",
+                    "covered",
                     "missingRates"
                   ]
                 }

@@ -19,6 +19,8 @@ type Budget = {
   spent: Money;
   left: Money;
   held: Money;
+  coveredOut: Money;
+  restored: Money;
 };
 type Status = {
   period: { from: string; to: string };
@@ -300,8 +302,15 @@ describe('changing budgets', () => {
     });
     expect(patched.status).toBe(200);
     const after = patched.body as Status;
-    expect(find(after, 'Buffer').held).toEqual(usd(20_000));
-    expect(after.free.amountMinor).toBe(before.free.amountMinor - 20_000);
+    // Spending earlier in the file may already have been covered from it.
+    const buf = find(after, 'Buffer');
+    expect(buf.planned).toEqual(usd(20_000));
+    expect(buf.held.amountMinor).toBe(
+      20_000 - buf.coveredOut.amountMinor + buf.restored.amountMinor,
+    );
+    expect(after.free.amountMinor).toBe(
+      before.free.amountMinor - buf.held.amountMinor,
+    );
     const fixed = await h.alice.patch(`/v1/budgets/${buffer.id}`, {
       mode: 'daily',
     });

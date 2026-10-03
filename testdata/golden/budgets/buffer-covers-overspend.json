@@ -1,0 +1,103 @@
+{
+  "description": "Free money is used up, so a Food overspend of $40 is covered by the Buffer. $1,500 counted, Food $100 daily, Travel $300 and the Buffer $200 set aside; $950 spent outside any budget first.",
+  "today": "2026-03-10",
+  "settings": { "dailyMode": "free" },
+  "categories": { "food": null, "travel": null, "other": null },
+  "ledger": [
+    {
+      "id": "open",
+      "kind": "opening",
+      "on": "2026-02-18",
+      "account": "card-USD",
+      "amountMinor": 100000
+    },
+    {
+      "id": "pay",
+      "kind": "paycheck",
+      "on": "2026-03-01",
+      "account": "card-USD",
+      "amountMinor": 50000
+    },
+    {
+      "id": "rent",
+      "kind": "expense",
+      "on": "2026-03-05",
+      "account": "card-USD",
+      "amountMinor": 95000,
+      "category": "other"
+    },
+    {
+      "id": "groceries",
+      "kind": "expense",
+      "on": "2026-03-06",
+      "account": "card-USD",
+      "amountMinor": 14000,
+      "category": "food"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "food",
+      "target": { "kind": "category", "category": "food" },
+      "mode": "daily",
+      "leftover": "free",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 10000]]
+    },
+    {
+      "id": "travel",
+      "target": { "kind": "category", "category": "travel" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 30000]]
+    },
+    {
+      "id": "buffer",
+      "target": { "kind": "buffer" },
+      "mode": "set-aside",
+      "leftover": "carry",
+      "startedOn": "2026-03-01",
+      "amounts": [["2026-03-01", 20000]]
+    }
+  ],
+  "expected": {
+    "entries": {
+      "rent": { "own": 0, "covers": { "free": 95000 }, "uncovered": 0 },
+      "groceries": {
+        "own": 10000,
+        "covers": { "buffer": 4000 },
+        "uncovered": 0
+      }
+    },
+    "available": 41000,
+    "held": 46000,
+    "free": -5000,
+    "dailyLeft": 0,
+    "unbudgeted": 95000,
+    "dailyNumber": -228,
+    "budgets": {
+      "food": {
+        "planned": 10000,
+        "carriedIn": 0,
+        "spent": 14000,
+        "left": 0,
+        "held": 0
+      },
+      "travel": {
+        "planned": 30000,
+        "carriedIn": 0,
+        "spent": 0,
+        "left": 30000,
+        "held": 30000
+      },
+      "buffer": {
+        "planned": 20000,
+        "carriedIn": 0,
+        "spent": 0,
+        "left": 16000,
+        "held": 16000
+      }
+    }
+  }
+}
