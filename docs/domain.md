@@ -493,7 +493,9 @@ Logical model; the SQL schema lives in `migrations/`.
 - New users get the starter categories as ordinary rows: Food (Groceries,
   Eating out), Transport, Housing (Rent, Utilities), Bills and
   subscriptions, Health, Shopping, Fun, Other; Paycheck (the paycheck
-  category) and Other income.
+  category), Other income, Interest and Tax refund. Users from before
+  Interest and Tax refund were added get them too, unless they already have
+  a category of that name.
 
 ```
 users(id, name, locale, tz, default_currency, created_at)
