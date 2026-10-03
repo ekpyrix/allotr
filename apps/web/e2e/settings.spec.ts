@@ -27,12 +27,24 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 });
 
 test.beforeEach(async ({ page, baseURL }) => {
-  const response = await page.request.post('/v1/auth/sign-in/email', {
+  // Sign-in is rate limited per minute and every test here signs in, so wait
+  // out a refusal instead of failing on it.
+  test.setTimeout(90_000);
+  let response = await signIn(page, baseURL);
+  for (let tries = 0; response.status() === 429 && tries < 3; tries += 1) {
+    const wait = Number(response.headers()['x-retry-after'] ?? 20);
+    await page.waitForTimeout(Math.min(Math.max(wait, 1), 60) * 1000);
+    response = await signIn(page, baseURL);
+  }
+  expect(response.ok()).toBe(true);
+});
+
+function signIn(page: Page, baseURL: string | undefined) {
+  return page.request.post('/v1/auth/sign-in/email', {
     data: { email: account.email, password: account.password },
     headers: { origin: baseURL ?? '' },
   });
-  expect(response.ok()).toBe(true);
-});
+}
 
 async function today(page: Page): Promise<TodayView> {
   return (await (await page.request.get('/v1/today')).json()) as TodayView;
@@ -645,7 +657,7 @@ test('two-factor authentication turns on with a code and stays on while required
   baseURL,
 }) => {
   // Two browser contexts and several sign-ins: slow under a full run.
-  test.setTimeout(60_000);
+  test.setTimeout(150_000);
   await page.goto('/settings#security');
   const region = section(page, 'Security');
   await region
