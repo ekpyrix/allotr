@@ -105,8 +105,122 @@ export const en = {
   },
   budget: {
     title: 'Budget',
-    intro: 'What is set aside before the daily number.',
+    intro: 'What is planned, what is set aside and who covers a shortfall.',
     loading: 'Loading the budget',
+    edit: 'Edit',
+    errors: {
+      amountRequired: 'Enter an amount.',
+      amountInvalid: 'Enter an amount such as {example}.',
+      amountDecimals: 'This currency has fewer decimal places.',
+      amountPositive: 'The amount must be greater than zero.',
+    },
+    budgets: {
+      title: 'Budgets',
+      intro:
+        'A planned amount per period. Nothing is moved: spent and left come from your entries.',
+      free: 'Free money {amount}',
+      add: 'Add a budget',
+      addTitle: 'Add a budget',
+      editTitle: 'Edit {name}',
+      edit: 'Edit {name}',
+      category: 'Category',
+      name: 'Name',
+      amount: 'Planned per period',
+      amountHint:
+        'In your default currency. A new amount counts from this period.',
+      mode: 'Kind',
+      modes: { daily: 'Daily', 'set-aside': 'Set aside' },
+      modeHint: {
+        daily: 'Stays in the daily number; what is left is free money.',
+        'set-aside': 'Held out of the daily number until you spend it.',
+      },
+      leftover: 'At the end of a period',
+      leftovers: {
+        free: 'Return what is left to free money',
+        carry: 'Carry what is left over',
+      },
+      bufferFixed:
+        'The Buffer is always set aside and carried over. It only holds money; nothing is spent from it directly.',
+      save: 'Save',
+      end: 'End this budget',
+      dailyTitle: 'Daily',
+      dailyIntro: 'Inside the daily number.',
+      setAsideTitle: 'Set aside',
+      setAsideIntro: 'Held out of the daily number.',
+      noDaily:
+        'No daily budgets yet. Spending with no budget is covered from free money.',
+      spentOfPlanned: 'Spent {spent} of {planned} planned',
+      left: '{amount} left',
+      progress: 'Spent from {name}',
+      overflow: 'Went {amount} past what it had; others covered it.',
+      held: 'Holds {amount} out of the daily number.',
+    },
+    cover: {
+      title: 'Cover order',
+      intro:
+        'When spending passes what a budget has left, the shortfall is taken in this order. Drag a row, or press Up or Down on its handle.',
+      list: 'Cover order, first to last',
+      free: 'Free money',
+      sortable: 'sortable item',
+      handle:
+        '{name}, position {position} of {count}. Press Up or Down to move.',
+      up: 'Move {name} up',
+      down: 'Move {name} down',
+      moved: '{name} moved to position {position} of {count}.',
+      billsNever: 'Bills are never used to cover spending.',
+    },
+    pools: {
+      title: 'Pools',
+      intro:
+        'Groups of accounts. Only pools that count make up the daily number.',
+      kinds: { spending: 'Spending', savings: 'Savings' },
+      accounts: { one: '{count} account', other: '{count} accounts' },
+      counts: 'Counts toward the daily number',
+      inDaily: 'In the daily number.',
+      notInDaily: 'Not in the daily number.',
+      savingsOff:
+        'Its own switch is on, but savings count only when you turn that on in Settings.',
+      newName: 'New pool name',
+      newKind: 'Kind',
+      add: 'Add pool',
+    },
+    preview: {
+      takes: 'Takes {amount} from {source}.',
+      takesLast: 'and {amount} from {source}.',
+      own: '{amount} comes out of {budget}.',
+      uncovered:
+        '{amount} is covered by nothing, so the daily number goes lower.',
+      setAside: 'This reaches money you set aside. Tap Save again to confirm.',
+      saveAnyway: 'Save anyway',
+      confirmNeeded: 'Check the cover below, then tap Save again.',
+      label: 'Cover for this entry',
+    },
+    entryCover: {
+      title: 'Cover',
+      none: 'Its own budget paid all of it.',
+      from: '{source}: {amount}',
+      uncovered: 'Nothing covered {amount}.',
+      edit: 'Change the split',
+      reset: 'Back to the automatic split',
+      automatic: 'Chosen automatically.',
+      chosen: 'You chose this split.',
+      sheetTitle: 'Change the cover',
+      sheetIntro:
+        'Say how much each source covers. A source gives at most what it had; the rest follows the cover order.',
+      save: 'Save the split',
+      empty: 'Enter an amount for at least one source.',
+    },
+    dashboard: {
+      budgets: 'Budgets',
+      budgetsLabel: 'Budgets this period',
+      pools: 'Pools',
+      covered: 'Covered this period',
+      coveredBody: '{amount} of spending went past a budget and was covered.',
+      coveredFrom:
+        'Free money {free}, Buffer {buffer}, other budgets {budgets}.',
+      uncovered: '{amount} was covered by nothing.',
+      seeBudget: 'See the Budget tab',
+    },
   },
   shell: {
     twoFactorRequired:

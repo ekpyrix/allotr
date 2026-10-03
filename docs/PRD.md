@@ -163,13 +163,14 @@ Milestones refer to [§9](#9-release-plan).
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-W1 | Dashboard (the home view, `/`): today card with the hero number, pace bar, "needs attention" items, today's entries. | M | M2 |
-| FR-W2 | Destinations Dashboard, Accounts, Transactions, Budget (bills for now) and Reports (the cycle, with history), plus Settings from the header gear or the sidebar foot; Savings under Accounts. Settings are grouped Money, App, Account and security, Data. Reports show per-category summary cards (parent rolls up its subcategories, top two shown, expandable) per payday cycle or calendar month. Old addresses (`/today`, `/ledger`, `/cycle`, `/history`, `/savings`, `/settings#bills`) redirect. | M | M2 |
+| FR-W2 | Destinations Dashboard, Accounts, Transactions, Budget (budgets, cover order, pools and bills) and Reports (the cycle, with history), plus Settings from the header gear or the sidebar foot; Savings under Accounts. Settings are grouped Money, App, Account and security, Data. Reports show per-category summary cards (parent rolls up its subcategories, top two shown, expandable) per payday cycle or calendar month. Old addresses (`/today`, `/ledger`, `/cycle`, `/history`, `/savings`, `/settings#bills`) redirect. | M | M2 |
 | FR-W3 | Responsive layouts for phone, foldable, tablet and desktop; installable PWA. On phones a floating flat pill tab bar with a separate round add button; from 600 px an ordinary sidebar. Tab switches are instant. | M | M2 |
 | FR-W4 | Entries made offline are queued and synced later. | S | M7 |
 | FR-W5 | Palette themes with a role map, fitted to WCAG 2.2 AA contrast; shipped palette families; custom themes by editor or import from common palette and terminal colour formats. | S | M2 |
 | FR-W6 | Read-only kiosk view and a small embeddable card, accessed with a summary-only token. | S | M6 |
 | FR-W7 | Onboarding reaches a first daily number in about three minutes. | M | M2 |
 | FR-W8 | Flat, compact visual language: hairline grouped lists, 4/6/8/12 px radii, toggle groups for choices, an overflow menu for rare actions, skeleton loading, and value colour (negative red, positive green, transfers blue) always shown with a sign and an arrow. | M | M2 |
+| FR-W9 | Budget tab: budgets with spent and left bars (daily or set aside), the cover order as a list that can be dragged or moved from the keyboard, pools with their daily switch, and bills. The entry sheet shows the cover ("takes $X from Food") in the warning colour and asks for a second tap when it reaches set-aside money or the Buffer; an expense's cover split can be changed afterwards. The Dashboard shows budgets, pools and what cover paid this period. The web app only displays the server's figures. | M | v2 |
 
 ### 6.6 Currency
 

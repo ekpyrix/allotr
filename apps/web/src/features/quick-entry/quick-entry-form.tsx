@@ -16,6 +16,7 @@ import { Split } from 'lucide-react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useQueryClient } from '@tanstack/react-query';
 import { describeProblem } from '@/lib/problem';
 import { randomId } from '@/lib/random-id';
 import { t } from '@/messages/t';
@@ -40,6 +41,13 @@ import {
   type DraftKey,
   type QuickEntryDraft,
 } from './draft.ts';
+import {
+  CoverPreview,
+  coverKey,
+  coverPreviewOptions,
+  coverRequest,
+  useCoverPreview,
+} from '@/features/budget/cover-preview';
 import { readLastUsed, rememberChoice } from './last-used.ts';
 import {
   categoryOptions,
@@ -135,6 +143,9 @@ export function QuickEntryForm({
   const [summary, setSummary] = useState('');
   const form = useRef<HTMLFormElement>(null);
   const save = useSaveEntry(edit?.id);
+  const queryClient = useQueryClient();
+  // The cover request the user has already confirmed with a second tap.
+  const [confirmed, setConfirmed] = useState<string | null>(null);
   const saving = save.isPending;
   useEffect(() => {
     onSavingChange(saving);
@@ -203,6 +214,17 @@ export function QuickEntryForm({
   const options = categoryOptions(categories, draft.kind);
   const split = !transfer && isSplit(draft);
   const linesCurrency = splitCurrency(draft, accounts);
+  const built =
+    draft.kind === 'expense' && edit === undefined && !split
+      ? toBody(draft, { accounts, locale })
+      : null;
+  const coverAsk = coverRequest(built?.ok === true ? built.body : null);
+  const { preview, key: previewKey } = useCoverPreview(coverAsk);
+  const askKey = coverKey(coverAsk);
+  const needsSecondTap =
+    preview?.needsConfirmation === true &&
+    previewKey === askKey &&
+    confirmed !== askKey;
   const error = (field: DraftField, currency: string | undefined) => {
     const message = errors[field];
     return message === undefined
@@ -229,16 +251,46 @@ export function QuickEntryForm({
       return;
     }
     clearErrors();
-    key.current = keyForBody(key.current, result.body, () => randomId());
+    const body = result.body;
+    const request = edit === undefined ? coverRequest(body) : null;
+    if (request === null) {
+      record(body);
+      return;
+    }
+    // The cover can reach money set aside: ask the server now, so the
+    // second tap is required even when the preview had not settled yet.
+    inFlight.current = true;
+    const asked = coverKey(request);
+    void queryClient
+      .query(coverPreviewOptions(request))
+      .then((cover) => {
+        if (cover.needsConfirmation && confirmed !== asked) {
+          setConfirmed(asked);
+          inFlight.current = false;
+          return;
+        }
+        inFlight.current = false;
+        record(body);
+      })
+      .catch(() => {
+        // The preview is advice; saving does not depend on it.
+        inFlight.current = false;
+        record(body);
+      });
+  }
+
+  function record(body: CreateTransactionBody) {
+    if (inFlight.current) return;
+    key.current = keyForBody(key.current, body, () => randomId());
     inFlight.current = true;
     save.mutate(
-      { body: result.body, idempotencyKey: key.current.key },
+      { body, idempotencyKey: key.current.key },
       {
         onSuccess: (entryId) => {
           key.current = null;
           // Last used is for new entries; an edit is a correction.
           if (edit === undefined) rememberChoice(storage(), draft);
-          onSaved(savedMessage(result.body, locale), entryId);
+          onSaved(savedMessage(body, locale), entryId);
         },
         onSettled: () => {
           inFlight.current = false;
@@ -579,6 +631,10 @@ export function QuickEntryForm({
         </fieldset>
       )}
 
+      {preview !== undefined && previewKey === askKey ? (
+        <CoverPreview preview={preview} locale={locale} />
+      ) : null}
+
       <div
         className={
           stickyActions
@@ -598,9 +654,11 @@ export function QuickEntryForm({
         <Button type="submit" className="h-11 w-full" disabled={save.isPending}>
           {save.isPending
             ? t('quickEntry.saving')
-            : edit === undefined
-              ? t('quickEntry.save')
-              : t('quickEntry.saveChanges')}
+            : needsSecondTap
+              ? t('budget.preview.saveAnyway')
+              : edit === undefined
+                ? t('quickEntry.save')
+                : t('quickEntry.saveChanges')}
         </Button>
       </div>
     </form>

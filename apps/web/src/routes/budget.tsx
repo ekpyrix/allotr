@@ -3,7 +3,11 @@ import { FormError } from '@/components/field';
 import { Page } from '@/components/page';
 import { LoadingBlock } from '@/components/route-skeleton';
 import { Button } from '@/components/ui/button';
+import { BudgetsSection } from '@/features/budget/budgets-section';
+import { CoverOrder } from '@/features/budget/cover-order';
+import { PoolsSection } from '@/features/budget/pools-section';
 import { BillsSection } from '@/features/settings/bills';
+import { budgetsQuery, poolsQuery } from '@/lib/budgets';
 import {
   allAccountsQuery,
   allCategoriesQuery,
@@ -14,10 +18,9 @@ import { errorMessage } from '@/lib/problem';
 import { billsQuery, ratesQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
-// The Budget tab (ADR 0023). For now it hosts the bills that reserve money
-// from the daily number; pools, budgets and goals arrive with the money
-// model. A card appears only when its data exists, so nothing here is a
-// placeholder figure.
+// The Budget tab (ADR 0021, 0023): budgets for the period, the cover order,
+// pools and the bills that reserve money from the daily number. Every
+// figure comes from the server, so nothing here is a placeholder.
 export function BudgetPage() {
   const settings = useQuery(ledgerSettingsQuery);
   const today = useQuery(todayQuery);
@@ -26,7 +29,18 @@ export function BudgetPage() {
   // Merged and archived too: a bill can still name one.
   const categories = useQuery(allCategoriesQuery);
   const accounts = useQuery(allAccountsQuery);
-  const all = [settings, today, bills, rates, categories, accounts];
+  const budgets = useQuery(budgetsQuery);
+  const pools = useQuery(poolsQuery);
+  const all = [
+    settings,
+    today,
+    bills,
+    rates,
+    categories,
+    accounts,
+    budgets,
+    pools,
+  ];
 
   const failed = all.find((q) => q.isError && q.data === undefined);
   if (failed !== undefined)
@@ -51,7 +65,9 @@ export function BudgetPage() {
     bills.data === undefined ||
     rates.data === undefined ||
     categories.data === undefined ||
-    accounts.data === undefined
+    accounts.data === undefined ||
+    budgets.data === undefined ||
+    pools.data === undefined
   )
     return (
       <Page title={t('budget.title')}>
@@ -61,6 +77,14 @@ export function BudgetPage() {
 
   return (
     <Page title={t('budget.title')} intro={t('budget.intro')}>
+      <BudgetsSection
+        status={budgets.data}
+        categories={categories.data.categories}
+        currency={settings.data.defaultCurrency}
+        locale={settings.data.locale}
+      />
+      <CoverOrder items={budgets.data.coverOrder} />
+      <PoolsSection list={pools.data} locale={settings.data.locale} />
       <BillsSection
         bills={bills.data.bills}
         accounts={accounts.data.accounts}

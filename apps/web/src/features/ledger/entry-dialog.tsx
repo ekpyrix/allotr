@@ -11,6 +11,7 @@ import { Dialog } from 'radix-ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import { FormError } from '@/components/field';
 import { Button } from '@/components/ui/button';
+import { EntryCover } from '@/features/budget/entry-cover';
 import { QuickEntryForm } from '@/features/quick-entry/quick-entry-form';
 import { entryCategoryIds } from '@/lib/entry-categories';
 import {
@@ -274,6 +275,10 @@ function EntryDetail({
       )}
       {touchesArchived && entry.reversedById === null ? (
         <p className="text-text-muted">{t('ledger.entry.archived')}</p>
+      ) : null}
+
+      {open && entry.kind === 'expense' ? (
+        <EntryCover entryId={entry.id} locale={locale} />
       ) : null}
 
       {canUndo || canEdit ? (

@@ -6,6 +6,7 @@ import { Page } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton, SkeletonCard, SkeletonRows } from '@/components/ui/skeleton';
+import { BudgetCards } from '@/features/today/budget-cards';
 import { AttentionList } from '@/features/today/attention-list';
 import { entryRows } from '@/features/today/entries';
 import {
@@ -18,6 +19,7 @@ import { HeroCard } from '@/features/today/hero-card';
 import { heroState, paceAhead } from '@/features/today/state';
 import { TodaysEntries } from '@/features/today/todays-entries';
 import { Waterfall } from '@/features/today/waterfall';
+import { budgetsQuery, poolsQuery } from '@/lib/budgets';
 import {
   accountsQuery,
   categoriesQuery,
@@ -42,6 +44,9 @@ export function TodayPage({ user }: { user: SessionUser }) {
   const categories = useQuery(categoriesQuery);
   const entries = useQuery(entriesOnQuery(today.data?.today));
   const days = useQuery(cycleDaysQuery(today.data?.cycle.openedOn));
+  // Cards that add to the page, so a failure here never blocks it.
+  const budgets = useQuery(budgetsQuery);
+  const pools = useQuery(poolsQuery);
   const [explaining, setExplaining] = useState(false);
   const all = [today, settings, accounts, categories, entries];
 
@@ -139,6 +144,11 @@ export function TodayPage({ user }: { user: SessionUser }) {
             <FirstPaycheck />
           ) : null}
           <AttentionList figures={figures} locale={locale} />
+          <BudgetCards
+            status={budgets.data}
+            pools={pools.data}
+            locale={locale}
+          />
         </div>
         <div className="grid gap-6">
           {entries.data === undefined ||
