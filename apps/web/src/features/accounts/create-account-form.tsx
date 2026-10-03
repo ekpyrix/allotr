@@ -18,6 +18,7 @@ import {
   type AccountDraftErrors,
   type AccountDraftField,
 } from './create-draft.ts';
+import { reformatAmountInput } from '@/lib/amount-input.ts';
 
 function useCreateAccount() {
   const queryClient = useQueryClient();
@@ -241,6 +242,15 @@ export function CreateAccountForm({
             value={draft.openingBalance}
             onChange={(e) => {
               update({ openingBalance: e.currentTarget.value });
+            }}
+            onBlur={(e) => {
+              update({
+                openingBalance: reformatAmountInput(
+                  e.currentTarget.value,
+                  draft.currency,
+                  locale,
+                ),
+              });
             }}
           />
         )}

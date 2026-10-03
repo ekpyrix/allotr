@@ -48,6 +48,7 @@ import {
 } from './bill-draft.ts';
 import { Section } from './section.tsx';
 import { useBusy } from './use-busy.ts';
+import { reformatAmountInput } from '@/lib/amount-input.ts';
 
 type PayHow = 'record' | 'link';
 
@@ -414,6 +415,15 @@ export function BillForm({
                   setPriceText(e.currentTarget.value);
                   setPriceError(undefined);
                 }}
+                onBlur={(e) => {
+                  setPriceText(
+                    reformatAmountInput(
+                      e.currentTarget.value,
+                      priceCurrency,
+                      locale,
+                    ),
+                  );
+                }}
               />
             )}
           </FieldControl>
@@ -441,6 +451,11 @@ export function BillForm({
             onChange={(e) => {
               setAmount(e.currentTarget.value);
               setAmountError(undefined);
+            }}
+            onBlur={(e) => {
+              setAmount(
+                reformatAmountInput(e.currentTarget.value, currency, locale),
+              );
             }}
           />
         )}
@@ -814,6 +829,15 @@ function PayBill({
                     setPriceText(e.currentTarget.value);
                     setPriceError(undefined);
                   }}
+                  onBlur={(e) => {
+                    setPriceText(
+                      reformatAmountInput(
+                        e.currentTarget.value,
+                        priceCurrency,
+                        locale,
+                      ),
+                    );
+                  }}
                 />
               )}
             </FieldControl>
@@ -834,6 +858,15 @@ function PayBill({
                 onChange={(e) => {
                   setPaidText(e.currentTarget.value);
                   setPaidError(undefined);
+                }}
+                onBlur={(e) => {
+                  setPaidText(
+                    reformatAmountInput(
+                      e.currentTarget.value,
+                      currency,
+                      locale,
+                    ),
+                  );
                 }}
               />
             )}

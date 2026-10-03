@@ -11,6 +11,7 @@ import {
   type SplitLineDraft,
 } from './draft.ts';
 import type { CategoryOption } from './options.ts';
+import { reformatAmountInput } from '@/lib/amount-input.ts';
 
 // One entry across several categories (FR-L5): a category and an amount
 // per line, and what is still left to assign. The draft holds the lines;
@@ -120,6 +121,15 @@ export function SplitEditor({
                     value={line.amount}
                     onChange={(e) => {
                       onLine(i, { amount: e.currentTarget.value });
+                    }}
+                    onBlur={(e) => {
+                      onLine(i, {
+                        amount: reformatAmountInput(
+                          e.currentTarget.value,
+                          currency,
+                          locale,
+                        ),
+                      });
                     }}
                   />
                 )}
