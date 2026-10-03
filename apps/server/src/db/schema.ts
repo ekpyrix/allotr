@@ -201,6 +201,16 @@ export interface Postings {
   user_id: string;
 }
 
+export interface PushSubscriptions {
+  auth: string;
+  created_at: string;
+  endpoint: string;
+  id: string;
+  p256dh: string;
+  user_agent: string | null;
+  user_id: string;
+}
+
 export interface Reconciliations {
   account_id: string;
   adjustment_transaction_id: string | null;
@@ -210,6 +220,18 @@ export interface Reconciliations {
   id: string;
   on_date: string;
   stated_minor: number;
+  user_id: string;
+}
+
+export interface Reminders {
+  body: string;
+  created_at: string;
+  dedupe_key: string;
+  id: string;
+  kind: string;
+  read_at: string | null;
+  title: string;
+  url: string;
   user_id: string;
 }
 
@@ -335,7 +357,9 @@ export interface DB {
   pool_moves: PoolMoves;
   pools: Pools;
   postings: Postings;
+  push_subscriptions: PushSubscriptions;
   reconciliations: Reconciliations;
+  reminders: Reminders;
   schema_migrations: SchemaMigrations;
   sessions: Sessions;
   sign_in_failures: SignInFailures;

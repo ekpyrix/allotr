@@ -14,6 +14,7 @@ describe('serverEnvSchema', () => {
       ALLOTR_HOST: '127.0.0.1',
       ALLOTR_PORT: 8080,
       ALLOTR_LOG_LEVEL: 'info',
+      ALLOTR_REMINDER_INTERVAL_SECONDS: 900,
       ALLOTR_TRUSTED_PROXIES: [],
     });
   });
@@ -41,6 +42,7 @@ describe('serverEnvSchema', () => {
     ['a short secret key', { ALLOTR_SECRET_KEY: 'short' }],
     ['a port out of range', { ALLOTR_PORT: '70000' }],
     ['an unknown log level', { ALLOTR_LOG_LEVEL: 'loud' }],
+    ['a reminder interval of zero', { ALLOTR_REMINDER_INTERVAL_SECONDS: '0' }],
     [
       'a trusted proxy that is not an address',
       { ALLOTR_TRUSTED_PROXIES: 'proxy' },

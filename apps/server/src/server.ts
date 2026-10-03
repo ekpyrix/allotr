@@ -7,6 +7,9 @@ import { createAuth } from './auth/auth.ts';
 import { defaultAuthLimits, type AuthLimits } from './auth/limits.ts';
 import { createKysely, openSqlite } from './db/sqlite.ts';
 import { createApp } from './http/app.ts';
+import { createPushService } from './push/service.ts';
+import { startScheduler } from './scheduler.ts';
+import type { PushSender } from './push/delivery.ts';
 import type { Logger } from './logger.ts';
 
 const repoMigrations = join(import.meta.dirname, '../../../migrations');
@@ -21,6 +24,10 @@ export interface StartOptions {
   readonly webDir?: string;
   /** Replaces the network for theme URL imports in tests. */
   readonly fetchThemeUrl?: (url: string) => Promise<string>;
+  /** Replaces the network for Web Push in tests. */
+  readonly sendPush?: PushSender;
+  /** Milliseconds between reminder runs; the default is 15 minutes. */
+  readonly reminderIntervalMs?: number;
 }
 
 export interface RunningServer {
@@ -61,6 +68,9 @@ export async function startServer(
 
   const db = createKysely(sqlite);
   const auth = createAuth({ db, config, limits, logger, now });
+  const push = createPushService(db, config.baseUrl, now, options.sendPush);
+  // The VAPID keys are made at first start and kept with the instance secrets.
+  await push.publicKey();
   const app = createApp({
     db,
     auth,
@@ -68,6 +78,7 @@ export async function startServer(
     limits,
     logger,
     now,
+    push,
     webDir: options.webDir ?? repoWebDir,
     ...(options.fetchThemeUrl === undefined
       ? {}
@@ -80,9 +91,19 @@ export async function startServer(
   const url = `http://${host}:${String(address.port)}`;
   logger.info({ url }, 'server listening');
 
+  const stopScheduler = startScheduler({
+    db,
+    send: push.send,
+    now,
+    logger,
+    intervalMs:
+      options.reminderIntervalMs ?? config.reminderIntervalSeconds * 1000,
+  });
+
   return {
     url,
     close: async () => {
+      stopScheduler();
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {
           if (error) reject(error);

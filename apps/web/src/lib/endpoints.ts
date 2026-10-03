@@ -1,4 +1,10 @@
 import {
+  markReadBodySchema,
+  pushConfigSchema,
+  pushSubscriptionBodySchema,
+  pushSubscriptionListSchema,
+  pushTestResultSchema,
+  reminderListSchema,
   calendarSchema,
   createIouBodySchema,
   createdIousSchema,
@@ -543,6 +549,43 @@ export const endpoints = {
     path: '/v1/ious/{id}',
     body: updateIouBodySchema,
     response: iouSchema,
+  }),
+  reminders: endpoint({
+    method: 'GET',
+    path: '/v1/reminders',
+    response: reminderListSchema,
+  }),
+  markRemindersRead: endpoint({
+    method: 'POST',
+    path: '/v1/reminders/read',
+    body: markReadBodySchema,
+    response: z.unknown(),
+  }),
+  pushConfig: endpoint({
+    method: 'GET',
+    path: '/v1/push/config',
+    response: pushConfigSchema,
+  }),
+  pushSubscriptions: endpoint({
+    method: 'GET',
+    path: '/v1/push/subscriptions',
+    response: pushSubscriptionListSchema,
+  }),
+  subscribePush: endpoint({
+    method: 'POST',
+    path: '/v1/push/subscriptions',
+    body: pushSubscriptionBodySchema,
+    response: z.unknown(),
+  }),
+  unsubscribePush: endpoint({
+    method: 'DELETE',
+    path: '/v1/push/subscriptions',
+    response: z.unknown(),
+  }),
+  pushTest: endpoint({
+    method: 'POST',
+    path: '/v1/push/test',
+    response: pushTestResultSchema,
   }),
   today: endpoint({
     method: 'GET',

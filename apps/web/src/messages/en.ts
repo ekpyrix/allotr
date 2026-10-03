@@ -1375,6 +1375,46 @@ export const en = {
       other: 'Other ({count} categories)',
     },
   },
+  reminders: {
+    title: 'Reminders',
+    intro: 'Bills due, IOUs due or overdue, and your weekly review.',
+    loading: 'Loading reminders',
+    feed: {
+      empty: 'Nothing to remind you of yet.',
+      unread: { one: '{count} unread', other: '{count} unread' },
+      markAll: 'Mark all read',
+      new: 'New',
+      open: 'Open',
+    },
+    card: {
+      title: 'Reminders',
+      all: {
+        one: 'See all ({count} unread)',
+        other: 'See all ({count} unread)',
+      },
+    },
+    push: {
+      title: 'Notifications on this device',
+      privacy:
+        "Off until you turn it on. Notifications go through your browser vendor's push service, which sees that a notification was sent but not your figures. Reminders still appear here without it.",
+      unsupported: 'This browser cannot show notifications for installed apps.',
+      blocked:
+        'Notifications are blocked for this site in the browser settings.',
+      on: 'Notifications are on for this device.',
+      off: 'Notifications are off for this device.',
+      turnOn: 'Turn on notifications',
+      turnOff: 'Turn off notifications',
+      test: 'Send a test notification',
+      testSent: 'A test notification was sent.',
+      testNone: 'The test notification could not be delivered.',
+      problems: {
+        refused: 'Permission was not given, so nothing was turned on.',
+        'no-worker':
+          'The app is not installed as an offline app in this browser yet. Try again after a reload.',
+        invalid: 'The browser gave a subscription Allotr could not use.',
+      },
+    },
+  },
   calendar: {
     title: 'Calendar',
     gridLabel: 'Days of the month',

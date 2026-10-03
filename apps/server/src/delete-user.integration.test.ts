@@ -1,3 +1,4 @@
+import { runReminders } from './reminders.ts';
 import { sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createClient, type TestClient } from './testing/http-client.ts';
@@ -227,6 +228,20 @@ describe('POST /v1/user/delete', () => {
       expect(
         (await h.bob.put('/v1/settings/appearance', { mode: 'dark' })).status,
       ).toBe(200);
+      expect(
+        (
+          await h.bob.post('/v1/push/subscriptions', {
+            endpoint: 'https://push.example.test/send/bob',
+            keys: {
+              p256dh:
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+              auth: 'AAAAAAAAAAAAAAAAAAAAAA',
+            },
+          })
+        ).status,
+      ).toBe(204);
+      // A reminder for the user, with no network involved.
+      await runReminders(h.db, () => Promise.resolve('sent'), new Date());
       await h.alice.post('/v1/import', bundle);
       aliceBefore = await userRowCounts(h, await userIdOf(h.alice));
     });

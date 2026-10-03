@@ -3,6 +3,7 @@
 // figures always come from the server. A new build installs beside the old
 // one and waits until the page asks it to take over (the update prompt).
 import { route } from './policy.ts';
+import { parsePush } from './push.ts';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -62,4 +63,40 @@ self.addEventListener('fetch', (event) => {
   if (target.kind === 'network') return;
   const path = target.kind === 'shell' ? '/index.html' : target.path;
   event.respondWith(fromCache(event.request, path));
+});
+
+// Web Push (ADR 0024): shown only for a device the user turned it on for.
+// The payload names a path in this app; tapping the notification opens it.
+self.addEventListener('push', (event) => {
+  const message = parsePush(event.data === null ? null : event.data.text());
+  event.waitUntil(
+    self.registration.showNotification(message.title, {
+      body: message.body,
+      icon: '/icon-192.png',
+      data: { url: message.url },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const data: unknown = event.notification.data;
+  const url = parsePush(JSON.stringify(data)).url;
+  event.waitUntil(
+    (async () => {
+      const open = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      const target = new URL(url, self.location.origin).href;
+      for (const client of open) {
+        if (new URL(client.url).origin === self.location.origin) {
+          await client.focus();
+          if ('navigate' in client) await client.navigate(target);
+          return;
+        }
+      }
+      await self.clients.openWindow(target);
+    })(),
+  );
 });

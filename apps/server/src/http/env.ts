@@ -5,6 +5,7 @@ import type { AuthLimits } from '../auth/limits.ts';
 import type { Config } from '../config.ts';
 import type { DB } from '../db/schema.ts';
 import type { Logger } from '../logger.ts';
+import type { PushService } from '../push/service.ts';
 
 export interface AppDeps {
   readonly db: Kysely<DB>;
@@ -13,6 +14,8 @@ export interface AppDeps {
   readonly limits: AuthLimits;
   readonly logger: Logger;
   readonly now: () => Date;
+  /** The Web Push key and sender; tests replace the sender. */
+  readonly push: PushService;
   /** Built web app to serve; omitted in API-only tests. */
   readonly webDir?: string;
   /** Fetches a theme file from a URL; tests replace the network. */

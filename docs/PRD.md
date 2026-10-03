@@ -195,6 +195,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-U5 | Notifications through chat, web push, or self-hosted push services. | S | M6 |
 | FR-U6 | Signed outgoing webhooks for automation tools. | C | M6 |
 | FR-U7 | Digests and reminders at configurable times in the user's timezone. | S | M6 |
+| FR-U8 | Reminders for bills due, IOUs due or overdue (weekly) and the weekly review, made once each by a server job and shown in an in-app feed; opt-in Web Push per device (off by default, through the browser vendor's push service, with instance VAPID keys generated at first start). | S | v2 |
 
 ## 7. Non-functional requirements
 

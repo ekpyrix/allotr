@@ -16,6 +16,7 @@ describe('loadConfig', () => {
       secretKey: 'fake-secret-key-for-tests-0123456789',
       host: '127.0.0.1',
       port: 9000,
+      reminderIntervalSeconds: 900,
       logLevel: 'info',
       trustedProxies: [],
     });

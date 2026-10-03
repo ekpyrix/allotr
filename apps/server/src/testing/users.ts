@@ -7,6 +7,7 @@ import { defaultAuthLimits } from '../auth/limits.ts';
 import type { DB } from '../db/schema.ts';
 import { createKysely, openSqlite } from '../db/sqlite.ts';
 import { createLogger } from '../logger.ts';
+import type { PushSender } from '../push/delivery.ts';
 import { startServer, type RunningServer } from '../server.ts';
 import { createClient, type TestClient } from './http-client.ts';
 
@@ -35,6 +36,8 @@ export async function startWithTwoUsers(
   options: {
     now?: () => Date;
     fetchThemeUrl?: (url: string) => Promise<string>;
+    /** Web Push never reaches the network in tests. */
+    sendPush?: PushSender;
   } = {},
 ): Promise<TwoUsers> {
   const dir = mkdtempSync(join(tmpdir(), 'allotr-api-'));
@@ -45,11 +48,13 @@ export async function startWithTwoUsers(
       secretKey: 'fake-secret-key-for-tests-0123456789',
       host: '127.0.0.1',
       port: 0,
+      reminderIntervalSeconds: 900,
       logLevel: 'silent',
       trustedProxies: [],
     },
     logger: createLogger('silent'),
     authLimits: { ...defaultAuthLimits, signInRequestsPerMinute: 1000 },
+    sendPush: options.sendPush ?? (() => Promise.resolve('failed')),
     ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.fetchThemeUrl === undefined
       ? {}

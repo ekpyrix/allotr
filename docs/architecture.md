@@ -103,7 +103,9 @@ non-GET request go to the network untouched. Its cache holds build output
 only, never user data. A new build installs beside the old one, and the page
 offers **Reload** instead of switching by itself. Offline, the app still
 opens and shows an offline notice in place of figures; it does not show
-cached numbers.
+cached numbers. The worker also shows Web Push notifications and opens the
+app path a notification names (only a path inside the app), for a device whose
+user turned push on.
 
 ### 4.4 Assistant and MCP
 
@@ -444,7 +446,7 @@ server's suggested name, or `--out`. It never overwrites a file.
 
 | Source | Holds |
 |---|---|
-| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, `ALLOTR_TRUSTED_PROXIES`, `ALLOTR_ROLE` (documented in `.env.example` and `deploy/.env.example`) |
+| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, `ALLOTR_REMINDER_INTERVAL_SECONDS`, `ALLOTR_TRUSTED_PROXIES`, `ALLOTR_ROLE` (documented in `.env.example` and `deploy/.env.example`) |
 | Admin UI (stored in the database) | Everything else: gateways, AI, exchange rates, OIDC, registration, notifications |
 | Per-user settings | Policies, defaults, locale, timezone, currency, themes |
 
@@ -458,6 +460,22 @@ backups and retention purges. Jobs are idempotent and keyed by
 (job, user, period) in the user's timezone. After downtime each missed period
 runs once; digests older than 24 hours are skipped. Correctness never depends
 on a job running, because figures are derived from the ledger.
+
+The reminder job is the first one. An in-process timer (every
+`ALLOTR_REMINDER_INTERVAL_SECONDS`, 900 by default) runs `runReminders`: for
+each user it asks the `dueReminders` projection in `packages/core` what is due
+today in the user's timezone (bills due today or tomorrow and unpaid, IOUs due
+today and weekly while overdue, the weekly review once per ISO week), records
+each in `reminders` under a unique (user, key) so it is made once, and pushes
+only the new ones. The in-app feed is `GET /v1/reminders` (Settings, and the
+Dashboard card for unread ones). Web Push is opt-in per device
+(`/v1/push/subscriptions`): the payload is encrypted (RFC 8291) and signed
+with the instance's VAPID key (RFC 8292) using `node:crypto`, so there is no
+push library; the user-supplied endpoint gets the same guard as theme URLs
+(https, public addresses only, pinned connection, no redirects). The VAPID
+pair is created at first start and stored in `instance_settings` (key
+`vapid_keys`); the database is plaintext by [ADR 0015](adr/0015-encryption-at-rest.md).
+A push service answering 404 or 410 removes the subscription.
 
 ## 9. Security and privacy
 

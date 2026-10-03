@@ -12,6 +12,7 @@ import {
   PaydayCard,
   WeeklyReviewCard,
 } from '@/features/today/insight-cards';
+import { ReminderCard } from '@/features/reminders/reminder-card';
 import { NextDays } from '@/features/calendar/next-days';
 import { BudgetCards } from '@/features/today/budget-cards';
 import { AttentionList } from '@/features/today/attention-list';
@@ -178,6 +179,7 @@ export function TodayPage({ user }: { user: SessionUser }) {
               locale={locale}
             />
           )}
+          <ReminderCard />
           <NextDays today={figures.today} locale={locale} />
           <BudgetCards
             status={budgets.data}
