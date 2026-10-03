@@ -35,6 +35,7 @@ const specs = [
   'audit',
   'budget',
   'payday',
+  'ious',
 ];
 
 const projects = sizes.flatMap((size, i) =>

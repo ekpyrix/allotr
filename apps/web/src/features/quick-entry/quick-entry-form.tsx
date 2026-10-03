@@ -1,5 +1,6 @@
 import {
   formatMoney,
+  type CoverPreviewView,
   type AccountView,
   type CategoryView,
   type CreateTransactionBody,
@@ -48,6 +49,14 @@ import {
   coverRequest,
   useCoverPreview,
 } from '@/features/budget/cover-preview';
+import {
+  toSplitBody,
+  type PersonDraft,
+  type PersonError,
+} from '@/features/ious/draft';
+import { SplitPeople } from '@/features/ious/split-people';
+import { useSplitSave } from '@/features/ious/use-split-save';
+import { previewIouCover } from '@/lib/ious';
 import { readLastUsed, rememberChoice } from './last-used.ts';
 import {
   categoryOptions,
@@ -144,9 +153,20 @@ export function QuickEntryForm({
   const form = useRef<HTMLFormElement>(null);
   const save = useSaveEntry(edit?.id);
   const queryClient = useQueryClient();
+  const splitSave = useSplitSave();
+  // Splitting with people (ADR 0024): null when off; the typed amount is then
+  // the user's own share.
+  const [people, setPeople] = useState<readonly PersonDraft[] | null>(null);
+  const [peopleErrors, setPeopleErrors] = useState<
+    Readonly<Record<number, PersonError>>
+  >({});
+  const [splitWarning, setSplitWarning] = useState<CoverPreviewView | null>(
+    null,
+  );
+  const splitKey = useRef<string | null>(null);
   // The cover request the user has already confirmed with a second tap.
   const [confirmed, setConfirmed] = useState<string | null>(null);
-  const saving = save.isPending;
+  const saving = save.isPending || splitSave.isPending;
   useEffect(() => {
     onSavingChange(saving);
     return () => {
@@ -215,7 +235,7 @@ export function QuickEntryForm({
   const split = !transfer && isSplit(draft);
   const linesCurrency = splitCurrency(draft, accounts);
   const built =
-    draft.kind === 'expense' && edit === undefined && !split
+    draft.kind === 'expense' && edit === undefined && !split && people === null
       ? toBody(draft, { accounts, locale })
       : null;
   const coverAsk = coverRequest(built?.ok === true ? built.body : null);
@@ -252,6 +272,10 @@ export function QuickEntryForm({
     }
     clearErrors();
     const body = result.body;
+    if (people !== null && edit === undefined && body.kind === 'expense') {
+      submitSplit(body, people);
+      return;
+    }
     const request = edit === undefined ? coverRequest(body) : null;
     if (request === null) {
       record(body);
@@ -276,6 +300,60 @@ export function QuickEntryForm({
         // The preview is advice; saving does not depend on it.
         inFlight.current = false;
         record(body);
+      });
+  }
+
+  function submitSplit(
+    body: Extract<CreateTransactionBody, { kind: 'expense' }>,
+    shares: readonly PersonDraft[],
+  ) {
+    const built = toSplitBody(body, shares, locale);
+    if (!built.ok) {
+      setPeopleErrors(built.errors);
+      return;
+    }
+    setPeopleErrors({});
+    const askedFor = JSON.stringify(built.body);
+    const send = () => {
+      splitKey.current ??= randomId();
+      splitSave.mutate(
+        { body: built.body, key: splitKey.current },
+        {
+          onSuccess: (created) => {
+            splitKey.current = null;
+            onSaved(
+              t('budget.ious.saved', {
+                amount: formatMoney(body.amount, locale),
+              }),
+              created.transaction.id,
+            );
+          },
+          onSettled: () => {
+            inFlight.current = false;
+          },
+        },
+      );
+    };
+    inFlight.current = true;
+    void queryClient
+      .query({
+        queryKey: ['today', 'budgets', 'iou-cover-preview', askedFor],
+        queryFn: () => previewIouCover(built.body),
+        staleTime: 10_000,
+        retry: false,
+        networkMode: 'always',
+      })
+      .then((cover) => {
+        if (cover.needsConfirmation && confirmed !== askedFor) {
+          setConfirmed(askedFor);
+          setSplitWarning(cover);
+          inFlight.current = false;
+          return;
+        }
+        send();
+      })
+      .catch(() => {
+        send();
       });
   }
 
@@ -631,6 +709,22 @@ export function QuickEntryForm({
         </fieldset>
       )}
 
+      {edit === undefined && draft.kind === 'expense' && !split ? (
+        <SplitPeople
+          people={people}
+          errors={peopleErrors}
+          currency={source?.currency ?? 'USD'}
+          locale={locale}
+          onChange={(next) => {
+            setPeople(next);
+            setPeopleErrors({});
+            setSplitWarning(null);
+          }}
+        />
+      ) : null}
+      {splitWarning !== null ? (
+        <CoverPreview preview={splitWarning} locale={locale} />
+      ) : null}
       {preview !== undefined && previewKey === askKey ? (
         <CoverPreview preview={preview} locale={locale} />
       ) : null}

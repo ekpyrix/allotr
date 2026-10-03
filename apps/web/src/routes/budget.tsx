@@ -9,6 +9,8 @@ import { PaydaySection } from '@/features/payday/payday-section';
 import { PoolsSection } from '@/features/budget/pools-section';
 import { BillsSection } from '@/features/settings/bills';
 import { budgetsQuery, poolsQuery } from '@/lib/budgets';
+import { iousQuery } from '@/lib/ious';
+import { IousSection } from '@/features/ious/ious-section';
 import {
   allAccountsQuery,
   allCategoriesQuery,
@@ -32,6 +34,7 @@ export function BudgetPage() {
   const accounts = useQuery(allAccountsQuery);
   const budgets = useQuery(budgetsQuery);
   const pools = useQuery(poolsQuery);
+  const ious = useQuery(iousQuery);
   const all = [
     settings,
     today,
@@ -41,6 +44,7 @@ export function BudgetPage() {
     accounts,
     budgets,
     pools,
+    ious,
   ];
 
   const failed = all.find((q) => q.isError && q.data === undefined);
@@ -68,7 +72,8 @@ export function BudgetPage() {
     categories.data === undefined ||
     accounts.data === undefined ||
     budgets.data === undefined ||
-    pools.data === undefined
+    pools.data === undefined ||
+    ious.data === undefined
   )
     return (
       <Page title={t('budget.title')}>
@@ -93,6 +98,13 @@ export function BudgetPage() {
       />
       <CoverOrder items={budgets.data.coverOrder} />
       <PoolsSection list={pools.data} locale={settings.data.locale} />
+      <IousSection
+        list={ious.data}
+        accounts={accounts.data.accounts}
+        categories={categories.data.categories}
+        currency={settings.data.defaultCurrency}
+        locale={settings.data.locale}
+      />
       <BillsSection
         bills={bills.data.bills}
         accounts={accounts.data.accounts}

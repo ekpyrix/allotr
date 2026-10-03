@@ -26,6 +26,7 @@ import { heroState, paceAhead } from '@/features/today/state';
 import { TodaysEntries } from '@/features/today/todays-entries';
 import { Waterfall } from '@/features/today/waterfall';
 import { budgetsQuery, poolsQuery } from '@/lib/budgets';
+import { iousQuery } from '@/lib/ious';
 import {
   accountsQuery,
   categoriesQuery,
@@ -59,6 +60,7 @@ export function TodayPage({ user }: { user: SessionUser }) {
   // Cards that add to the page, so a failure here never blocks it.
   const budgets = useQuery(budgetsQuery);
   const pools = useQuery(poolsQuery);
+  const ious = useQuery(iousQuery);
   const review = useQuery(weeklyReviewQuery);
   const fund = useQuery(emergencyFundQuery);
   const worth = useQuery(netWorthQuery(30));
@@ -159,7 +161,11 @@ export function TodayPage({ user }: { user: SessionUser }) {
           ) ? (
             <FirstPaycheck />
           ) : null}
-          <AttentionList figures={figures} locale={locale} />
+          <AttentionList
+            figures={figures}
+            locale={locale}
+            ious={ious.data?.ious}
+          />
           {plan.data !== undefined && plan.data.income.amountMinor > 0 ? (
             <PaydayCard />
           ) : null}
