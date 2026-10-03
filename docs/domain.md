@@ -299,6 +299,18 @@ All of these are computed from the ledger and settings when read.
   summaries). It is negative when savings fell and null when the cycle had no
   income. The web app only formats it.
 
+## Calendar
+
+`calendar(view, from, to, today)` gives one row per day. `spent` is the
+pace spending of the day (linked bill payments and reconcile adjustments are
+left out, as in the cycle charts), in the default currency at the rate of
+that day, and null after today. `heat` is `ceil(4 * spent / peak)` clamped to
+1 to 4 for a day with spending, 0 for none, where `peak` is the most spent on
+one day of the range. Bills are the due dates of each bill with whether that
+due date was paid; payday is the day a paycheck opened a cycle and the open
+cycle's expected payday; IOUs are unsettled ones by due date. A range is at
+most 62 days.
+
 ## Daily usable
 
 ```

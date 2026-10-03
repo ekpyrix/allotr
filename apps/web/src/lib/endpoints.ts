@@ -1,4 +1,5 @@
 import {
+  calendarSchema,
   createIouBodySchema,
   createdIousSchema,
   iouListSchema,
@@ -562,6 +563,11 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/accounts/{id}/history',
     response: accountHistorySchema,
+  }),
+  calendar: endpoint({
+    method: 'GET',
+    path: '/v1/reports/calendar',
+    response: calendarSchema,
   }),
   categorySummary: endpoint({
     method: 'GET',

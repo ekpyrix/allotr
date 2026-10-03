@@ -12,6 +12,7 @@ import {
   PaydayCard,
   WeeklyReviewCard,
 } from '@/features/today/insight-cards';
+import { NextDays } from '@/features/calendar/next-days';
 import { BudgetCards } from '@/features/today/budget-cards';
 import { AttentionList } from '@/features/today/attention-list';
 import { entryRows } from '@/features/today/entries';
@@ -177,6 +178,7 @@ export function TodayPage({ user }: { user: SessionUser }) {
               locale={locale}
             />
           )}
+          <NextDays today={figures.today} locale={locale} />
           <BudgetCards
             status={budgets.data}
             pools={pools.data}

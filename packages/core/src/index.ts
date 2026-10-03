@@ -226,6 +226,16 @@ export {
   type CategoryGroup,
   type SummaryCategoryNode,
 } from './projections/category-summary.ts';
+export {
+  calendar,
+  heatLevel,
+  HEAT_LEVELS,
+  MAX_CALENDAR_DAYS,
+  type Calendar,
+  type CalendarBill,
+  type CalendarDay,
+  type CalendarIou,
+} from './projections/calendar.ts';
 export { savingsRate } from './projections/savings-rate.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
