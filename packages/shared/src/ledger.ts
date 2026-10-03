@@ -25,8 +25,12 @@ export const accountSchema = z.object({
   name: z.string(),
   kind: accountKindSchema,
   currency: currencyCodeSchema,
-  /** The group it counts toward today. */
+  /**
+   * `on` when its pool counts toward the daily number today, else `off`.
+   */
   budgetGroup: budgetGroupSchema,
+  /** The pool it is in today. */
+  poolId: idSchema,
   balance: moneySchema,
   archived: z.boolean(),
   createdAt: z.iso.datetime(),
@@ -388,6 +392,11 @@ export const ledgerSettingsSchema = z.object({
   paydayDay: z.int().min(1).max(31),
   /** The next payday, when it differs from the predicted one. */
   paydayOverride: localDateSchema.nullable(),
+  /**
+   * Lets a savings pool count toward the daily number when its own switch
+   * is on (ADR 0021). Off by default: savings are never included.
+   */
+  countSavingsInDaily: z.boolean(),
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -400,6 +409,7 @@ export const updateLedgerSettingsBodySchema = z
     paydayDay: z.int().min(1).max(31).optional(),
     /** null clears the override. */
     paydayOverride: localDateSchema.nullable().optional(),
+    countSavingsInDaily: z.boolean().optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

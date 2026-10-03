@@ -24,6 +24,7 @@ const accounts: AccountView[] = [...currencies, 'USD2'].map((name) => ({
   balance: money(0, name.slice(0, 3)),
   archived: false,
   createdAt: '2026-01-01T00:00:00.000Z',
+  poolId: 'pool-budget',
   lastReconciledOn: null,
 }));
 

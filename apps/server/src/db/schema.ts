@@ -106,6 +106,28 @@ export interface Invites {
   used_by: string | null;
 }
 
+export interface PoolMoves {
+  account_id: string;
+  created_at: string;
+  effective_on: string;
+  id: string;
+  pool_id: string;
+  user_id: string;
+}
+
+export interface Pools {
+  archived: Generated<number>;
+  counts_toward_daily: number;
+  created_at: string;
+  default_for: string | null;
+  id: string;
+  kind: string;
+  name: string;
+  position: Generated<number>;
+  updated_at: string;
+  user_id: string;
+}
+
 export interface Postings {
   account_id: string;
   amount_minor: number;
@@ -241,6 +263,8 @@ export interface DB {
   fx_rates: FxRates;
   instance_settings: InstanceSettings;
   invites: Invites;
+  pool_moves: PoolMoves;
+  pools: Pools;
   postings: Postings;
   reconciliations: Reconciliations;
   schema_migrations: SchemaMigrations;

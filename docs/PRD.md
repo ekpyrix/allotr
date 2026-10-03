@@ -4,7 +4,7 @@
 |---|---|
 | Status | Approved for v1 planning |
 | Owner | @fnnyx |
-| Last updated | 2026-09-27 |
+| Last updated | 2026-10-01 |
 | Related | [Architecture](architecture.md) · [Domain](domain.md) · [Grammar](grammar.md) · [ADRs](adr/) |
 
 This document says **what** Allotr v1 must do and **why**. How it is built is
@@ -103,7 +103,7 @@ Milestones refer to [§9](#9-release-plan).
 | ID | Requirement | Pri | MS |
 |---|---|---|---|
 | FR-L1 | Record expenses, income and transfers in a double-entry, append-only ledger. | M | M1 |
-| FR-L2 | Accounts are **on-budget** (spendable) or **off-budget** (savings); any account can be switched, effective from that day. | M | M1 |
+| FR-L2 | Accounts are **on-budget** (spendable) or **off-budget** (savings); any account can be switched, effective from that day. Superseded in part by FR-L11. | M | M1 |
 | FR-L3 | Each account has one ISO 4217 currency, fixed at creation. | M | M1 |
 | FR-L4 | Correcting or deleting an entry posts a reversal (plus a new entry for edits); nothing is removed from the ledger. A deleted entry is hidden from lists and can be restored as a copy. | M | M1 |
 | FR-L5 | Split one transaction across several categories. | M | M2 |
@@ -112,6 +112,7 @@ Milestones refer to [§9](#9-release-plan).
 | FR-L8 | Archive an account only at zero balance, offering a transfer or write-off. | M | M1 |
 | FR-L9 | Reconcile any account against the bank's balance, with a one-tap adjustment for the difference. | M | M2 |
 | FR-L10 | Recurring transactions with remind (default), auto-post or off. | S | M4 |
+| FR-L11 | Pools: named groups of accounts, each with a switch for counting toward the daily number. Defaults are Budget (counts) and Savings (does not); an account is in one pool, effective from a date. A savings pool counts only when the user also turns on a setting, off by default. | M | v2 |
 
 ### 6.2 Cycles and daily budget
 

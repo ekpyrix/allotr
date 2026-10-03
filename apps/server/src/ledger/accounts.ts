@@ -4,17 +4,19 @@ import {
   accountId,
   balanceHistory,
   balanceOf,
-  budgetGroupsOn,
   budgetSwitch,
   dailyFiguresOn,
+  groupsOn,
   leftTodayChange,
   opening,
+  poolsOn,
   totalOn,
   transfer,
   writeOff,
   type AccountId,
   type BudgetGroup,
   type Chart,
+  type PoolInputs,
   type Transaction,
 } from '@allotr/core';
 import {
@@ -42,6 +44,7 @@ import {
   ensureSystemAccounts,
   loadChart,
   loadLedger,
+  loadPoolSetup,
   newEntry,
   userToday,
   withSystemAccounts,
@@ -71,14 +74,32 @@ function nameTaken(): RequestProblem {
   );
 }
 
-type LedgerState = { chart: Chart; ledger: Transaction[]; today: LocalDate };
+type LedgerState = {
+  chart: Chart;
+  ledger: Transaction[];
+  today: LocalDate;
+  /** What core reads to tell which pool and group each account is in. */
+  pools: PoolInputs;
+};
 
 async function state(db: Db, userId: string, now: Date): Promise<LedgerState> {
   const chart = await loadChart(db, userId);
+  const ledger = await loadLedger(db, userId, chart);
+  const [today, setup, settings] = await Promise.all([
+    userToday(db, userId, now),
+    loadPoolSetup(db, userId),
+    readLedgerSettings(db, userId),
+  ]);
   return {
     chart,
-    ledger: await loadLedger(db, userId, chart),
-    today: await userToday(db, userId, now),
+    ledger,
+    today,
+    pools: {
+      chart,
+      ledger,
+      pools: setup,
+      settings: { countSavingsInDaily: settings.countSavingsInDaily },
+    },
   };
 }
 
@@ -131,10 +152,11 @@ async function views(
   const rows = await query.execute();
   if (rows.length === 0) return [];
 
-  const { chart, ledger, today } = await state(db, userId, now);
+  const { ledger, today, pools } = await state(db, userId, now);
   const reconciled = await lastReconciled(db, userId);
   const balances = accountBalances(ledger);
-  const groups = budgetGroupsOn(chart, ledger, today);
+  const groups = groupsOn(pools, today);
+  const placed = poolsOn(pools, today);
   return rows.map((row) => {
     const id = accountId(row.id);
     return {
@@ -143,6 +165,7 @@ async function views(
       kind: row.kind as UserAccountKind,
       currency: row.currency as CurrencyCode,
       budgetGroup: groups.get(id) ?? 'on',
+      poolId: placed.get(id) ?? '',
       balance: balances.get(id) ?? money(0, row.currency),
       archived: row.archived === 1,
       createdAt: row.created_at,
@@ -325,15 +348,19 @@ export async function updateAccount(
     }
     if (input.budgetGroup === undefined) return;
     if (row.archived === 1) throw archivedProblem();
-    const { chart, ledger, today } = await state(trx, userId, now);
-    const current = budgetGroupsOn(chart, ledger, today).get(accountId(id));
+    const { chart, ledger, today, pools } = await state(trx, userId, now);
+    const current = groupsOn(pools, today).get(accountId(id));
     if (current === input.budgetGroup) return;
     // Effective today, as a dated system transaction (docs/domain.md
-    // "Edge cases").
-    const entry = budgetSwitch(chart, ledger, newEntry(now, today), {
-      accountId: accountId(id),
-      budgetGroup: input.budgetGroup,
-    });
+    // "Edge cases"); it moves the account into the default Budget or
+    // Savings pool.
+    const entry = budgetSwitch(
+      chart,
+      ledger,
+      newEntry(now, today),
+      { accountId: accountId(id), budgetGroup: input.budgetGroup },
+      current ?? null,
+    );
     await appendTransaction(trx, userId, entry, { source: 'system' });
   });
   return getAccount(db, userId, id, now);

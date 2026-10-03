@@ -8,7 +8,7 @@ import {
   type Money,
 } from '@allotr/shared';
 import type { AccountId, TransactionId } from '../ledger/types.ts';
-import { accountBalances, budgetGroupsOn } from '../ledger/balances.ts';
+import { accountBalances } from '../ledger/balances.ts';
 import type { Transaction } from '../ledger/types.ts';
 import { billWindow, cycleOn, cyclesOf } from './cycles.ts';
 import {
@@ -17,6 +17,7 @@ import {
   dueDates,
   type Policies,
 } from './policies.ts';
+import { groupsOn } from './pools.ts';
 import { totalOn } from './rates.ts';
 import type {
   BillDue,
@@ -51,7 +52,7 @@ export function onBudgetSums(
   date: LocalDate,
   balances: ReadonlyMap<AccountId, Money> = accountBalances(view.ledger, date),
 ): Sums {
-  const groups = budgetGroupsOn(view.chart, view.ledger, date);
+  const groups = groupsOn(view, date);
   const sums: Sums = new Map();
   for (const [id, balance] of balances) {
     if (groups.get(id) === 'on') {
@@ -123,11 +124,11 @@ export function spentSums(
   to: LocalDate,
   excluded: ReadonlySet<TransactionId> = new Set(),
 ): { spent: Sums; kept: Sums } {
-  const groupsByDay = new Map<LocalDate, ReturnType<typeof budgetGroupsOn>>();
-  const groupsOn = (date: LocalDate) => {
+  const groupsByDay = new Map<LocalDate, ReturnType<typeof groupsOn>>();
+  const groupsByDate = (date: LocalDate) => {
     let groups = groupsByDay.get(date);
     if (groups === undefined) {
-      groups = budgetGroupsOn(view.chart, view.ledger, date);
+      groups = groupsOn(view, date);
       groupsByDay.set(date, groups);
     }
     return groups;
@@ -142,7 +143,7 @@ export function spentSums(
   for (const t of view.ledger) {
     if (t.occurredOn < from || t.occurredOn > to) continue;
     if (!t.postings.some((p) => expenseAccounts.has(p.accountId))) continue;
-    const groups = groupsOn(t.occurredOn);
+    const groups = groupsByDate(t.occurredOn);
     const keep = !excluded.has(t.id);
     for (const p of t.postings) {
       if (groups.get(p.accountId) === 'on') {

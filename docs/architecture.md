@@ -132,6 +132,10 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   While 2FA is required, turning it off is refused (`two_factor_required`)
   and `/v1/session` reports `twoFactorEnforced`. Invite links open the web
   app's public `/invite/<token>` page.
+- Pools (ADR 0021) are served under `/v1/pools`: list with balances,
+  add, and rename, switch or archive. `PUT /v1/accounts/{id}/pool` moves an
+  account into a pool from a date. `GET`/`PATCH /v1/settings/ledger` carry
+  `countSavingsInDaily`.
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
   and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
   edit (`…/edit`) only append entries. An `Idempotency-Key` header on

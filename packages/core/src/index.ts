@@ -94,6 +94,19 @@ export {
   type CycleDay,
   type CycleDays,
 } from './projections/series.ts';
+export {
+  defaultPoolSetup,
+  groupsOn,
+  poolCounts,
+  poolId,
+  poolsOn,
+  type Pool,
+  type PoolId,
+  type PoolKind,
+  type PoolMove,
+  type PoolInputs,
+  type PoolSetup,
+} from './projections/pools.ts';
 export { convertOn, totalOn } from './projections/rates.ts';
 export {
   billAmount,

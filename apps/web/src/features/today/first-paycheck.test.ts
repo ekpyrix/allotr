@@ -12,6 +12,7 @@ const account = (budgetGroup: 'on' | 'off', archived = false): AccountView =>
     balance: money(0, 'USD'),
     archived,
     createdAt: '2026-01-01T00:00:00.000Z',
+    poolId: 'pool-budget',
     lastReconciledOn: null,
   }) as AccountView;
 

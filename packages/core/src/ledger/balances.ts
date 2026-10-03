@@ -67,7 +67,7 @@ export function balanceOf(
 
 // Budget switches that were not reversed, oldest first. Ties on a date go
 // by creation time, then ID, so the order never depends on the input.
-function activeSwitches(ledger: readonly Transaction[]): Transaction[] {
+export function activeSwitches(ledger: readonly Transaction[]): Transaction[] {
   const reversed = new Set(
     ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
   );
@@ -124,8 +124,13 @@ export function budgetGroupBalances(
   chart: Chart,
   ledger: readonly Transaction[],
   asOf?: LocalDate,
+  /** Each account's group; the ledger's switches when omitted. */
+  groups: ReadonlyMap<AccountId, BudgetGroup> = budgetGroupsOn(
+    chart,
+    ledger,
+    asOf,
+  ),
 ): GroupBalances {
-  const groups = budgetGroupsOn(chart, ledger, asOf);
   const balances = accountBalances(ledger, asOf);
   const totals = (group: BudgetGroup) =>
     new Map(

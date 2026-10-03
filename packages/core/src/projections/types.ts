@@ -12,6 +12,7 @@ import type {
   TransactionId,
 } from '../ledger/types.ts';
 import type { Policies } from './policies.ts';
+import type { PoolSetup } from './pools.ts';
 
 // Inputs and results of the projections: cycles and the daily figures
 // (docs/domain.md "Daily usable" and "Cycles"). Everything is computed from
@@ -67,6 +68,11 @@ export type LedgerSettings = Readonly<{
   paydayDay: number;
   /** The next payday, when it differs from the predicted one. */
   paydayOverride: LocalDate | null;
+  /**
+   * A savings pool may count toward the daily number only when this is on
+   * (ADR 0021). Off when omitted: savings are never included.
+   */
+  countSavingsInDaily?: boolean;
 }>;
 
 /** Everything the projections read. */
@@ -78,6 +84,11 @@ export type LedgerView = Readonly<{
   settings: LedgerSettings;
   bills: readonly Bill[];
   rates: readonly ExchangeRate[];
+  /**
+   * The user's pools and account moves. When omitted, the two default pools
+   * (Budget, Savings) follow each account's budget group and its switches.
+   */
+  pools?: PoolSetup;
   /**
    * Entries posted by reconciling to make up a difference; pace leaves
    * them out. None when omitted.

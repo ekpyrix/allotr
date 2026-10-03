@@ -22,6 +22,7 @@ function account(
     balance: money(amountMinor, 'USD'),
     archived: false,
     createdAt: '2026-01-01T00:00:00.000Z',
+    poolId: 'pool-budget',
     lastReconciledOn: null,
   } as AccountView;
 }

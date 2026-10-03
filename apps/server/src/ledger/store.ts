@@ -3,12 +3,15 @@ import {
   accountId,
   categoryId,
   chartOf,
+  poolId,
   restore,
   systemAccountsNeeded,
   transactionId,
   type Account,
   type BudgetGroup,
   type Chart,
+  type Pool,
+  type PoolSetup,
   type PostingDraft,
   type SystemRole,
   type Transaction,
@@ -296,5 +299,73 @@ export function newEntry(
     occurredOn,
     createdAt: now.toISOString(),
     note: note ?? null,
+  };
+}
+
+type PoolRow = {
+  id: string;
+  name: string;
+  kind: string;
+  counts_toward_daily: number;
+  default_for: string | null;
+  archived: number;
+};
+
+export function poolOf(row: PoolRow): Pool {
+  return {
+    id: poolId(row.id),
+    name: row.name,
+    kind: row.kind === 'savings' ? 'savings' : 'spending',
+    countsTowardDaily: row.counts_toward_daily === 1,
+  };
+}
+
+export const poolColumns = [
+  'id',
+  'name',
+  'kind',
+  'counts_toward_daily',
+  'default_for',
+  'archived',
+] as const;
+
+/**
+ * The user's pools and account moves as core reads them. Every pool is
+ * included, archived ones too, so history keeps its meaning.
+ */
+export async function loadPoolSetup(
+  db: Db,
+  userId: string,
+): Promise<PoolSetup> {
+  const [pools, moves] = await Promise.all([
+    db
+      .selectFrom('pools')
+      .select(poolColumns)
+      .where('user_id', '=', userId)
+      .orderBy('position')
+      .orderBy('id')
+      .execute(),
+    db
+      .selectFrom('pool_moves')
+      .select(['id', 'account_id', 'pool_id', 'effective_on', 'created_at'])
+      .where('user_id', '=', userId)
+      .execute(),
+  ]);
+  const on = pools.find((p) => p.default_for === 'on');
+  const off = pools.find((p) => p.default_for === 'off');
+  if (on === undefined || off === undefined) {
+    // Every user is seeded with both; losing one is a broken database.
+    throw new Error('A user is missing a default pool.');
+  }
+  return {
+    pools: pools.map(poolOf),
+    defaults: { on: poolId(on.id), off: poolId(off.id) },
+    moves: moves.map((m) => ({
+      id: m.id,
+      accountId: accountId(m.account_id),
+      poolId: poolId(m.pool_id),
+      effectiveOn: localDate(m.effective_on),
+      createdAt: m.created_at,
+    })),
   };
 }
