@@ -621,6 +621,7 @@ describe('migration 0007_pools', () => {
       '0007_pools',
       '0008_budgets',
       '0009_budget_cover',
+      '0010_category_style',
     ]);
 
     expect(pools()).toEqual([
@@ -771,6 +772,7 @@ describe('migration 0008_budgets', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0008_budgets',
       '0009_budget_cover',
+      '0010_category_style',
     ]);
 
     expect(
@@ -927,7 +929,10 @@ describe('migration 0009_budget_cover', () => {
   it('applies to a database at 0008', () => {
     migrateFrom(migrationsUpTo('0008'));
     insertUser('u1');
-    expect(migrateFrom(repoMigrations)).toEqual(['0009_budget_cover']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0009_budget_cover',
+      '0010_category_style',
+    ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
 
