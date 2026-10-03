@@ -33,6 +33,7 @@ const specs = [
   'command-palette',
   'savings',
   'audit',
+  'budget',
 ];
 
 const projects = sizes.flatMap((size, i) =>
