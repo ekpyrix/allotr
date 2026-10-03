@@ -112,6 +112,8 @@ export async function loadView(
       countSavingsInDaily: settings.countSavingsInDaily,
       budgetPeriod: settings.budgetPeriod,
       dailyMode: settings.dailyMode,
+      payYourselfFirst: settings.payYourselfFirst,
+      emergencyMonths: settings.emergencyMonths,
     },
     pools,
     budgets,

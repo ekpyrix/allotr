@@ -376,6 +376,20 @@ export const paydayRules = ['fixed', 'last-working-day', 'manual'] as const;
 export const paydayRuleSchema = z.enum(paydayRules);
 export type PaydayRule = z.infer<typeof paydayRuleSchema>;
 
+/**
+ * What is set aside first at payday: a fixed amount, or a share of the
+ * paycheck in hundredths of a percent (1000 is 10%).
+ */
+export const payYourselfFirstSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('fixed'), amount: moneySchema }),
+  z.object({
+    kind: z.literal('percent'),
+    basisPoints: z.int().min(0).max(10_000),
+  }),
+]);
+
+export type PayYourselfFirstSetting = z.output<typeof payYourselfFirstSchema>;
+
 export const ledgerSettingsSchema = z.object({
   /** BCP 47 locale for formatting, such as `en-US`. */
   locale: z.string(),
@@ -404,6 +418,10 @@ export const ledgerSettingsSchema = z.object({
    * less bills, or what the daily budgets have left.
    */
   dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']),
+  /** The savings line first at payday; null for none. */
+  payYourselfFirst: payYourselfFirstSchema.nullable(),
+  /** Months of average expenses the emergency fund aims at. */
+  emergencyMonths: z.int().min(1).max(24),
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -419,6 +437,9 @@ export const updateLedgerSettingsBodySchema = z
     countSavingsInDaily: z.boolean().optional(),
     budgetPeriod: z.enum(['cycle', 'month']).optional(),
     dailyMode: z.enum(['free', 'pool-minus-bills', 'daily-budgets']).optional(),
+    /** null clears it. */
+    payYourselfFirst: payYourselfFirstSchema.nullable().optional(),
+    emergencyMonths: z.int().min(1).max(24).optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

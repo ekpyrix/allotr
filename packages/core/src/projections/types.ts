@@ -13,6 +13,7 @@ import type {
 } from '../ledger/types.ts';
 import type { Policies } from './policies.ts';
 import type { BudgetPeriodRule, BudgetSetup, DailyMode } from './budgets.ts';
+import type { PayYourselfFirst } from './plan.ts';
 import type { PoolSetup } from './pools.ts';
 
 // Inputs and results of the projections: cycles and the daily figures
@@ -78,6 +79,10 @@ export type LedgerSettings = Readonly<{
   budgetPeriod?: BudgetPeriodRule;
   /** What the daily number divides; free money when omitted. */
   dailyMode?: DailyMode;
+  /** Savings set aside first at payday; none when omitted. */
+  payYourselfFirst?: PayYourselfFirst | null;
+  /** Months of expenses the emergency fund aims at (3 when omitted). */
+  emergencyMonths?: number;
 }>;
 
 /** Everything the projections read. */

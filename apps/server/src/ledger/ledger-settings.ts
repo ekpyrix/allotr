@@ -2,11 +2,13 @@ import {
   budgetPeriodRuleSchema,
   currencyCode,
   dailyModeSchema,
+  payYourselfFirstSchema,
   localDateSchema,
   paydayRuleSchema,
   type BudgetPeriodRule,
   type DailyMode,
   type LedgerSettingsView,
+  type PayYourselfFirstSetting,
   type LocalDate,
   type PaydayRule,
 } from '@allotr/shared';
@@ -30,6 +32,8 @@ const paydayOverrideKey = 'payday_override';
 const countSavingsKey = 'count_savings_in_daily';
 const budgetPeriodKey = 'budget_period';
 const dailyModeKey = 'daily_mode';
+const payFirstKey = 'pay_yourself_first';
+const emergencyKey = 'emergency_months';
 
 const paydayDaySchema = z.int().min(1).max(31);
 const paydayOverrideSchema = localDateSchema.nullable();
@@ -67,6 +71,8 @@ export async function readLedgerSettings(
         countSavingsKey,
         budgetPeriodKey,
         dailyModeKey,
+        payFirstKey,
+        emergencyKey,
       ])
       .execute(),
   ]);
@@ -85,6 +91,10 @@ export async function readLedgerSettings(
     budgetPeriod:
       parsed(budgetPeriodRuleSchema, stored.get(budgetPeriodKey)) ?? 'cycle',
     dailyMode: parsed(dailyModeSchema, stored.get(dailyModeKey)) ?? 'free',
+    payYourselfFirst:
+      parsed(payYourselfFirstSchema, stored.get(payFirstKey)) ?? null,
+    emergencyMonths:
+      parsed(z.int().min(1).max(24), stored.get(emergencyKey)) ?? 3,
   };
 }
 
@@ -158,6 +168,8 @@ export type LedgerSettingsPatch = Readonly<{
   countSavingsInDaily?: boolean | undefined;
   budgetPeriod?: BudgetPeriodRule | undefined;
   dailyMode?: DailyMode | undefined;
+  payYourselfFirst?: PayYourselfFirstSetting | null | undefined;
+  emergencyMonths?: number | undefined;
 }>;
 
 function canonicalLocale(locale: string): string {
@@ -235,6 +247,17 @@ export async function applyLedgerSettings(
     ...(patch.dailyMode === undefined
       ? []
       : [{ key: dailyModeKey, value: JSON.stringify(patch.dailyMode) }]),
+    ...(patch.payYourselfFirst === undefined
+      ? []
+      : [
+          {
+            key: payFirstKey,
+            value: JSON.stringify(patch.payYourselfFirst),
+          },
+        ]),
+    ...(patch.emergencyMonths === undefined
+      ? []
+      : [{ key: emergencyKey, value: JSON.stringify(patch.emergencyMonths) }]),
   ];
   if (Object.keys(user).length > 0) {
     await db

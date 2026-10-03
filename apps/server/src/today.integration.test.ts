@@ -537,6 +537,8 @@ describe('ledger settings', () => {
       countSavingsInDaily: false,
       budgetPeriod: 'cycle',
       dailyMode: 'free',
+      payYourselfFirst: null,
+      emergencyMonths: 3,
     });
   });
 
