@@ -93,7 +93,7 @@ test('the only admin is refused while others use the instance', async ({
 
   await page.goto('/settings#delete-account');
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Delete account' }),
+    page.getByRole('heading', { level: 3, name: 'Delete account' }),
   ).toBeFocused();
   await expectAccessible(page);
 

@@ -51,6 +51,7 @@ import {
   todayQuery,
 } from '@/lib/ledger';
 import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
+import { CategorySummarySection } from '@/features/reports/category-summary-section';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
@@ -595,6 +596,11 @@ export function CyclePage({
           currencies={data.missingRates}
           defaultCurrency={defaultCurrency}
           date={formatLongDay(data.lastDay, locale)}
+        />
+        <CategorySummarySection
+          openedOn={data.openedOn}
+          categories={categories.data.categories}
+          locale={locale}
         />
         <Tabs
           label={t('cycle.tabs.label')}

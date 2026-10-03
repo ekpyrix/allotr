@@ -263,6 +263,15 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   line, available at the end of the day and that day's allowance, from the
   same projection as `/v1/today` (ADR 0020). All are computed on every
   request, like today's figures.
+- `GET /v1/reports/categories?period=cycle|month` gives spending and income
+  per top-level category for a payday cycle (the open one, or `cycle=` the
+  day another opened) or a calendar month (`month=YYYY-MM`, default the
+  current one). Subcategories are rolled up by the server
+  (`rollUpCategories` in `packages/core`, property-tested), each group lists
+  its children largest first, and a merged category counts as the one it
+  merged into. The web app shows the top two children per card, expands to
+  the rest, and takes the period and "always expand" from device settings
+  (`allotr.report-period`, `allotr.category-cards`).
 - `GET /v1/accounts/{id}/history?days=30` gives an account's end-of-day
   balance for the last 7 to 365 days, in its own currency.
 - `POST /v1/import` fills an empty ledger from a JSON bundle (see

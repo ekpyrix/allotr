@@ -41,7 +41,7 @@ export type CycleSnapshot = Readonly<{
   savingsNetChange: readonly Money[];
 }>;
 
-function byCategory(
+export function byCategory(
   entries: Iterable<readonly [CategoryId | null, Money]>,
 ): CategoryTotal[] {
   const sums = new Map<

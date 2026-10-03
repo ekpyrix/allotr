@@ -220,6 +220,12 @@ export {
   type CycleReport,
   type GroupTotals,
 } from './projections/history.ts';
+export {
+  categoryTotalsBetween,
+  rollUpCategories,
+  type CategoryGroup,
+  type SummaryCategoryNode,
+} from './projections/category-summary.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,

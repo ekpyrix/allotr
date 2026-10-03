@@ -12,6 +12,7 @@ import {
   categoryListSchema,
   categorySchema,
   createCategoryBodySchema,
+  categorySummarySchema,
   cycleDayListSchema,
   accountHistorySchema,
   cycleDetailSchema,
@@ -400,6 +401,11 @@ export const endpoints = {
     method: 'GET',
     path: '/v1/accounts/{id}/history',
     response: accountHistorySchema,
+  }),
+  categorySummary: endpoint({
+    method: 'GET',
+    path: '/v1/reports/categories',
+    response: categorySummarySchema,
   }),
   cycleDays: endpoint({
     method: 'GET',
