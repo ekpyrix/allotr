@@ -193,7 +193,7 @@ export {
   categoryTotalsBetween,
   rollUpCategories,
   type CategoryGroup,
-  type CategoryNode,
+  type SummaryCategoryNode,
 } from './projections/category-summary.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {

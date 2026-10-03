@@ -7,7 +7,7 @@ import { categoryId } from '../ledger/types.ts';
 import {
   categoryTotalsBetween,
   rollUpCategories,
-  type CategoryNode,
+  type SummaryCategoryNode,
 } from './category-summary.ts';
 import { chart, day, paycheck, spend, view, wallet } from './testing.ts';
 
@@ -73,9 +73,9 @@ describe('rollUpCategories', () => {
     fc.assert(
       fc.property(
         fc.uniqueArray(node, { selector: (n) => n.categoryId ?? '' }),
-        (totals: CategoryNode[]) => {
+        (totals: SummaryCategoryNode[]) => {
           const groups = rollUpCategories(totals, parents);
-          const sum = (xs: readonly CategoryNode[]) =>
+          const sum = (xs: readonly SummaryCategoryNode[]) =>
             xs.reduce((acc, x) => acc + x.amount.amountMinor, 0);
           expect(sum(groups)).toBe(sum(totals));
           for (const g of groups) {

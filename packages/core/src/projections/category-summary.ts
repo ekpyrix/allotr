@@ -14,7 +14,7 @@ import type { LedgerView } from './types.ts';
 // app only shows the figures (architecture §4).
 
 /** One category, or the entries without one (`categoryId` null). */
-export type CategoryNode = CategoryTotal;
+export type SummaryCategoryNode = CategoryTotal;
 
 /** A top-level category with everything under it, largest first. */
 export type CategoryGroup = Readonly<{
@@ -25,10 +25,10 @@ export type CategoryGroup = Readonly<{
    * The subcategories with figures. Entries booked directly on the parent
    * appear as a child with the parent's own id.
    */
-  children: readonly CategoryNode[];
+  children: readonly SummaryCategoryNode[];
 }>;
 
-const bigger = (a: CategoryNode, b: CategoryNode) =>
+const bigger = (a: SummaryCategoryNode, b: SummaryCategoryNode) =>
   b.amount.amountMinor - a.amount.amountMinor ||
   (a.categoryId ?? '').localeCompare(b.categoryId ?? '');
 
@@ -38,10 +38,10 @@ const bigger = (a: CategoryNode, b: CategoryNode) =>
  * absent from it, or mapped to null, is top level.
  */
 export function rollUpCategories(
-  totals: readonly CategoryNode[],
+  totals: readonly SummaryCategoryNode[],
   parentOf: ReadonlyMap<CategoryId, CategoryId | null>,
 ): CategoryGroup[] {
-  const groups = new Map<CategoryId | null, CategoryNode[]>();
+  const groups = new Map<CategoryId | null, SummaryCategoryNode[]>();
   for (const total of totals) {
     const top =
       total.categoryId === null
@@ -74,7 +74,7 @@ export function categoryTotalsBetween(
   range: Readonly<{ from: LocalDate; to: LocalDate }>,
   role: 'expenses' | 'income',
   mergedInto: ReadonlyMap<CategoryId, CategoryId> = new Map(),
-): Readonly<{ totals: CategoryNode[]; missingRates: CurrencyCode[] }> {
+): Readonly<{ totals: SummaryCategoryNode[]; missingRates: CurrencyCode[] }> {
   const roleOf = (id: AccountId) => view.chart.get(id)?.systemRole ?? null;
   const sign = role === 'expenses' ? 1 : -1;
   const native = byCategory(
