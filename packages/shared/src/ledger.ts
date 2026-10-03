@@ -621,6 +621,11 @@ export const cycleSummarySchema = z.object({
   leftover: moneySchema,
   /** Change in the off-budget total over the cycle. */
   savingsNetChange: moneySchema,
+  /**
+   * `savingsNetChange` over `income` in hundredths of a percent, rounded
+   * half to even; null when the cycle had no income.
+   */
+  savingsRate: z.int().nullable(),
   /** The off-budget total at the end of `lastDay`. */
   offBudgetClosing: moneySchema,
   /** An entry dated in it was recorded after it closed. */

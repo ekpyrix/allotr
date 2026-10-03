@@ -294,6 +294,10 @@ All of these are computed from the ledger and settings when read.
   the three biggest categories, the daily figure, free money and where the
   budgets stand. Spending counts as for budgets: paid from counted accounts,
   without linked bill payments and reconcile adjustments.
+- **Savings rate.** A cycle's change in savings over its paycheck income,
+  in hundredths of a percent, rounded half to even (`savingsRate` on cycle
+  summaries). It is negative when savings fell and null when the cycle had no
+  income. The web app only formats it.
 
 ## Daily usable
 

@@ -5,6 +5,7 @@ import { LoadingBlock } from '@/components/route-skeleton';
 import { Button } from '@/components/ui/button';
 import { BudgetsSection } from '@/features/budget/budgets-section';
 import { CoverOrder } from '@/features/budget/cover-order';
+import { PaydaySection } from '@/features/payday/payday-section';
 import { PoolsSection } from '@/features/budget/pools-section';
 import { BillsSection } from '@/features/settings/bills';
 import { budgetsQuery, poolsQuery } from '@/lib/budgets';
@@ -80,6 +81,13 @@ export function BudgetPage() {
       <BudgetsSection
         status={budgets.data}
         categories={categories.data.categories}
+        currency={settings.data.defaultCurrency}
+        locale={settings.data.locale}
+      />
+      <PaydaySection
+        budgets={budgets.data}
+        categories={categories.data.categories}
+        accounts={accounts.data.accounts}
         currency={settings.data.defaultCurrency}
         locale={settings.data.locale}
       />

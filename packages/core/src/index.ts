@@ -226,6 +226,7 @@ export {
   type CategoryGroup,
   type SummaryCategoryNode,
 } from './projections/category-summary.ts';
+export { savingsRate } from './projections/savings-rate.ts';
 export { rankTotals, type RankedTotals } from './projections/ranked.ts';
 export {
   cycleSnapshot,

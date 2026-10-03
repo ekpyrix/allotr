@@ -12,6 +12,7 @@ import { DeleteAccountSection } from '@/features/settings/delete-account';
 import { hashTarget } from '@/features/settings/hash-target';
 import { ExportSection } from '@/features/settings/export';
 import { InstanceSection } from '@/features/settings/instance';
+import { PlanSettingsSection } from '@/features/settings/plan-settings';
 import { LedgerSettingsSection } from '@/features/settings/ledger-settings';
 import { RatesSection } from '@/features/settings/rates';
 import { ReportsSection } from '@/features/settings/reports';
@@ -107,6 +108,7 @@ export function SettingsPage({ session: initial }: { session: SessionView }) {
     ledger = (
       <SettingsGroup id="money" title={t('settings.groups.money')}>
         <LedgerSettingsSection settings={settings.data} today={today.data} />
+        <PlanSettingsSection settings={settings.data} />
         <CategoriesSection categories={categories.data.categories} />
         <TagsSection tags={tags.data.tags} />
         <RatesSection

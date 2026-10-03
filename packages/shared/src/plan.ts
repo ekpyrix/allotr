@@ -93,6 +93,8 @@ export const emergencyFundSchema = z.object({
   missingRates: missing,
 });
 
+export type EmergencyFundView = z.infer<typeof emergencyFundSchema>;
+
 export const netWorthQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(731).optional(),
 });
@@ -105,6 +107,8 @@ export const netWorthSchema = z.object({
   series: z.array(z.object({ date: localDateSchema, amount: moneySchema })),
   missingRates: missing,
 });
+
+export type NetWorthView = z.infer<typeof netWorthSchema>;
 
 export const weeklyReviewSchema = z.object({
   /** The seven days ending today. */
@@ -128,3 +132,4 @@ export const weeklyReviewSchema = z.object({
   uncovered: moneySchema,
   missingRates: missing,
 });
+export type WeeklyReviewView = z.infer<typeof weeklyReviewSchema>;

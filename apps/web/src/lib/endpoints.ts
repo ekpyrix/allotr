@@ -1,4 +1,10 @@
 import {
+  confirmPlanBodySchema,
+  confirmPlanResultSchema,
+  emergencyFundSchema,
+  netWorthSchema,
+  paydayPlanSchema,
+  weeklyReviewSchema,
   budgetStatusSchema,
   coverListSchema,
   coverOrderBodySchema,
@@ -460,6 +466,32 @@ export const endpoints = {
     method: 'DELETE',
     path: '/v1/transactions/{id}/cover',
     response: z.unknown(),
+  }),
+  paydayPlan: endpoint({
+    method: 'GET',
+    path: '/v1/payday-plan',
+    response: paydayPlanSchema,
+  }),
+  confirmPaydayPlan: endpoint({
+    method: 'POST',
+    path: '/v1/payday-plan/confirm',
+    body: confirmPlanBodySchema,
+    response: confirmPlanResultSchema,
+  }),
+  emergencyFund: endpoint({
+    method: 'GET',
+    path: '/v1/insights/emergency-fund',
+    response: emergencyFundSchema,
+  }),
+  netWorth: endpoint({
+    method: 'GET',
+    path: '/v1/insights/net-worth',
+    response: netWorthSchema,
+  }),
+  weeklyReview: endpoint({
+    method: 'GET',
+    path: '/v1/insights/weekly-review',
+    response: weeklyReviewSchema,
   }),
   today: endpoint({
     method: 'GET',

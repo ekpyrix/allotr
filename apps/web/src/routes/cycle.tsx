@@ -52,6 +52,7 @@ import {
 } from '@/lib/ledger';
 import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
 import { CategorySummarySection } from '@/features/reports/category-summary-section';
+import { PlanTab } from '@/features/reports/plan-tab';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
 
@@ -551,6 +552,7 @@ export function CyclePage({
     ...(open
       ? [{ value: 'bills' as const, label: t('cycle.tabs.bills') }]
       : []),
+    { value: 'plan', label: t('cycle.tabs.plan') },
   ];
   const shownTab = !open && tab === 'bills' ? 'overview' : tab;
   const billDates = open ? today.data.cycleBills.map((bill) => bill.dueOn) : [];
@@ -653,6 +655,9 @@ export function CyclePage({
               names={names}
               locale={locale}
             />
+          </TabsPanel>
+          <TabsPanel value="plan">
+            <PlanTab currency={defaultCurrency} locale={locale} />
           </TabsPanel>
           {open ? (
             <TabsPanel value="bills">
