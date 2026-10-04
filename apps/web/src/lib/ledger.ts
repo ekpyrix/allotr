@@ -230,6 +230,14 @@ export function restoreTransaction(id: string) {
 }
 
 /**
+ * Goes back to an earlier version of an edited entry: the entry as it
+ * stands now is replaced by a copy of that version.
+ */
+export function revertTransaction(id: string) {
+  return call(endpoints.revertTransaction, { params: { id } });
+}
+
+/**
  * Moves an entry within its day to right after `afterId` (oldest first),
  * or to the start of the day when that is null.
  */

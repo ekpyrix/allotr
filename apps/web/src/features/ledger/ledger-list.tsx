@@ -47,6 +47,7 @@ function Row({
     row.occurredTime,
     row.accounts.filter((name) => name !== '').join(' → '),
     row.kind === 'reversal' || row.title === null ? null : row.note,
+    row.edited ? t('ledger.edited') : null,
   ].filter((part) => part !== null && part !== '');
   return (
     <li>

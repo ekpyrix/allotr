@@ -40,6 +40,7 @@ import {
   checkTags,
   getTransaction,
   insertReversal,
+  recordReplacement,
   resolveCategory,
   storeTransaction,
 } from './transactions.ts';
@@ -501,6 +502,7 @@ export async function convertToIou(
       'api',
       now,
     );
+    await recordReplacement(trx, userId, id, created.id);
     return { reversalId, ...created };
   });
   return {

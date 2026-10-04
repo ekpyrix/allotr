@@ -164,8 +164,11 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `GET /v1/insights/net-worth?days=` and `GET /v1/insights/weekly-review`.
   `payYourselfFirst` and `emergencyMonths` are ledger settings.
 - The ledger is served under `/v1/accounts`, `/v1/categories`, `/v1/tags`
-  and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`) and
-  edit (`…/edit`) only append entries. An `Idempotency-Key` header on
+  and `/v1/transactions`. Undo (`POST /v1/transactions/{id}/reverse`),
+  edit (`…/edit`) and going back to an earlier version of an edited entry
+  (`…/revert`) only append entries. An edit's replacement carries
+  `replacesId` and the version it replaced `replacedById`; the list leaves
+  earlier versions and their undos out. An `Idempotency-Key` header on
   `POST /v1/transactions` makes a repeat return the entry it first created
   (200) instead of recording another, as offline queues need. Each page
   of `GET /v1/transactions` carries `dayTotals`: for every day on the

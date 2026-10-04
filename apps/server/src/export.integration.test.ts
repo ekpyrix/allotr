@@ -168,10 +168,15 @@ for (const fixture of fixtures) {
       const response = await download(h.alice, 'csv');
       expect(response.headers.get('content-type')).toMatch(/^text\/csv/);
       const text = response.body as string;
-      const listed = await h.alice.get('/v1/transactions?limit=200');
+      // Every posting, edits' earlier versions included, which the list
+      // leaves out.
       const postings = (
-        listed.body as { transactions: { postings: unknown[] }[] }
-      ).transactions.reduce((n, t) => n + t.postings.length, 0);
+        await h.db
+          .selectFrom('postings')
+          .select(h.db.fn.countAll<number>().as('n'))
+          .where('user_id', '=', await userIdOf(h.alice))
+          .executeTakeFirstOrThrow()
+      ).n;
       // The header, one line per posting, and the final line end.
       expect(postingCount(text)).toBe(postings + 2);
       expect(text.startsWith('date,entry_id,kind,account,amount,')).toBe(true);

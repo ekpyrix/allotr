@@ -118,43 +118,56 @@ async function views(
 ): Promise<TransactionView[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
-  const [postings, tags, reversals, restores] = await Promise.all([
-    db
-      .selectFrom('postings')
-      .innerJoin('accounts', 'accounts.id', 'postings.account_id')
-      .select([
-        'postings.transaction_id',
-        'postings.account_id',
-        'postings.amount_minor',
-        'postings.currency',
-        'postings.category_id',
-        'accounts.system_role',
-      ])
-      .where('postings.user_id', '=', userId)
-      .where('postings.transaction_id', 'in', ids)
-      .orderBy('postings.transaction_id')
-      .orderBy('postings.position')
-      .execute(),
-    db
-      .selectFrom('transaction_tags')
-      .select(['transaction_id', 'tag_id'])
-      .where('user_id', '=', userId)
-      .where('transaction_id', 'in', ids)
-      .orderBy('tag_id')
-      .execute(),
-    db
-      .selectFrom('transactions')
-      .select(['id', 'reverses_id'])
-      .where('user_id', '=', userId)
-      .where('reverses_id', 'in', ids)
-      .execute(),
-    db
-      .selectFrom('transactions')
-      .select(['id', 'idempotency_key'])
-      .where('user_id', '=', userId)
-      .where('idempotency_key', 'in', ids.map(restoreKey))
-      .execute(),
-  ]);
+  const [postings, tags, reversals, restores, replacements] = await Promise.all(
+    [
+      db
+        .selectFrom('postings')
+        .innerJoin('accounts', 'accounts.id', 'postings.account_id')
+        .select([
+          'postings.transaction_id',
+          'postings.account_id',
+          'postings.amount_minor',
+          'postings.currency',
+          'postings.category_id',
+          'accounts.system_role',
+        ])
+        .where('postings.user_id', '=', userId)
+        .where('postings.transaction_id', 'in', ids)
+        .orderBy('postings.transaction_id')
+        .orderBy('postings.position')
+        .execute(),
+      db
+        .selectFrom('transaction_tags')
+        .select(['transaction_id', 'tag_id'])
+        .where('user_id', '=', userId)
+        .where('transaction_id', 'in', ids)
+        .orderBy('tag_id')
+        .execute(),
+      db
+        .selectFrom('transactions')
+        .select(['id', 'reverses_id'])
+        .where('user_id', '=', userId)
+        .where('reverses_id', 'in', ids)
+        .execute(),
+      db
+        .selectFrom('transactions')
+        .select(['id', 'idempotency_key'])
+        .where('user_id', '=', userId)
+        .where('idempotency_key', 'in', ids.map(restoreKey))
+        .execute(),
+      db
+        .selectFrom('transaction_replacements')
+        .select(['replacement_id', 'original_id'])
+        .where('user_id', '=', userId)
+        .where((eb) =>
+          eb.or([
+            eb('replacement_id', 'in', ids),
+            eb('original_id', 'in', ids),
+          ]),
+        )
+        .execute(),
+    ],
+  );
   const group = <T extends { transaction_id: string }>(items: T[]) => {
     const map = new Map<string, T[]>();
     for (const item of items) {
@@ -169,6 +182,12 @@ async function views(
   const tagsOf = group(tags);
   const undoneBy = new Map(reversals.map((r) => [r.reverses_id, r.id]));
   const restoredBy = new Map(restores.map((r) => [r.idempotency_key, r.id]));
+  const replaces = new Map(
+    replacements.map((r) => [r.replacement_id, r.original_id]),
+  );
+  const replacedBy = new Map(
+    replacements.map((r) => [r.original_id, r.replacement_id]),
+  );
 
   return rows.map((row) => ({
     id: row.id,
@@ -190,6 +209,8 @@ async function views(
     reversesId: row.reverses_id,
     reversedById: undoneBy.get(row.id) ?? null,
     restoredById: restoredBy.get(restoreKey(row.id)) ?? null,
+    replacesId: replaces.get(row.id) ?? null,
+    replacedById: replacedBy.get(row.id) ?? null,
     impliedRate: row.fx_rate_implied as TransactionView['impliedRate'],
     budgetSwitch:
       row.switch_account_id === null
@@ -383,6 +404,28 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
       ),
     );
   }
+  // An edit's earlier version and its undo are history, not deletes: they
+  // are listed in neither view, only reached from the entry.
+  query = query.where((eb) =>
+    eb.not(
+      eb.exists(
+        eb
+          .selectFrom('transaction_replacements as replaced')
+          .select('replaced.original_id')
+          .where('replaced.user_id', '=', userId)
+          .where((inner) =>
+            inner.or([
+              inner('replaced.original_id', '=', inner.ref('transactions.id')),
+              inner(
+                'replaced.original_id',
+                '=',
+                inner.ref('transactions.reverses_id'),
+              ),
+            ]),
+          ),
+      ),
+    ),
+  );
   if (filter.undone === 'hide') {
     query = query.where((eb) =>
       eb.and([
@@ -822,6 +865,27 @@ export async function restoreTransaction(
   return getTransaction(db, userId, copyId);
 }
 
+/**
+ * Notes that `replacementId` took the place of `originalId` in an edit,
+ * inside the caller's transaction, so the original's undo is not listed
+ * as a delete.
+ */
+export async function recordReplacement(
+  db: Db,
+  userId: string,
+  originalId: string,
+  replacementId: string,
+): Promise<void> {
+  await db
+    .insertInto('transaction_replacements')
+    .values({
+      replacement_id: replacementId,
+      original_id: originalId,
+      user_id: userId,
+    })
+    .execute();
+}
+
 /** Replaces an entry: its reversal plus a new entry (FR-L4). */
 export async function editTransaction(
   db: Kysely<DB>,
@@ -853,11 +917,73 @@ export async function editTransaction(
         'api',
         transactionId(id),
       );
+      await recordReplacement(trx, userId, id, replacement.id);
       return [reversal.id, replacement.id] as const;
     });
   const [reversal, replacement] = await viewsByIds(db, userId, [
     reversalId,
     replacementId,
+  ]);
+  if (reversal === undefined || replacement === undefined) throw notFound();
+  return { reversal, replacement };
+}
+
+/**
+ * Goes back to an earlier version of an edited entry: the current version
+ * is replaced by a copy of the earlier one, as an edit, so it can be
+ * undone or edited like any other (FR-L4).
+ */
+export async function revertTransaction(
+  db: Kysely<DB>,
+  userId: string,
+  versionId: string,
+  now: Date,
+): Promise<{ reversal: TransactionView; replacement: TransactionView }> {
+  const [reversalId, copyId] = await db.transaction().execute(async (trx) => {
+    const version = await getTransaction(trx, userId, versionId);
+    if (version.replacedById === null)
+      throw new RequestProblem(
+        409,
+        'not_replaced',
+        'This is not an earlier version of an edited entry.',
+      );
+    // The version that stands now: follow the edits forward.
+    let current = await getTransaction(trx, userId, version.replacedById);
+    for (let hops = 0; current.replacedById !== null; hops += 1) {
+      if (hops > 10_000) throw new Error('edit chain does not end');
+      current = await getTransaction(trx, userId, current.replacedById);
+    }
+    if (current.reversedById !== null)
+      throw new RequestProblem(
+        409,
+        'entry_deleted',
+        'The entry has been deleted since. Restore it first.',
+      );
+    await refuseIouEdit(trx, userId, current.id, 'edit');
+    const chart = await loadChart(trx, userId);
+    const ledger = await loadLedger(trx, userId, chart);
+    const meta = { id: newTransactionId(), createdAt: now.toISOString() };
+    const reversal = reverse(chart, ledger, transactionId(current.id), meta);
+    const copy = reinstate(chart, ledger, transactionId(versionId), {
+      id: newTransactionId(),
+      createdAt: meta.createdAt,
+    });
+    await storeTransaction(trx, userId, reversal, [], null, 'api');
+    await storeTransaction(
+      trx,
+      userId,
+      copy,
+      version.tagIds,
+      null,
+      'api',
+      transactionId(current.id),
+    );
+    await recordReplacement(trx, userId, current.id, copy.id);
+    return [reversal.id, copy.id] as const;
+  });
+  const [reversal, replacement] = await viewsByIds(db, userId, [
+    reversalId,
+    copyId,
   ]);
   if (reversal === undefined || replacement === undefined) throw notFound();
   return { reversal, replacement };

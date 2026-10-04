@@ -6,7 +6,7 @@ import {
 } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Pencil, RotateCcw, Trash2, X } from 'lucide-react';
+import { History, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
 import { Dialog } from 'radix-ui';
 import { useEffect, useId, useRef, useState } from 'react';
 import { FormError } from '@/components/field';
@@ -34,7 +34,11 @@ import {
 } from './format.ts';
 import { ledgerRows } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
-import { useDeleteEntry, useRestoreEntry } from './use-delete-entry.ts';
+import {
+  useDeleteEntry,
+  useRestoreEntry,
+  useRevertEntry,
+} from './use-delete-entry.ts';
 
 type Confirm = 'paycheck' | 'opening' | null;
 
@@ -65,6 +69,7 @@ function EntryDetail({
 }) {
   const undo = useDeleteEntry(onUndone);
   const restore = useRestoreEntry();
+  const revert = useRevertEntry();
   const [confirming, setConfirming] = useState(false);
   const confirmId = useId();
   const confirmButton = useRef<HTMLButtonElement>(null);
@@ -109,7 +114,16 @@ function EntryDetail({
   const canUndo =
     open && entry.kind !== 'reversal' && entry.kind !== 'budget_switch';
   const canEdit = open && isEditable(entry);
+  // An earlier version of an edited entry was undone by the edit, not
+  // deleted: it is gone back to, not restored.
+  const replaced = entry.replacedById !== null;
+  const canRevert =
+    replaced &&
+    !touchesArchived &&
+    entry.kind !== 'reversal' &&
+    entry.kind !== 'budget_switch';
   const canRestore =
+    !replaced &&
     entry.reversedById !== null &&
     entry.restoredById === null &&
     !touchesArchived &&
@@ -212,7 +226,52 @@ function EntryDetail({
         </table>
       )}
 
-      {entry.reversedById === null ? null : (
+      {entry.replacesId === null ? null : (
+        <p>
+          {t('ledger.entry.replaces')}{' '}
+          <Link
+            to="/transactions"
+            search={{ ...search, entry: entry.replacesId }}
+            replace
+            className="font-medium underline underline-offset-4"
+          >
+            {t('ledger.entry.showEarlier')}
+          </Link>
+        </p>
+      )}
+      {entry.replacedById === null ? null : (
+        <p>
+          {t('ledger.entry.replacedBy')}{' '}
+          <Link
+            to="/transactions"
+            search={{ ...search, entry: entry.replacedById }}
+            replace
+            className="font-medium underline underline-offset-4"
+          >
+            {t('ledger.entry.showNewer')}
+          </Link>
+        </p>
+      )}
+      {canRevert ? (
+        <Button
+          variant="tonal"
+          className="w-fit"
+          disabled={revert.isPending}
+          onClick={() => {
+            revert.mutate(entry.id, {
+              onSuccess: (copyId) => {
+                onRestored(copyId);
+              },
+            });
+          }}
+        >
+          <History aria-hidden />
+          {revert.isPending
+            ? t('ledger.entry.reverting')
+            : t('ledger.entry.revert')}
+        </Button>
+      ) : null}
+      {entry.reversedById === null || replaced ? null : (
         <p>
           {t('ledger.entry.undoneBy')}{' '}
           <Link

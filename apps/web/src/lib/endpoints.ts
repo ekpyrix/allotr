@@ -665,6 +665,11 @@ export const endpoints = {
     path: '/v1/transactions/{id}/restore',
     response: transactionSchema,
   }),
+  revertTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions/{id}/revert',
+    response: editedTransactionSchema,
+  }),
   moveTransaction: endpoint({
     method: 'POST',
     path: '/v1/transactions/{id}/move',

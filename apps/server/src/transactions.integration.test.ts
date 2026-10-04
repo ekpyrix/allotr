@@ -22,6 +22,8 @@ type Entry = {
   reversesId: string | null;
   reversedById: string | null;
   restoredById: string | null;
+  replacesId: string | null;
+  replacedById: string | null;
   impliedRate: string | null;
   tagIds: string[];
 };
@@ -489,6 +491,109 @@ describe('undo and edit', () => {
       (kept.body as Entry).id,
     ]);
     expect(hidden.dayTotals).toEqual(shown.dayTotals);
+  });
+
+  it('links an edit to the version it replaced, and keeps it out of deleted entries', async () => {
+    const day = '2026-02-02';
+    const original = await h.alice.post(
+      '/v1/transactions',
+      spend(300, { occurredOn: day }),
+    );
+    const id = (original.body as Entry).id;
+    const edited = await h.alice.post(
+      `/v1/transactions/${id}/edit`,
+      spend(350, { occurredOn: day }),
+    );
+    const { reversal, replacement } = edited.body as {
+      reversal: Entry;
+      replacement: Entry;
+    };
+    expect(replacement.replacesId).toBe(id);
+    expect(replacement.replacedById).toBeNull();
+    expect(
+      ((await h.alice.get(`/v1/transactions/${id}`)).body as Entry)
+        .replacedById,
+    ).toBe(replacement.id);
+
+    const deleted = await h.alice.post(
+      '/v1/transactions',
+      spend(400, { occurredOn: day }),
+    );
+    const undo = await h.alice.post(
+      `/v1/transactions/${(deleted.body as Entry).id}/reverse`,
+    );
+    const list = async (undone: string) =>
+      (
+        (
+          await h.alice.get(
+            `/v1/transactions?from=${day}&to=${day}&undone=${undone}`,
+          )
+        ).body as { transactions: Entry[]; dayTotals: { net: Money }[] }
+      ).transactions.map((t) => t.id);
+    const shown = await list('show');
+    expect(shown).toHaveLength(3);
+    expect(shown).toEqual(
+      expect.arrayContaining([
+        replacement.id,
+        (deleted.body as Entry).id,
+        (undo.body as Entry).id,
+      ]),
+    );
+    expect(shown).not.toContain(id);
+    expect(shown).not.toContain(reversal.id);
+    expect(await list('hide')).toEqual([replacement.id]);
+  });
+
+  it('goes back to an earlier version as a new edit', async () => {
+    const tag = await h.alice.post('/v1/tags', { name: 'revert-test' });
+    const tagId = (tag.body as { id: string }).id;
+    const first = await h.alice.post(
+      '/v1/transactions',
+      spend(500, { note: 'first', tagIds: [tagId] }),
+    );
+    const firstId = (first.body as Entry).id;
+    const second = (
+      (
+        await h.alice.post(
+          `/v1/transactions/${firstId}/edit`,
+          spend(600, { note: 'second' }),
+        )
+      ).body as { replacement: Entry }
+    ).replacement;
+    const third = (
+      (
+        await h.alice.post(
+          `/v1/transactions/${second.id}/edit`,
+          spend(700, { note: 'third' }),
+        )
+      ).body as { replacement: Entry }
+    ).replacement;
+    const before = await balance(h.alice, card);
+
+    const current = await h.alice.post(`/v1/transactions/${third.id}/revert`);
+    expect(current.status).toBe(409);
+    expect(code(current)).toBe('not_replaced');
+
+    const reverted = await h.alice.post(`/v1/transactions/${firstId}/revert`);
+    expect(reverted.status).toBe(201);
+    const { reversal, replacement } = reverted.body as {
+      reversal: Entry;
+      replacement: Entry;
+    };
+    expect(reversal.reversesId).toBe(third.id);
+    expect(replacement).toMatchObject({
+      note: 'first',
+      tagIds: [tagId],
+      replacesId: third.id,
+    });
+    expect(replacement.postings).toEqual((first.body as Entry).postings);
+    expect(await balance(h.alice, card)).toBe(before + 700 - 500);
+
+    await h.alice.post(`/v1/transactions/${replacement.id}/reverse`);
+    const gone = await h.alice.post(`/v1/transactions/${second.id}/revert`);
+    expect(code(gone)).toBe('entry_deleted');
+    const other = await h.bob.post(`/v1/transactions/${firstId}/revert`);
+    expect(other.status).toBe(404);
   });
 
   it('never updates or deletes a stored row', async () => {

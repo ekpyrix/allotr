@@ -18,6 +18,7 @@ import {
   listTransactions,
   moveTransaction,
   restoreTransaction,
+  revertTransaction,
   reverseTransaction,
 } from '../../ledger/transactions.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
@@ -139,7 +140,7 @@ const editRoute = createRoute({
   tags,
   summary: 'Replace an entry',
   description:
-    'Posts a reversal of the entry plus the replacement described by the body. Nothing is updated in place.',
+    'Posts a reversal of the entry plus the replacement described by the body. Nothing is updated in place. The replacement points at the entry it replaced (`replacesId`), and the list leaves the earlier version and its undo out: an edit is not a delete.',
   request: { params: idParamSchema, body: createBody },
   responses: {
     201: json(editedTransactionSchema, 'The reversal and the replacement.'),
@@ -147,6 +148,24 @@ const editRoute = createRoute({
     ...signedIn,
     404: notFound,
     409: problemResponse('Already undone, an undo, or on an archived account.'),
+  },
+});
+
+const revertRoute = createRoute({
+  method: 'post',
+  path: '/v1/transactions/{id}/revert',
+  tags,
+  summary: 'Go back to an earlier version of an edited entry',
+  description:
+    'The entry as it stands now is replaced by a copy of this earlier version, with its date, category, note, tags and postings: a reversal plus the copy, as for any edit.',
+  request: { params: idParamSchema },
+  responses: {
+    201: json(editedTransactionSchema, 'The reversal and the copy.'),
+    ...signedIn,
+    404: notFound,
+    409: problemResponse(
+      'Not an earlier version (`not_replaced`), the entry was deleted since (`entry_deleted`), it lends, borrows or settles an IOU (`iou_entry`), or it is on an archived account.',
+    ),
   },
 });
 
@@ -235,6 +254,14 @@ export function registerTransactionRoutes(
         c.req.valid('json'),
         now(),
       ),
+      201,
+    );
+  });
+
+  app.openapi(revertRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(
+      await revertTransaction(db, c.get('user').id, id, now()),
       201,
     );
   });
