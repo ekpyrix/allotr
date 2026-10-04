@@ -215,6 +215,12 @@ with autocomplete from earlier ones, not contacts.
   brings its people back as new IOUs; restoring an undone repayment or
   write-off settles the same IOUs again, and is refused if one has since been
   undone or paid.
+- **Entries.** Every lend, borrow, repayment and write-off is an entry of its
+  own. Each can be undone right after it is saved and deleted later like any
+  entry, which posts its undo; restoring brings it back as above. An IOU
+  lists its live repayments and write-offs, settled ones included, and
+  deleting an IOU deletes the entry that recorded it, with every person and
+  any own share on that entry.
 - **Due date and write-off.** An IOU may have a due date, and is overdue the
   day after it. Allotr *offers* to write off a debt to the user from `due date +
   iouWriteOffAfterDays` (default 90; the day it was recorded when there is no

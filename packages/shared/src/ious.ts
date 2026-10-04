@@ -26,6 +26,7 @@ export const iouSettlementSchema = z.object({
   /** The entry was undone, so it settles nothing. */
   undone: z.boolean(),
 });
+export type IouSettlementView = z.infer<typeof iouSettlementSchema>;
 
 export const iouSchema = z.object({
   id: idSchema,

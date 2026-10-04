@@ -7,18 +7,21 @@ import {
   type CategoryView,
   type CurrencyCode,
   type IouListView,
+  type IouSettlementView,
   type IouView,
 } from '@allotr/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { HandCoins, TriangleAlert } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CircleCheck, HandCoins, TriangleAlert } from 'lucide-react';
 import { useState, type SubmitEvent } from 'react';
 import { FieldControl, FormError, selectClass } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSnackbar } from '@/components/ui/snackbar';
 import { StatusChip } from '@/components/ui/status-chip';
 import { Sheet } from '@/features/accounts/sheet';
 import { MoneyInput } from '@/features/budget/money-input';
 import { formatLongDay } from '@/features/ledger/format';
+import { useDeleteEntry } from '@/features/ledger/use-delete-entry';
 import { categoryOptions } from '@/features/quick-entry/options';
 import {
   parseBillAmount,
@@ -27,39 +30,75 @@ import {
 import { Section } from '@/features/settings/section';
 import { useBusy } from '@/features/settings/use-busy';
 import {
+  allIousQuery,
   createIou,
   iouQueryKeys,
   repayIous,
   updateIou,
   writeOffIou,
 } from '@/lib/ious';
-import { describeProblem } from '@/lib/problem';
+import { ApiError } from '@/lib/api';
+import { describeProblem, errorMessage } from '@/lib/problem';
 import { randomId } from '@/lib/random-id';
 import { invalidate } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { toLoanBody, type PersonError } from './draft.ts';
 import { PeopleInput } from './people-input.tsx';
 
+// Every lend, borrow, repayment and write-off is an entry of its own: it
+// can be undone right after it is saved, and deleted later like any entry
+// (its undo restores it). An IOU's payments are listed under it.
+
 type Open =
   | { kind: 'loan' }
-  | { kind: 'repay' | 'writeoff' | 'edit'; iou: IouView }
+  | { kind: 'repay' | 'writeoff' | 'edit' | 'delete'; iou: IouView }
   | null;
+
+/** An entry just saved: its id, and what the messages call it. */
+interface Saved {
+  id: string;
+  description: string;
+}
 
 interface FormProps {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
   locale: string;
-  onDone: () => void;
+  onDone: (saved?: Saved) => void;
   onBusyChange: (busy: boolean) => void;
 }
 
-function useIouChange<A, R>(run: (args: A) => Promise<R>, onDone: () => void) {
+type EntryKind = 'origin' | 'repayment' | 'write-off';
+
+/** What an IOU's entry is called, as in "Deleted repayment from Alex." */
+export function entryName(
+  kind: EntryKind,
+  iou: Pick<IouView, 'direction' | 'person'>,
+): string {
+  const toMe = iou.direction === 'owed-to-me';
+  const key =
+    kind === 'origin'
+      ? toMe
+        ? 'lentTo'
+        : 'borrowedFrom'
+      : kind === 'repayment'
+        ? toMe
+          ? 'repaidBy'
+          : 'paidTo'
+        : 'writtenOff';
+  return t(`budget.ious.entries.${key}`, { person: iou.person });
+}
+
+function useIouChange<A, R>(
+  run: (args: A) => Promise<R>,
+  onDone: (result: R) => void,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: run,
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await invalidate(queryClient, iouQueryKeys);
-      onDone();
+      onDone(result);
     },
   });
 }
@@ -122,7 +161,14 @@ function LoanForm({
   const [key] = useState(() => randomId());
   const create = useIouChange(
     (body: Parameters<typeof createIou>[0]) => createIou(body, key),
-    onDone,
+    ({ transaction, ious }) => {
+      const [first] = ious;
+      onDone(
+        first === undefined
+          ? undefined
+          : { id: transaction.id, description: entryName('origin', first) },
+      );
+    },
   );
   useBusy(create.isPending, onBusyChange);
   const currency = open.find((a) => a.id === accountId)?.currency ?? 'USD';
@@ -249,7 +295,12 @@ function RepayForm({
     formatMoneyInput(iou.outstanding, locale),
   );
   const [error, setError] = useState<AmountError>();
-  const repay = useIouChange(repayIous, onDone);
+  const repay = useIouChange(repayIous, ({ transaction }) => {
+    onDone({
+      id: transaction.id,
+      description: entryName('repayment', iou),
+    });
+  });
   useBusy(repay.isPending, onBusyChange);
 
   function submit(event: SubmitEvent<HTMLFormElement>) {
@@ -313,7 +364,12 @@ function WriteOffForm({
   const [categoryId, setCategoryId] = useState(options[0]?.id ?? '');
   const off = useIouChange(
     (id: string) => writeOffIou(id, { categoryId }),
-    onDone,
+    ({ transaction }) => {
+      onDone({
+        id: transaction.id,
+        description: entryName('write-off', iou),
+      });
+    },
   );
   useBusy(off.isPending, onBusyChange);
   return (
@@ -376,7 +432,9 @@ function EditForm({
   const [dueOn, setDueOn] = useState(iou.dueOn ?? '');
   const save = useIouChange(
     (body: Parameters<typeof updateIou>[1]) => updateIou(iou.id, body),
-    onDone,
+    () => {
+      onDone();
+    },
   );
   useBusy(save.isPending, onBusyChange);
   return (
@@ -423,14 +481,122 @@ function EditForm({
   );
 }
 
+/** The IOU's own entry goes, with everyone else it recorded. */
+function DeleteForm({
+  shared,
+  onDelete,
+}: {
+  /** Other IOUs recorded by the same entry. */
+  shared: readonly IouView[];
+  onDelete: (onError: (message: string) => void) => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  return (
+    <form
+      className="mt-4 grid gap-4"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        setError(null);
+        setPending(true);
+        onDelete((message) => {
+          setPending(false);
+          setError(message);
+        });
+      }}
+    >
+      <p className="text-body">{t('budget.ious.deleteBody')}</p>
+      {shared.length > 0 ? (
+        <p className="text-body text-text-muted">
+          {t('budget.ious.deleteShared', {
+            names: shared.map((other) => other.person).join(', '),
+          })}
+        </p>
+      ) : null}
+      <FormError message={error} />
+      <Button type="submit" disabled={pending}>
+        {t('budget.ious.deleteSubmit')}
+      </Button>
+    </form>
+  );
+}
+
+function settlementLabel(settlement: IouSettlementView, iou: IouView): string {
+  return settlement.kind === 'write-off'
+    ? t('budget.ious.kinds.writtenOff')
+    : iou.direction === 'owed-to-me'
+      ? t('budget.ious.kinds.repaid')
+      : t('budget.ious.kinds.paidBack');
+}
+
+/** Each live repayment or write-off, as an entry that can be deleted. */
+function Payments({
+  iou,
+  locale,
+  onDelete,
+}: {
+  iou: IouView;
+  locale: string;
+  onDelete: (id: string, description: string) => void;
+}) {
+  const live = iou.settlements.filter((s) => !s.undone);
+  if (live.length === 0) return null;
+  return (
+    <ul
+      aria-label={t('budget.ious.paymentsFor', { person: iou.person })}
+      data-testid="iou-payments"
+      className="grid gap-1"
+    >
+      {live.map((settlement) => {
+        const label = settlementLabel(settlement, iou);
+        const amount = formatMoney(settlement.amount, locale);
+        const date = formatLongDay(settlement.on, locale);
+        return (
+          <li
+            key={settlement.id}
+            className="flex items-center justify-between gap-3 text-caption text-text-muted"
+          >
+            <span>
+              {date} · {label}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="font-mono">{amount}</span>
+              <Button
+                variant="text"
+                size="dense"
+                aria-label={t('budget.ious.deletePayment', {
+                  kind: label.toLowerCase(),
+                  amount,
+                  date,
+                })}
+                onClick={() => {
+                  onDelete(
+                    settlement.transactionId,
+                    entryName(settlement.kind, iou),
+                  );
+                }}
+              >
+                {t('budget.ious.delete')}
+              </Button>
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function IouRow({
   iou,
   locale,
   onOpen,
+  onDeletePayment,
 }: {
   iou: IouView;
   locale: string;
   onOpen: (open: Exclude<Open, null | { kind: 'loan' }>) => void;
+  onDeletePayment: (id: string, description: string) => void;
 }) {
   const toMe = iou.direction === 'owed-to-me';
   return (
@@ -453,6 +619,11 @@ function IouRow({
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        {iou.settled ? (
+          <StatusChip tone="success" icon={<CircleCheck aria-hidden="true" />}>
+            {t('budget.ious.settled')}
+          </StatusChip>
+        ) : null}
         {iou.overdue ? (
           <StatusChip
             tone="warning"
@@ -467,18 +638,21 @@ function IouRow({
           </StatusChip>
         ) : null}
       </div>
+      <Payments iou={iou} locale={locale} onDelete={onDeletePayment} />
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outlined"
-          size="dense"
-          onClick={() => {
-            onOpen({ kind: 'repay', iou });
-          }}
-        >
-          {toMe ? t('budget.ious.recordRepayment') : t('budget.ious.payBack')}
-          <span className="sr-only"> {iou.person}</span>
-        </Button>
-        {toMe ? (
+        {iou.settled ? null : (
+          <Button
+            variant="outlined"
+            size="dense"
+            onClick={() => {
+              onOpen({ kind: 'repay', iou });
+            }}
+          >
+            {toMe ? t('budget.ious.recordRepayment') : t('budget.ious.payBack')}
+            <span className="sr-only"> {iou.person}</span>
+          </Button>
+        )}
+        {toMe && !iou.settled ? (
           <Button
             variant="text"
             size="dense"
@@ -500,6 +674,16 @@ function IouRow({
           {t('budget.edit')}
           <span className="sr-only"> {iou.person}</span>
         </Button>
+        <Button
+          variant="text"
+          size="dense"
+          onClick={() => {
+            onOpen({ kind: 'delete', iou });
+          }}
+        >
+          {t('budget.ious.delete')}
+          <span className="sr-only"> {iou.person}</span>
+        </Button>
       </div>
     </li>
   );
@@ -507,7 +691,7 @@ function IouRow({
 
 /** Money lent and borrowed: who owes whom, repayments and write-offs. */
 export function IousSection({
-  list,
+  list: open_,
   accounts,
   categories,
   currency,
@@ -521,8 +705,38 @@ export function IousSection({
 }) {
   const [open, setOpen] = useState<Open>(null);
   const [busy, setBusy] = useState(false);
+  const [showSettled, setShowSettled] = useState(false);
+  const all = useQuery({ ...allIousQuery, enabled: showSettled });
+  const list = showSettled && all.data !== undefined ? all.data : open_;
+  const snack = useSnackbar();
   const close = () => {
     setOpen(null);
+  };
+  const removeEntry = useDeleteEntry();
+  const removeIou = useDeleteEntry(close);
+  const deleteEntry = (id: string, description: string) => {
+    removeEntry.mutate(
+      { id, description },
+      {
+        onError: (error) => {
+          snack({ message: errorMessage(error), tone: 'error' });
+        },
+      },
+    );
+  };
+  // Saved from a sheet: say so, with Undo, which deletes it again.
+  const done = (saved?: Saved) => {
+    close();
+    if (saved === undefined) return;
+    snack({
+      message: t('budget.ious.recorded', { entry: saved.description }),
+      action: {
+        label: t('entries.restore'),
+        onAction: () => {
+          deleteEntry(saved.id, saved.description);
+        },
+      },
+    });
   };
   const title =
     open === null
@@ -533,7 +747,7 @@ export function IousSection({
   const shared = {
     accounts,
     locale,
-    onDone: close,
+    onDone: done,
     onBusyChange: setBusy,
   };
   return (
@@ -558,6 +772,16 @@ export function IousSection({
         >
           {t('budget.ious.add')}
         </Button>
+        <label className="flex items-center gap-2 text-body">
+          <input
+            type="checkbox"
+            checked={showSettled}
+            onChange={(e) => {
+              setShowSettled(e.currentTarget.checked);
+            }}
+          />
+          {t('budget.ious.showSettled')}
+        </label>
       </div>
       {list.totals.missingRates.length > 0 ? (
         <p className="mt-1 text-caption text-text-muted">
@@ -574,11 +798,22 @@ export function IousSection({
       ) : (
         <ul className="mt-3 border-y border-outline-variant">
           {list.ious.map((iou) => (
-            <IouRow key={iou.id} iou={iou} locale={locale} onOpen={setOpen} />
+            <IouRow
+              key={iou.id}
+              iou={iou}
+              locale={locale}
+              onOpen={setOpen}
+              onDeletePayment={deleteEntry}
+            />
           ))}
         </ul>
       )}
-      <Sheet open={open !== null} title={title} busy={busy} onClose={close}>
+      <Sheet
+        open={open !== null}
+        title={title}
+        busy={busy || removeIou.isPending}
+        onClose={close}
+      >
         {open === null ? null : open.kind === 'loan' ? (
           <LoanForm {...shared} />
         ) : open.kind === 'repay' ? (
@@ -589,14 +824,41 @@ export function IousSection({
             iou={open.iou}
             categories={categories}
             locale={locale}
-            onDone={close}
+            onDone={done}
             onBusyChange={setBusy}
+          />
+        ) : open.kind === 'delete' ? (
+          <DeleteForm
+            key={open.iou.id}
+            shared={list.ious.filter(
+              (other) =>
+                other.originId === open.iou.originId &&
+                other.id !== open.iou.id,
+            )}
+            onDelete={(onError) => {
+              removeIou.mutate(
+                {
+                  id: open.iou.originId,
+                  description: entryName('origin', open.iou),
+                },
+                {
+                  onError: (error) => {
+                    onError(
+                      error instanceof ApiError &&
+                        error.problem.code === 'iou_has_payments'
+                        ? t('budget.ious.hasPayments')
+                        : errorMessage(error),
+                    );
+                  },
+                },
+              );
+            }}
           />
         ) : (
           <EditForm
             key={open.iou.id}
             iou={open.iou}
-            onDone={close}
+            onDone={done}
             onBusyChange={setBusy}
           />
         )}
