@@ -11,13 +11,17 @@ import {
   transfer,
   type Chart,
   type Transaction,
+  type TransactionId,
 } from '@allotr/core';
 import type {
   CreateTransactionBody,
+  DayOrderView,
   LocalDate,
+  MoveTransactionBody,
   TransactionListView,
   TransactionView,
 } from '@allotr/shared';
+import { isRank } from '@allotr/shared';
 import { sql, type Kysely } from 'kysely';
 import type { DB } from '../db/schema.ts';
 import { atPath, RequestProblem } from '../http/domain-errors.ts';
@@ -26,6 +30,7 @@ import {
   refuseUndoWithPayments,
   restoreIouRows,
 } from './iou-links.ts';
+import { moveInDay } from './entry-order.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
@@ -63,7 +68,9 @@ type TransactionRow = {
   id: string;
   kind: string;
   occurred_on: string;
+  occurred_time: string | null;
   created_at: string;
+  sort_rank: string;
   source: string;
   category_id: string | null;
   note: string | null;
@@ -74,18 +81,34 @@ type TransactionRow = {
 };
 
 const transactionColumns = [
-  'id',
-  'kind',
-  'occurred_on',
-  'created_at',
-  'source',
-  'category_id',
-  'note',
-  'reverses_id',
-  'fx_rate_implied',
-  'switch_account_id',
-  'switch_budget_group',
+  'transactions.id',
+  'transactions.kind',
+  'transactions.occurred_on',
+  'transactions.occurred_time',
+  'transactions.created_at',
+  'transaction_ranks.sort_rank',
+  'transactions.source',
+  'transactions.category_id',
+  'transactions.note',
+  'transactions.reverses_id',
+  'transactions.fx_rate_implied',
+  'transactions.switch_account_id',
+  'transactions.switch_budget_group',
 ] as const;
+
+// A user's entries with their place in the day. Every entry has a rank row
+// (migration 0014), so the inner join loses none.
+function selectEntries(db: Db, userId: string) {
+  return db
+    .selectFrom('transactions')
+    .innerJoin(
+      'transaction_ranks',
+      'transaction_ranks.transaction_id',
+      'transactions.id',
+    )
+    .select(transactionColumns)
+    .where('transactions.user_id', '=', userId);
+}
 
 /** Views for transaction rows, with their postings, tags and undo. */
 async function views(
@@ -151,7 +174,9 @@ async function views(
     id: row.id,
     kind: row.kind as Kind,
     occurredOn: row.occurred_on as LocalDate,
+    occurredTime: row.occurred_time as TransactionView['occurredTime'],
     createdAt: row.created_at,
+    sortRank: row.sort_rank,
     source: row.source as TransactionView['source'],
     categoryId: row.category_id,
     note: row.note,
@@ -182,11 +207,8 @@ async function viewsByIds(
   userId: string,
   ids: readonly string[],
 ): Promise<TransactionView[]> {
-  const rows = await db
-    .selectFrom('transactions')
-    .select(transactionColumns)
-    .where('user_id', '=', userId)
-    .where('id', 'in', ids)
+  const rows = await selectEntries(db, userId)
+    .where('transactions.id', 'in', ids)
     .execute();
   const found = await views(db, userId, rows);
   return ids.flatMap((id) => found.filter((view) => view.id === id));
@@ -214,10 +236,10 @@ export type ListFilter = Readonly<{
   cursor?: string | undefined;
 }>;
 
-type Cursor = [occurredOn: string, createdAt: string, id: string];
+type Cursor = [occurredOn: string, sortRank: string, id: string];
 
 function encodeCursor(view: TransactionView): string {
-  const cursor: Cursor = [view.occurredOn, view.createdAt, view.id];
+  const cursor: Cursor = [view.occurredOn, view.sortRank, view.id];
   return Buffer.from(JSON.stringify(cursor)).toString('base64url');
 }
 
@@ -229,7 +251,9 @@ function decodeCursor(text: string): Cursor {
     if (
       Array.isArray(value) &&
       value.length === 3 &&
-      value.every((part) => typeof part === 'string')
+      value.every((part) => typeof part === 'string') &&
+      // Cursors from before entries had ranks held a timestamp here.
+      isRank(value[1] ?? '')
     ) {
       return value as Cursor;
     }
@@ -290,15 +314,12 @@ async function checkTagExists(
 /** Entries newest first, by date, then time of entry, then ID. */
 // The entries a filter matches, before paging.
 async function matching(db: Db, userId: string, filter: ListFilter) {
-  let query = db
-    .selectFrom('transactions')
-    .select(transactionColumns)
-    .where('user_id', '=', userId);
+  let query = selectEntries(db, userId);
   if (filter.from !== undefined) {
-    query = query.where('occurred_on', '>=', filter.from);
+    query = query.where('transactions.occurred_on', '>=', filter.from);
   }
   if (filter.to !== undefined)
-    query = query.where('occurred_on', '<=', filter.to);
+    query = query.where('transactions.occurred_on', '<=', filter.to);
   if (filter.accountId !== undefined) {
     const account = filter.accountId;
     query = query.where((eb) =>
@@ -404,15 +425,15 @@ export async function listTransactions(
 ): Promise<TransactionListView> {
   let query = await matching(db, userId, filter);
   if (filter.cursor !== undefined) {
-    const [occurredOn, createdAt, id] = decodeCursor(filter.cursor);
+    const [occurredOn, sortRank, id] = decodeCursor(filter.cursor);
     query = query.where(
-      sql<boolean>`(occurred_on, created_at, id) < (${occurredOn}, ${createdAt}, ${id})`,
+      sql<boolean>`(transactions.occurred_on, transaction_ranks.sort_rank, transactions.id) < (${occurredOn}, ${sortRank}, ${id})`,
     );
   }
   const rows = await query
-    .orderBy('occurred_on', 'desc')
-    .orderBy('created_at', 'desc')
-    .orderBy('id', 'desc')
+    .orderBy('transactions.occurred_on', 'desc')
+    .orderBy('transaction_ranks.sort_rank', 'desc')
+    .orderBy('transactions.id', 'desc')
     .limit(filter.limit + 1)
     .execute();
   const page = await views(db, userId, rows.slice(0, filter.limit));
@@ -442,7 +463,7 @@ async function dayTotalsFor(
   if (days.length === 0) return [];
   const [rows, chart, rates, settings] = await Promise.all([
     (await matching(db, userId, filter))
-      .where('occurred_on', 'in', days)
+      .where('transactions.occurred_on', 'in', days)
       .execute(),
     loadChart(db, userId),
     loadRates(db, userId),
@@ -542,6 +563,7 @@ async function build(
   userId: string,
   body: CreateTransactionBody,
   now: Date,
+  keepTime = false,
 ): Promise<{ transaction: Transaction; chart: Chart; tagIds: string[] }> {
   const chart = await ensureSystemAccounts(
     db,
@@ -551,10 +573,15 @@ async function build(
     now,
   );
   const tagIds = await checkTags(db, userId, body.tagIds ?? []);
+  // A time is kept only when the user has entry times on, so a client that
+  // always sends one (such as a chat parser) follows the setting. An import
+  // keeps the times its history has.
+  const { entryTimes } = await readLedgerSettings(db, userId);
   const entry = newEntry(
     now,
     body.occurredOn ?? (await userToday(db, userId, now)),
     body.note,
+    entryTimes === 'off' && !keepTime ? null : (body.occurredTime ?? null),
   );
   if (body.kind === 'transfer') {
     const category =
@@ -616,8 +643,13 @@ export async function storeTransaction(
   tagIds: readonly string[],
   idempotencyKey: string | null,
   source: TransactionSource,
+  placeAfter?: TransactionId,
 ): Promise<void> {
-  await appendTransaction(db, userId, transaction, { source, idempotencyKey });
+  await appendTransaction(db, userId, transaction, {
+    source,
+    idempotencyKey,
+    ...(placeAfter === undefined ? {} : { placeAfter }),
+  });
   if (tagIds.length === 0) return;
   await db
     .insertInto('transaction_tags')
@@ -639,7 +671,13 @@ export async function recordTransaction(
   source: TransactionSource,
   now: Date,
 ): Promise<string> {
-  const { transaction, tagIds } = await build(db, userId, body, now);
+  const { transaction, tagIds } = await build(
+    db,
+    userId,
+    body,
+    now,
+    source === 'import',
+  );
   await storeTransaction(db, userId, transaction, tagIds, null, source);
   return transaction.id;
 }
@@ -776,6 +814,7 @@ export async function restoreTransaction(
       tags.map((t) => t.tag_id),
       key,
       'api',
+      transactionId(id),
     );
     await restoreIouRows(trx, userId, id, copy.id, now);
     return copy.id;
@@ -812,6 +851,7 @@ export async function editTransaction(
         built.tagIds,
         null,
         'api',
+        transactionId(id),
       );
       return [reversal.id, replacement.id] as const;
     });
@@ -821,4 +861,37 @@ export async function editTransaction(
   ]);
   if (reversal === undefined || replacement === undefined) throw notFound();
   return { reversal, replacement };
+}
+
+/**
+ * Moves an entry within its day (docs/domain.md "Order within a day").
+ * Nothing in the entry changes, only its place; figures that follow the
+ * order, such as which budget covered a shortfall, follow it too.
+ */
+export async function moveTransaction(
+  db: Kysely<DB>,
+  userId: string,
+  id: string,
+  body: MoveTransactionBody,
+  now: Date,
+): Promise<DayOrderView> {
+  return db.transaction().execute(async (trx) => {
+    const row = await trx
+      .selectFrom('transactions')
+      .select('occurred_on')
+      .where('user_id', '=', userId)
+      .where('id', '=', id)
+      .executeTakeFirst();
+    if (row === undefined) throw notFound();
+    const occurredOn = row.occurred_on as LocalDate;
+    const ids = await moveInDay(
+      trx,
+      userId,
+      transactionId(id),
+      occurredOn,
+      body.afterId === null ? null : transactionId(body.afterId),
+      now,
+    );
+    return { occurredOn, ids };
+  });
 }

@@ -196,6 +196,8 @@ export function toBeancount(snapshot: Snapshot, today: LocalDate): string {
       `  id: "${entry.id}"`,
       `  kind: "${entry.kind}"`,
     );
+    if (entry.occurredTime !== null)
+      out.push(`  time: "${entry.occurredTime}"`);
     if (entry.reversesId !== null)
       out.push(`  reverses: "${entry.reversesId}"`);
     if (entry.kind === 'transfer' && entry.categoryId !== null) {

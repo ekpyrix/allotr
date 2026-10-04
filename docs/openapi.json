@@ -4862,9 +4862,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -5015,7 +5025,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -12064,9 +12076,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -12217,7 +12239,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -12466,9 +12490,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -12619,7 +12653,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -13939,9 +13975,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -14092,7 +14138,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -14707,9 +14755,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -14860,7 +14918,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -14897,9 +14957,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -15050,7 +15120,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -15300,9 +15372,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -15453,7 +15535,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -15490,9 +15574,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -15643,7 +15737,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -16219,9 +16315,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -16372,7 +16478,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -22187,9 +22295,19 @@
                             "type": "string",
                             "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                           },
+                          "occurredTime": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "sortRank": {
+                            "type": "string"
                           },
                           "source": {
                             "type": "string",
@@ -22340,7 +22458,9 @@
                           "id",
                           "kind",
                           "occurredOn",
+                          "occurredTime",
                           "createdAt",
+                          "sortRank",
                           "source",
                           "categoryId",
                           "note",
@@ -22745,6 +22865,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -22856,6 +22980,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -22937,6 +23065,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -22993,9 +23125,19 @@
                       "type": "string",
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
+                    "occurredTime": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "sortRank": {
+                      "type": "string"
                     },
                     "source": {
                       "type": "string",
@@ -23146,7 +23288,9 @@
                     "id",
                     "kind",
                     "occurredOn",
+                    "occurredTime",
                     "createdAt",
+                    "sortRank",
                     "source",
                     "categoryId",
                     "note",
@@ -23190,9 +23334,19 @@
                       "type": "string",
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
+                    "occurredTime": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "sortRank": {
+                      "type": "string"
                     },
                     "source": {
                       "type": "string",
@@ -23343,7 +23497,9 @@
                     "id",
                     "kind",
                     "occurredOn",
+                    "occurredTime",
                     "createdAt",
+                    "sortRank",
                     "source",
                     "categoryId",
                     "note",
@@ -23684,9 +23840,19 @@
                       "type": "string",
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
+                    "occurredTime": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "sortRank": {
+                      "type": "string"
                     },
                     "source": {
                       "type": "string",
@@ -23837,7 +24003,9 @@
                     "id",
                     "kind",
                     "occurredOn",
+                    "occurredTime",
                     "createdAt",
+                    "sortRank",
                     "source",
                     "categoryId",
                     "note",
@@ -24085,9 +24253,19 @@
                       "type": "string",
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
+                    "occurredTime": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "sortRank": {
+                      "type": "string"
                     },
                     "source": {
                       "type": "string",
@@ -24238,7 +24416,9 @@
                     "id",
                     "kind",
                     "occurredOn",
+                    "occurredTime",
                     "createdAt",
+                    "sortRank",
                     "source",
                     "categoryId",
                     "note",
@@ -24580,9 +24760,19 @@
                       "type": "string",
                       "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                     },
+                    "occurredTime": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
+                    },
+                    "sortRank": {
+                      "type": "string"
                     },
                     "source": {
                       "type": "string",
@@ -24733,7 +24923,9 @@
                     "id",
                     "kind",
                     "occurredOn",
+                    "occurredTime",
                     "createdAt",
+                    "sortRank",
                     "source",
                     "categoryId",
                     "note",
@@ -25086,6 +25278,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -25197,6 +25393,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -25278,6 +25478,10 @@
                         "type": "string",
                         "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                       },
+                      "occurredTime": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
                       "note": {
                         "type": "string",
                         "minLength": 1,
@@ -25337,9 +25541,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -25490,7 +25704,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -25527,9 +25743,19 @@
                           "type": "string",
                           "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                         },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
                         },
                         "source": {
                           "type": "string",
@@ -25680,7 +25906,9 @@
                         "id",
                         "kind",
                         "occurredOn",
+                        "occurredTime",
                         "createdAt",
+                        "sortRank",
                         "source",
                         "categoryId",
                         "note",
@@ -25924,6 +26152,354 @@
           },
           "409": {
             "description": "Already undone, an undo, or on an archived account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/{id}/move": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Move an entry within its day",
+        "description": "Places the entry right after `afterId`, or first in its day when that is null. Only its place changes: the entry itself, its date and its amounts stay as recorded. Entries with a time of day stay in time order. Projections that take entries in order, such as budget cover, follow the new order.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "afterId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "afterId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The day's entries in their new order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "occurredOn": {
+                      "type": "string",
+                      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                    },
+                    "ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 64
+                      }
+                    }
+                  },
+                  "required": [
+                    "occurredOn",
+                    "ids"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`afterId` is on another day (`different_day`) or is the entry itself.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such entry or account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The entry has a time and the move would put it out of time order (`out_of_time_order`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -26578,6 +27154,14 @@
                       "type": "integer",
                       "minimum": 1,
                       "maximum": 3650
+                    },
+                    "entryTimes": {
+                      "type": "string",
+                      "enum": [
+                        "off",
+                        "optional",
+                        "prefill-now"
+                      ]
                     }
                   },
                   "required": [
@@ -26592,7 +27176,8 @@
                     "dailyMode",
                     "payYourselfFirst",
                     "emergencyMonths",
-                    "iouWriteOffAfterDays"
+                    "iouWriteOffAfterDays",
+                    "entryTimes"
                   ]
                 }
               }
@@ -26841,6 +27426,14 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 3650
+                  },
+                  "entryTimes": {
+                    "type": "string",
+                    "enum": [
+                      "off",
+                      "optional",
+                      "prefill-now"
+                    ]
                   }
                 }
               }
@@ -26970,6 +27563,14 @@
                       "type": "integer",
                       "minimum": 1,
                       "maximum": 3650
+                    },
+                    "entryTimes": {
+                      "type": "string",
+                      "enum": [
+                        "off",
+                        "optional",
+                        "prefill-now"
+                      ]
                     }
                   },
                   "required": [
@@ -26984,7 +27585,8 @@
                     "dailyMode",
                     "payYourselfFirst",
                     "emergencyMonths",
-                    "iouWriteOffAfterDays"
+                    "iouWriteOffAfterDays",
+                    "entryTimes"
                   ]
                 }
               }
@@ -37279,6 +37881,10 @@
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                             },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                            },
                             "note": {
                               "type": "string",
                               "minLength": 1,
@@ -37362,6 +37968,10 @@
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                             },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                            },
                             "note": {
                               "type": "string",
                               "minLength": 1,
@@ -37412,6 +38022,10 @@
                             "occurredOn": {
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                            },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                             },
                             "note": {
                               "type": "string",
@@ -37474,6 +38088,10 @@
                             "occurredOn": {
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                            },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                             },
                             "note": {
                               "type": "string",
@@ -37594,6 +38212,10 @@
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                             },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                            },
                             "note": {
                               "type": "string",
                               "minLength": 1,
@@ -37713,6 +38335,10 @@
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                             },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                            },
                             "note": {
                               "type": "string",
                               "minLength": 1,
@@ -37800,6 +38426,10 @@
                             "occurredOn": {
                               "type": "string",
                               "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                            },
+                            "time": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                             },
                             "note": {
                               "type": "string",
@@ -38763,6 +39393,10 @@
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                               },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                              },
                               "note": {
                                 "type": "string",
                                 "minLength": 1,
@@ -38846,6 +39480,10 @@
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                               },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                              },
                               "note": {
                                 "type": "string",
                                 "minLength": 1,
@@ -38896,6 +39534,10 @@
                               "occurredOn": {
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                               },
                               "note": {
                                 "type": "string",
@@ -38958,6 +39600,10 @@
                               "occurredOn": {
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                               },
                               "note": {
                                 "type": "string",
@@ -39078,6 +39724,10 @@
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                               },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                              },
                               "note": {
                                 "type": "string",
                                 "minLength": 1,
@@ -39197,6 +39847,10 @@
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
                               },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                              },
                               "note": {
                                 "type": "string",
                                 "minLength": 1,
@@ -39284,6 +39938,10 @@
                               "occurredOn": {
                                 "type": "string",
                                 "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "time": {
+                                "type": "string",
+                                "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                               },
                               "note": {
                                 "type": "string",

@@ -1,9 +1,11 @@
 import {
   createTransactionBodySchema,
+  dayOrderSchema,
   editedTransactionSchema,
   idempotencyHeaderSchema,
   idParamSchema,
   listTransactionsQuerySchema,
+  moveTransactionBodySchema,
   reverseTransactionBodySchema,
   transactionListSchema,
   transactionSchema,
@@ -14,6 +16,7 @@ import {
   editTransaction,
   getTransaction,
   listTransactions,
+  moveTransaction,
   restoreTransaction,
   reverseTransaction,
 } from '../../ledger/transactions.ts';
@@ -147,6 +150,32 @@ const editRoute = createRoute({
   },
 });
 
+const moveRoute = createRoute({
+  method: 'post',
+  path: '/v1/transactions/{id}/move',
+  tags,
+  summary: 'Move an entry within its day',
+  description:
+    'Places the entry right after `afterId`, or first in its day when that is null. Only its place changes: the entry itself, its date and its amounts stay as recorded. Entries with a time of day stay in time order. Projections that take entries in order, such as budget cover, follow the new order.',
+  request: {
+    params: idParamSchema,
+    body: {
+      content: { 'application/json': { schema: moveTransactionBodySchema } },
+    },
+  },
+  responses: {
+    200: json(dayOrderSchema, "The day's entries in their new order."),
+    400: problemResponse(
+      '`afterId` is on another day (`different_day`) or is the entry itself.',
+    ),
+    ...signedIn,
+    404: notFound,
+    409: problemResponse(
+      'The entry has a time and the move would put it out of time order (`out_of_time_order`).',
+    ),
+  },
+});
+
 export function registerTransactionRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
@@ -207,6 +236,20 @@ export function registerTransactionRoutes(
         now(),
       ),
       201,
+    );
+  });
+
+  app.openapi(moveRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(
+      await moveTransaction(
+        db,
+        c.get('user').id,
+        id,
+        c.req.valid('json'),
+        now(),
+      ),
+      200,
     );
   });
 }

@@ -18,6 +18,8 @@ export const csvHeader = [
   'tags',
   'reverses_id',
   'recorded_at',
+  // Last, so readers of the columns before it keep working.
+  'time',
 ] as const;
 
 export const systemAccountNames: Record<SystemRole, string> = {
@@ -65,6 +67,7 @@ export function toCsv(snapshot: Snapshot): string {
           textCell(tags),
           entry.reversesId ?? '',
           entry.createdAt,
+          entry.occurredTime ?? '',
         ].join(','),
       );
     }

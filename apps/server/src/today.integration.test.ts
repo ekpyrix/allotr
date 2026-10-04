@@ -540,6 +540,7 @@ describe('ledger settings', () => {
       payYourselfFirst: null,
       emergencyMonths: 3,
       iouWriteOffAfterDays: 90,
+      entryTimes: 'off',
     });
   });
 

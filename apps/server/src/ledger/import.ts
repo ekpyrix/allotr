@@ -117,6 +117,7 @@ function toBody(
 ): CreateTransactionBody {
   const common = {
     occurredOn: entry.occurredOn,
+    ...(entry.time === undefined ? {} : { occurredTime: entry.time }),
     ...(entry.note === undefined ? {} : { note: entry.note }),
     ...(tagIds.length === 0 ? {} : { tagIds }),
   };
@@ -178,7 +179,7 @@ async function recordWriteOff(
   }
   const transaction = writeOff(
     chart,
-    newEntry(now, entry.occurredOn, entry.note),
+    newEntry(now, entry.occurredOn, entry.note, entry.time),
     { accountId: accountId(id), balance: entry.balance },
   );
   await storeTransaction(db, userId, transaction, tagIds, null, 'import');

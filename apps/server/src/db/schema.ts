@@ -277,6 +277,14 @@ export interface Tags {
   user_id: string;
 }
 
+export interface TransactionRanks {
+  occurred_on: string;
+  sort_rank: string;
+  transaction_id: string;
+  updated_at: string;
+  user_id: string;
+}
+
 export interface Transactions {
   category_id: string | null;
   created_at: string;
@@ -286,6 +294,7 @@ export interface Transactions {
   kind: string;
   note: string | null;
   occurred_on: string;
+  occurred_time: string | null;
   reverses_id: string | null;
   source: string;
   switch_account_id: string | null;
@@ -365,6 +374,7 @@ export interface DB {
   sign_in_failures: SignInFailures;
   starter_categories: StarterCategories;
   tags: Tags;
+  transaction_ranks: TransactionRanks;
   transaction_tags: TransactionTags;
   transactions: Transactions;
   two_factors: TwoFactors;
