@@ -1,6 +1,8 @@
 import {
+  formatMoneyInput,
   isLocalDate,
   localDate,
+  money,
   MoneyError,
   parseMoney,
   type CreateIouBody,
@@ -19,13 +21,22 @@ export interface PersonDraft {
   readonly amount: string;
   /** YYYY-MM-DD, or empty for no due date. */
   readonly dueOn: string;
+  /**
+   * True once the user typed this amount. Until then it holds an even
+   * share of the bill, refilled as the bill or the people change.
+   */
+  readonly edited?: boolean;
 }
 
 export const emptyPerson: PersonDraft = { person: '', amount: '', dueOn: '' };
 
 export type PersonError = 'person' | 'amount';
 
-function positive(
+/** The split as a whole: people owe more than the bill. */
+export type TotalError = 'exceeds';
+
+/** A positive amount as typed, or null while it does not read as one. */
+export function positive(
   text: string,
   currency: string,
   locale: string,
@@ -42,7 +53,64 @@ function positive(
 
 export type IouResult =
   | { ok: true; body: CreateIouBody }
-  | { ok: false; errors: Record<number, PersonError> };
+  | {
+      ok: false;
+      errors: Record<number, PersonError>;
+      total?: TotalError;
+    };
+
+/**
+ * Each person's even share of a bill split between them and the user, in
+ * minor units. Rounding down leaves the odd minor units with the user.
+ */
+export function evenShare(totalMinor: number, people: number): number {
+  if (people <= 0 || totalMinor <= 0) return 0;
+  return Math.floor(totalMinor / (people + 1));
+}
+
+/** The amount as typed, in minor units; 0 when empty or not a number. */
+function typedMinor(text: string, currency: string, locale: string): number {
+  return positive(text, currency, locale)?.amountMinor ?? 0;
+}
+
+/**
+ * Fills the amounts the user has not typed with an even share of what the
+ * typed ones leave of the bill. Nothing changes without a bill.
+ */
+export function fillEven(
+  people: readonly PersonDraft[],
+  total: Money | null,
+  locale: string,
+): readonly PersonDraft[] {
+  if (total === null) return people;
+  const typed = people
+    .filter((p) => p.edited === true)
+    .reduce((sum, p) => sum + typedMinor(p.amount, total.currency, locale), 0);
+  const open = people.filter((p) => p.edited !== true).length;
+  const share = evenShare(total.amountMinor - typed, open);
+  const amount =
+    share > 0 ? formatMoneyInput(money(share, total.currency), locale) : '';
+  return people.map((p) => (p.edited === true ? p : { ...p, amount }));
+}
+
+/**
+ * The user's own share of a bill: what is left once everyone's amount is
+ * taken off. Null while the bill or any amount does not read as money.
+ */
+export function ownShareOf(
+  total: Money | null,
+  people: readonly PersonDraft[],
+  locale: string,
+): Money | null {
+  if (total === null) return null;
+  let left = total.amountMinor;
+  for (const p of people) {
+    const amount = positive(p.amount, total.currency, locale);
+    if (amount === null) return null;
+    left -= amount.amountMinor;
+  }
+  return money(left, total.currency);
+}
 
 function lines(
   people: readonly PersonDraft[],
@@ -70,8 +138,9 @@ function lines(
 }
 
 /**
- * A split bill from the entry sheet: the expense typed there is the user's
- * own share, and each person adds what they owe on top.
+ * A split bill from the entry sheet: the expense typed there is the whole
+ * bill, each person owes their amount, and the rest is the user's own
+ * share. When people owe all of it, it is a loan with no expense.
  */
 export function toSplitBody(
   expense: CreateTransactionBody,
@@ -82,13 +151,24 @@ export function toSplitBody(
     return { ok: false, errors: {} };
   const built = lines(people, expense.amount.currency, locale);
   if (!built.ok) return built;
+  const own =
+    expense.amount.amountMinor -
+    built.lines.reduce((sum, p) => sum + p.amount.amountMinor, 0);
+  if (own < 0) return { ok: false, errors: {}, total: 'exceeds' };
   return {
     ok: true,
     body: {
       direction: 'owed-to-me',
       accountId: expense.accountId,
       people: built.lines,
-      ownShare: { amount: expense.amount, categoryId: expense.categoryId },
+      ...(own === 0
+        ? {}
+        : {
+            ownShare: {
+              amount: money(own, expense.amount.currency),
+              categoryId: expense.categoryId,
+            },
+          }),
       ...(expense.occurredOn === undefined
         ? {}
         : { occurredOn: expense.occurredOn }),

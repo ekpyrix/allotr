@@ -1,4 +1,6 @@
 import {
+  convertedIouSchema,
+  convertToIouBodySchema,
   coverPreviewSchema,
   createdIousSchema,
   createIouBodySchema,
@@ -17,6 +19,7 @@ import {
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import {
+  convertToIou,
   createIou,
   listIous,
   listPeople,
@@ -84,6 +87,34 @@ const createRouteDef = createRoute({
     ...signedIn,
     404: problemResponse('There is no such account.'),
     409: problemResponse('The account is archived.'),
+  },
+});
+
+const convertRoute = createRoute({
+  method: 'post',
+  path: '/v1/ious/from/{id}',
+  tags,
+  summary: 'Split a logged expense with people',
+  description:
+    "Turns a logged expense into a split bill, or a loan when people owe all of it. The expense is undone and replaced by one entry with the same account, amount, date, note and tags: each person's line is receivable and the rest is the user's own share, an expense in `categoryId` (the expense's category by default). Only a live expense in one category, in the account's currency and tied to no IOU, can be turned. With an `Idempotency-Key` header, repeating a request returns what the key first created (200).",
+  request: {
+    headers: idempotencyHeaderSchema,
+    params: idParamSchema,
+    body: {
+      content: { 'application/json': { schema: convertToIouBodySchema } },
+    },
+  },
+  responses: {
+    200: json(convertedIouSchema, 'What this idempotency key created earlier.'),
+    201: json(convertedIouSchema, 'The undo, the new entry and its IOUs.'),
+    400: problemResponse(
+      'The request is invalid, people owe more than the expense (`owed_exceeds_total`), or in another currency (`currency_mismatch`).',
+    ),
+    ...signedIn,
+    404: problemResponse('There is no such entry.'),
+    409: problemResponse(
+      'Not a live plain expense (`not_plain_expense`), or the account is archived.',
+    ),
   },
 });
 
@@ -205,6 +236,18 @@ export function registerIouRoutes(
       now(),
     );
     return replayed ? c.json(created, 200) : c.json(created, 201);
+  });
+
+  app.openapi(convertRoute, async (c) => {
+    const { replayed, ...converted } = await convertToIou(
+      db,
+      c.get('user').id,
+      c.req.valid('param').id,
+      c.req.valid('json'),
+      c.req.valid('header')['idempotency-key'],
+      now(),
+    );
+    return replayed ? c.json(converted, 200) : c.json(converted, 201);
   });
 
   app.openapi(writeOffRoute, async (c) => {

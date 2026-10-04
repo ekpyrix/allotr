@@ -122,6 +122,26 @@ export const createdIousSchema = z.object({
   ious: z.array(iouSchema),
 });
 
+/**
+ * Turns a logged expense into a split bill or a loan. The amount, account,
+ * date, note and tags stay the entry's; people owe their lines and the
+ * rest is the user's own share.
+ */
+export const convertToIouBodySchema = z.object({
+  people: z.array(personLine).min(1).max(20),
+  /** The own share's category; the entry's when omitted. */
+  categoryId: idSchema.optional(),
+});
+export type ConvertToIouBody = z.output<typeof convertToIouBodySchema>;
+
+export const convertedIouSchema = z.object({
+  /** The undo of the logged expense. */
+  reversal: transactionSchema,
+  /** The split bill or loan that replaces it. */
+  transaction: transactionSchema,
+  ious: z.array(iouSchema),
+});
+
 export const repaymentBodySchema = z
   .object({
     /** Where the money arrived, or left. */
