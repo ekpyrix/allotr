@@ -261,7 +261,12 @@ export const en = {
       dueHint: 'Optional. After it you get a reminder each week.',
       note: 'Note',
       record: 'Record it',
-      errors: { person: 'Enter a name.' },
+      date: 'Date',
+      errors: {
+        person: 'Enter a name.',
+        date: 'Enter a date.',
+        beforeIou: 'Pick {date} or later, the day it was recorded.',
+      },
       owesYou: 'Owes you',
       youOwe: 'You owe',
       due: 'due {date}',

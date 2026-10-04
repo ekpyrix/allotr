@@ -9,6 +9,7 @@ import {
   type IouListView,
   type IouSettlementView,
   type IouView,
+  type LocalDate,
 } from '@allotr/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CircleCheck, HandCoins, TriangleAlert } from 'lucide-react';
@@ -42,7 +43,12 @@ import { describeProblem, errorMessage } from '@/lib/problem';
 import { randomId } from '@/lib/random-id';
 import { invalidate } from '@/lib/settings';
 import { t } from '@/messages/t';
-import { toLoanBody, type PersonError } from './draft.ts';
+import {
+  parseEntryDate,
+  toLoanBody,
+  type DateError,
+  type PersonError,
+} from './draft.ts';
 import { PeopleInput } from './people-input.tsx';
 
 // Every lend, borrow, repayment and write-off is an entry of its own: it
@@ -64,8 +70,53 @@ interface FormProps {
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
   locale: string;
+  /** The user's today; each entry is dated today unless changed. */
+  today: LocalDate;
   onDone: (saved?: Saved) => void;
   onBusyChange: (busy: boolean) => void;
+}
+
+/** When the money moved; a payment cannot be dated before its IOU. */
+function EntryDate({
+  value,
+  onChange,
+  error,
+  notBefore,
+  locale,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  error: DateError | undefined;
+  notBefore?: LocalDate | undefined;
+  locale: string;
+}) {
+  return (
+    <FieldControl
+      label={t('budget.ious.date')}
+      error={
+        error === undefined
+          ? undefined
+          : error === 'invalid'
+            ? t('budget.ious.errors.date')
+            : t('budget.ious.errors.beforeIou', {
+                date: formatLongDay(notBefore ?? localDate(value), locale),
+              })
+      }
+    >
+      {(props) => (
+        <Input
+          {...props}
+          type="date"
+          name="occurredOn"
+          min={notBefore}
+          value={value}
+          onChange={(e) => {
+            onChange(e.currentTarget.value);
+          }}
+        />
+      )}
+    </FieldControl>
+  );
 }
 
 type EntryKind = 'origin' | 'repayment' | 'write-off';
@@ -145,6 +196,7 @@ function AccountSelect({
 function LoanForm({
   accounts,
   locale,
+  today,
   onDone,
   onBusyChange,
 }: Omit<FormProps, 'categories'>) {
@@ -157,7 +209,9 @@ function LoanForm({
   const [amount, setAmount] = useState('');
   const [dueOn, setDueOn] = useState('');
   const [note, setNote] = useState('');
+  const [occurredOn, setOccurredOn] = useState<string>(today);
   const [error, setError] = useState<PersonError>();
+  const [dateError, setDateError] = useState<DateError>();
   const [key] = useState(() => randomId());
   const create = useIouChange(
     (body: Parameters<typeof createIou>[0]) => createIou(body, key),
@@ -183,12 +237,11 @@ function LoanForm({
       locale,
       note,
     );
-    if (!result.ok) {
-      setError(result.errors[0]);
-      return;
-    }
-    setError(undefined);
-    create.mutate(result.body);
+    const date = parseEntryDate(occurredOn);
+    setError(result.ok ? undefined : result.errors[0]);
+    setDateError(date.ok ? undefined : date.error);
+    if (!result.ok || !date.ok) return;
+    create.mutate({ ...result.body, occurredOn: date.date });
   }
 
   return (
@@ -239,6 +292,12 @@ function LoanForm({
         error={error === 'amount' ? 'invalid' : undefined}
         onChange={setAmount}
       />
+      <EntryDate
+        value={occurredOn}
+        onChange={setOccurredOn}
+        error={dateError}
+        locale={locale}
+      />
       <FieldControl
         label={t('budget.ious.dueOn')}
         hint={t('budget.ious.dueHint')}
@@ -283,6 +342,7 @@ function RepayForm({
   iou,
   accounts,
   locale,
+  today,
   onDone,
   onBusyChange,
 }: Omit<FormProps, 'categories'> & { iou: IouView }) {
@@ -295,6 +355,8 @@ function RepayForm({
     formatMoneyInput(iou.outstanding, locale),
   );
   const [error, setError] = useState<AmountError>();
+  const [occurredOn, setOccurredOn] = useState<string>(today);
+  const [dateError, setDateError] = useState<DateError>();
   const repay = useIouChange(repayIous, ({ transaction }) => {
     onDone({
       id: transaction.id,
@@ -306,15 +368,15 @@ function RepayForm({
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseBillAmount(amount, currency, locale);
-    if (!parsed.ok) {
-      setError(parsed.error);
-      return;
-    }
-    setError(undefined);
+    const date = parseEntryDate(occurredOn, iou.recordedOn);
+    setError(parsed.ok ? undefined : parsed.error);
+    setDateError(date.ok ? undefined : date.error);
+    if (!parsed.ok || !date.ok) return;
     repay.mutate({
       accountId,
       settles: [{ iouId: iou.id, amount: parsed.amount }],
       direction: iou.direction,
+      occurredOn: date.date,
     });
   }
 
@@ -343,6 +405,13 @@ function RepayForm({
         })}
         onChange={setAmount}
       />
+      <EntryDate
+        value={occurredOn}
+        onChange={setOccurredOn}
+        error={dateError}
+        notBefore={iou.recordedOn}
+        locale={locale}
+      />
       <FormError
         message={repay.isError ? describeProblem(repay.error).message : null}
       />
@@ -357,13 +426,16 @@ function WriteOffForm({
   iou,
   categories,
   locale,
+  today,
   onDone,
   onBusyChange,
 }: Omit<FormProps, 'accounts'> & { iou: IouView }) {
   const options = categoryOptions(categories, 'expense');
   const [categoryId, setCategoryId] = useState(options[0]?.id ?? '');
+  const [occurredOn, setOccurredOn] = useState<string>(today);
+  const [dateError, setDateError] = useState<DateError>();
   const off = useIouChange(
-    (id: string) => writeOffIou(id, { categoryId }),
+    (date: LocalDate) => writeOffIou(iou.id, { categoryId, occurredOn: date }),
     ({ transaction }) => {
       onDone({
         id: transaction.id,
@@ -378,7 +450,9 @@ function WriteOffForm({
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
-        off.mutate(iou.id);
+        const date = parseEntryDate(occurredOn, iou.recordedOn);
+        setDateError(date.ok ? undefined : date.error);
+        if (date.ok) off.mutate(date.date);
       }}
     >
       <p className="text-body">
@@ -413,6 +487,13 @@ function WriteOffForm({
           </select>
         )}
       </FieldControl>
+      <EntryDate
+        value={occurredOn}
+        onChange={setOccurredOn}
+        error={dateError}
+        notBefore={iou.recordedOn}
+        locale={locale}
+      />
       <FormError
         message={off.isError ? describeProblem(off.error).message : null}
       />
@@ -696,12 +777,14 @@ export function IousSection({
   categories,
   currency,
   locale,
+  today,
 }: {
   list: IouListView;
   accounts: readonly AccountView[];
   categories: readonly CategoryView[];
   currency: CurrencyCode;
   locale: string;
+  today: LocalDate;
 }) {
   const [open, setOpen] = useState<Open>(null);
   const [busy, setBusy] = useState(false);
@@ -747,6 +830,7 @@ export function IousSection({
   const shared = {
     accounts,
     locale,
+    today,
     onDone: done,
     onBusyChange: setBusy,
   };
@@ -824,6 +908,7 @@ export function IousSection({
             iou={open.iou}
             categories={categories}
             locale={locale}
+            today={today}
             onDone={done}
             onBusyChange={setBusy}
           />

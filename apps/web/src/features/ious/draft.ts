@@ -8,6 +8,7 @@ import {
   type CreateIouBody,
   type CreateTransactionBody,
   type IouDirectionView,
+  type LocalDate,
   type Money,
 } from '@allotr/shared';
 
@@ -198,4 +199,18 @@ export function toLoanBody(
       ...(note.trim() === '' ? {} : { note: note.trim() }),
     },
   };
+}
+
+export type DateError = 'invalid' | 'beforeIou';
+
+/** The entry's date, or why it cannot be one. */
+export function parseEntryDate(
+  value: string,
+  notBefore?: LocalDate,
+): { ok: true; date: LocalDate } | { ok: false; error: DateError } {
+  if (!isLocalDate(value)) return { ok: false, error: 'invalid' };
+  const date = localDate(value);
+  if (notBefore !== undefined && date < notBefore)
+    return { ok: false, error: 'beforeIou' };
+  return { ok: true, date };
 }

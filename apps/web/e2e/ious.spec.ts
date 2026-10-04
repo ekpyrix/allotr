@@ -66,6 +66,7 @@ test('lends money with a due date that has passed', async ({ page }) => {
   await sheet.getByLabel('Person').fill('Alex Example');
   await sheet.getByLabel('Amount', { exact: true }).fill('40');
   await sheet.getByLabel('Due on').fill(daysAgo(10));
+  await sheet.getByLabel('Date', { exact: true }).fill(daysAgo(12));
   await expectAccessible(page);
   await sheet.getByRole('button', { name: 'Record it' }).click();
   await expect(sheet).toBeHidden();
@@ -80,6 +81,7 @@ test('lends money with a due date that has passed', async ({ page }) => {
   );
   const list = await ious(page);
   expect(list.totals.owedToMe.amountMinor).toBe(4000);
+  expect(list.ious[0]?.recordedOn).toBe(daysAgo(12));
   await expectAccessible(page);
 
   await page.goto('/');
@@ -96,13 +98,20 @@ test('records a part repayment', async ({ page }) => {
     .click();
   const sheet = page.getByRole('dialog', { name: 'Repayment: Alex Example' });
   await sheet.getByLabel('Amount repaid').fill('15');
+  const date = sheet.getByLabel('Date', { exact: true });
+  await date.fill(daysAgo(20));
+  await sheet.getByRole('button', { name: 'Record repayment' }).click();
+  await expect(sheet).toContainText('the day it was recorded');
+  await date.fill(daysAgo(3));
   await expectAccessible(page);
   await sheet.getByRole('button', { name: 'Record repayment' }).click();
   await expect(sheet).toBeHidden();
   await expect(
     section(page).getByTestId('iou-row').filter({ hasText: 'Alex Example' }),
   ).toContainText('$25.00');
-  expect((await ious(page)).totals.owedToMe.amountMinor).toBe(2500);
+  const list = await ious(page);
+  expect(list.totals.owedToMe.amountMinor).toBe(2500);
+  expect(list.ious[0]?.settlements[0]?.on).toBe(daysAgo(3));
 });
 
 test('deletes a repayment and undoes the delete', async ({ page }) => {

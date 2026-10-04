@@ -1,5 +1,6 @@
 import {
   currencyCode,
+  localDate,
   money,
   type CreateTransactionBody,
 } from '@allotr/shared';
@@ -10,6 +11,7 @@ import {
   evenShare,
   fillEven,
   ownShareOf,
+  parseEntryDate,
   toLoanBody,
   toSplitBody,
 } from './draft.ts';
@@ -190,5 +192,34 @@ describe('fillEven', () => {
         },
       ),
     );
+  });
+});
+
+describe('parseEntryDate', () => {
+  it('takes a calendar day', () => {
+    expect(parseEntryDate('2026-03-14')).toEqual({
+      ok: true,
+      date: localDate('2026-03-14'),
+    });
+  });
+
+  it('refuses an empty or impossible day', () => {
+    expect(parseEntryDate('')).toEqual({ ok: false, error: 'invalid' });
+    expect(parseEntryDate('2026-02-30')).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
+  });
+
+  it('refuses a payment dated before its IOU, and takes the same day', () => {
+    const recorded = localDate('2026-03-10');
+    expect(parseEntryDate('2026-03-09', recorded)).toEqual({
+      ok: false,
+      error: 'beforeIou',
+    });
+    expect(parseEntryDate('2026-03-10', recorded)).toEqual({
+      ok: true,
+      date: recorded,
+    });
   });
 });
