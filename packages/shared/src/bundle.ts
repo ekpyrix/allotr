@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
-import { localDateSchema } from './dates.ts';
+import { localDateSchema, localTimeSchema } from './dates.ts';
 import { iouDirectionSchema } from './ious.ts';
 import {
   budgetGroupSchema,
@@ -84,6 +84,11 @@ const entryFields = {
   /** Lets a bill payment link to this entry; unique in the bundle. */
   ref: refSchema.optional(),
   occurredOn: localDateSchema,
+  /**
+   * The time of day, HH:MM, for an expense, income, transfer or write-off.
+   * Entries keep the order they have in the bundle within each day.
+   */
+  time: localTimeSchema.optional(),
   note: z.string().trim().min(1).max(500).optional(),
   tags: z.array(nameSchema).max(20).optional(),
 };

@@ -8,6 +8,9 @@ import {
   localDate,
   localDateIn,
   localDateSchema,
+  localTime,
+  localTimeIn,
+  localTimeSchema,
   nextDayOfMonth,
 } from './dates.ts';
 
@@ -124,5 +127,30 @@ describe('isoWeekday and lastDayOfMonth', () => {
     expect(lastDayOfMonth(localDate('2028-02-03'))).toBe('2028-02-29');
     expect(lastDayOfMonth(localDate('2026-04-30'))).toBe('2026-04-30');
     expect(lastDayOfMonth(localDate('2026-12-01'))).toBe('2026-12-31');
+  });
+});
+
+describe('localTime', () => {
+  it.each(['00:00', '09:05', '23:59'])('accepts %s', (text) => {
+    expect(localTime(text)).toBe(text);
+    expect(localTimeSchema.parse(text)).toBe(text);
+  });
+
+  it.each(['24:00', '9:05', '12:60', '12:30:00', ''])('refuses %s', (text) => {
+    expect(errorCode(() => localTime(text))).toBe('date.invalid');
+    expect(localTimeSchema.safeParse(text).success).toBe(false);
+  });
+
+  it('reads the wall-clock time in a time zone', () => {
+    const instant = new Date('2026-03-08T23:30:00Z');
+    expect(localTimeIn(instant, 'UTC')).toBe('23:30');
+    expect(localTimeIn(instant, 'Asia/Bangkok')).toBe('06:30');
+    expect(localTimeIn(new Date('2026-03-08T00:05:00Z'), 'UTC')).toBe('00:05');
+  });
+
+  it('refuses an unknown time zone', () => {
+    expect(errorCode(() => localTimeIn(new Date(0), 'Mars/Base'))).toBe(
+      'date.invalid',
+    );
   });
 });

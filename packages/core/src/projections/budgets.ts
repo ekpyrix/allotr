@@ -7,12 +7,9 @@ import {
   type LocalDate,
   type Money,
 } from '@allotr/shared';
-import type {
-  CategoryId,
-  Transaction,
-  TransactionId,
-} from '../ledger/types.ts';
+import type { CategoryId, TransactionId } from '../ledger/types.ts';
 import { cycleEndOn, cycleOn, cyclesOf } from './cycles.ts';
+import { compareEntries } from '../ledger/order.ts';
 import { iouReturns, loanKey } from './ious.ts';
 import { groupsOn } from './pools.ts';
 import { convertOn } from './rates.ts';
@@ -262,13 +259,7 @@ export function heldBy(line: BudgetPeriodLine): bigint {
   return left > 0n ? left : 0n;
 }
 
-function ordered(a: Transaction, b: Transaction): number {
-  return (
-    a.occurredOn.localeCompare(b.occurredOn) ||
-    a.createdAt.localeCompare(b.createdAt) ||
-    a.id.localeCompare(b.id)
-  );
-}
+const ordered = compareEntries;
 
 export type CountedSpend = Readonly<{
   entryId: TransactionId;

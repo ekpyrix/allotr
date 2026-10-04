@@ -54,6 +54,13 @@ export {
   type TransferInput,
 } from './ledger/build.ts';
 export {
+  compareEntries,
+  moveEntry,
+  placeEntry,
+  sortDay,
+  type DaySlot,
+} from './ledger/order.ts';
+export {
   edit,
   reinstate,
   reverse,
