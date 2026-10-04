@@ -51,7 +51,9 @@ function entryFor(body: CreateTransactionBody): TransactionView {
   const base = {
     id: 't1',
     occurredOn: body.occurredOn ?? '2026-03-14',
+    occurredTime: null,
     createdAt: '2026-03-14T10:00:00.000Z',
+    sortRank: 'V',
     source: 'api' as const,
     note: body.note ?? null,
     reversesId: null,

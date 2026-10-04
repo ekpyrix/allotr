@@ -1,4 +1,8 @@
-import type { ExchangeRate, Transaction } from '@allotr/core';
+import {
+  compareEntries,
+  type ExchangeRate,
+  type Transaction,
+} from '@allotr/core';
 import {
   localDateIn,
   money,
@@ -261,12 +265,8 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     c.parentId === null ? -1 : (rank.get(c.parentId) ?? rank.size);
   categories.sort((a, b) => order(a) - order(b));
 
-  const entries = [...ledger].sort(
-    (a, b) =>
-      compare(a.occurredOn, b.occurredOn) ||
-      compare(a.createdAt, b.createdAt) ||
-      compare(a.id, b.id),
-  );
+  // In the user's order within each day, so an import puts them back so.
+  const entries = [...ledger].sort(compareEntries);
 
   const tags = new Map<string, string[]>();
   for (const row of tagRows) {
@@ -338,8 +338,4 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     reconciliations,
     ious,
   };
-}
-
-function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
 }

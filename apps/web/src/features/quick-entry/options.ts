@@ -87,6 +87,7 @@ export function newDraft(defaults: DraftDefaults): QuickEntryDraft {
     tagIds: [],
     note: '',
     occurredOn: defaults.today,
+    occurredTime: '',
     ...choicesFor('expense', defaults),
   };
 }
@@ -132,4 +133,22 @@ export function withToday(
   return dateEdited || draft.occurredOn === today
     ? draft
     : { ...draft, occurredOn: today };
+}
+
+/**
+ * With entry times filled in, an entry for today takes the current time
+ * until the user changes it; an entry on another day has none unless the
+ * user gives one.
+ */
+export function withTime(
+  draft: QuickEntryDraft,
+  today: string,
+  now: string | null,
+  timeEdited: boolean,
+): QuickEntryDraft {
+  if (timeEdited || now === null) return draft;
+  const occurredTime = draft.occurredOn === today ? now : '';
+  return draft.occurredTime === occurredTime
+    ? draft
+    : { ...draft, occurredTime };
 }

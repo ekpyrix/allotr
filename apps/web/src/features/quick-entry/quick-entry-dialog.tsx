@@ -102,6 +102,8 @@ function QuickEntryLoader({
       tags={tags.data.tags}
       locale={settings.data.locale}
       today={today.data.today}
+      entryTimes={settings.data.entryTimes}
+      timeZone={settings.data.timeZone}
       onSaved={onSaved}
       onSavingChange={onSavingChange}
       preset={preset}

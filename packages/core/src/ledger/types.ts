@@ -1,4 +1,10 @@
-import type { CurrencyCode, LocalDate, Money, Rate } from '@allotr/shared';
+import type {
+  CurrencyCode,
+  LocalDate,
+  LocalTime,
+  Money,
+  Rate,
+} from '@allotr/shared';
 
 // The append-only double-entry ledger (docs/domain.md "Accounts and
 // double-entry"). Values are plain frozen data; build transactions with
@@ -73,8 +79,15 @@ export type Transaction = Readonly<{
   id: TransactionId;
   kind: TransactionKind;
   occurredOn: LocalDate;
-  /** ISO 8601 UTC instant; orders entries made on the same date. */
+  /** The wall-clock time it happened, when the user gave one. */
+  occurredTime: LocalTime | null;
+  /** ISO 8601 UTC instant the entry was recorded. */
   createdAt: string;
+  /**
+   * The entry's place within its day (order.ts). Every stored entry has
+   * one; it is null only on an entry not yet placed.
+   */
+  sortRank: string | null;
   /** Null for a split: each balancing posting then carries its own. */
   categoryId: CategoryId | null;
   note: string | null;
@@ -89,6 +102,8 @@ export type Transaction = Readonly<{
 export type EntryMeta = Readonly<{
   id: TransactionId;
   occurredOn: LocalDate;
+  occurredTime?: LocalTime | null;
   createdAt: string;
+  sortRank?: string | null;
   note?: string | null;
 }>;

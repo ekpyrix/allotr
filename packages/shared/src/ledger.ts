@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
-import { localDateSchema } from './dates.ts';
+import { localDateSchema, localTimeSchema } from './dates.ts';
 import {
   currencyCodeSchema,
   moneySchema,
@@ -247,7 +247,11 @@ export const transactionSchema = z.object({
   id: idSchema,
   kind: transactionKindSchema,
   occurredOn: localDateSchema,
+  /** The time of day it happened, when one was given. */
+  occurredTime: localTimeSchema.nullable(),
   createdAt: z.iso.datetime(),
+  /** Its place within its day; entries sort by date, then this. */
+  sortRank: z.string(),
   source: z.enum(['api', 'import', 'system']),
   categoryId: idSchema.nullable(),
   note: z.string().nullable(),
@@ -269,6 +273,11 @@ export type TransactionView = z.infer<typeof transactionSchema>;
 const entryFields = {
   /** The entry's date in the user's time zone; today when omitted. */
   occurredOn: localDateSchema.optional(),
+  /**
+   * The time of day it happened, HH:MM in the user's time zone. Kept only
+   * when the user has entry times turned on.
+   */
+  occurredTime: localTimeSchema.optional(),
   note: z.string().trim().min(1).max(500).optional(),
   tagIds: z.array(idSchema).max(20).optional(),
 };
@@ -333,6 +342,22 @@ export const idempotencyHeaderSchema = z.object({
 export const reverseTransactionBodySchema = z.object({
   note: z.string().trim().min(1).max(500).optional(),
 });
+
+/**
+ * Where to move an entry within its day: right after `afterId`, or to the
+ * start of the day when it is null. The order is oldest first.
+ */
+export const moveTransactionBodySchema = z.object({
+  afterId: idSchema.nullable(),
+});
+export type MoveTransactionBody = z.infer<typeof moveTransactionBodySchema>;
+
+/** A day's entries in their order, oldest first, after a move. */
+export const dayOrderSchema = z.object({
+  occurredOn: localDateSchema,
+  ids: z.array(idSchema),
+});
+export type DayOrderView = z.infer<typeof dayOrderSchema>;
 
 export const editedTransactionSchema = z.object({
   reversal: transactionSchema,
@@ -407,6 +432,13 @@ export const payYourselfFirstSchema = z.discriminatedUnion('kind', [
 
 export type PayYourselfFirstSetting = z.output<typeof payYourselfFirstSchema>;
 
+/**
+ * Whether entries take a time of day: off (default), optional, or filled
+ * in with the current time for today's entries.
+ */
+export const entryTimesSchema = z.enum(['off', 'optional', 'prefill-now']);
+export type EntryTimes = z.infer<typeof entryTimesSchema>;
+
 export const ledgerSettingsSchema = z.object({
   /** BCP 47 locale for formatting, such as `en-US`. */
   locale: z.string(),
@@ -444,6 +476,11 @@ export const ledgerSettingsSchema = z.object({
    * from which money owed to you may be written off.
    */
   iouWriteOffAfterDays: z.int().min(1).max(3650),
+  /**
+   * Whether new entries take a time of day. Times already recorded are
+   * shown whatever this says.
+   */
+  entryTimes: entryTimesSchema,
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -463,6 +500,7 @@ export const updateLedgerSettingsBodySchema = z
     payYourselfFirst: payYourselfFirstSchema.nullable().optional(),
     emergencyMonths: z.int().min(1).max(24).optional(),
     iouWriteOffAfterDays: z.int().min(1).max(3650).optional(),
+    entryTimes: entryTimesSchema.optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

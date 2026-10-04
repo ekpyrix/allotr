@@ -229,6 +229,14 @@ export function restoreTransaction(id: string) {
   return call(endpoints.restoreTransaction, { params: { id } });
 }
 
+/**
+ * Moves an entry within its day to right after `afterId` (oldest first),
+ * or to the start of the day when that is null.
+ */
+export function moveTransaction(id: string, afterId: string | null) {
+  return call(endpoints.moveTransaction, { params: { id }, body: { afterId } });
+}
+
 /** Opens an account; its opening balance is an entry. */
 export function createAccount(body: CreateAccountBody) {
   return call(endpoints.createAccount, { body });

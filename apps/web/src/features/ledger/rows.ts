@@ -18,6 +18,8 @@ export interface LedgerRow {
   id: string;
   kind: LedgerKind;
   occurredOn: LocalDate;
+  /** HH:MM when the entry has a time of day. */
+  occurredTime: string | null;
   /** Category name; for an undo, what the undone entry is called. */
   title: string | null;
   note: string | null;
@@ -89,6 +91,7 @@ export function ledgerRows(
       id: entry.id,
       kind: entry.kind,
       occurredOn: entry.occurredOn,
+      occurredTime: entry.occurredTime,
       title: category ?? original?.note ?? null,
       note: entry.note,
       accounts:
@@ -128,4 +131,13 @@ export function byDay(rows: readonly LedgerRow[]): LedgerDay[] {
     else days.push({ day: row.occurredOn, rows: [row] });
   }
   return days;
+}
+
+/**
+ * The `afterId` for a move, when a day's rows (newest first, as listed)
+ * have the moved row now at `to`: the row listed below it is the one
+ * before it in time, and none means the start of the day.
+ */
+export function afterIdAt(newestFirst: readonly { id: string }[], to: number) {
+  return newestFirst[to + 1]?.id ?? null;
 }

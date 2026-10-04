@@ -1,9 +1,11 @@
 import {
   formatMoney,
+  localTimeIn,
   type CoverPreviewView,
   type AccountView,
   type CategoryView,
   type CreateTransactionBody,
+  type EntryTimes,
 } from '@allotr/shared';
 import {
   useEffect,
@@ -66,6 +68,7 @@ import {
   newDraft,
   paycheckDraft,
   switchKind,
+  withTime,
   withToday,
   type DraftDefaults,
 } from './options.ts';
@@ -105,6 +108,8 @@ export function QuickEntryForm({
   tags,
   locale,
   today,
+  entryTimes = 'off',
+  timeZone = 'UTC',
   onSaved,
   onSavingChange,
   edit,
@@ -116,6 +121,10 @@ export function QuickEntryForm({
   tags: readonly { id: string; name: string }[];
   locale: string;
   today: string;
+  /** Whether entries take a time of day (the `entryTimes` setting). */
+  entryTimes?: EntryTimes | undefined;
+  /** The user's time zone, for the current time. */
+  timeZone?: string | undefined;
   /** Called with what to announce and the ID of the saved entry. */
   onSaved: (message: string, entryId: string) => void;
   onSavingChange: (saving: boolean) => void;
@@ -144,7 +153,18 @@ export function QuickEntryForm({
   // by a refetch after the form opened on a cached value. An edit keeps the
   // entry's own date.
   const [dateEdited, setDateEdited] = useState(edit !== undefined);
-  const draft = withToday(typed, today, dateEdited);
+  // The same for the time when entry times are filled in: it is the time
+  // the form opened, for today's entries, until the user changes it.
+  const [timeEdited, setTimeEdited] = useState(edit !== undefined);
+  const [openedAt] = useState(() => new Date());
+  const draft = withTime(
+    withToday(typed, today, dateEdited),
+    today,
+    entryTimes === 'prefill-now' ? localTimeIn(openedAt, timeZone) : null,
+    timeEdited,
+  );
+  // An entry that has a time keeps the field, whatever the setting says.
+  const showTime = entryTimes !== 'off' || draft.occurredTime !== '';
   const [errors, setErrors] = useState<DraftErrors>({});
   // Set after the failed field errors are on screen, so the alert changes
   // (empty, then text) on every failed save and is announced again.
@@ -732,6 +752,28 @@ export function QuickEntryForm({
           />
         )}
       </FieldControl>
+
+      {showTime ? (
+        <FieldControl
+          label={t('quickEntry.time')}
+          error={error('occurredTime', undefined)}
+        >
+          {(props) => (
+            <Input
+              {...props}
+              name="occurredTime"
+              type="time"
+              className="h-11 text-base"
+              readOnly={converting}
+              value={draft.occurredTime}
+              onChange={(e) => {
+                setTimeEdited(true);
+                update({ occurredTime: e.currentTarget.value });
+              }}
+            />
+          )}
+        </FieldControl>
+      ) : null}
 
       <FieldControl label={t('quickEntry.note')}>
         {(props) => (

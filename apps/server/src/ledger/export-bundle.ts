@@ -169,6 +169,7 @@ export function toBundle(snapshot: Snapshot): Bundle {
     const common = {
       ...(linked.has(entry.id) ? { ref: entry.id } : {}),
       occurredOn: entry.occurredOn,
+      ...(entry.occurredTime === null ? {} : { time: entry.occurredTime }),
       ...(entry.note === null ? {} : { note: entry.note }),
       ...tagsOf(snapshot, entry.id),
     };

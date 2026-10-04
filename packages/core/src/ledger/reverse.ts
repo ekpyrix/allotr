@@ -5,7 +5,7 @@ import type { EntryMeta, Transaction, TransactionId } from './types.ts';
 
 // Undo and edit never change a committed transaction (invariant 2, FR-L4).
 
-export type ReversalMeta = Omit<EntryMeta, 'occurredOn'>;
+export type ReversalMeta = Omit<EntryMeta, 'occurredOn' | 'occurredTime'>;
 
 /**
  * Undoes a transaction with one that negates every posting and references
@@ -39,7 +39,11 @@ export function reverse(
   }
 
   return commit(chart, {
-    meta: { ...meta, occurredOn: original.occurredOn },
+    meta: {
+      ...meta,
+      occurredOn: original.occurredOn,
+      occurredTime: original.occurredTime,
+    },
     kind: 'reversal',
     categoryId: original.categoryId,
     reversesId: original.id,
@@ -71,7 +75,10 @@ export function edit(
   return [reverse(chart, ledger, originalId, meta), replacement];
 }
 
-export type ReinstateMeta = Omit<EntryMeta, 'occurredOn' | 'note'>;
+export type ReinstateMeta = Omit<
+  EntryMeta,
+  'occurredOn' | 'occurredTime' | 'note'
+>;
 
 /**
  * Brings back an undone entry as a new copy of it: same kind, date,
@@ -112,7 +119,12 @@ export function reinstate(
     );
   }
   return commit(chart, {
-    meta: { ...meta, occurredOn: original.occurredOn, note: original.note },
+    meta: {
+      ...meta,
+      occurredOn: original.occurredOn,
+      occurredTime: original.occurredTime,
+      note: original.note,
+    },
     kind: original.kind,
     categoryId: original.categoryId,
     impliedRate: original.impliedRate,

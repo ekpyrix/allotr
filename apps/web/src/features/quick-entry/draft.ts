@@ -2,6 +2,7 @@ import {
   currencyCode,
   formatMoney,
   localDateSchema,
+  localTimeSchema,
   minorUnit,
   money,
   MoneyError,
@@ -49,6 +50,8 @@ export interface QuickEntryDraft {
   readonly note: string;
   /** YYYY-MM-DD; empty leaves the day to the server. */
   readonly occurredOn: string;
+  /** HH:MM, when entry times are on; empty for none. */
+  readonly occurredTime: string;
 }
 
 export interface SplitLineDraft {
@@ -108,6 +111,7 @@ export function fieldOrder(draft: QuickEntryDraft): DraftField[] {
     ]),
     'lines',
     'occurredOn',
+    'occurredTime',
   ];
 }
 
@@ -250,9 +254,14 @@ export function toBody(
   if (draft.occurredOn !== '' && !date.success)
     errors.occurredOn = 'quickEntry.errors.dateInvalid';
 
+  const time = localTimeSchema.safeParse(draft.occurredTime);
+  if (draft.occurredTime !== '' && !time.success)
+    errors.occurredTime = 'quickEntry.errors.timeInvalid';
+
   const note = draft.note.trim();
   const entry = {
     ...(date.success ? { occurredOn: date.data } : {}),
+    ...(time.success ? { occurredTime: time.data } : {}),
     ...(note === '' ? {} : { note }),
     ...(draft.tagIds.length === 0 ? {} : { tagIds: [...draft.tagIds] }),
   };

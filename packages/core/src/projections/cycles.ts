@@ -1,5 +1,6 @@
 import { addDays, type LocalDate } from '@allotr/shared';
 import type { Transaction } from '../ledger/types.ts';
+import { compareEntries } from '../ledger/order.ts';
 import { nextPayday } from './payday.ts';
 import type { DateWindow } from './policies.ts';
 import type { Cycle, LedgerView } from './types.ts';
@@ -11,13 +12,7 @@ import type { Cycle, LedgerView } from './types.ts';
 /** A paycheck this close to payday starts the next cycle early. */
 const EARLY_PAYCHECK_DAYS = 3;
 
-function ordered(a: Transaction, b: Transaction): number {
-  return (
-    a.occurredOn.localeCompare(b.occurredOn) ||
-    a.createdAt.localeCompare(b.createdAt) ||
-    a.id.localeCompare(b.id)
-  );
-}
+const ordered = compareEntries;
 
 function earliest(first: LocalDate, ...dates: LocalDate[]): LocalDate {
   return dates.reduce((a, b) => (b < a ? b : a), first);

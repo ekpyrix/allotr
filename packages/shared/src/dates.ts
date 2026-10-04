@@ -137,3 +137,53 @@ export function localDateIn(instant: Date, timeZone: string): LocalDate {
     `${String(parts.year).padStart(4, '0')}-${String(parts.month)}-${String(parts.day)}`,
   );
 }
+
+// A wall-clock time of day without a date or time zone, such as the
+// optional time an entry happened. Minutes only: HH:MM on a 24-hour clock,
+// so the text form sorts in time order.
+export type LocalTime = string & z.$brand<'LocalTime'>;
+
+const LOCAL_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export function isLocalTime(value: string): value is LocalTime {
+  return LOCAL_TIME.test(value);
+}
+
+export function localTime(value: string): LocalTime {
+  if (!isLocalTime(value)) {
+    throw new DateError(
+      'date.invalid',
+      `"${value}" is not a time of day. Use HH:MM on a 24-hour clock.`,
+    );
+  }
+  return value;
+}
+
+export const localTimeSchema = z
+  .string()
+  .regex(LOCAL_TIME)
+  .brand<'LocalTime'>();
+
+const timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** The wall-clock time of an instant in an IANA time zone. */
+export function localTimeIn(instant: Date, timeZone: string): LocalTime {
+  let formatter = timeFormatters.get(timeZone);
+  if (formatter === undefined) {
+    try {
+      formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      });
+    } catch {
+      throw new DateError('date.invalid', `Unknown time zone "${timeZone}".`);
+    }
+    timeFormatters.set(timeZone, formatter);
+  }
+  const parts = Object.fromEntries(
+    formatter.formatToParts(instant).map((part) => [part.type, part.value]),
+  );
+  return localTime(`${String(parts.hour)}:${String(parts.minute)}`);
+}

@@ -14,9 +14,15 @@ export {
   lastDayOfMonth,
   nextDayOfMonth,
   localDateSchema,
+  isLocalTime,
+  localTime,
+  localTimeIn,
+  localTimeSchema,
   type DateErrorCode,
   type LocalDate,
+  type LocalTime,
 } from './dates.ts';
+export * from './rank.ts';
 export { MoneyError, type MoneyErrorCode } from './money/errors.ts';
 export {
   currencies,

@@ -3,18 +3,21 @@ import { Link } from '@tanstack/react-router';
 import {
   ArrowDownLeft,
   ArrowLeftRight,
+  ArrowUpDown,
+  Check,
   Landmark,
   Receipt,
   Repeat,
   Undo2,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Amount } from '@/components/ui/amount';
 import { Button } from '@/components/ui/button';
 import { CategoryIcon } from '@/components/ui/category-icon';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
+import { DayReorder } from './day-reorder.tsx';
 import { formatLongDay, rowTitle } from './format.ts';
 import { byDay, type LedgerRow } from './rows.ts';
 import type { LedgerSearch } from './search.ts';
@@ -41,6 +44,7 @@ function Row({
   const Icon = kindIcons[row.kind];
   const muted = row.undone || row.kind === 'reversal';
   const details = [
+    row.occurredTime,
     row.accounts.filter((name) => name !== '').join(' → '),
     row.kind === 'reversal' || row.title === null ? null : row.note,
   ].filter((part) => part !== null && part !== '');
@@ -122,6 +126,8 @@ export function LedgerList({
 }) {
   const list = useRef<HTMLDivElement>(null);
   const focusFrom = useRef<number | null>(null);
+  // The day being rearranged, if any: one at a time.
+  const [reordering, setReordering] = useState<string | null>(null);
 
   useEffect(() => {
     const from = focusFrom.current;
@@ -139,25 +145,60 @@ export function LedgerList({
       {byDay(rows).map((group) => {
         const headingId = `ledger-day-${group.day}`;
         const total = dayTotals.get(group.day);
+        const dayLabel = formatLongDay(group.day, locale);
+        const rearranging = reordering === group.day;
         return (
           <section key={group.day} aria-labelledby={headingId} className="mt-4">
-            <h2
-              id={headingId}
-              className="sticky top-16 z-[5] -mx-1 flex items-baseline justify-between gap-3 bg-canvas px-1 py-2 text-label text-text-muted"
-            >
-              <span>{formatLongDay(group.day, locale)}</span>
-              {total === undefined ? null : (
-                <span>
-                  <span className="sr-only">{t('ledger.dayNet')} </span>
-                  <Amount amount={total.net} locale={locale} />
-                </span>
+            <div className="sticky top-16 z-[5] -mx-1 flex items-center justify-between gap-3 bg-canvas px-1 py-1">
+              <h2
+                id={headingId}
+                className="flex min-w-0 flex-1 items-baseline justify-between gap-3 py-1 text-label text-text-muted"
+              >
+                <span>{dayLabel}</span>
+                {total === undefined ? null : (
+                  <span>
+                    <span className="sr-only">{t('ledger.dayNet')} </span>
+                    <Amount amount={total.net} locale={locale} />
+                  </span>
+                )}
+              </h2>
+              {group.rows.length < 2 ? null : rearranging ? (
+                <Button
+                  variant="text"
+                  size="dense"
+                  onClick={() => {
+                    setReordering(null);
+                  }}
+                >
+                  <Check aria-hidden="true" />
+                  {t('ledger.reorder.done')}
+                </Button>
+              ) : (
+                <Button
+                  variant="text"
+                  size="icon"
+                  aria-label={t('ledger.reorder.start', { day: dayLabel })}
+                  onClick={() => {
+                    setReordering(group.day);
+                  }}
+                >
+                  <ArrowUpDown aria-hidden="true" />
+                </Button>
               )}
-            </h2>
-            <ul className="overflow-hidden border-y border-outline-variant">
-              {group.rows.map((row) => (
-                <Row key={row.id} row={row} locale={locale} search={search} />
-              ))}
-            </ul>
+            </div>
+            {rearranging ? (
+              <DayReorder
+                dayLabel={dayLabel}
+                rows={group.rows}
+                locale={locale}
+              />
+            ) : (
+              <ul className="overflow-hidden border-y border-outline-variant">
+                {group.rows.map((row) => (
+                  <Row key={row.id} row={row} locale={locale} search={search} />
+                ))}
+              </ul>
+            )}
           </section>
         );
       })}

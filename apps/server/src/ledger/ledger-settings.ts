@@ -2,11 +2,13 @@ import {
   budgetPeriodRuleSchema,
   currencyCode,
   dailyModeSchema,
+  entryTimesSchema,
   payYourselfFirstSchema,
   localDateSchema,
   paydayRuleSchema,
   type BudgetPeriodRule,
   type DailyMode,
+  type EntryTimes,
   type LedgerSettingsView,
   type PayYourselfFirstSetting,
   type LocalDate,
@@ -37,6 +39,7 @@ const payFirstKey = 'pay_yourself_first';
 const emergencyKey = 'emergency_months';
 const iouWriteOffKey = 'iou_write_off_after_days';
 const iouWriteOffSchema = z.int().min(1).max(3650);
+const entryTimesKey = 'entry_times';
 
 const paydayDaySchema = z.int().min(1).max(31);
 const paydayOverrideSchema = localDateSchema.nullable();
@@ -77,6 +80,7 @@ export async function readLedgerSettings(
         payFirstKey,
         emergencyKey,
         iouWriteOffKey,
+        entryTimesKey,
       ])
       .execute(),
   ]);
@@ -102,6 +106,7 @@ export async function readLedgerSettings(
     iouWriteOffAfterDays:
       parsed(iouWriteOffSchema, stored.get(iouWriteOffKey)) ??
       defaultWriteOffAfterDays,
+    entryTimes: parsed(entryTimesSchema, stored.get(entryTimesKey)) ?? 'off',
   };
 }
 
@@ -178,6 +183,7 @@ export type LedgerSettingsPatch = Readonly<{
   payYourselfFirst?: PayYourselfFirstSetting | null | undefined;
   emergencyMonths?: number | undefined;
   iouWriteOffAfterDays?: number | undefined;
+  entryTimes?: EntryTimes | undefined;
 }>;
 
 function canonicalLocale(locale: string): string {
@@ -274,6 +280,9 @@ export async function applyLedgerSettings(
             value: JSON.stringify(patch.iouWriteOffAfterDays),
           },
         ]),
+    ...(patch.entryTimes === undefined
+      ? []
+      : [{ key: entryTimesKey, value: JSON.stringify(patch.entryTimes) }]),
   ];
   if (Object.keys(user).length > 0) {
     await db

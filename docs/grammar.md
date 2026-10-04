@@ -11,7 +11,7 @@ All examples use made-up accounts and amounts.
 
 ```
 entry     := amount ws category [ws "@" account [ws number]] [ws date]
-             [ws "#" tag]* [ws "//" note]
+             [ws time] [ws "#" tag]* [ws "//" note]
 amount    := ("+" | "-") [symbol] number [ws code]     # -12.50 · -€45 · -45 EUR
 split     := amount ws (category ws number)+           # -80 groceries 60 home 20
 iou       := entry ws "owe:" name ws number            # part of an entry owed to me
@@ -24,10 +24,14 @@ rate      := "rate" ws code [ws code] ws number        # manual exchange rate
 undo      := "undo" [ws id]
 query     := "?" text                                  # AI only
 date      := dd "/" mm ["/" yyyy] | "today" | "yesterday" | "yday"
+time      := hh ":" mm                                 # 24-hour, such as 08:15
 code      := ISO 4217 alphabetic code, case-insensitive
 ```
 
 - `-` is spending, `+` is income.
+- `time` is when the entry happened, in the user's timezone. It is kept only
+  when the user has entry times turned on (domain.md "Order within a day");
+  otherwise it is dropped and the proposal says so.
 - `owe:` records an IOU (domain.md "IOUs"): the entry is the whole payment,
   the number after the name is what that person owes, and the rest is the
   user's own share, an expense in the entry's category. `owe:` may repeat for
@@ -47,6 +51,7 @@ code      := ISO 4217 alphabetic code, case-insensitive
 -12.50 food                       spend $12.50 on Food from the default account
 -4 coffee @card                   spend from Daily Card
 -79 food @wallet 28/08            back-dated entry
+-4 coffee 08:15                   with the time it happened
 -80 groceries 60 home 20          split across two categories
 -60 dinner owe:alex 30            paid $60; $30 is owed back by Alex
 +30 from:alex @card               Alex repays
@@ -66,6 +71,8 @@ undo                              reverse the last entry
 - A message with several lines logs a batch; each line is parsed on its own.
 - A line without a date inherits the date of the previous dated line in the
   same message; otherwise it is today (in the user's timezone).
+- A time is never inherited: a line without one has no time, or the current
+  time when the user's setting fills it in.
 
 ## Defaults
 

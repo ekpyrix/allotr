@@ -10,8 +10,8 @@ import { openSqlite } from './sqlite.ts';
 // Integration tests for migrations/0003_ledger.sql,
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql,
 // 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
-// 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql and
-// 0013_reminders.sql against real SQLite.
+// 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
+// 0013_reminders.sql and 0014_entry_order_time.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -55,6 +55,7 @@ function migrationsUpTo(last: string): string {
     '0010_category_style.sql',
     '0011_income_categories.sql',
     '0012_ious.sql',
+    '0013_reminders.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -456,6 +457,7 @@ describe('migration 0005_reconciliations', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     insertReconciliation('r1');
@@ -549,6 +551,7 @@ describe('migration 0006_bill_prices', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(
@@ -637,6 +640,7 @@ describe('migration 0007_pools', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(pools()).toEqual([
@@ -791,6 +795,7 @@ describe('migration 0008_budgets', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(
@@ -953,6 +958,7 @@ describe('migration 0009_budget_cover', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1018,6 +1024,7 @@ describe('migration 0010_category_style', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1103,6 +1110,7 @@ describe('migration 0012_ious', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1252,6 +1260,7 @@ describe('migration 0011_income_categories', () => {
       '0011_income_categories',
       '0012_ious',
       '0013_reminders',
+      '0014_entry_order_time',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1326,7 +1335,10 @@ describe('migration 0013_reminders', () => {
     insertUser('u1');
     insertAccount('card', 'u1', 'USD');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0013_reminders']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0013_reminders',
+      '0014_entry_order_time',
+    ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
     expect(count('SELECT count(*) FROM push_subscriptions')).toBe(0);
@@ -1358,5 +1370,131 @@ describe('migration 0013_reminders', () => {
     sqlite.exec("DELETE FROM users WHERE id = 'u1'");
     expect(count('SELECT count(*) FROM push_subscriptions')).toBe(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
+  });
+});
+
+describe('migration 0014_entry_order_time', () => {
+  const entry = (id: string, user: string, on: string, createdAt: string) =>
+    sqlite
+      .prepare(
+        `INSERT INTO transactions (id, user_id, kind, occurred_on, created_at, source)
+         VALUES (?, ?, 'expense', ?, ?, 'api')`,
+      )
+      .run(id, user, on, createdAt);
+  const ranked = (user: string, on: string) =>
+    sqlite
+      .prepare(
+        `SELECT transaction_id FROM transaction_ranks
+         WHERE user_id = ? AND occurred_on = ? ORDER BY sort_rank`,
+      )
+      .pluck()
+      .all(user, on);
+
+  it('ranks the entries of a database at 0013 in the order they had', () => {
+    migrateFrom(migrationsUpTo('0013'));
+    insertUser('u1');
+    insertUser('u2');
+    entry('b', 'u1', '2026-01-05', '2026-01-05T10:00:00.000Z');
+    entry('a', 'u1', '2026-01-05', '2026-01-05T09:00:00.000Z');
+    entry('d', 'u1', '2026-01-05', '2026-01-05T09:00:00.000Z');
+    entry('c', 'u1', '2026-01-06', '2026-01-04T00:00:00.000Z');
+    entry('e', 'u2', '2026-01-05', '2026-01-05T08:00:00.000Z');
+    for (let i = 0; i < 11; i += 1) {
+      entry(
+        `n${String(i)}`,
+        'u2',
+        '2026-01-07',
+        `2026-01-07T00:00:${String(i).padStart(2, '0')}.000Z`,
+      );
+    }
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0014_entry_order_time']);
+    expect(ranked('u1', '2026-01-05')).toEqual(['a', 'd', 'b']);
+    expect(ranked('u1', '2026-01-06')).toEqual(['c']);
+    expect(ranked('u2', '2026-01-05')).toEqual(['e']);
+    expect(ranked('u2', '2026-01-07')).toEqual(
+      Array.from({ length: 11 }, (_, i) => `n${String(i)}`),
+    );
+    expect(
+      sqlite
+        .prepare(
+          "SELECT sort_rank FROM transaction_ranks WHERE transaction_id = 'a'",
+        )
+        .pluck()
+        .get(),
+    ).toBe('000001V');
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertUser('u2');
+      entry('t1', 'u1', '2026-01-05', at);
+    });
+
+    const rank = (id: string, user: string, key: string) =>
+      sqlite
+        .prepare(
+          `INSERT INTO transaction_ranks
+             (transaction_id, user_id, occurred_on, sort_rank, updated_at)
+           VALUES (?, ?, '2026-01-05', ?, ?)`,
+        )
+        .run(id, user, key, at);
+
+    it('takes a time of day only as HH:MM', () => {
+      const timed = (id: string, time: string) =>
+        sqlite
+          .prepare(
+            `INSERT INTO transactions
+               (id, user_id, kind, occurred_on, occurred_time, created_at, source)
+             VALUES (?, 'u1', 'expense', '2026-01-05', ?, ?, 'api')`,
+          )
+          .run(id, time, at);
+      timed('ok', '23:59');
+      expect(() => timed('late', '24:00')).toThrow(/CHECK/);
+      expect(() => timed('short', '9:05')).toThrow(/CHECK/);
+      expect(() => timed('seconds', '09:05:00')).toThrow(/CHECK/);
+    });
+
+    it('still refuses to change an entry, its time included', () => {
+      expect(() =>
+        sqlite
+          .prepare(
+            "UPDATE transactions SET occurred_time = '09:00' WHERE id = 't1'",
+          )
+          .run(),
+      ).toThrow(/append-only/);
+    });
+
+    it("keeps ranks to valid keys in the entry's own user", () => {
+      expect(() => rank('t1', 'u1', 'A0')).toThrow(/CHECK/);
+      expect(() => rank('t1', 'u1', 'A-')).toThrow(/CHECK/);
+      expect(() => rank('t1', 'u1', '')).toThrow(/CHECK/);
+      expect(() => rank('t1', 'u2', 'V')).toThrow(/FOREIGN KEY/);
+      rank('t1', 'u1', 'V');
+    });
+
+    it('lets the rank move but not the entry or day it belongs to', () => {
+      rank('t1', 'u1', 'V');
+      sqlite
+        .prepare(
+          "UPDATE transaction_ranks SET sort_rank = 'W' WHERE transaction_id = 't1'",
+        )
+        .run();
+      expect(() =>
+        sqlite
+          .prepare(
+            "UPDATE transaction_ranks SET occurred_on = '2026-01-06' WHERE transaction_id = 't1'",
+          )
+          .run(),
+      ).toThrow(/stays with its entry/);
+    });
+
+    it('goes with its user', () => {
+      rank('t1', 'u1', 'V');
+      sqlite.prepare("DELETE FROM users WHERE id = 'u1'").run();
+      expect(count('SELECT count(*) FROM transaction_ranks')).toBe(0);
+    });
   });
 });

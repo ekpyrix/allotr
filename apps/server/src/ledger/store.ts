@@ -15,6 +15,7 @@ import {
   type PostingDraft,
   type SystemRole,
   type Transaction,
+  type TransactionId,
   type TransactionKind,
   type UserAccountKind,
 } from '@allotr/core';
@@ -22,13 +23,16 @@ import {
   currencyCode,
   localDate,
   localDateIn,
+  localTime,
   money,
   parseRate,
   type CurrencyCode,
   type LocalDate,
+  type LocalTime,
 } from '@allotr/shared';
 import type { Kysely, Transaction as KyselyTransaction } from 'kysely';
 import type { DB } from '../db/schema.ts';
+import { placeNewEntry } from './entry-order.ts';
 
 // Persistence for the ledger. Rows are always read and written for one
 // user (invariant 7); transactions and postings are only ever inserted
@@ -113,8 +117,14 @@ export async function loadLedger(
   const [transactions, postings] = await Promise.all([
     db
       .selectFrom('transactions')
-      .selectAll()
-      .where('user_id', '=', userId)
+      .leftJoin(
+        'transaction_ranks',
+        'transaction_ranks.transaction_id',
+        'transactions.id',
+      )
+      .selectAll('transactions')
+      .select('transaction_ranks.sort_rank')
+      .where('transactions.user_id', '=', userId)
       .execute(),
     db
       .selectFrom('postings')
@@ -145,7 +155,10 @@ export async function loadLedger(
       meta: {
         id: transactionId(row.id),
         occurredOn: localDate(row.occurred_on),
+        occurredTime:
+          row.occurred_time === null ? null : localTime(row.occurred_time),
         createdAt: row.created_at,
+        sortRank: row.sort_rank,
         note: row.note,
       },
       kind: row.kind as TransactionKind,
@@ -232,9 +245,14 @@ export async function ensureSystemAccounts(
 export type AppendOptions = Readonly<{
   source: TransactionSource;
   idempotencyKey?: string | null;
+  /**
+   * The entry this one replaces or brings back, whose place in the day it
+   * keeps. A reversal keeps to its original without this.
+   */
+  placeAfter?: TransactionId;
 }>;
 
-/** Inserts a committed transaction and its postings. */
+/** Inserts a committed transaction, its postings and its place in the day. */
 export async function appendTransaction(
   db: Db,
   userId: string,
@@ -248,6 +266,7 @@ export async function appendTransaction(
       user_id: userId,
       kind: transaction.kind,
       occurred_on: transaction.occurredOn,
+      occurred_time: transaction.occurredTime,
       created_at: transaction.createdAt,
       source: options.source,
       category_id: transaction.categoryId,
@@ -259,6 +278,13 @@ export async function appendTransaction(
       switch_budget_group: transaction.budgetSwitch?.budgetGroup ?? null,
     })
     .execute();
+  await placeNewEntry(
+    db,
+    userId,
+    transaction,
+    new Date(transaction.createdAt),
+    options.placeAfter ?? transaction.reversesId ?? undefined,
+  );
   if (transaction.postings.length === 0) return;
   await db
     .insertInto('postings')
@@ -300,10 +326,12 @@ export function newEntry(
   now: Date,
   occurredOn: LocalDate,
   note?: string | null,
+  occurredTime?: LocalTime | null,
 ) {
   return {
     id: newTransactionId(),
     occurredOn,
+    occurredTime: occurredTime ?? null,
     createdAt: now.toISOString(),
     note: note ?? null,
   };

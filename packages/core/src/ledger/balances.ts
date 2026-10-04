@@ -5,6 +5,7 @@ import {
   type Money,
 } from '@allotr/shared';
 import { accountIn, type Chart } from './chart.ts';
+import { compareEntries } from './order.ts';
 import type { AccountId, BudgetGroup, Transaction } from './types.ts';
 
 // Balances are a pure fold over postings (docs/domain.md, invariant 8): the
@@ -65,20 +66,15 @@ export function balanceOf(
   return accountBalances(ledger, asOf).get(id) ?? money(0, account.currency);
 }
 
-// Budget switches that were not reversed, oldest first. Ties on a date go
-// by creation time, then ID, so the order never depends on the input.
+// Budget switches that were not reversed, oldest first, in the order of
+// entries within a day (order.ts).
 export function activeSwitches(ledger: readonly Transaction[]): Transaction[] {
   const reversed = new Set(
     ledger.flatMap((t) => (t.reversesId === null ? [] : [t.reversesId])),
   );
   return ledger
     .filter((t) => t.budgetSwitch !== null && !reversed.has(t.id))
-    .sort(
-      (a, b) =>
-        a.occurredOn.localeCompare(b.occurredOn) ||
-        a.createdAt.localeCompare(b.createdAt) ||
-        a.id.localeCompare(b.id),
-    );
+    .sort(compareEntries);
 }
 
 /** Every user account's budget group at the end of a day. */
