@@ -104,6 +104,7 @@ export function BudgetPage() {
         categories={categories.data.categories}
         currency={settings.data.defaultCurrency}
         locale={settings.data.locale}
+        today={today.data.today}
       />
       <BillsSection
         bills={bills.data.bills}
