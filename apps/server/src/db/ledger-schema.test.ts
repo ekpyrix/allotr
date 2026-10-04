@@ -11,7 +11,8 @@ import { openSqlite } from './sqlite.ts';
 // 0004_bill_payments.sql, 0005_reconciliations.sql, 0006_bill_prices.sql,
 // 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
-// 0013_reminders.sql and 0014_entry_order_time.sql against real SQLite.
+// 0013_reminders.sql, 0014_entry_order_time.sql and
+// 0015_entry_replacements.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -56,6 +57,7 @@ function migrationsUpTo(last: string): string {
     '0011_income_categories.sql',
     '0012_ious.sql',
     '0013_reminders.sql',
+    '0014_entry_order_time.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -458,6 +460,7 @@ describe('migration 0005_reconciliations', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     insertReconciliation('r1');
@@ -552,6 +555,7 @@ describe('migration 0006_bill_prices', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(
@@ -641,6 +645,7 @@ describe('migration 0007_pools', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(pools()).toEqual([
@@ -796,6 +801,7 @@ describe('migration 0008_budgets', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(
@@ -959,6 +965,7 @@ describe('migration 0009_budget_cover', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1025,6 +1032,7 @@ describe('migration 0010_category_style', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1111,6 +1119,7 @@ describe('migration 0012_ious', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1261,6 +1270,7 @@ describe('migration 0011_income_categories', () => {
       '0012_ious',
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1338,6 +1348,7 @@ describe('migration 0013_reminders', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0013_reminders',
       '0014_entry_order_time',
+      '0015_entry_replacements',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1408,7 +1419,9 @@ describe('migration 0014_entry_order_time', () => {
       );
     }
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0014_entry_order_time']);
+    expect(migrateFrom(migrationsUpTo('0014'))).toEqual([
+      '0014_entry_order_time',
+    ]);
     expect(ranked('u1', '2026-01-05')).toEqual(['a', 'd', 'b']);
     expect(ranked('u1', '2026-01-06')).toEqual(['c']);
     expect(ranked('u2', '2026-01-05')).toEqual(['e']);
@@ -1495,6 +1508,107 @@ describe('migration 0014_entry_order_time', () => {
       rank('t1', 'u1', 'V');
       sqlite.prepare("DELETE FROM users WHERE id = 'u1'").run();
       expect(count('SELECT count(*) FROM transaction_ranks')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0015_entry_replacements', () => {
+  const entry = (
+    id: string,
+    user: string,
+    createdAt: string,
+    reverses: string | null = null,
+  ) =>
+    sqlite
+      .prepare(
+        `INSERT INTO transactions
+           (id, user_id, kind, occurred_on, created_at, source, reverses_id)
+         VALUES (?, ?, ?, '2026-01-05', ?, 'api', ?)`,
+      )
+      .run(
+        id,
+        user,
+        reverses === null ? 'expense' : 'reversal',
+        createdAt,
+        reverses,
+      );
+  const pairs = () =>
+    sqlite
+      .prepare(
+        `SELECT original_id || '>' || replacement_id
+         FROM transaction_replacements ORDER BY original_id`,
+      )
+      .pluck()
+      .all();
+
+  it('finds the edits of a database at 0014 and leaves deletes as they were', () => {
+    migrateFrom(migrationsUpTo('0014'));
+    insertUser('u1');
+    insertUser('u2');
+    // Edited: the undo and the new entry share their created_at.
+    entry('a', 'u1', '2026-01-05T09:00:00.000Z');
+    entry('a-undo', 'u1', '2026-01-05T10:00:00.000Z', 'a');
+    entry('a2', 'u1', '2026-01-05T10:00:00.000Z');
+    // Deleted.
+    entry('b', 'u1', '2026-01-05T09:00:00.000Z');
+    entry('b-undo', 'u1', '2026-01-05T11:00:00.000Z', 'b');
+    // Deleted, then another entry recorded in the same instant by another
+    // user: still a delete.
+    entry('c', 'u1', '2026-01-05T09:00:00.000Z');
+    entry('c-undo', 'u1', '2026-01-05T12:00:00.000Z', 'c');
+    entry('x', 'u2', '2026-01-05T12:00:00.000Z');
+    // Too many entries in that instant to tell: left as a delete.
+    entry('d', 'u1', '2026-01-05T09:00:00.000Z');
+    entry('d-undo', 'u1', '2026-01-05T13:00:00.000Z', 'd');
+    entry('d2', 'u1', '2026-01-05T13:00:00.000Z');
+    entry('d3', 'u1', '2026-01-05T13:00:00.000Z');
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0015_entry_replacements']);
+    expect(pairs()).toEqual(['a>a2']);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+      insertUser('u2');
+      entry('t1', 'u1', at);
+      entry('t2', 'u1', at);
+      entry('t3', 'u1', at);
+      entry('o1', 'u2', at);
+    });
+
+    const replace = (original: string, replacement: string, user = 'u1') =>
+      sqlite
+        .prepare(
+          `INSERT INTO transaction_replacements
+             (replacement_id, original_id, user_id) VALUES (?, ?, ?)`,
+        )
+        .run(replacement, original, user);
+
+    it("replaces an entry once, with one of the same user's", () => {
+      replace('t1', 't2');
+      expect(() => replace('t1', 't3')).toThrow(/UNIQUE/);
+      expect(() => replace('t3', 't3')).toThrow(/CHECK/);
+      expect(() => replace('t2', 'o1')).toThrow(/FOREIGN KEY/);
+    });
+
+    it('never changes a recorded replacement', () => {
+      replace('t1', 't2');
+      expect(() =>
+        sqlite
+          .prepare("UPDATE transaction_replacements SET replacement_id = 't3'")
+          .run(),
+      ).toThrow(/append-only/);
+      expect(() =>
+        sqlite.prepare('DELETE FROM transaction_replacements').run(),
+      ).toThrow(/append-only/);
+    });
+
+    it('goes with its user', () => {
+      replace('t1', 't2');
+      sqlite.prepare("DELETE FROM users WHERE id = 'u1'").run();
+      expect(count('SELECT count(*) FROM transaction_replacements')).toBe(0);
     });
   });
 });

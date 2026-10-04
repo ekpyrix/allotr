@@ -30,6 +30,8 @@ export interface LedgerRow {
   /** A transfer, or the undo of one: the amount has no sign. */
   moves: boolean;
   undone: boolean;
+  /** Replaced an earlier version in an edit. */
+  edited: boolean;
   /** For an undo, the entry it undoes, and its kind when it is loaded. */
   reversesId: string | null;
   originalKind: LedgerKind | null;
@@ -109,6 +111,7 @@ export function ledgerRows(
             : single,
       moves,
       undone: entry.reversedById !== null,
+      edited: entry.replacesId !== null,
       reversesId: entry.reversesId,
       originalKind: original?.kind ?? null,
       budgetGroup: entry.budgetSwitch?.budgetGroup ?? null,

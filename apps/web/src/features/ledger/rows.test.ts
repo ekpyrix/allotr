@@ -35,6 +35,8 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     reversesId: null,
     reversedById: null,
     restoredById: null,
+    replacesId: null,
+    replacedById: null,
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],
@@ -108,6 +110,7 @@ describe('ledgerRows', () => {
         amount: usd(1250),
         moves: false,
         undone: false,
+        edited: false,
         reversesId: 'e-1',
         originalKind: 'expense',
         budgetGroup: null,
@@ -124,6 +127,7 @@ describe('ledgerRows', () => {
         amount: usd(-1250),
         moves: false,
         undone: true,
+        edited: false,
         reversesId: null,
         originalKind: null,
         budgetGroup: null,
@@ -167,6 +171,16 @@ describe('ledgerRows', () => {
       categories,
     );
     expect(undo?.title).toBe('Rent pot');
+  });
+
+  it('marks an entry that replaced an earlier version as edited', () => {
+    const [edited, plain] = ledgerRows(
+      [entry({ id: 'e-3', replacesId: 'e-1' }), entry({ id: 'e-4' })],
+      accounts,
+      categories,
+    );
+    expect(edited).toMatchObject({ edited: true, undone: false });
+    expect(plain?.edited).toBe(false);
   });
 
   it('shows a budget switch with its account and no amount', () => {

@@ -100,6 +100,8 @@ describe('splitting a logged expense', () => {
       kind: 'expense',
       occurredOn: '2026-03-14',
       note: 'Dinner',
+      // An edit of the expense, not a delete of it.
+      replacesId: dinner,
     });
     expect(
       converted.transaction.postings.map((p) => [

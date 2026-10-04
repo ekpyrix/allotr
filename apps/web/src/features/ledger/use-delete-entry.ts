@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api';
 import {
   entryQueryKeys,
   restoreTransaction,
+  revertTransaction,
   reverseTransaction,
 } from '@/lib/ledger';
 import { haptic } from '@/motion/haptics';
@@ -38,6 +39,27 @@ export function useRestoreEntry() {
     onSuccess: async (_copyId, { description }) => {
       await refresh();
       snack({ message: t('entries.restored', { entry: description }) });
+    },
+    onError: (error) => {
+      snack({ message: errorMessage(error), tone: 'error' });
+      haptic('error');
+    },
+  });
+}
+
+/**
+ * Goes back to an earlier version of an edited entry and says so; returns
+ * the id of the copy that now stands.
+ */
+export function useRevertEntry() {
+  const refresh = useRefresh();
+  const snack = useSnackbar();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (await revertTransaction(id)).replacement.id,
+    onSuccess: async () => {
+      await refresh();
+      snack({ message: t('ledger.entry.reverted') });
     },
     onError: (error) => {
       snack({ message: errorMessage(error), tone: 'error' });

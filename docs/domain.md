@@ -216,6 +216,7 @@ with autocomplete from earlier ones, not contacts.
   was recorded. It is undone and replaced by one IOU entry with the same
   account, amount, date, note and tags, so the account's balance does not
   move; the own share keeps the expense's category unless another is chosen.
+  The IOU entry is recorded as an edit of the expense, not a delete of it.
 - **Owed to the user** lowers free money from the day it is lent (the cash is
   gone, as with a transfer to savings) but is never spending: it is not in
   `spent_today`, not in `cycle_spent` or pace, not in the weekly review and not
@@ -513,7 +514,8 @@ open.
 | Switching an account on/off-budget | Effective today, recorded as a dated system transaction; the account moves into the default Budget or Savings pool. |
 | Moving an account into a pool | Effective from the chosen date (today by default), recorded as a dated row. No entry changes. |
 | Deleting a category in use | Must be merged into another category. |
-| Editing any past entry | Reversal plus a new entry. A change of date or time is an edit too. |
+| Editing any past entry | Reversal plus a new entry. A change of date or time is an edit too. The new entry records which one it replaced (`transaction_replacements`), so an edit is not a delete: the earlier version and its reversal are left out of lists, deleted entries shown or not, and are reached from the entry ("Edited", "Show the earlier version"). |
+| Going back to an earlier version | An edit of the entry as it stands now, whose replacement is a copy of that version: same kind, date, category, note, tags and postings. Refused once the entry has been deleted; restore it first. |
 | Deleting an entry | A reversal. The app calls it delete and hides the entry and its reversal from lists unless the user asks to see deleted entries. |
 | Restoring a deleted entry | A new copy of it: same kind, date, category, note, tags and postings. The copy is stored with idempotency key `restore:<original id>`, so an entry is restored at most once. A reversal or budget switch cannot be restored. |
 | Offline entries arriving late | Treated as back-dated entries; idempotency keys prevent duplicates. |
@@ -590,6 +592,8 @@ transactions(id, user_id, kind, occurred_on, occurred_time, created_at,
 transaction_ranks(transaction_id, user_id, occurred_on, sort_rank,
                   updated_at)    # place within the day; the only row that
                                  # changes after an entry is committed
+transaction_replacements(replacement_id, original_id, user_id)
+                                 # which entry an edit replaced; append-only
 postings(id, user_id, transaction_id, account_id, amount_minor, currency,
          category_id, position)
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)

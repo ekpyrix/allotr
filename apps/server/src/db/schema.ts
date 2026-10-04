@@ -285,6 +285,12 @@ export interface TransactionRanks {
   user_id: string;
 }
 
+export interface TransactionReplacements {
+  original_id: string;
+  replacement_id: string;
+  user_id: string;
+}
+
 export interface Transactions {
   category_id: string | null;
   created_at: string;
@@ -375,6 +381,7 @@ export interface DB {
   starter_categories: StarterCategories;
   tags: Tags;
   transaction_ranks: TransactionRanks;
+  transaction_replacements: TransactionReplacements;
   transaction_tags: TransactionTags;
   transactions: Transactions;
   two_factors: TwoFactors;

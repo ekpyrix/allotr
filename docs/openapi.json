@@ -4980,6 +4980,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -5035,6 +5051,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -12194,6 +12212,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -12249,6 +12283,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -12608,6 +12644,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -12663,6 +12715,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -14093,6 +14147,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -14148,6 +14218,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -14873,6 +14945,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -14928,6 +15016,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -15075,6 +15165,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -15130,6 +15236,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -15490,6 +15598,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -15545,6 +15669,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -15692,6 +15818,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -15747,6 +15889,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -16433,6 +16577,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -16488,6 +16648,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -22413,6 +22575,22 @@
                             "minLength": 1,
                             "maxLength": 64
                           },
+                          "replacesId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "replacedById": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
                           "impliedRate": {
                             "type": [
                               "string",
@@ -22468,6 +22646,8 @@
                           "reversesId",
                           "reversedById",
                           "restoredById",
+                          "replacesId",
+                          "replacedById",
                           "impliedRate",
                           "budgetSwitch",
                           "tagIds"
@@ -23243,6 +23423,22 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "replacesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "replacedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -23298,6 +23494,8 @@
                     "reversesId",
                     "reversedById",
                     "restoredById",
+                    "replacesId",
+                    "replacedById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -23452,6 +23650,22 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "replacesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "replacedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -23507,6 +23721,8 @@
                     "reversesId",
                     "reversedById",
                     "restoredById",
+                    "replacesId",
+                    "replacedById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -23958,6 +24174,22 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "replacesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "replacedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -24013,6 +24245,8 @@
                     "reversesId",
                     "reversedById",
                     "restoredById",
+                    "replacesId",
+                    "replacedById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -24371,6 +24605,22 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "replacesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "replacedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -24426,6 +24676,8 @@
                     "reversesId",
                     "reversedById",
                     "restoredById",
+                    "replacesId",
+                    "replacedById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -24878,6 +25130,22 @@
                       "minLength": 1,
                       "maxLength": 64
                     },
+                    "replacesId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "replacedById": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
                     "impliedRate": {
                       "type": [
                         "string",
@@ -24933,6 +25201,8 @@
                     "reversesId",
                     "reversedById",
                     "restoredById",
+                    "replacesId",
+                    "replacedById",
                     "impliedRate",
                     "budgetSwitch",
                     "tagIds"
@@ -25170,7 +25440,7 @@
           "Transactions"
         ],
         "summary": "Replace an entry",
-        "description": "Posts a reversal of the entry plus the replacement described by the body. Nothing is updated in place.",
+        "description": "Posts a reversal of the entry plus the replacement described by the body. Nothing is updated in place. The replacement points at the entry it replaced (`replacesId`), and the list leaves the earlier version and its undo out: an edit is not a delete.",
         "parameters": [
           {
             "schema": {
@@ -25659,6 +25929,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -25714,6 +26000,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -25861,6 +26149,22 @@
                           "minLength": 1,
                           "maxLength": 64
                         },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
                         "impliedRate": {
                           "type": [
                             "string",
@@ -25916,6 +26220,8 @@
                         "reversesId",
                         "reversedById",
                         "restoredById",
+                        "replacesId",
+                        "replacedById",
                         "impliedRate",
                         "budgetSwitch",
                         "tagIds"
@@ -26152,6 +26458,705 @@
           },
           "409": {
             "description": "Already undone, an undo, or on an archived account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transactions/{id}/revert": {
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "summary": "Go back to an earlier version of an edited entry",
+        "description": "The entry as it stands now is replaced by a copy of this earlier version, with its date, category, note, tags and postings: a reversal plus the copy, as for any edit.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The reversal and the copy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reversal": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income",
+                            "transfer",
+                            "opening",
+                            "write_off",
+                            "budget_switch",
+                            "reversal"
+                          ]
+                        },
+                        "occurredOn": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "api",
+                            "import",
+                            "system"
+                          ]
+                        },
+                        "categoryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "postings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "systemRole": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "expenses",
+                                  "income",
+                                  "opening",
+                                  "conversion",
+                                  "receivables",
+                                  "payables",
+                                  null
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "categoryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "systemRole",
+                              "amount",
+                              "categoryId"
+                            ]
+                          }
+                        },
+                        "reversesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "reversedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "restoredById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "impliedRate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 40,
+                          "pattern": "^\\d+(\\.\\d+)?$"
+                        },
+                        "budgetSwitch": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "accountId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "budgetGroup": {
+                              "type": "string",
+                              "enum": [
+                                "on",
+                                "off"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "accountId",
+                            "budgetGroup"
+                          ]
+                        },
+                        "tagIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "occurredOn",
+                        "occurredTime",
+                        "createdAt",
+                        "sortRank",
+                        "source",
+                        "categoryId",
+                        "note",
+                        "postings",
+                        "reversesId",
+                        "reversedById",
+                        "restoredById",
+                        "replacesId",
+                        "replacedById",
+                        "impliedRate",
+                        "budgetSwitch",
+                        "tagIds"
+                      ]
+                    },
+                    "replacement": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income",
+                            "transfer",
+                            "opening",
+                            "write_off",
+                            "budget_switch",
+                            "reversal"
+                          ]
+                        },
+                        "occurredOn": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "occurredTime": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "sortRank": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "api",
+                            "import",
+                            "system"
+                          ]
+                        },
+                        "categoryId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "postings": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "accountId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 64
+                              },
+                              "systemRole": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "expenses",
+                                  "income",
+                                  "opening",
+                                  "conversion",
+                                  "receivables",
+                                  "payables",
+                                  null
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "categoryId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "minLength": 1,
+                                "maxLength": 64
+                              }
+                            },
+                            "required": [
+                              "accountId",
+                              "systemRole",
+                              "amount",
+                              "categoryId"
+                            ]
+                          }
+                        },
+                        "reversesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "reversedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "restoredById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacesId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "replacedById": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "impliedRate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 40,
+                          "pattern": "^\\d+(\\.\\d+)?$"
+                        },
+                        "budgetSwitch": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "accountId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 64
+                            },
+                            "budgetGroup": {
+                              "type": "string",
+                              "enum": [
+                                "on",
+                                "off"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "accountId",
+                            "budgetGroup"
+                          ]
+                        },
+                        "tagIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "kind",
+                        "occurredOn",
+                        "occurredTime",
+                        "createdAt",
+                        "sortRank",
+                        "source",
+                        "categoryId",
+                        "note",
+                        "postings",
+                        "reversesId",
+                        "reversedById",
+                        "restoredById",
+                        "replacesId",
+                        "replacedById",
+                        "impliedRate",
+                        "budgetSwitch",
+                        "tagIds"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "reversal",
+                    "replacement"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed, or two-factor enrolment is required first.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no such entry or account.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "minimum": 400,
+                      "maximum": 599
+                    },
+                    "detail": {
+                      "type": "string"
+                    },
+                    "instance": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "path",
+                          "message"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not an earlier version (`not_replaced`), the entry was deleted since (`entry_deleted`), it lends, borrows or settles an IOU (`iou_entry`), or it is on an archived account.",
             "content": {
               "application/problem+json": {
                 "schema": {

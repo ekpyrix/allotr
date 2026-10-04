@@ -224,6 +224,31 @@ describe('POST /v1/user/delete', () => {
           })
         ).status,
       ).toBe(201);
+      // An edited entry, so every per-user table has a row.
+      const categoryId = (
+        entries.body as {
+          transactions: { kind: string; categoryId: string | null }[];
+        }
+      ).transactions.find((t) => t.kind === 'expense')?.categoryId;
+      const coffee = {
+        kind: 'expense',
+        accountId: firstAccount?.id ?? '',
+        amount: { amountMinor: 300, currency: defaultCurrency },
+        categoryId,
+      };
+      const logged = await h.bob.post('/v1/transactions', coffee);
+      expect(logged.status, JSON.stringify(logged.body)).toBe(201);
+      expect(
+        (
+          await h.bob.post(
+            `/v1/transactions/${(logged.body as { id: string }).id}/edit`,
+            {
+              ...coffee,
+              amount: { amountMinor: 350, currency: defaultCurrency },
+            },
+          )
+        ).status,
+      ).toBe(201);
       ({ totpURI } = await enrolTwoFactor(h.bob));
       expect(
         (await h.bob.put('/v1/settings/appearance', { mode: 'dark' })).status,

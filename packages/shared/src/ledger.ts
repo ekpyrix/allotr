@@ -261,6 +261,10 @@ export const transactionSchema = z.object({
   reversedById: idSchema.nullable(),
   /** The copy that brought this entry back after it was undone. */
   restoredById: idSchema.nullable(),
+  /** The earlier version this entry replaced in an edit. */
+  replacesId: idSchema.nullable(),
+  /** The newer version that replaced this entry in an edit. */
+  replacedById: idSchema.nullable(),
   /** Units received per unit sent, for cross-currency entries. */
   impliedRate: rateSchema.nullable(),
   budgetSwitch: z
@@ -378,7 +382,9 @@ export const listTransactionsQuerySchema = z.object({
   q: z.string().trim().min(1).max(100).optional(),
   /**
    * `hide` leaves out undone entries and their undos, as if deleted; the
-   * pair nets to zero, so day totals are the same either way.
+   * pair nets to zero, so day totals are the same either way. Earlier
+   * versions of edited entries, and their undos, are left out either way:
+   * they are reached from the entry (`replacesId`).
    */
   undone: z.enum(['show', 'hide']).default('show'),
   limit: z.coerce.number().int().min(1).max(200).default(50),

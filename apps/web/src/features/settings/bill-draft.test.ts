@@ -190,6 +190,8 @@ describe('linkCandidates', () => {
     reversesId: null,
     reversedById: null,
     restoredById: null,
+    replacesId: null,
+    replacedById: null,
     impliedRate: null,
     budgetSwitch: null,
     tagIds: [],

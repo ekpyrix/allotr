@@ -40,6 +40,8 @@ function entry(
     reversesId: null,
     reversedById: null,
     restoredById: null,
+    replacesId: null,
+    replacedById: null,
     impliedRate: impliedRate as Rate | null,
     budgetSwitch: null,
     tagIds: [],

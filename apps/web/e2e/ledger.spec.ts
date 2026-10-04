@@ -128,7 +128,7 @@ test('searching notes finds the matching entry', async ({ page }) => {
   await expect(entry(page, 'Eating out')).toHaveCount(1);
 });
 
-test('editing an entry shows its undo and the new entry, and the balance matches', async ({
+test('editing an entry is not a delete, keeps its earlier version, and the balance matches', async ({
   page,
 }) => {
   const before = await everyday(page);
@@ -161,22 +161,15 @@ test('editing an entry shows its undo and the new entry, and the balance matches
   await replacement.getByRole('button', { name: 'Close' }).click();
   await expect(page).not.toHaveURL(/entry=/);
 
-  // The old version and its undo are hidden until asked for.
+  // An edit is not a delete: the old version and its undo stay out of the
+  // list even with deleted entries shown.
   await expect(entry(page, 'Transport')).toHaveCount(1);
   await expect(entry(page, 'Transport')).toContainText('-$9.25');
+  await expect(entry(page, 'Transport')).toContainText('Edited');
   await page.getByLabel('Show deleted entries').click();
   await expect(page).toHaveURL(/deleted=show/);
-  await expect(entry(page, 'Deleted: Transport')).toContainText('$7.50');
-  const transport = entry(page, 'Transport').filter({
-    hasNotText: 'Deleted:',
-  });
-  await expect(transport).toHaveCount(2);
-  await expect(transport.filter({ hasText: 'Deleted' })).toContainText(
-    '-$7.50',
-  );
-  await expect(transport.filter({ hasNotText: 'Deleted' })).toContainText(
-    '-$9.25',
-  );
+  await expect(entry(page, 'Deleted: Transport')).toHaveCount(0);
+  await expect(entry(page, 'Transport')).toHaveCount(1);
   await page.getByLabel('Show deleted entries').click();
   await expect(page).not.toHaveURL(/deleted=/);
 
@@ -188,6 +181,29 @@ test('editing an entry shows its undo and the new entry, and the balance matches
     `Balance of Everyday: ${formatMoney(after.balance, 'en-US')}`,
   );
   await expectAccessible(page);
+
+  // The earlier version is reached from the entry, and can be gone back to.
+  await entry(page, 'Transport').click();
+  const edited = entryView(page, 'Transport');
+  await expect(edited).toContainText('Edited.');
+  await edited.getByRole('link', { name: 'Show the earlier version' }).click();
+  const earlier = entryView(page, 'Transport');
+  await expect(earlier).toContainText('-$7.50');
+  await expect(earlier).toContainText('An earlier version of an edited entry.');
+  await expect(earlier.getByRole('button', { name: 'Restore' })).toHaveCount(0);
+  await expectAccessible(page);
+  await earlier
+    .getByRole('button', { name: 'Go back to this version' })
+    .click();
+  const reverted = entryView(page, 'Transport');
+  await expect(reverted).toContainText('Edited.');
+  await expect(
+    reverted.getByRole('button', { name: 'Go back to this version' }),
+  ).toHaveCount(0);
+  await expect(reverted).toContainText('-$7.50');
+  await reverted.getByRole('button', { name: 'Close' }).click();
+  await expect(entry(page, 'Transport')).toHaveCount(1);
+  expect((await everyday(page)).balance).toEqual(before.balance);
 });
 
 test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) => {
@@ -216,14 +232,13 @@ test('a back-dated edit updates Today’s figures', async ({ page, baseURL }) =>
   await form.getByRole('button', { name: 'Save changes' }).click();
   await expect(entryView(page, 'Groceries')).toContainText('-$25.00');
 
-  // The replacement keeps the original's date.
+  // The replacement keeps the original's date; the original and its undo
+  // are its history, not listed.
   const list = (await (
     await page.request.get(`/v1/transactions?from=${day}&to=${day}`)
   ).json()) as { transactions: TransactionView[] };
-  expect(list.transactions.map((t) => t.kind).sort()).toEqual([
-    'expense',
-    'expense',
-    'reversal',
+  expect(list.transactions.map((t) => [t.kind, t.replacesId])).toEqual([
+    ['expense', original.id],
   ]);
 
   const after = await figures(page);

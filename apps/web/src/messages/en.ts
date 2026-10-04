@@ -551,6 +551,7 @@ export const en = {
     },
     undoOf: 'Deleted: {title}',
     undone: 'Deleted',
+    edited: 'Edited',
     reorder: {
       start: 'Rearrange {day}',
       done: 'Done',
@@ -603,6 +604,13 @@ export const en = {
       showRestored: 'Show the copy',
       restore: 'Restore',
       restoring: 'Restoring…',
+      replaces: 'Edited.',
+      showEarlier: 'Show the earlier version',
+      replacedBy: 'An earlier version of an edited entry.',
+      showNewer: 'Show the newer version',
+      revert: 'Go back to this version',
+      reverting: 'Going back…',
+      reverted: 'Entry changed back.',
       archived:
         'An account in this entry is archived, so it cannot be changed.',
       edit: 'Edit',
