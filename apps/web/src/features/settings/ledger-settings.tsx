@@ -1,4 +1,6 @@
 import {
+  entryTimesSchema,
+  type EntryTimes,
   type LedgerSettingsView,
   type TodayView,
   type UpdateLedgerSettingsBody,
@@ -35,6 +37,7 @@ function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
   const [locale, setLocale] = useState(settings.locale);
   const [timeZone, setTimeZone] = useState(settings.timeZone);
   const [currency, setCurrency] = useState<string>(settings.defaultCurrency);
+  const [entryTimes, setEntryTimes] = useState<EntryTimes>(settings.entryTimes);
   const [saved, setSaved] = useState(false);
   const save = useSaveLedgerSettings();
   const zones = useMemo(() => timeZoneOptions(settings.timeZone), [settings]);
@@ -55,6 +58,7 @@ function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
       ...(currency === settings.defaultCurrency
         ? {}
         : { defaultCurrency: currency }),
+      ...(entryTimes === settings.entryTimes ? {} : { entryTimes }),
     };
     if (Object.keys(body).length === 0) {
       setSaved(true);
@@ -137,6 +141,29 @@ function LedgerForm({ settings }: { settings: LedgerSettingsView }) {
             {currencies.map((option) => (
               <option key={option.code} value={option.code}>
                 {option.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </FieldControl>
+      <FieldControl
+        label={t('settings.ledger.entryTimes')}
+        hint={t('settings.ledger.entryTimesHint')}
+      >
+        {(props) => (
+          <select
+            {...props}
+            name="entryTimes"
+            value={entryTimes}
+            className={selectClass}
+            onChange={(e) => {
+              setEntryTimes(entryTimesSchema.parse(e.currentTarget.value));
+              changed();
+            }}
+          >
+            {entryTimesSchema.options.map((option) => (
+              <option key={option} value={option}>
+                {t(`settings.ledger.entryTimesOptions.${option}`)}
               </option>
             ))}
           </select>

@@ -6,6 +6,7 @@ import {
   newDraft,
   paycheckDraft,
   switchKind,
+  withTime,
   withToday,
   type DraftDefaults,
 } from './options.ts';
@@ -97,6 +98,7 @@ describe('newDraft', () => {
       tagIds: [],
       note: '',
       occurredOn: '2026-03-14',
+      occurredTime: '',
     });
   });
 
@@ -337,5 +339,26 @@ describe('paycheckDraft', () => {
       kind: 'income',
       categoryId: '',
     });
+  });
+});
+
+describe('withTime', () => {
+  const draft = { ...newDraft(defaults()), occurredOn: '2026-03-15' };
+
+  it("fills in the current time on today's entries until it is edited", () => {
+    expect(withTime(draft, '2026-03-15', '09:41', false).occurredTime).toBe(
+      '09:41',
+    );
+    const edited = { ...draft, occurredTime: '07:00' };
+    expect(withTime(edited, '2026-03-15', '09:41', true)).toBe(edited);
+  });
+
+  it('leaves an entry on another day without one', () => {
+    const past = { ...draft, occurredOn: '2026-03-01', occurredTime: '09:41' };
+    expect(withTime(past, '2026-03-15', '09:41', false).occurredTime).toBe('');
+  });
+
+  it('does nothing unless times are filled in', () => {
+    expect(withTime(draft, '2026-03-15', null, false)).toBe(draft);
   });
 });

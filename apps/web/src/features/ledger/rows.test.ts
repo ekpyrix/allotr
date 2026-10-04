@@ -6,7 +6,7 @@ import {
   type TransactionView,
 } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { byDay, ledgerRows } from './rows.ts';
+import { afterIdAt, byDay, ledgerRows } from './rows.ts';
 
 // Made-up accounts, categories and entries.
 const usd = (amountMinor: number) => money(amountMinor, 'USD');
@@ -25,7 +25,9 @@ function entry(overrides: Partial<TransactionView>): TransactionView {
     id: 'e-1',
     kind: 'expense',
     occurredOn: '2026-03-11',
+    occurredTime: null,
     createdAt: '2026-03-11T09:00:00.000Z',
+    sortRank: 'V',
     source: 'api',
     categoryId: null,
     note: null,
@@ -99,6 +101,7 @@ describe('ledgerRows', () => {
         id: 'e-2',
         kind: 'reversal',
         occurredOn: '2026-03-11',
+        occurredTime: null,
         title: 'Food',
         note: null,
         accounts: ['Everyday'],
@@ -114,6 +117,7 @@ describe('ledgerRows', () => {
         id: 'e-1',
         kind: 'expense',
         occurredOn: '2026-03-11',
+        occurredTime: null,
         title: 'Food',
         note: 'Lunch',
         accounts: ['Everyday'],
@@ -199,5 +203,18 @@ describe('byDay', () => {
       ['2026-03-12', ['a']],
       ['2026-03-11', ['b', 'c']],
     ]);
+  });
+});
+
+describe('afterIdAt', () => {
+  const day = [{ id: 'c' }, { id: 'b' }, { id: 'a' }];
+
+  it('names the row listed below, which is the one before it in time', () => {
+    expect(afterIdAt(day, 0)).toBe('b');
+    expect(afterIdAt(day, 1)).toBe('a');
+  });
+
+  it('is null at the bottom, the start of the day', () => {
+    expect(afterIdAt(day, 2)).toBeNull();
   });
 });

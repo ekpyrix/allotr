@@ -91,6 +91,31 @@ the user owes them, sit in the `Receivables` and `Payables` system accounts
 | Borrow $50 | None: the cash is reserved until it is paid |
 | Pay back $50 you owe | None: the reserve is released as the cash leaves |
 
+### Order within a day
+
+Entries on the same date have an order, which the user can change. Every list
+and every projection that takes entries one by one, such as budget cover
+("Per line, in time order") and the money free just before an entry, uses
+this one order, so what the user sees and what the figures assume never
+differ.
+
+- **Default.** A new entry goes last in its day. An edit or a restored copy
+  takes the place of the entry it replaces. An undo sits right after its
+  entry.
+- **Rearranging.** The user moves an entry within its day. Moving it to
+  another day is an edit (a change of date), not a move. A move records
+  nothing: the entry, its date and its postings stay as committed; only its
+  place changes, kept apart from the entry so the ledger stays append-only.
+  A move on a past day can change which budget covered a shortfall then, as
+  a back-dated entry can.
+- **Time of day (optional).** An entry may carry the time it happened,
+  HH:MM in the user's timezone. Like the date, it is part of the entry and
+  changes only through an edit. A timed entry goes right after the last
+  entry timed no later than it. Timed entries always stay in time order: a
+  move that would break it is refused, and the user changes or clears the
+  time instead. Untimed entries go anywhere. When entry times are turned
+  off, existing times are still shown and kept.
+
 ## Pools
 
 A pool (ADR 0021) is a named group of accounts. It has a kind, `spending`
@@ -462,6 +487,7 @@ Per-user settings. The default is listed first.
 | Extra income | Ask, default spendable | Always spendable · hold until payday |
 | Reconcile mismatch | Offer one-tap "Unrecorded" adjustment | Auto-adjust · flag only |
 | Recurring transactions | Remind on due date | Auto-post · off |
+| Entry times | Off: entries have a date only | Optional time on each entry · filled in with the current time for today's entries |
 | Timezone while travelling | Home timezone | Follow device |
 | Default currency | USD | Any ISO 4217 currency |
 
@@ -486,7 +512,7 @@ open.
 | Switching an account on/off-budget | Effective today, recorded as a dated system transaction; the account moves into the default Budget or Savings pool. |
 | Moving an account into a pool | Effective from the chosen date (today by default), recorded as a dated row. No entry changes. |
 | Deleting a category in use | Must be merged into another category. |
-| Editing any past entry | Reversal plus a new entry. |
+| Editing any past entry | Reversal plus a new entry. A change of date or time is an edit too. |
 | Deleting an entry | A reversal. The app calls it delete and hides the entry and its reversal from lists unless the user asks to see deleted entries. |
 | Restoring a deleted entry | A new copy of it: same kind, date, category, note, tags and postings. The copy is stored with idempotency key `restore:<original id>`, so an entry is restored at most once. A reversal or budget switch cannot be restored. |
 | Offline entries arriving late | Treated as back-dated entries; idempotency keys prevent duplicates. |
@@ -556,9 +582,13 @@ categories(id, user_id, name, kind[expense|income|transfer], parent_id,
            name from a fixed set], merged_into_id)
 tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)
 aliases(id, user_id, alias, target_type, target_id)
-transactions(id, user_id, kind, occurred_on, created_at, source, category_id,
-             note, reverses_id, idempotency_key, message_id, cycle_id,
-             fx_rate_implied, switch_account_id, switch_budget_group)
+transactions(id, user_id, kind, occurred_on, occurred_time, created_at,
+             source, category_id, note, reverses_id, idempotency_key,
+             message_id, cycle_id, fx_rate_implied, switch_account_id,
+             switch_budget_group)
+transaction_ranks(transaction_id, user_id, occurred_on, sort_rank,
+                  updated_at)    # place within the day; the only row that
+                                 # changes after an entry is committed
 postings(id, user_id, transaction_id, account_id, amount_minor, currency,
          category_id, position)
 cycles(id, user_id, opened_at, opened_by_txn, cycle_end, closed_at, snapshot)

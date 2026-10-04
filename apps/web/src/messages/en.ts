@@ -551,6 +551,19 @@ export const en = {
     },
     undoOf: 'Deleted: {title}',
     undone: 'Deleted',
+    reorder: {
+      start: 'Rearrange {day}',
+      done: 'Done',
+      intro:
+        'Newest at the top. Drag a row, or press Up or Down on its handle. Entries with a time stay in time order.',
+      list: 'Entries on {day}, newest first',
+      sortable: 'sortable item',
+      handle:
+        '{name}, position {position} of {count}. Press Up or Down to move.',
+      up: 'Move {name} up',
+      down: 'Move {name} down',
+      moved: '{name} moved to position {position} of {count}.',
+    },
     budgetOn: 'Moved on budget',
     budgetOff: 'Moved off budget',
     entry: {
@@ -854,6 +867,14 @@ export const en = {
       currency: 'Default currency',
       currencyHint:
         'Figures are shown in this currency. Accounts in other currencies need an exchange rate.',
+      entryTimes: 'Time of day on entries',
+      entryTimesHint:
+        'A day is ordered by time for entries that have one. Times already recorded stay either way.',
+      entryTimesOptions: {
+        off: 'Off',
+        optional: 'Optional',
+        'prefill-now': "Fill in the current time on today's entries",
+      },
     },
     payday: {
       title: 'Payday',
@@ -1238,6 +1259,7 @@ export const en = {
     chooseCategory: 'Choose a category',
     noCategory: 'None',
     date: 'Date',
+    time: 'Time (optional)',
     note: 'Note',
     tags: 'Tags',
     save: 'Save',
@@ -1284,6 +1306,7 @@ export const en = {
       categoryTwice: 'Each line needs its own category.',
       splitMismatch: 'Make the lines add up to the amount.',
       dateInvalid: 'Enter a date.',
+      timeInvalid: 'Enter a time such as 08:15, or leave it empty.',
     },
   },
   offline: {

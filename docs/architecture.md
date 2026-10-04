@@ -176,7 +176,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   amount}]` (2–20 distinct categories adding up to the amount, or to
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split
   entry's own `categoryId` is null and each balancing posting carries its
-  line's category.
+  line's category. An entry may carry `occurredTime` (HH:MM, user's
+  timezone), kept only when the `entryTimes` ledger setting is not `off`.
+  `POST /v1/transactions/{id}/move` with `{afterId}` (null for first)
+  rearranges a day (domain.md "Order within a day"): it updates only
+  `transaction_ranks`, refuses another day's entry (`different_day`) and a
+  move that puts timed entries out of time order (`out_of_time_order`).
   `POST /v1/accounts/{id}/reconcile` compares the bank's balance with the
   ledger's on a day and records a match; a debt can be given as a
   positive `amountOwed` instead of a negative `balance`. With `adjust` it
@@ -184,7 +189,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   transaction, refused as `reconcile_stale` when `expectedDifference` no
   longer holds, or recorded as a match when the difference is now zero.
   Accounts report `lastReconciledOn`.
-  `GET /v1/transactions` pages newest first and filters by date range,
+  `GET /v1/transactions` pages newest first (by date, then the user's
+  order within the day, `sortRank`) and filters by date range,
   account, category (with its subcategories, matching any line of a
   split), tag and note text; an undo
   matches whatever the entry it undoes matches. Every query is scoped to the signed-in user, and another
@@ -314,7 +320,9 @@ The native import format, version 1 (`bundleSchema` in `packages/shared`).
 Items refer to each other by name: account names, category paths (`"Fun"`,
 `"Food/Coffee"`) and tag names, all compared without case. A category that
 matches an existing one by name and parent is reused; the rest are created.
-Transactions need `occurredOn`; an account without `openedOn` opens on the
+Transactions need `occurredOn`, and an expense, income, transfer or
+write-off may give `time` (HH:MM); within a day, entries keep the order
+they have in the bundle. An account without `openedOn` opens on the
 earliest entry day. A transaction `ref` lets a bill payment or a
 reconciliation's adjustment link to it. An expense or income gives
 `category` or, for a split, `lines: [{category, amount}]`. A `write_off`
@@ -408,16 +416,19 @@ interactive terminal.
   entry on a merged category is filed under the one it was merged into; an
   archived account whose name was reused becomes `"<name> (archived)"`; a
   `/` in a category name becomes `∕`; a bill payment for a day the bill is
-  no longer due on is left out. Lost on the way: undo history and
-  `amended` markers, times of entry, unused tags, category order and
-  default accounts, and the start of a ledger that was not itself imported.
+  no longer due on is left out. Entries keep their time of day (`time`)
+  and, within each day, the user's order. Lost on the way: undo history
+  and `amended` markers, when entries were recorded, unused tags, category
+  order and default accounts, and the start of a ledger that was not itself
+  imported.
   A ledger over the import limits exports but does not import back.
 - `csv`: one row per posting, every entry including undos, RFC 4180:
   `date, entry_id, kind, account, amount, currency, category, note, tags,
-  reverses_id, recorded_at`. System legs are `Expenses`, `Income`,
+  reverses_id, recorded_at, time`, in the user's order within each day.
+  System legs are `Expenses`, `Income`,
   `Equity:Opening` and `Equity:Conversion`; text starting with `= + - @`
   gets a leading `'` so spreadsheets do not run it.
-- `beancount`: every entry including undos, with `id`, `kind` and
+- `beancount`: every entry including undos, with `id`, `kind`, `time` and
   `reverses` metadata. Accounts are `Assets:`, `Assets:Receivable:`,
   `Liabilities:`, `Liabilities:Payable:` plus the account name, categories
   `Expenses:<Top>:<Child>` and `Income:…`, write-offs

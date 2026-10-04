@@ -61,6 +61,7 @@ const draft = (patch: Partial<QuickEntryDraft> = {}): QuickEntryDraft => ({
   tagIds: [],
   note: '',
   occurredOn: '2026-03-14',
+  occurredTime: '',
   ...patch,
 });
 
@@ -155,6 +156,20 @@ describe('toBody', () => {
         amount: { amountMinor: 1250, currency: 'USD' },
         categoryId: 'food',
       },
+    });
+  });
+
+  it('sends a time of day when one is given', () => {
+    const result = toBody(draft({ occurredTime: '08:15' }), ctx);
+    expect(result.ok && result.body.occurredTime).toBe('08:15');
+    const without = toBody(draft(), ctx);
+    expect(without.ok && 'occurredTime' in without.body).toBe(false);
+  });
+
+  it('rejects a malformed time', () => {
+    expect(toBody(draft({ occurredTime: '25:00' }), ctx)).toEqual({
+      ok: false,
+      errors: { occurredTime: 'quickEntry.errors.timeInvalid' },
     });
   });
 
@@ -476,6 +491,7 @@ describe('splits', () => {
       'lines.1.amount',
       'lines',
       'occurredOn',
+      'occurredTime',
     ]);
   });
 });

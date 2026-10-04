@@ -30,6 +30,7 @@ export function draftFromEntry(
     tagIds: entry.tagIds,
     note: entry.note ?? '',
     occurredOn: entry.occurredOn,
+    occurredTime: entry.occurredTime ?? '',
     categoryId: entry.categoryId ?? '',
     foreign: '',
     foreignCurrency: '',

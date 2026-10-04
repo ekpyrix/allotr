@@ -75,6 +75,8 @@ import {
   reconcileBodySchema,
   reconcileResultSchema,
   reverseTransactionBodySchema,
+  moveTransactionBodySchema,
+  dayOrderSchema,
   sessionSchema,
   sessionUserSchema,
   setupSchema,
@@ -662,5 +664,11 @@ export const endpoints = {
     method: 'POST',
     path: '/v1/transactions/{id}/restore',
     response: transactionSchema,
+  }),
+  moveTransaction: endpoint({
+    method: 'POST',
+    path: '/v1/transactions/{id}/move',
+    body: moveTransactionBodySchema,
+    response: dayOrderSchema,
   }),
 };

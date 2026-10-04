@@ -38,6 +38,7 @@ const specs = [
   'ious',
   'calendar',
   'reminders',
+  'entry-order',
 ];
 
 const projects = sizes.flatMap((size, i) =>

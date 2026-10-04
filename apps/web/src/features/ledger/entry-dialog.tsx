@@ -431,6 +431,8 @@ function EntryLoader({
           tags={tags.data.tags}
           locale={locale}
           today={today.data.today}
+          entryTimes={settings.data.entryTimes}
+          timeZone={timeZone}
           edit={{
             id: view.id,
             draft: draftFromEntry(
