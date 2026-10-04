@@ -243,6 +243,7 @@ export const en = {
         repay: 'Repayment: {person}',
         writeoff: 'Write off: {person}',
         edit: 'Edit IOU: {person}',
+        delete: 'Delete IOU: {person}?',
       },
       totals: 'Owed to you {toMe}. You owe {byMe}.',
       missingRates:
@@ -272,11 +273,36 @@ export const en = {
       stillOwed: 'Still owed: {amount}',
       writeOff: 'Write off',
       writeOffBody:
-        'This turns the {amount} still owed by {person} into an expense. It cannot be undone, but you can record the money if it comes back.',
+        'This turns the {amount} still owed by {person} into an expense. You can delete the write-off later if the money comes back.',
       writeOffOffered: 'It has been long enough that a write-off is offered.',
       writeOffAnyTime:
         'A write-off is offered from {date}, but you can do it any time.',
       writeOffCategory: 'Expense category',
+      showSettled: 'Show settled',
+      settled: 'Settled',
+      entries: {
+        lentTo: 'loan to {person}',
+        borrowedFrom: 'loan from {person}',
+        repaidBy: 'repayment from {person}',
+        paidTo: 'payment to {person}',
+        writtenOff: 'write-off for {person}',
+      },
+      recorded: 'Recorded {entry}.',
+      payments: 'Payments',
+      paymentsFor: 'Payments for {person}',
+      kinds: {
+        repaid: 'Repaid',
+        paidBack: 'Paid back',
+        writtenOff: 'Written off',
+      },
+      deletePayment: 'Delete {kind} {amount} on {date}',
+      delete: 'Delete',
+      deleteBody:
+        'This deletes the entry that recorded it, so its money goes back to where it came from. You can undo it right after.',
+      deleteShared:
+        'The same entry also recorded {names}; they are deleted with it, and so is your own share if it was a split bill.',
+      deleteSubmit: 'Delete it',
+      hasPayments: 'It has payments. Delete them first.',
       saved: 'Split saved. {amount} is yours; the rest is owed to you.',
       lent: 'Saved. All {amount} is owed to you.',
       split: {

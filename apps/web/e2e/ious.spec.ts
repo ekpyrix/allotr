@@ -105,6 +105,69 @@ test('records a part repayment', async ({ page }) => {
   expect((await ious(page)).totals.owedToMe.amountMinor).toBe(2500);
 });
 
+test('deletes a repayment and undoes the delete', async ({ page }) => {
+  await page.goto('/budget');
+  const row = section(page)
+    .getByTestId('iou-row')
+    .filter({ hasText: 'Alex Example' });
+  const payments = row.getByRole('list', {
+    name: 'Payments for Alex Example',
+  });
+  await expect(payments).toContainText('Repaid');
+  await expect(payments).toContainText('$15.00');
+  await payments
+    .getByRole('button', { name: /^Delete repaid \$15\.00/ })
+    .click();
+  await expect(page.locator('[data-slot="snackbar-status"]')).toContainText(
+    'Deleted repayment from Alex Example.',
+  );
+  await expect(row).toContainText('$40.00');
+  await expect(payments).toBeHidden();
+  expect((await ious(page)).totals.owedToMe.amountMinor).toBe(4000);
+
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(row).toContainText('$25.00');
+  await expect(payments).toContainText('$15.00');
+  expect((await ious(page)).totals.owedToMe.amountMinor).toBe(2500);
+  await expectAccessible(page);
+});
+
+test('an IOU with payments is not deleted until they are', async ({ page }) => {
+  await page.goto('/budget');
+  await page
+    .getByRole('button', { name: 'Delete Alex Example', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: 'Delete IOU: Alex Example?',
+  });
+  await expectAccessible(page);
+  await sheet.getByRole('button', { name: 'Delete it' }).click();
+  await expect(sheet).toContainText('It has payments. Delete them first.');
+  await sheet.getByRole('button', { name: 'Close' }).click();
+  expect((await ious(page)).totals.owedToMe.amountMinor).toBe(2500);
+});
+
+test('undoes a loan right after it is recorded', async ({ page }) => {
+  await page.goto('/budget');
+  await section(page).getByRole('button', { name: 'Lend or borrow' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Lend or borrow' });
+  await sheet.getByLabel('Person').fill('Sam Example');
+  await sheet.getByLabel('Amount', { exact: true }).fill('12');
+  await sheet.getByRole('button', { name: 'Record it' }).click();
+  await expect(sheet).toBeHidden();
+  const row = section(page)
+    .getByTestId('iou-row')
+    .filter({ hasText: 'Sam Example' });
+  await expect(row).toContainText('$12.00');
+  await expect(page.locator('[data-slot="snackbar-status"]')).toContainText(
+    'Recorded loan to Sam Example.',
+  );
+
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(row).toHaveCount(0);
+  expect((await ious(page)).totals.owedToMe.amountMinor).toBe(2500);
+});
+
 test('writes off what is left, any time', async ({ page }) => {
   await page.goto('/budget');
   await page.getByRole('button', { name: 'Write off Alex Example' }).click();
@@ -223,4 +286,37 @@ test('a split line without a name is refused next to the field', async ({
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog.getByText('Enter a name.')).toBeVisible();
   expect((await ious(page)).ious).toHaveLength(5);
+});
+
+test('deletes a settled IOU once its payments are gone', async ({ page }) => {
+  await page.goto('/budget');
+  await section(page).getByLabel('Show settled').check();
+  const row = section(page)
+    .getByTestId('iou-row')
+    .filter({ hasText: 'Alex Example' });
+  await expect(row).toContainText('Settled');
+  const payments = row.getByRole('list', {
+    name: 'Payments for Alex Example',
+  });
+  await expect(payments).toContainText('Written off');
+  await expectAccessible(page);
+
+  await payments.getByRole('button', { name: /^Delete written off/ }).click();
+  await expect(row).not.toContainText('Written off');
+  await payments.getByRole('button', { name: /^Delete repaid/ }).click();
+  await expect(payments).toBeHidden();
+  await expect(row).toContainText('$40.00');
+
+  await page
+    .getByRole('button', { name: 'Delete Alex Example', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', {
+    name: 'Delete IOU: Alex Example?',
+  });
+  await sheet.getByRole('button', { name: 'Delete it' }).click();
+  await expect(sheet).toBeHidden();
+  await expect(row).toHaveCount(0);
+  await expect(page.locator('[data-slot="snackbar-status"]')).toContainText(
+    'Deleted loan to Alex Example.',
+  );
 });

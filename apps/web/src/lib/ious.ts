@@ -17,6 +17,12 @@ export const iousQuery = queryOptions({
   queryFn: () => call(endpoints.ious),
 });
 
+/** Open and settled ones, so a settled IOU's payments can be undone. */
+export const allIousQuery = queryOptions({
+  queryKey: ['today', 'ious', 'all'],
+  queryFn: () => call(endpoints.ious, { query: { status: 'all' } }),
+});
+
 /** Names used before, for autocomplete. */
 export function peopleQuery(query: string) {
   return queryOptions({
