@@ -93,7 +93,8 @@ the user owes them, sit in the `Receivables` and `Payables` system accounts
 
 ### Order within a day
 
-Entries on the same date have an order, which the user can change. Every list
+Entries on the same date have an order, which the user can change
+([ADR 0025](adr/0025-entry-order-and-time.md)). Every list
 and every projection that takes entries one by one, such as budget cover
 ("Per line, in time order") and the money free just before an entry, uses
 this one order, so what the user sees and what the figures assume never

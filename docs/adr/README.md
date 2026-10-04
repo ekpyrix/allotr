@@ -37,3 +37,4 @@ kept in `docs/drafts/`, which git ignores.
 - [0022 Visual language v2: compact, flat, hairlines and value colour](0022-visual-language-v2.md)
 - [0023 Navigation v2 and calmer motion](0023-navigation-and-motion.md)
 - [0024 IOUs, split bills and reminders](0024-ious-and-reminders.md)
+- [0025 Order of entries within a day, and an optional time of day](0025-entry-order-and-time.md)
