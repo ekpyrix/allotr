@@ -180,6 +180,16 @@ with autocomplete from earlier ones, not contacts.
   currency. Entries stay `transfer` (lend, borrow, repay) and `expense`
   (split) in the ledger; the `ious` and `iou_settlements` tables say who owes
   what.
+- **Entering.** The amount entered is the whole payment, as the bank shows
+  it. Each person's share starts as an even split of the bill between them
+  and the user (odd minor units stay with the user) and can be changed; the
+  user's own share is what is left. When people owe all of it, the entry is
+  a loan, not a split, and nothing is spending.
+- **Splitting a logged expense.** A live expense in one category, in the
+  account's currency and tied to no IOU, can be split with people after it
+  was recorded. It is undone and replaced by one IOU entry with the same
+  account, amount, date, note and tags, so the account's balance does not
+  move; the own share keeps the expense's category unless another is chosen.
 - **Owed to the user** lowers free money from the day it is lent (the cash is
   gone, as with a transfer to savings) but is never spending: it is not in
   `spent_today`, not in `cycle_spent` or pace, not in the weekly review and not

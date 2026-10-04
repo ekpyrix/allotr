@@ -21,6 +21,7 @@ import {
   localDate,
   money,
   type Money,
+  type ConvertToIouBody,
   type CoverPreviewView,
   type CreateIouBody,
   type IouListView,
@@ -38,9 +39,11 @@ import {
   byIdempotencyKey,
   checkTags,
   getTransaction,
+  insertReversal,
   resolveCategory,
   storeTransaction,
 } from './transactions.ts';
+import { iouLinks } from './iou-links.ts';
 import {
   ensureSystemAccounts,
   newEntry,
@@ -391,6 +394,117 @@ export async function createIou(
       createIouIn(trx, userId, body, idempotencyKey ?? null, 'api', now),
     );
   return {
+    transaction: await getTransaction(db, userId, done.id),
+    ious: await viewsOf(db, userId, done.ious, now),
+    replayed: done.replayed,
+  };
+}
+
+/**
+ * Turns a logged expense into a split bill or a loan: the expense is undone
+ * and an IOU entry with the same account, amount and date replaces it, so
+ * the account's line is unchanged. Only a live expense in one category,
+ * paid in the account's own currency and tied to no IOU, can be turned.
+ */
+export async function convertToIou(
+  db: Kysely<DB>,
+  userId: string,
+  id: string,
+  body: ConvertToIouBody,
+  idempotencyKey: string | undefined,
+  now: Date,
+): Promise<{
+  reversal: TransactionView;
+  transaction: TransactionView;
+  ious: IouView[];
+  replayed: boolean;
+}> {
+  const done = await db.transaction().execute(async (trx) => {
+    const key = idempotencyKey ?? null;
+    if (key !== null) {
+      const earlier = await byIdempotencyKey(trx, userId, key);
+      if (earlier !== undefined) {
+        const original = await getTransaction(trx, userId, id);
+        if (original.reversedById === null)
+          throw problem(
+            409,
+            'idempotency_conflict',
+            'This key was used for another request.',
+          );
+        return {
+          reversalId: original.reversedById,
+          id: earlier.id,
+          ious: await iousOfOrigin(trx, userId, earlier.id),
+          replayed: true,
+        };
+      }
+    }
+    const original = await getTransaction(trx, userId, id);
+    const paid = original.postings.find((p) => p.systemRole === null);
+    const spent = original.postings.find((p) => p.systemRole === 'expenses');
+    const links = await iouLinks(trx, userId, id);
+    if (
+      original.kind !== 'expense' ||
+      original.reversesId !== null ||
+      original.reversedById !== null ||
+      original.categoryId === null ||
+      original.postings.length !== 2 ||
+      paid === undefined ||
+      spent === undefined ||
+      paid.amount.currency !== spent.amount.currency ||
+      links.origin ||
+      links.settles
+    ) {
+      throw problem(
+        409,
+        'not_plain_expense',
+        'Only a live expense in one category, in the account’s currency, can be split with people.',
+      );
+    }
+    const total = spent.amount.amountMinor;
+    const currency = spent.amount.currency;
+    const owed = body.people.reduce((sum, p) => sum + p.amount.amountMinor, 0);
+    if (body.people.some((p) => p.amount.currency !== currency))
+      throw problem(
+        400,
+        'currency_mismatch',
+        'People owe in the account’s currency.',
+      );
+    if (owed > total)
+      throw problem(
+        400,
+        'owed_exceeds_total',
+        'People owe more than the expense.',
+      );
+    const own = total - owed;
+    const reversalId = await insertReversal(trx, userId, id, undefined, now);
+    const created = await createIouIn(
+      trx,
+      userId,
+      {
+        direction: 'owed-to-me',
+        accountId: paid.accountId,
+        people: body.people,
+        ...(own === 0
+          ? {}
+          : {
+              ownShare: {
+                amount: money(own, currency),
+                categoryId: body.categoryId ?? original.categoryId,
+              },
+            }),
+        occurredOn: original.occurredOn,
+        ...(original.note === null ? {} : { note: original.note }),
+        ...(original.tagIds.length === 0 ? {} : { tagIds: original.tagIds }),
+      },
+      key,
+      'api',
+      now,
+    );
+    return { reversalId, ...created };
+  });
+  return {
+    reversal: await getTransaction(db, userId, done.reversalId),
     transaction: await getTransaction(db, userId, done.id),
     ious: await viewsOf(db, userId, done.ious, now),
     replayed: done.replayed,

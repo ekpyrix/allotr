@@ -50,12 +50,15 @@ import {
   useCoverPreview,
 } from '@/features/budget/cover-preview';
 import {
+  fillEven,
+  positive,
   toSplitBody,
   type PersonDraft,
   type PersonError,
+  type TotalError,
 } from '@/features/ious/draft';
 import { SplitPeople } from '@/features/ious/split-people';
-import { useSplitSave } from '@/features/ious/use-split-save';
+import { useConvertSave, useSplitSave } from '@/features/ious/use-split-save';
 import { previewIouCover } from '@/lib/ious';
 import { readLastUsed, rememberChoice } from './last-used.ts';
 import {
@@ -154,19 +157,24 @@ export function QuickEntryForm({
   const save = useSaveEntry(edit?.id);
   const queryClient = useQueryClient();
   const splitSave = useSplitSave();
-  // Splitting with people (ADR 0024): null when off; the typed amount is then
-  // the user's own share.
+  const convertSave = useConvertSave();
+  // Splitting with people (ADR 0024): null when off; the typed amount is
+  // then the whole bill, and the user's share is what people do not owe.
   const [people, setPeople] = useState<readonly PersonDraft[] | null>(null);
   const [peopleErrors, setPeopleErrors] = useState<
     Readonly<Record<number, PersonError>>
   >({});
+  const [totalError, setTotalError] = useState<TotalError | undefined>();
   const [splitWarning, setSplitWarning] = useState<CoverPreviewView | null>(
     null,
   );
   const splitKey = useRef<string | null>(null);
   // The cover request the user has already confirmed with a second tap.
   const [confirmed, setConfirmed] = useState<string | null>(null);
-  const saving = save.isPending || splitSave.isPending;
+  const saving = save.isPending || splitSave.isPending || convertSave.isPending;
+  // Splitting an entry being edited keeps its bill: the account, amount and
+  // date stay what was logged, so only the people and category change.
+  const converting = edit !== undefined && people !== null;
   useEffect(() => {
     onSavingChange(saving);
     return () => {
@@ -205,6 +213,8 @@ export function QuickEntryForm({
   // A server error is about the request that was sent, not the next edit.
   const editing = () => {
     if (save.isError) save.reset();
+    if (splitSave.isError) splitSave.reset();
+    if (convertSave.isError) convertSave.reset();
   };
   const update = (patch: Partial<QuickEntryDraft>) => {
     editing();
@@ -272,8 +282,9 @@ export function QuickEntryForm({
     }
     clearErrors();
     const body = result.body;
-    if (people !== null && edit === undefined && body.kind === 'expense') {
-      submitSplit(body, people);
+    if (people !== null && body.kind === 'expense') {
+      if (edit === undefined) submitSplit(body, people);
+      else submitConvert(edit.id, body, people);
       return;
     }
     const request = edit === undefined ? coverRequest(body) : null;
@@ -307,12 +318,18 @@ export function QuickEntryForm({
     body: Extract<CreateTransactionBody, { kind: 'expense' }>,
     shares: readonly PersonDraft[],
   ) {
-    const built = toSplitBody(body, shares, locale);
+    const built = toSplitBody(
+      body,
+      fillEven(shares, body.amount, locale),
+      locale,
+    );
     if (!built.ok) {
       setPeopleErrors(built.errors);
+      setTotalError(built.total);
       return;
     }
     setPeopleErrors({});
+    setTotalError(undefined);
     const askedFor = JSON.stringify(built.body);
     const send = () => {
       splitKey.current ??= randomId();
@@ -321,10 +338,13 @@ export function QuickEntryForm({
         {
           onSuccess: (created) => {
             splitKey.current = null;
+            const own = built.body.ownShare?.amount;
             onSaved(
-              t('budget.ious.saved', {
-                amount: formatMoney(body.amount, locale),
-              }),
+              own === undefined
+                ? t('budget.ious.lent', {
+                    amount: formatMoney(body.amount, locale),
+                  })
+                : t('budget.ious.saved', { amount: formatMoney(own, locale) }),
               created.transaction.id,
             );
           },
@@ -355,6 +375,56 @@ export function QuickEntryForm({
       .catch(() => {
         send();
       });
+  }
+
+  function submitConvert(
+    id: string,
+    body: Extract<CreateTransactionBody, { kind: 'expense' }>,
+    shares: readonly PersonDraft[],
+  ) {
+    const built = toSplitBody(
+      body,
+      fillEven(shares, body.amount, locale),
+      locale,
+    );
+    if (!built.ok) {
+      setPeopleErrors(built.errors);
+      setTotalError(built.total);
+      return;
+    }
+    setPeopleErrors({});
+    setTotalError(undefined);
+    splitKey.current ??= randomId();
+    inFlight.current = true;
+    const own = built.body.ownShare;
+    convertSave.mutate(
+      {
+        id,
+        body: {
+          people: built.body.people,
+          ...(own === undefined ? {} : { categoryId: own.categoryId }),
+        },
+        key: splitKey.current,
+      },
+      {
+        onSuccess: (converted) => {
+          splitKey.current = null;
+          onSaved(
+            own === undefined
+              ? t('budget.ious.lent', {
+                  amount: formatMoney(body.amount, locale),
+                })
+              : t('budget.ious.saved', {
+                  amount: formatMoney(own.amount, locale),
+                }),
+            converted.transaction.id,
+          );
+        },
+        onSettled: () => {
+          inFlight.current = false;
+        },
+      },
+    );
   }
 
   function record(body: CreateTransactionBody) {
@@ -429,6 +499,7 @@ export function QuickEntryForm({
             autoComplete="off"
             autoFocus
             className="h-11 text-base"
+            readOnly={converting}
             value={draft.amount}
             onChange={(e) => {
               update({ amount: e.currentTarget.value });
@@ -455,6 +526,7 @@ export function QuickEntryForm({
             {...props}
             name="accountId"
             className={selectClass}
+            disabled={converting}
             value={draft.accountId}
             onChange={(e) => {
               update({ accountId: e.currentTarget.value });
@@ -651,6 +723,7 @@ export function QuickEntryForm({
             name="occurredOn"
             type="date"
             className="h-11 text-base"
+            readOnly={converting}
             value={draft.occurredOn}
             onChange={(e) => {
               setDateEdited(true);
@@ -709,15 +782,30 @@ export function QuickEntryForm({
         </fieldset>
       )}
 
-      {edit === undefined && draft.kind === 'expense' && !split ? (
+      {draft.kind === 'expense' &&
+      !split &&
+      (edit === undefined ||
+        (edit.draft.kind === 'expense' &&
+          edit.draft.lines.length === 0 &&
+          edit.draft.foreignCurrency === '')) ? (
         <SplitPeople
           people={people}
           errors={peopleErrors}
+          totalError={totalError}
+          total={positive(draft.amount, source?.currency ?? 'USD', locale)}
           currency={source?.currency ?? 'USD'}
           locale={locale}
           onChange={(next) => {
+            // An entry being split goes back to its bill as logged.
+            if (edit !== undefined && people === null && next !== null)
+              update({
+                amount: edit.draft.amount,
+                accountId: edit.draft.accountId,
+                occurredOn: edit.draft.occurredOn,
+              });
             setPeople(next);
             setPeopleErrors({});
+            setTotalError(undefined);
             setSplitWarning(null);
           }}
         />
@@ -739,14 +827,19 @@ export function QuickEntryForm({
         <FormError
           message={
             summary === ''
-              ? save.isError
-                ? describeProblem(save.error).message
-                : null
+              ? (() => {
+                  const failed = [save, splitSave, convertSave].find(
+                    (m) => m.isError,
+                  )?.error;
+                  return failed == null
+                    ? null
+                    : describeProblem(failed).message;
+                })()
               : summary
           }
         />
-        <Button type="submit" className="h-11 w-full" disabled={save.isPending}>
-          {save.isPending
+        <Button type="submit" className="h-11 w-full" disabled={saving}>
+          {saving
             ? t('quickEntry.saving')
             : needsSecondTap
               ? t('budget.preview.saveAnyway')

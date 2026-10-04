@@ -6,6 +6,8 @@ import {
   pushTestResultSchema,
   reminderListSchema,
   calendarSchema,
+  convertedIouSchema,
+  convertToIouBodySchema,
   createIouBodySchema,
   createdIousSchema,
   iouListSchema,
@@ -525,6 +527,12 @@ export const endpoints = {
     path: '/v1/ious',
     body: createIouBodySchema,
     response: createdIousSchema,
+  }),
+  convertToIou: endpoint({
+    method: 'POST',
+    path: '/v1/ious/from/{id}',
+    body: convertToIouBodySchema,
+    response: convertedIouSchema,
   }),
   iouCoverPreview: endpoint({
     method: 'POST',

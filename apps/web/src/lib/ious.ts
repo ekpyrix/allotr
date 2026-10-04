@@ -1,4 +1,5 @@
 import type {
+  ConvertToIouBody,
   CreateIouBody,
   RepaymentBody,
   UpdateIouBody,
@@ -46,6 +47,19 @@ export function previewIouCover(body: CreateIouBody) {
 
 export function repayIous(body: RepaymentBody) {
   return call(endpoints.repayIous, { body });
+}
+
+/** Splits a logged expense with people, or lends all of it. */
+export function convertToIou(
+  id: string,
+  body: ConvertToIouBody,
+  idempotencyKey: string,
+) {
+  return call(endpoints.convertToIou, {
+    params: { id },
+    body,
+    headers: { 'idempotency-key': idempotencyKey },
+  });
 }
 
 export function writeOffIou(id: string, body: WriteOffBody) {
