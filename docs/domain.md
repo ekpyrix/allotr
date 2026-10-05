@@ -185,7 +185,11 @@ corrects past and present figures through the same function.
   (default for set-aside budgets). A carried leftover is never below zero: an
   overspend is not a debt of the budget.
 - **Buffer.** Created for every user; set aside and carried over, and fixed
-  that way. It starts with an amount of zero, and it only holds money.
+  that way. It starts with an amount of zero, and it only holds money. Until
+  an amount is planned, its zero follows the user's default currency and its
+  start is their local day, so setup can choose both after sign-up. An amount
+  planned in a currency that is no longer the default is kept and converted
+  when read, like any amount in another currency.
 - **Overspending.** A budget never goes below zero. What its own budget
   could not pay is covered (see Cover and refill); `spent` still counts the
   whole entry and `overflow` is the part that went past.
