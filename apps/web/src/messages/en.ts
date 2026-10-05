@@ -280,6 +280,8 @@ export const en = {
       payBack: 'Pay back',
       repayAmount: 'Amount repaid',
       stillOwed: 'Still owed: {amount}',
+      stillOwedAcross:
+        'Still owed: {amount} across {count} IOUs. The oldest is settled first.',
       writeOff: 'Write off',
       writeOffBody:
         'This turns the {amount} still owed by {person} into an expense. You can delete the write-off later if the money comes back.',

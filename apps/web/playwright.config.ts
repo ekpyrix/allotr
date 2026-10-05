@@ -36,6 +36,7 @@ const specs = [
   'budget',
   'payday',
   'ious',
+  'ious-repay',
   'calendar',
   'reminders',
   'entry-order',
