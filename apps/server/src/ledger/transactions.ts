@@ -72,6 +72,7 @@ type TransactionRow = {
   created_at: string;
   sort_rank: string;
   source: string;
+  client: string | null;
   category_id: string | null;
   note: string | null;
   reverses_id: string | null;
@@ -88,6 +89,7 @@ const transactionColumns = [
   'transactions.created_at',
   'transaction_ranks.sort_rank',
   'transactions.source',
+  'transactions.client',
   'transactions.category_id',
   'transactions.note',
   'transactions.reverses_id',
@@ -196,7 +198,7 @@ async function views(
     occurredTime: row.occurred_time as TransactionView['occurredTime'],
     createdAt: row.created_at,
     sortRank: row.sort_rank,
-    source: row.source as TransactionView['source'],
+    source: (row.client ?? row.source) as TransactionView['source'],
     categoryId: row.category_id,
     note: row.note,
     postings: (legs.get(row.id) ?? []).map((p) => ({

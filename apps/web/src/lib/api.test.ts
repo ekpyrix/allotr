@@ -62,7 +62,10 @@ describe('call', () => {
       expect.objectContaining({
         method: 'POST',
         body: '{"name":"Food"}',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'x-allotr-client': 'web',
+          'content-type': 'application/json',
+        },
       }),
     );
   });
@@ -77,6 +80,7 @@ describe('call', () => {
       '/v1/tags',
       expect.objectContaining({
         headers: {
+          'x-allotr-client': 'web',
           'content-type': 'application/json',
           'idempotency-key': 'k1',
         },

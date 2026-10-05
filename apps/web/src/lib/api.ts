@@ -81,6 +81,7 @@ export async function call<Res, Body, Path extends string>(
       method: target.method,
       credentials: 'same-origin',
       headers: {
+        'x-allotr-client': 'web',
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         ...headers,
       },

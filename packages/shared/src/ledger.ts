@@ -252,7 +252,11 @@ export const transactionSchema = z.object({
   createdAt: z.iso.datetime(),
   /** Its place within its day; entries sort by date, then this. */
   sortRank: z.string(),
-  source: z.enum(['api', 'import', 'system']),
+  /**
+   * How it was added: typed in the app (`web`), sent by a chat gateway
+   * (`chat`), by another API caller (`api`), imported, or made by Allotr.
+   */
+  source: z.enum(['web', 'chat', 'api', 'import', 'system']),
   categoryId: idSchema.nullable(),
   note: z.string().nullable(),
   postings: z.array(postingSchema),

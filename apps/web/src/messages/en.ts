@@ -583,8 +583,10 @@ export const en = {
       entered: 'Entered',
       source: 'Source',
       sources: {
-        api: 'Allotr',
-        import: 'Import',
+        web: 'Added in the app',
+        chat: 'Added by chat',
+        api: 'Added through the API',
+        import: 'Added by import',
         system: 'Allotr (automatic)',
       },
       postings: 'Postings',

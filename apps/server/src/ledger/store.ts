@@ -32,6 +32,7 @@ import {
 } from '@allotr/shared';
 import type { Kysely, Transaction as KyselyTransaction } from 'kysely';
 import type { DB } from '../db/schema.ts';
+import { currentClient } from './client.ts';
 import { placeNewEntry } from './entry-order.ts';
 
 // Persistence for the ledger. Rows are always read and written for one
@@ -269,6 +270,7 @@ export async function appendTransaction(
       occurred_time: transaction.occurredTime,
       created_at: transaction.createdAt,
       source: options.source,
+      client: options.source === 'api' ? currentClient() : null,
       category_id: transaction.categoryId,
       note: transaction.note,
       reverses_id: transaction.reversesId,

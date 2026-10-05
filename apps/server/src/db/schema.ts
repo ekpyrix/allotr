@@ -299,6 +299,7 @@ export interface TransactionReplacements {
 
 export interface Transactions {
   category_id: string | null;
+  client: string | null;
   created_at: string;
   fx_rate_implied: string | null;
   id: string;
