@@ -64,6 +64,14 @@ transfer $100.00 from USD Card to EUR Wallet, received €91.50
 - Exchange rates are exact decimals, only used to **report** foreign amounts.
   Conversion rounds half to even at the target minor unit, once, at display
   time. A missing rate is flagged, never guessed.
+- A payment that states both amounts says what the rate was. When an expense
+  or income with a foreign amount is saved and no rate between its two
+  currencies is stored for its day (quoted either way round), that implied
+  rate is stored with the source `implied`. A manual rate for the same day
+  always wins and replaces it. Undoing, editing or deleting the entry takes
+  the rate back unless another entry on that day implied it too. Rates are
+  never invented from anything else, so a currency with no payment and no
+  manual rate is still flagged.
 - A rate is a positive decimal string: how many units of the target
   currency one unit of the source currency buys (`0.915` turns USD into
   EUR). `packages/shared` is the only code that parses, formats or converts

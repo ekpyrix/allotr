@@ -40,6 +40,15 @@ const bundle = {
       tags: ['treats'],
       ref: 'snack',
     },
+    // Priced in USD on a day with no rate, so it leaves an implied one.
+    {
+      kind: 'expense',
+      account: 'Wallet',
+      amount: eur(920),
+      foreignAmount: { amountMinor: 1_000, currency: 'USD' },
+      category: 'Snacks',
+      occurredOn: '2026-05-03',
+    },
   ],
   bills: [
     {

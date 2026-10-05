@@ -772,7 +772,7 @@ export const exchangeRateSchema = z.object({
   rate: rateSchema,
   /** Used for figures on and after this day, until a later rate. */
   asOf: localDateSchema,
-  source: z.enum(['manual']),
+  source: z.enum(['manual', 'implied']),
   createdAt: z.iso.datetime(),
 });
 export type ExchangeRateView = z.infer<typeof exchangeRateSchema>;

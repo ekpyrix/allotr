@@ -32,7 +32,7 @@ import {
 } from './iou-links.ts';
 import { moveInDay } from './entry-order.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
-import { loadRates } from './rates.ts';
+import { loadRates, recordImpliedRate, releaseImpliedRate } from './rates.ts';
 import { isUniqueViolation } from './sqlite-errors.ts';
 import {
   appendTransaction,
@@ -693,6 +693,16 @@ export async function storeTransaction(
     idempotencyKey,
     ...(placeAfter === undefined ? {} : { placeAfter }),
   });
+  if (transaction.reversesId !== null) {
+    await releaseImpliedRate(db, userId, transaction.reversesId);
+  } else {
+    await recordImpliedRate(
+      db,
+      userId,
+      transaction,
+      new Date(transaction.createdAt),
+    );
+  }
   if (tagIds.length === 0) return;
   await db
     .insertInto('transaction_tags')

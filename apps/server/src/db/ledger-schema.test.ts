@@ -12,7 +12,8 @@ import { openSqlite } from './sqlite.ts';
 // 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
 // 0013_reminders.sql, 0014_entry_order_time.sql and
-// 0015_entry_replacements.sql and 0016_buffer_currency.sql against real SQLite.
+// 0015_entry_replacements.sql, 0016_buffer_currency.sql and
+// 0017_implied_rates.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -59,6 +60,7 @@ function migrationsUpTo(last: string): string {
     '0013_reminders.sql',
     '0014_entry_order_time.sql',
     '0015_entry_replacements.sql',
+    '0016_buffer_currency.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -463,6 +465,7 @@ describe('migration 0005_reconciliations', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     insertReconciliation('r1');
@@ -559,6 +562,7 @@ describe('migration 0006_bill_prices', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(
@@ -650,6 +654,7 @@ describe('migration 0007_pools', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(pools()).toEqual([
@@ -807,6 +812,7 @@ describe('migration 0008_budgets', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(
@@ -972,6 +978,7 @@ describe('migration 0009_budget_cover', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1040,6 +1047,7 @@ describe('migration 0010_category_style', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1128,6 +1136,7 @@ describe('migration 0012_ious', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1280,6 +1289,7 @@ describe('migration 0011_income_categories', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1359,6 +1369,7 @@ describe('migration 0013_reminders', () => {
       '0014_entry_order_time',
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1576,6 +1587,7 @@ describe('migration 0015_entry_replacements', () => {
     expect(migrateFrom(repoMigrations)).toEqual([
       '0015_entry_replacements',
       '0016_buffer_currency',
+      '0017_implied_rates',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1656,7 +1668,10 @@ describe('migration 0016_buffer_currency', () => {
        FROM budgets WHERE user_id = 'u1' AND kind = 'buffer'`,
     ).run(at);
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0016_buffer_currency']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0016_buffer_currency',
+      '0017_implied_rates',
+    ]);
 
     expect(
       sql(
@@ -1702,5 +1717,34 @@ describe('migration 0016_buffer_currency', () => {
         ).run(),
       ).toThrow(/fixed/);
     });
+  });
+});
+
+describe('migration 0017_implied_rates', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+
+  it('keeps the rates of a database at 0016 and accepts implied ones', () => {
+    migrateFrom(migrationsUpTo('0016'));
+    insertUser('u1');
+    sql(
+      `INSERT INTO fx_rates (id, user_id, base, quote, rate, as_of, source, created_at)
+       VALUES ('r1', 'u1', 'USD', 'EUR', '0.92', '2026-03-10', 'manual', ?)`,
+    ).run(at);
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0017_implied_rates']);
+
+    expect(sql('SELECT id, rate, source FROM fx_rates').all()).toEqual([
+      { id: 'r1', rate: '0.92', source: 'manual' },
+    ]);
+    sql(
+      `INSERT INTO fx_rates (id, user_id, base, quote, rate, as_of, source, created_at)
+       VALUES ('r2', 'u1', 'USD', 'EUR', '0.9', '2026-03-11', 'implied', ?)`,
+    ).run(at);
+    expect(() =>
+      sql(
+        `INSERT INTO fx_rates (id, user_id, base, quote, rate, as_of, source, created_at)
+         VALUES ('r3', 'u1', 'USD', 'EUR', '0.9', '2026-03-12', 'guessed', ?)`,
+      ).run(at),
+    ).toThrow();
   });
 });

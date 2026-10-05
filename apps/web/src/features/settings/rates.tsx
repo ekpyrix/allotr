@@ -205,6 +205,9 @@ function RateItem({
         </span>{' '}
         <span className="text-sm text-text-muted">
           {t('settings.rates.from', { day })}
+          {rate.source === 'implied'
+            ? `, ${t('settings.rates.implied')}`
+            : null}
         </span>
       </span>
       <span className="flex flex-wrap items-center gap-2">

@@ -165,6 +165,29 @@ describe('convertInverse', () => {
   });
 });
 
+describe('an implied rate as the only rate', () => {
+  // A foreign payment leaves the rate it implied (docs/domain.md "Exchange
+  // rates"). Reporting with only that rate gives back the paid amount, in
+  // either direction, for any amount a person can pay.
+  it('converts the foreign amount to the paid amount and back, exactly', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1e9 }),
+        fc.integer({ min: 1, max: 1e9 }),
+        currencyArb,
+        currencyArb,
+        (paidMinor, foreignMinor, paidIn, foreignIn) => {
+          const paid = money(paidMinor, paidIn);
+          const foreign = money(foreignMinor, foreignIn);
+          const rate = impliedRate(paid, foreign);
+          expect(convert(paid, rate, foreignIn)).toEqual(foreign);
+          expect(convertInverse(foreign, rate, paidIn)).toEqual(paid);
+        },
+      ),
+    );
+  });
+});
+
 describe('impliedRate', () => {
   it.each([
     [money(10000, 'USD'), money(9150, 'EUR'), '0.915'],

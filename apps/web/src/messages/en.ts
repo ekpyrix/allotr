@@ -1071,6 +1071,7 @@ export const en = {
       listLabel: 'Rates, newest first',
       item: '1 {base} = {rate} {quote}',
       from: 'from {day}',
+      implied: 'implied by a payment',
       none: 'No rates yet.',
       announce: {
         saved: 'Saved: 1 {base} = {rate} {quote}.',
