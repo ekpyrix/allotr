@@ -522,6 +522,17 @@ cycle's payday after each paycheck, and the configured day stands in until
 they do. "Latest day of a window" is not built yet, as its meaning is still
 open.
 
+## Entry source
+
+Every entry records how it reached the ledger: `source` is `api`, `import`
+or `system`. For an `api` entry, `client` says which kind of client sent it:
+`web` for the app (it sends `X-Allotr-Client: web`), `chat` for a chat
+gateway (`chat`). A caller that sends neither, and every entry from before
+migration 0018, has no client and reads as plain `api`. Entries show the
+combined value (`web`, `chat`, `api`, `import`, `system`) as `source`. The
+header is the caller's own claim, shown for information; nothing depends on
+it, and it never changes what a caller may do.
+
 ## Edge cases
 
 | Case | Behaviour |
@@ -604,7 +615,7 @@ categories(id, user_id, name, kind[expense|income|transfer], parent_id,
 tags(id, user_id, name) · transaction_tags(user_id, transaction_id, tag_id)
 aliases(id, user_id, alias, target_type, target_id)
 transactions(id, user_id, kind, occurred_on, occurred_time, created_at,
-             source, category_id, note, reverses_id, idempotency_key,
+             source, client, category_id, note, reverses_id, idempotency_key,
              message_id, cycle_id, fx_rate_implied, switch_account_id,
              switch_budget_group)
 transaction_ranks(transaction_id, user_id, occurred_on, sort_rank,

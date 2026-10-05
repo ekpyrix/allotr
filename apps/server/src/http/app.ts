@@ -5,6 +5,7 @@ import { requestId } from 'hono/request-id';
 import { secureHeaders } from 'hono/secure-headers';
 import manifest from '../../package.json' with { type: 'json' };
 import { AUTH_BASE_PATH } from '../auth/auth.ts';
+import { CLIENT_HEADER, parseClient, withClient } from '../ledger/client.ts';
 import { createMutex } from '../mutex.ts';
 import { authHandler } from './auth-handler.ts';
 import { domainProblem, isDomainError } from './domain-errors.ts';
@@ -96,6 +97,9 @@ export function createApp(deps: AppDeps): OpenAPIHono<AppEnv> {
     resolveClientIp(createClientIpResolver(deps.config.trustedProxies)),
   );
   app.use('/v1/*', requireSameOrigin(deps.config.baseUrl));
+  app.use('/v1/*', (c, next) =>
+    withClient(parseClient(c.req.header(CLIENT_HEADER)), next),
+  );
 
   registerHealthRoutes(app, deps);
   app.on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, authHandler(deps.auth));

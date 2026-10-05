@@ -4879,6 +4879,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -12124,6 +12126,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -12556,6 +12560,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -14059,6 +14065,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -14857,6 +14865,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -15077,6 +15087,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -15510,6 +15522,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -15730,6 +15744,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -16489,6 +16505,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -22487,6 +22505,8 @@
                           "source": {
                             "type": "string",
                             "enum": [
+                              "web",
+                              "chat",
                               "api",
                               "import",
                               "system"
@@ -23335,6 +23355,8 @@
                     "source": {
                       "type": "string",
                       "enum": [
+                        "web",
+                        "chat",
                         "api",
                         "import",
                         "system"
@@ -23562,6 +23584,8 @@
                     "source": {
                       "type": "string",
                       "enum": [
+                        "web",
+                        "chat",
                         "api",
                         "import",
                         "system"
@@ -24086,6 +24110,8 @@
                     "source": {
                       "type": "string",
                       "enum": [
+                        "web",
+                        "chat",
                         "api",
                         "import",
                         "system"
@@ -24517,6 +24543,8 @@
                     "source": {
                       "type": "string",
                       "enum": [
+                        "web",
+                        "chat",
                         "api",
                         "import",
                         "system"
@@ -25042,6 +25070,8 @@
                     "source": {
                       "type": "string",
                       "enum": [
+                        "web",
+                        "chat",
                         "api",
                         "import",
                         "system"
@@ -25841,6 +25871,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -26061,6 +26093,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -26595,6 +26629,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
@@ -26815,6 +26851,8 @@
                         "source": {
                           "type": "string",
                           "enum": [
+                            "web",
+                            "chat",
                             "api",
                             "import",
                             "system"
