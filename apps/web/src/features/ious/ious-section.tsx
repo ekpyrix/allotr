@@ -1,6 +1,7 @@
 import {
   formatMoney,
   formatMoneyInput,
+  money,
   isLocalDate,
   localDate,
   type AccountView,
@@ -338,22 +339,53 @@ function LoanForm({
   );
 }
 
+/** The person's open IOUs the same way and in the same currency, oldest first. */
+function openWith(list: readonly IouView[], iou: IouView): IouView[] {
+  const person = iou.person.toLowerCase();
+  return list
+    .filter(
+      (other) =>
+        !other.settled &&
+        other.person.toLowerCase() === person &&
+        other.direction === iou.direction &&
+        other.outstanding.currency === iou.outstanding.currency,
+    )
+    .sort(
+      (a, b) =>
+        a.recordedOn.localeCompare(b.recordedOn) || a.id.localeCompare(b.id),
+    );
+}
+
 function RepayForm({
   iou,
+  siblings,
   accounts,
   locale,
   today,
   onDone,
   onBusyChange,
-}: Omit<FormProps, 'categories'> & { iou: IouView }) {
+}: Omit<FormProps, 'categories'> & {
+  iou: IouView;
+  siblings: readonly IouView[];
+}) {
   const currency = iou.outstanding.currency;
   const options = accounts.filter(
     (a) => !a.archived && a.currency === currency,
   );
-  const [accountId, setAccountId] = useState(options[0]?.id ?? '');
-  const [amount, setAmount] = useState(
-    formatMoneyInput(iou.outstanding, locale),
+  // With several open IOUs the payment goes to the person: the server settles
+  // the oldest first and the surplus moves on to the next.
+  const byPerson = siblings.length > 1;
+  const owed = money(
+    siblings.reduce((sum, s) => sum + s.outstanding.amountMinor, 0),
+    currency,
   );
+  const stillOwed = byPerson ? owed : iou.outstanding;
+  const newest = siblings.reduce(
+    (latest, s) => (s.recordedOn > latest ? s.recordedOn : latest),
+    iou.recordedOn,
+  );
+  const [accountId, setAccountId] = useState(options[0]?.id ?? '');
+  const [amount, setAmount] = useState(formatMoneyInput(stillOwed, locale));
   const [error, setError] = useState<AmountError>();
   const [occurredOn, setOccurredOn] = useState<string>(today);
   const [dateError, setDateError] = useState<DateError>();
@@ -368,16 +400,26 @@ function RepayForm({
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = parseBillAmount(amount, currency, locale);
-    const date = parseEntryDate(occurredOn, iou.recordedOn);
+    const date = parseEntryDate(occurredOn, byPerson ? newest : iou.recordedOn);
     setError(parsed.ok ? undefined : parsed.error);
     setDateError(date.ok ? undefined : date.error);
     if (!parsed.ok || !date.ok) return;
-    repay.mutate({
-      accountId,
-      settles: [{ iouId: iou.id, amount: parsed.amount }],
-      direction: iou.direction,
-      occurredOn: date.date,
-    });
+    repay.mutate(
+      byPerson
+        ? {
+            accountId,
+            person: iou.person,
+            amount: parsed.amount,
+            direction: iou.direction,
+            occurredOn: date.date,
+          }
+        : {
+            accountId,
+            settles: [{ iouId: iou.id, amount: parsed.amount }],
+            direction: iou.direction,
+            occurredOn: date.date,
+          },
+    );
   }
 
   return (
@@ -400,16 +442,23 @@ function RepayForm({
         currency={currency}
         locale={locale}
         error={error}
-        hint={t('budget.ious.stillOwed', {
-          amount: formatMoney(iou.outstanding, locale),
-        })}
+        hint={
+          byPerson
+            ? t('budget.ious.stillOwedAcross', {
+                amount: formatMoney(stillOwed, locale),
+                count: siblings.length,
+              })
+            : t('budget.ious.stillOwed', {
+                amount: formatMoney(stillOwed, locale),
+              })
+        }
         onChange={setAmount}
       />
       <EntryDate
         value={occurredOn}
         onChange={setOccurredOn}
         error={dateError}
-        notBefore={iou.recordedOn}
+        notBefore={byPerson ? newest : iou.recordedOn}
         locale={locale}
       />
       <FormError
@@ -901,7 +950,12 @@ export function IousSection({
         {open === null ? null : open.kind === 'loan' ? (
           <LoanForm {...shared} />
         ) : open.kind === 'repay' ? (
-          <RepayForm key={open.iou.id} iou={open.iou} {...shared} />
+          <RepayForm
+            key={open.iou.id}
+            iou={open.iou}
+            siblings={openWith(list.ious, open.iou)}
+            {...shared}
+          />
         ) : open.kind === 'writeoff' ? (
           <WriteOffForm
             key={open.iou.id}
