@@ -496,6 +496,15 @@ const positive = (a: bigint) => (a > 0n ? a : 0n);
 
 type Take = { source: CoverSource; amount: bigint; refilled: bigint };
 
+/** What of an expense line a refund has not yet taken back. */
+type Counted = {
+  budgetId: BudgetId | null;
+  /** The part that went past its budget, not yet refunded. */
+  overflow: bigint;
+  /** The whole line, less what was refunded. */
+  net: bigint;
+};
+
 /**
  * Folds the ledger into budget figures for every period up to the one that
  * holds `today`. Null when the view has no budgets.
@@ -555,6 +564,7 @@ export function foldBudgets(
   const spend: SpendLine[] = [];
   const refills: Refill[] = [];
   const takesBy = new Map<TransactionId, Take[]>();
+  const countedBy = new Map<TransactionId, Counted[]>();
   let carry = new Map<BudgetId, bigint>();
   let lines: BudgetPeriodLine[] = [];
   let order: CoverSource[] = [];
@@ -634,6 +644,30 @@ export function foldBudgets(
           restored.push({ source: take.source, amount: give });
         }
         refills.push({ returnId: ret.id, restored, toFree: rest });
+
+        // A refund also lowers what the entry counted as spent, latest line
+        // first. What went past the budget is taken back first, which is
+        // what the cover restored above, so the budget's own part only
+        // shrinks by the remainder.
+        let back = BigInt(ret.amount.amountMinor);
+        for (const counted of [
+          ...(countedBy.get(ret.against) ?? []),
+        ].reverse()) {
+          const give = min(back, counted.net);
+          if (give <= 0n) continue;
+          const past = min(give, counted.overflow);
+          counted.net -= give;
+          counted.overflow -= past;
+          back -= give;
+          const target =
+            counted.budgetId === null ? undefined : state.get(counted.budgetId);
+          if (target !== undefined) {
+            target.spent -= give;
+            target.overflow -= past;
+          } else if (counted.budgetId === null) {
+            unbudgeted = positive(unbudgeted - give);
+          }
+        }
         continue;
       }
 
@@ -706,6 +740,15 @@ export function foldBudgets(
 
       // A loan's cover is refilled by its own repayments only, never by a
       // refund of the expense share of the same entry.
+      if (!line.loan) {
+        const counted = countedBy.get(line.entryId) ?? [];
+        counted.push({
+          budgetId: budget === null ? null : budget.id,
+          overflow: line.amount - ownPart,
+          net: line.amount,
+        });
+        countedBy.set(line.entryId, counted);
+      }
       const takeKey = line.loan ? loanKey(line.entryId) : line.entryId;
       const list = takesBy.get(takeKey) ?? [];
       for (const t of taken) list.push({ ...t, refilled: 0n });
