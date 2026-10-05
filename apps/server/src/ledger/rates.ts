@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ExchangeRate } from '@allotr/core';
+import type { ExchangeRate, Transaction } from '@allotr/core';
 import {
   currencyCode,
   localDate,
@@ -17,6 +17,8 @@ import { userToday, type Db } from './store.ts';
 // Manual exchange rates (ADR 0010, FR-X2). They are only read when a figure
 // is converted to the default currency; entries never change with them.
 // One rate per pair and day: entering it again replaces the earlier value.
+// A foreign payment with no rate stored for its day leaves the rate it
+// implied, with the source `implied`; a manual rate for the day replaces it.
 
 type RateRow = {
   id: string;
@@ -45,7 +47,7 @@ function toView(row: RateRow): ExchangeRateView {
     quote: currencyCode(row.quote),
     rate: parseRate(row.rate),
     asOf: localDate(row.as_of),
-    source: 'manual',
+    source: row.source === 'implied' ? 'implied' : 'manual',
     createdAt: row.created_at,
   };
 }
@@ -133,9 +135,15 @@ export async function upsertRate(
   } else {
     await db
       .updateTable('fx_rates')
-      .set({ rate: row.rate, created_at: row.created_at })
+      .set({ rate: row.rate, source: 'manual', created_at: row.created_at })
       .where('user_id', '=', userId)
       .where('id', '=', existing.id)
+      .execute();
+    // Entries no longer lean on it: the day's rate is now the user's own.
+    await db
+      .deleteFrom('fx_rate_entries')
+      .where('user_id', '=', userId)
+      .where('rate_id', '=', existing.id)
       .execute();
   }
   return { rate: toView(row), replaced: existing !== undefined };
@@ -166,5 +174,118 @@ export async function deleteRate(
       'rate_not_found',
       'There is no such exchange rate.',
     );
+  }
+}
+
+/**
+ * Keeps the rate a foreign expense or income implied, when no rate between
+ * its two currencies is stored for its day (either way round). A stored
+ * rate is left alone, a manual one always wins, and the entry is noted
+ * against an implied one so undoing it can take the rate back.
+ */
+export async function recordImpliedRate(
+  db: Db,
+  userId: string,
+  transaction: Transaction,
+  now: Date,
+): Promise<void> {
+  if (
+    transaction.impliedRate === null ||
+    (transaction.kind !== 'expense' && transaction.kind !== 'income')
+  ) {
+    return;
+  }
+  // The exchange legs book what was given up positive and what came out
+  // negative, which is the direction the implied rate runs.
+  const legs = await db
+    .selectFrom('postings')
+    .innerJoin('accounts', (join) =>
+      join
+        .onRef('accounts.id', '=', 'postings.account_id')
+        .onRef('accounts.user_id', '=', 'postings.user_id'),
+    )
+    .select(['postings.amount_minor', 'postings.currency'])
+    .where('postings.user_id', '=', userId)
+    .where('postings.transaction_id', '=', transaction.id)
+    .where('accounts.system_role', '=', 'conversion')
+    .execute();
+  const from = legs.find((leg) => leg.amount_minor > 0);
+  const to = legs.find((leg) => leg.amount_minor < 0);
+  if (from === undefined || to === undefined) return;
+
+  const asOf = transaction.occurredOn;
+  const stored = await db
+    .selectFrom('fx_rates')
+    .select(['id', 'source'])
+    .where('user_id', '=', userId)
+    .where('as_of', '=', asOf)
+    .where((eb) =>
+      eb.or([
+        eb.and([eb('base', '=', from.currency), eb('quote', '=', to.currency)]),
+        eb.and([eb('base', '=', to.currency), eb('quote', '=', from.currency)]),
+      ]),
+    )
+    .executeTakeFirst();
+  if (stored?.source === 'manual') return;
+  let rateId = stored?.id;
+  if (rateId === undefined) {
+    rateId = randomUUID();
+    await db
+      .insertInto('fx_rates')
+      .values({
+        id: rateId,
+        user_id: userId,
+        base: from.currency,
+        quote: to.currency,
+        rate: transaction.impliedRate,
+        as_of: asOf,
+        source: 'implied',
+        created_at: now.toISOString(),
+      })
+      .execute();
+  }
+  await db
+    .insertInto('fx_rate_entries')
+    .values({
+      rate_id: rateId,
+      transaction_id: transaction.id,
+      user_id: userId,
+    })
+    .execute();
+}
+
+/**
+ * Takes back what an undone entry left: it no longer leans on an implied
+ * rate, and a rate no other entry implied goes with it.
+ */
+export async function releaseImpliedRate(
+  db: Db,
+  userId: string,
+  transactionId: string,
+): Promise<void> {
+  const rows = await db
+    .deleteFrom('fx_rate_entries')
+    .where('user_id', '=', userId)
+    .where('transaction_id', '=', transactionId)
+    .returning('rate_id')
+    .execute();
+  for (const { rate_id: rateId } of rows) {
+    await db
+      .deleteFrom('fx_rates')
+      .where('user_id', '=', userId)
+      .where('id', '=', rateId)
+      .where('source', '=', 'implied')
+      .where((eb) =>
+        eb.not(
+          eb.exists(
+            eb
+              .selectFrom('fx_rate_entries')
+              .select('rate_id')
+              .where('user_id', '=', userId)
+              .whereRef('rate_id', '=', 'fx_rates.id'),
+          ),
+        ),
+      )
+      .execute();
   }
 }
