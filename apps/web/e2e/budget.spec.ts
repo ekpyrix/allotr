@@ -118,6 +118,54 @@ test('adds a daily budget', async ({ page }) => {
   expect(added?.planned.amountMinor).toBe(5000);
 });
 
+test('adds budgets in a row, each on the category chosen, and deletes them', async ({
+  page,
+}) => {
+  await page.goto('/budget');
+  const budgets = page.getByRole('region', { name: 'Budgets' });
+  const add = async (category: string, name?: string) => {
+    await page.getByRole('button', { name: 'Add a budget' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a budget' });
+    await expect(dialog.getByLabel('Category')).toHaveValue('');
+    await dialog.getByLabel('Planned per period').fill('10');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(
+      dialog.getByText('Choose the category this budget counts.'),
+    ).toBeVisible();
+    await dialog.getByLabel('Category').selectOption({ label: category });
+    if (name !== undefined) await dialog.getByLabel('Name').fill(name);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog).toBeHidden();
+  };
+  await add('Health');
+  await add('Shopping', 'Treats');
+
+  const health = budgets.getByRole('listitem').filter({ hasText: 'Health' });
+  await expect(health).toContainText('Counts Health');
+  const treats = budgets.getByRole('listitem').filter({ hasText: 'Treats' });
+  await expect(treats).toContainText('Counts Shopping');
+  const targets = (await status(page)).budgets.filter(
+    (b) => b.name === 'Health' || b.name === 'Treats',
+  );
+  expect(targets).toHaveLength(2);
+
+  for (const name of ['Health', 'Treats']) {
+    await page.getByRole('button', { name: `Edit ${name}` }).click();
+    const dialog = page.getByRole('dialog', { name: `Edit ${name}` });
+    await expectAccessible(page);
+    await dialog.getByRole('button', { name: 'Delete this budget' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      budgets.getByRole('heading', { name, exact: true }),
+    ).toBeHidden();
+  }
+  expect(
+    (await status(page)).budgets.some(
+      (b) => b.name === 'Health' || b.name === 'Treats',
+    ),
+  ).toBe(false);
+});
+
 test('moves a cover source with the keyboard', async ({ page }) => {
   await page.goto('/budget');
   const handle = page.getByRole('button', { name: /^Buffer, position 2 of/u });

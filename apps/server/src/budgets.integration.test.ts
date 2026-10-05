@@ -345,6 +345,86 @@ describe('changing budgets', () => {
   });
 });
 
+describe('deleting a budget', () => {
+  it('removes one started this period as if it was never planned', async () => {
+    const created = await h.alice.post('/v1/budgets', {
+      name: 'Mistake',
+      target: { kind: 'category', categoryId: ids.Other },
+      amount: usd(1_000),
+    });
+    expect(created.status).toBe(201);
+    const mistake = find(created.body as Status, 'Mistake');
+    const response = await h.alice.delete(
+      `/v1/budgets/${mistake.id}?mode=delete`,
+    );
+    expect(response.status).toBe(204);
+    expect((await status()).budgets.some((b) => b.name === 'Mistake')).toBe(
+      false,
+    );
+    const rows = await h.db
+      .selectFrom('budgets')
+      .select('id')
+      .where('id', '=', mistake.id)
+      .execute();
+    expect(rows).toEqual([]);
+    // The category is free for a budget again.
+    const again = await h.alice.post('/v1/budgets', {
+      name: 'Mistake',
+      target: { kind: 'category', categoryId: ids.Other },
+      amount: usd(1_000),
+    });
+    expect(again.status).toBe(201);
+    const next = find(again.body as Status, 'Mistake');
+    expect(
+      (await h.alice.delete(`/v1/budgets/${next.id}?mode=delete`)).status,
+    ).toBe(204);
+    expect(
+      (await h.alice.delete(`/v1/budgets/${next.id}?mode=delete`)).status,
+    ).toBe(404);
+  });
+
+  it('refuses the Buffer and a budget a closed period used', async () => {
+    const buffer = (await status()).budgets.find(
+      (b) => b.target.kind === 'buffer',
+    );
+    const refused = await h.alice.delete(
+      `/v1/budgets/${buffer?.id ?? ''}?mode=delete`,
+    );
+    expect(refused.status).toBe(409);
+    expect(code(refused)).toBe('budget_fixed');
+
+    // A budget from the period before this one (the trigger fixes started_on,
+    // so it is inserted that way).
+    const alice = await h.db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', 'alice@example.test')
+      .executeTakeFirstOrThrow();
+    const budget = { id: 'old-plan' };
+    await h.db
+      .insertInto('budgets')
+      .values({
+        id: budget.id,
+        user_id: alice.id,
+        name: 'Old plan',
+        kind: 'category',
+        category_id: ids.Other ?? '',
+        tag_id: null,
+        mode: 'daily',
+        leftover: 'free',
+        started_on: '2026-02-10',
+        created_at: '2026-02-10T00:00:00Z',
+        updated_at: '2026-02-10T00:00:00Z',
+      })
+      .execute();
+    const used = await h.alice.delete(`/v1/budgets/${budget.id}?mode=delete`);
+    expect(used.status).toBe(409);
+    expect(code(used)).toBe('budget_used');
+    // It can still be ended.
+    expect((await h.alice.delete(`/v1/budgets/${budget.id}`)).status).toBe(204);
+  });
+});
+
 describe('validation', () => {
   it('needs the default currency and an amount above zero', async () => {
     const euro = await h.alice.post('/v1/budgets', {

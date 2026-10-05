@@ -124,6 +124,9 @@ export const en = {
       editTitle: 'Edit {name}',
       edit: 'Edit {name}',
       category: 'Category',
+      chooseCategory: 'Choose a category',
+      categoryRequired: 'Choose the category this budget counts.',
+      counts: 'Counts {category}',
       name: 'Name',
       amount: 'Planned per period',
       amountHint:
@@ -143,6 +146,7 @@ export const en = {
         'The Buffer is always set aside and carried over. It only holds money; nothing is spent from it directly.',
       save: 'Save',
       end: 'End this budget',
+      delete: 'Delete this budget',
       dailyTitle: 'Daily',
       dailyIntro: 'Inside the daily number.',
       setAsideTitle: 'Set aside',

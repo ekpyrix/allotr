@@ -174,6 +174,12 @@ corrects past and present figures through the same function.
   periods; periods that are over keep theirs. A budget counts from the period
   that holds the day it was started, until the period that holds the day it
   was ended.
+- **Ending and deleting.** Ending a budget keeps it counting for the current
+  period. A budget started in the current period can instead be **deleted**:
+  it is removed as if it was never planned, along with the cover overrides
+  and cover-order slot that named it. Once a closed period has used a budget
+  it can only be ended, so past figures never change. The Buffer can do
+  neither.
 - **Leftover.** At the end of a period a budget's leftover either returns to
   free money (default for daily budgets) or carries into the next period
   (default for set-aside budgets). A carried leftover is never below zero: an

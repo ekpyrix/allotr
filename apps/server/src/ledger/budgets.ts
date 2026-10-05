@@ -33,6 +33,7 @@ import {
   type CreateBudgetBody,
   type LocalDate,
   type Money,
+  type RemoveBudgetQuery,
   type UpdateBudgetBody,
 } from '@allotr/shared';
 import type { Kysely } from 'kysely';
@@ -462,18 +463,21 @@ export async function updateBudget(
 
 /**
  * Ends a budget from the current period on; its earlier periods keep their
- * figures, and this period's spending counts as unbudgeted again.
+ * figures, and this period's spending counts as unbudgeted again. With
+ * `delete`, a budget started in the current period is removed instead, as if
+ * it was never planned; once a closed period used it, that is refused.
  */
 export async function endBudget(
   db: Kysely<DB>,
   userId: string,
   id: string,
   now: Date,
+  mode: RemoveBudgetQuery['mode'] = 'end',
 ): Promise<void> {
   await db.transaction().execute(async (trx) => {
     const row = await trx
       .selectFrom('budgets')
-      .select(['kind', 'ended_on'])
+      .select(['kind', 'ended_on', 'started_on'])
       .where('user_id', '=', userId)
       .where('id', '=', id)
       .executeTakeFirst();
@@ -483,16 +487,65 @@ export async function endBudget(
     }
     const today = await userToday(trx, userId, now);
     const { view } = await loadView(trx, userId);
+    const periodStart = budgetPeriodOn(view, today, today).from;
+    if (mode === 'delete') {
+      if (row.started_on < periodStart) {
+        throw problem(
+          409,
+          'budget_used',
+          'A closed period used this budget, so it can only be ended.',
+        );
+      }
+      await removeBudget(trx, userId, id);
+      return;
+    }
     await trx
       .updateTable('budgets')
       .set({
-        ended_on: addDays(budgetPeriodOn(view, today, today).from, -1),
+        ended_on: addDays(periodStart, -1),
         updated_at: now.toISOString(),
       })
       .where('user_id', '=', userId)
       .where('id', '=', id)
       .execute();
   });
+}
+
+// Nothing else points at a budget but the cover overrides and the stored cover
+// order, which name it by ID without a foreign key.
+async function removeBudget(
+  trx: Db,
+  userId: string,
+  id: string,
+): Promise<void> {
+  await trx
+    .deleteFrom('cover_overrides')
+    .where('user_id', '=', userId)
+    .where('source', '=', id)
+    .execute();
+  const stored = await trx
+    .selectFrom('user_settings')
+    .select('value')
+    .where('user_id', '=', userId)
+    .where('key', '=', coverOrderKey)
+    .executeTakeFirst();
+  if (stored !== undefined) {
+    await trx
+      .updateTable('user_settings')
+      .set({
+        value: JSON.stringify(
+          parseOrder(stored.value).filter((source) => source !== id),
+        ),
+      })
+      .where('user_id', '=', userId)
+      .where('key', '=', coverOrderKey)
+      .execute();
+  }
+  await trx
+    .deleteFrom('budgets')
+    .where('user_id', '=', userId)
+    .where('id', '=', id)
+    .execute();
 }
 
 // ---- Cover: order, per-entry overrides, the list and the preview ----------
