@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { budgetPeriodRuleSchema, dailyModeSchema } from './budgets.ts';
 import { categoryColourSchema, categoryIconSchema } from './category-style.ts';
 import { localDateSchema, localTimeSchema } from './dates.ts';
 import { iouDirectionSchema } from './ious.ts';
@@ -37,6 +38,10 @@ const settingsSchema = z.strictObject({
   paydayDay: z.int().min(1).max(31).optional(),
   paydayOverride: localDateSchema.nullable().optional(),
   iouWriteOffAfterDays: z.int().min(1).max(3650).optional(),
+  /** What the budgets need to come out as they did (ADR 0021). */
+  countSavingsInDaily: z.boolean().optional(),
+  budgetPeriod: budgetPeriodRuleSchema.optional(),
+  dailyMode: dailyModeSchema.optional(),
 });
 
 const categorySchema = z.strictObject({
@@ -66,7 +71,91 @@ const accountSchema = z.strictObject({
     )
     .max(bundleLimits.items)
     .optional(),
+  /**
+   * Later moves into a pool, in order, by pool name (ADR 0021). Without
+   * one, the account is in the pool of its budget group, which the
+   * switches above change.
+   */
+  poolMoves: z
+    .array(z.strictObject({ on: localDateSchema, pool: nameSchema }))
+    .max(bundleLimits.items)
+    .optional(),
 });
+
+/**
+ * A pool. The two default pools (Budget, Savings) exist in every ledger, so
+ * a pool with `defaultFor` stands for one of them and sets its name and
+ * switch; the others are created.
+ */
+const poolSchema = z
+  .strictObject({
+    name: nameSchema,
+    kind: z.enum(['spending', 'savings']),
+    /** Defaults to true for spending pools and false for savings pools. */
+    countsTowardDaily: z.boolean().optional(),
+    archived: z.boolean().optional(),
+    defaultFor: budgetGroupSchema.optional(),
+  })
+  .refine(
+    (pool) =>
+      pool.defaultFor === undefined ||
+      (pool.kind === (pool.defaultFor === 'on' ? 'spending' : 'savings') &&
+        pool.archived !== true &&
+        (pool.defaultFor === 'off' || pool.countsTowardDaily !== false)),
+    {
+      error:
+        'The Budget pool is for spending and always counts; the Savings pool is for savings; neither is archived',
+      path: ['defaultFor'],
+    },
+  );
+
+const budgetTargetSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('category'), category: categoryPathSchema }),
+  z.strictObject({ kind: z.literal('tag'), tag: nameSchema }),
+  /** The Buffer every ledger has; at most one. */
+  z.strictObject({ kind: z.literal('buffer') }),
+]);
+
+/** What a budget plans from a day on, in the default currency. */
+const budgetAmountSchema = z.strictObject({
+  from: localDateSchema,
+  amount: moneySchema.refine((m) => m.amountMinor >= 0, {
+    error: 'The amount cannot be negative',
+  }),
+});
+
+const budgetSchema = z
+  .strictObject({
+    name: nameSchema,
+    target: budgetTargetSchema,
+    /** Defaults to daily; the Buffer is always set aside. */
+    mode: z.enum(['daily', 'set-aside']).optional(),
+    /** Defaults to free for a daily budget, carry for a set-aside one. */
+    leftover: z.enum(['free', 'carry']).optional(),
+    /** Defaults to the earliest day in the bundle. */
+    startedOn: localDateSchema.optional(),
+    /** Set for a budget that ended; its earlier periods keep their figures. */
+    endedOn: localDateSchema.optional(),
+    /** In force from each day on; the first one is the planned amount. */
+    amounts: z.array(budgetAmountSchema).min(1).max(bundleLimits.items),
+  })
+  .refine(
+    (b) =>
+      b.target.kind !== 'buffer' ||
+      ((b.mode ?? 'set-aside') === 'set-aside' &&
+        (b.leftover ?? 'carry') === 'carry' &&
+        b.endedOn === undefined),
+    {
+      error: 'The Buffer is always set aside, carries over and is not ended',
+      path: ['target'],
+    },
+  );
+
+/** Free money, or a budget by name. */
+const coverSourceSchema = z.union([
+  z.literal('free'),
+  z.strictObject({ budget: nameSchema }),
+]);
 
 const rateItemSchema = z
   .strictObject({
@@ -231,6 +320,16 @@ const reconciliationSchema = z.strictObject({
   adjustment: refSchema.optional(),
 });
 
+/** How one expense's shortfall is covered, instead of the cover order. */
+const coverOverrideSchema = z.strictObject({
+  /** The `ref` of the expense or write-off. */
+  transaction: refSchema,
+  covers: z
+    .array(z.strictObject({ source: coverSourceSchema, amount: positiveMoney }))
+    .min(1)
+    .max(bundleLimits.items),
+});
+
 function list<T extends z.ZodType>(item: T, max: number = bundleLimits.items) {
   return z.array(item).max(max).default([]);
 }
@@ -245,6 +344,11 @@ export const bundleSchema = z.strictObject({
   transactions: list(transactionSchema, bundleLimits.transactions),
   bills: list(billSchema),
   reconciliations: list(reconciliationSchema, bundleLimits.transactions),
+  pools: list(poolSchema),
+  budgets: list(budgetSchema),
+  /** The cover order, first source first; left out, core's default applies. */
+  coverOrder: z.array(coverSourceSchema).max(bundleLimits.items).optional(),
+  coverOverrides: list(coverOverrideSchema, bundleLimits.transactions),
 });
 export type Bundle = z.infer<typeof bundleSchema>;
 export type BundleTransaction = Bundle['transactions'][number];
@@ -268,5 +372,8 @@ export const importResultSchema = z.object({
   reconciliations: z.int(),
   /** IOUs created from `iou` entries, one per person. */
   ious: z.int().default(0),
+  pools: z.int().default(0),
+  budgets: z.int().default(0),
+  coverOverrides: z.int().default(0),
 });
 export type ImportResult = z.infer<typeof importResultSchema>;

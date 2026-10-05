@@ -361,6 +361,142 @@ export function resolveBundle(
     }
   });
 
+  // Pools and budgets are named once, as the database's unique indexes
+  // have it, and the places that name them must exist.
+  const pools = new Set<string>();
+  const defaults = new Set<string>();
+  bundle.pools.forEach((pool, index) => {
+    const at = ['pools', index] as const;
+    const key = nameKey(pool.name);
+    if (pools.has(key)) {
+      report([...at, 'name'], `The pool "${pool.name}" is listed twice.`);
+    }
+    pools.add(key);
+    if (pool.defaultFor !== undefined) {
+      if (defaults.has(pool.defaultFor)) {
+        report([...at, 'defaultFor'], 'Each default pool is listed once.');
+      }
+      defaults.add(pool.defaultFor);
+    }
+  });
+  bundle.accounts.forEach((account, index) => {
+    account.poolMoves?.forEach((move, m) => {
+      if (!pools.has(nameKey(move.pool))) {
+        report(
+          ['accounts', index, 'poolMoves', m, 'pool'],
+          `There is no pool "${move.pool}" in the bundle.`,
+        );
+      }
+    });
+  });
+
+  const budgets = new Set<string>();
+  const budgetTargets = new Set<string>();
+  let buffers = 0;
+  bundle.budgets.forEach((budget, index) => {
+    const at = ['budgets', index] as const;
+    const key = nameKey(budget.name);
+    // An ended budget gives its name up.
+    if (budget.endedOn === undefined) {
+      if (budgets.has(key)) {
+        report([...at, 'name'], `The budget "${budget.name}" is listed twice.`);
+      }
+      budgets.add(key);
+    }
+    const { target } = budget;
+    if (target.kind === 'category') {
+      checkCategory([...at, 'target', 'category'], target.category, 'expense');
+    }
+    if (target.kind === 'buffer') {
+      buffers += 1;
+      if (buffers > 1) {
+        report([...at, 'target'], 'A ledger has one Buffer.');
+      }
+    } else if (budget.endedOn === undefined) {
+      const used = `${target.kind}:${
+        target.kind === 'category'
+          ? categoryKey(target.category)
+          : nameKey(target.tag)
+      }`;
+      if (budgetTargets.has(used)) {
+        report(
+          [...at, 'target'],
+          'Only one budget in use can plan for the same category or tag.',
+        );
+      }
+      budgetTargets.add(used);
+    }
+    const days = new Set<string>();
+    budget.amounts.forEach((amount, a) => {
+      if (days.has(amount.from)) {
+        report(
+          [...at, 'amounts', a, 'from'],
+          `The budget has two amounts from ${amount.from}.`,
+        );
+      }
+      days.add(amount.from);
+    });
+  });
+  const checkSource = (
+    path: readonly PropertyKey[],
+    source: 'free' | { budget: string },
+  ) => {
+    if (source === 'free') return;
+    // The cover works with budgets in use.
+    const found = bundle.budgets.some(
+      (b) =>
+        b.endedOn === undefined && nameKey(b.name) === nameKey(source.budget),
+    );
+    if (!found) {
+      report([...path, 'budget'], `There is no budget "${source.budget}".`);
+    }
+  };
+  const ordered = new Set<string>();
+  bundle.coverOrder?.forEach((source, index) => {
+    checkSource(['coverOrder', index], source);
+    const key = source === 'free' ? 'free' : `b:${nameKey(source.budget)}`;
+    if (ordered.has(key)) {
+      report(['coverOrder', index], 'A source appears twice.');
+    }
+    ordered.add(key);
+  });
+  const refKinds = new Map<string, string>();
+  for (const t of bundle.transactions) {
+    if (t.ref !== undefined) refKinds.set(t.ref, t.kind);
+  }
+  const overridden = new Set<string>();
+  bundle.coverOverrides.forEach((override, index) => {
+    const at = ['coverOverrides', index] as const;
+    const kind = refKinds.get(override.transaction);
+    if (kind === undefined) {
+      report(
+        [...at, 'transaction'],
+        `No entry has the ref "${override.transaction}".`,
+      );
+    } else if (
+      kind !== 'expense' &&
+      kind !== 'write_off' &&
+      kind !== 'iou' &&
+      kind !== 'iou_write_off'
+    ) {
+      report([...at, 'transaction'], 'Only spending has a shortfall to cover.');
+    }
+    if (overridden.has(override.transaction)) {
+      report([...at, 'transaction'], 'An entry is listed once.');
+    }
+    overridden.add(override.transaction);
+    const seen = new Set<string>();
+    override.covers.forEach((cover, c) => {
+      checkSource([...at, 'covers', c, 'source'], cover.source);
+      const key =
+        cover.source === 'free' ? 'free' : nameKey(cover.source.budget);
+      if (seen.has(key)) {
+        report([...at, 'covers', c, 'source'], 'A source appears twice.');
+      }
+      seen.add(key);
+    });
+  });
+
   return {
     errors,
     existingIds: categories.existingIds,

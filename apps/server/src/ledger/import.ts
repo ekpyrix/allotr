@@ -19,6 +19,12 @@ import {
 import { insertAccount } from './accounts.ts';
 import { insertBill, insertBillPayment } from './bills.ts';
 import { insertCategory } from './categories.ts';
+import {
+  importBudgets,
+  importCover,
+  importPoolMoves,
+  importPools,
+} from './import-budgets.ts';
 import { createIouIn, recordRepaymentIn, writeOffIouIn } from './ious.ts';
 import {
   categoryKey,
@@ -60,6 +66,19 @@ async function isEmpty(db: Db, userId: string): Promise<boolean> {
     first('transactions'),
     first('bills'),
     first('fx_rates'),
+    // The pools and the Buffer every user starts with do not count.
+    db
+      .selectFrom('pools')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('default_for', 'is', null)
+      .executeTakeFirst(),
+    db
+      .selectFrom('budgets')
+      .select('id')
+      .where('user_id', '=', userId)
+      .where('kind', '<>', 'buffer')
+      .executeTakeFirst(),
   ]);
   return found.every((row) => row === undefined);
 }
@@ -297,7 +316,7 @@ export async function importBundle(
       throw new RequestProblem(
         409,
         'ledger_not_empty',
-        'Import fills a new ledger. This one already has accounts, entries, bills or rates.',
+        'Import fills a new ledger. This one already has accounts, entries, bills, rates, pools or budgets.',
       );
     }
     const resolved = resolveBundle(
@@ -371,6 +390,8 @@ export async function importBundle(
       accountIds.set(nameKey(account.name), id);
       if (archived === true) toArchive.set(index, id);
     }
+
+    const poolIds = await importPools(trx, userId, bundle, now);
 
     for (const [index, rate] of bundle.rates.entries()) {
       await at(`/rates/${String(index)}`, () =>
@@ -514,6 +535,35 @@ export async function importBundle(
       }
     }
 
+    await importPoolMoves(trx, userId, bundle, accountIds, poolIds, now);
+
+    const { inUse } = await importBudgets(
+      trx,
+      userId,
+      bundle,
+      {
+        category,
+        firstDay,
+        tag: async (name) => {
+          const known = tagIds.get(nameKey(name));
+          if (known !== undefined) return known;
+          const tag = await createTag(trx, userId, name, now);
+          tagIds.set(nameKey(name), tag.id);
+          tagsCreated += 1;
+          return tag.id;
+        },
+      },
+      now,
+    );
+    const coverOverrides = await importCover(
+      trx,
+      userId,
+      bundle,
+      inUse,
+      refs,
+      now,
+    );
+
     let billPayments = 0;
     for (const [index, bill] of bundle.bills.entries()) {
       const id = await at(`/bills/${String(index)}`, () =>
@@ -593,6 +643,9 @@ export async function importBundle(
       billPayments,
       reconciliations: bundle.reconciliations.length,
       ious,
+      pools: bundle.pools.length,
+      budgets: bundle.budgets.length,
+      coverOverrides,
     };
   });
 }

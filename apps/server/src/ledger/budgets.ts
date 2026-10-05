@@ -314,7 +314,11 @@ async function requireTarget(
   }
 }
 
-function checkAmount(amount: Money, defaultCurrency: string, buffer: boolean) {
+export function checkAmount(
+  amount: Money,
+  defaultCurrency: string,
+  buffer: boolean,
+) {
   if (amount.currency !== defaultCurrency) {
     throw problem(
       400,

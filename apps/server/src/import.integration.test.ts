@@ -319,6 +319,9 @@ describe('refused imports write nothing', () => {
       billPayments: 0,
       reconciliations: 0,
       ious: 0,
+      pools: 0,
+      budgets: 0,
+      coverOverrides: 0,
     });
     expect(body(await h.bob.get('/v1/settings/ledger')).paydayDay).toBe(12);
     // Setup would only ask again for what the bundle set.
@@ -621,6 +624,9 @@ describe('an imported bundle matches the same entries posted one by one', () => 
       billPayments: 1,
       reconciliations: 0,
       ious: 0,
+      pools: 0,
+      budgets: 0,
+      coverOverrides: 0,
     });
   });
 

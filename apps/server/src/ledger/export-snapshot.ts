@@ -12,7 +12,9 @@ import {
   type Money,
 } from '@allotr/shared';
 import { sql } from 'kysely';
+import type { BudgetSetup } from '@allotr/core';
 import type { Db } from './store.ts';
+import { loadBudgetSetup } from './budgets.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadChart, loadLedger } from './store.ts';
 import { loadRates } from './rates.ts';
@@ -85,6 +87,21 @@ export type SnapshotReconciliation = Readonly<{
   adjustmentId: string | null;
 }>;
 
+export type SnapshotPool = Readonly<{
+  id: string;
+  name: string;
+  kind: 'spending' | 'savings';
+  countsTowardDaily: boolean;
+  defaultFor: 'on' | 'off' | null;
+  archived: boolean;
+}>;
+
+export type SnapshotPoolMove = Readonly<{
+  accountId: string;
+  poolId: string;
+  on: LocalDate;
+}>;
+
 export type Snapshot = Readonly<{
   settings: LedgerSettingsView;
   /** User accounts, oldest first. */
@@ -101,6 +118,14 @@ export type Snapshot = Readonly<{
   bills: readonly SnapshotBill[];
   reconciliations: readonly SnapshotReconciliation[];
   ious: readonly SnapshotIou[];
+  /** In their order, archived ones too. */
+  pools: readonly SnapshotPool[];
+  /** Moves between pools, in the order they took effect. */
+  poolMoves: readonly SnapshotPoolMove[];
+  /** Budgets, cover order and per-entry cover as core reads them. */
+  budgetSetup: BudgetSetup;
+  /** Tag names by tag id, used or not. */
+  tagNames: ReadonlyMap<string, string>;
 }>;
 
 export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
@@ -117,6 +142,10 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     reconciliationRows,
     iouRows,
     settlementRows,
+    poolRows,
+    moveRows,
+    budgetSetup,
+    tagNameRows,
   ] = await Promise.all([
     db
       .selectFrom('accounts')
@@ -223,6 +252,34 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
       .where('user_id', '=', userId)
       .orderBy('created_at')
       .orderBy('id')
+      .execute(),
+    db
+      .selectFrom('pools')
+      .select([
+        'id',
+        'name',
+        'kind',
+        'counts_toward_daily',
+        'default_for',
+        'archived',
+      ])
+      .where('user_id', '=', userId)
+      .orderBy('position')
+      .orderBy('id')
+      .execute(),
+    db
+      .selectFrom('pool_moves')
+      .select(['account_id', 'pool_id', 'effective_on'])
+      .where('user_id', '=', userId)
+      .orderBy('effective_on')
+      .orderBy('created_at')
+      .orderBy('id')
+      .execute(),
+    loadBudgetSetup(db, userId),
+    db
+      .selectFrom('tags')
+      .select(['id', 'name'])
+      .where('user_id', '=', userId)
       .execute(),
   ]);
 
@@ -337,5 +394,23 @@ export async function loadSnapshot(db: Db, userId: string): Promise<Snapshot> {
     bills,
     reconciliations,
     ious,
+    pools: poolRows.map((row): SnapshotPool => ({
+      id: row.id,
+      name: row.name,
+      kind: row.kind === 'savings' ? 'savings' : 'spending',
+      countsTowardDaily: row.counts_toward_daily === 1,
+      defaultFor:
+        row.default_for === 'on' || row.default_for === 'off'
+          ? row.default_for
+          : null,
+      archived: row.archived === 1,
+    })),
+    poolMoves: moveRows.map((row) => ({
+      accountId: row.account_id,
+      poolId: row.pool_id,
+      on: row.effective_on as LocalDate,
+    })),
+    budgetSetup,
+    tagNames: new Map(tagNameRows.map((row) => [row.id, row.name])),
   };
 }

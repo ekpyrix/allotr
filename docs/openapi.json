@@ -38601,6 +38601,24 @@
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 3650
+                      },
+                      "countSavingsInDaily": {
+                        "type": "boolean"
+                      },
+                      "budgetPeriod": {
+                        "type": "string",
+                        "enum": [
+                          "cycle",
+                          "month"
+                        ]
+                      },
+                      "dailyMode": {
+                        "type": "string",
+                        "enum": [
+                          "free",
+                          "pool-minus-bills",
+                          "daily-budgets"
+                        ]
                       }
                     },
                     "additionalProperties": false
@@ -38781,6 +38799,29 @@
                             "required": [
                               "on",
                               "budgetGroup"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 1000
+                        },
+                        "poolMoves": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "on": {
+                                "type": "string",
+                                "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "pool": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "on",
+                              "pool"
                             ],
                             "additionalProperties": false
                           },
@@ -39685,6 +39726,288 @@
                     },
                     "maxItems": 50000,
                     "default": []
+                  },
+                  "pools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "spending",
+                            "savings"
+                          ]
+                        },
+                        "countsTowardDaily": {
+                          "type": "boolean"
+                        },
+                        "archived": {
+                          "type": "boolean"
+                        },
+                        "defaultFor": {
+                          "type": "string",
+                          "enum": [
+                            "on",
+                            "off"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 1000,
+                    "default": []
+                  },
+                  "budgets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "target": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "category"
+                                  ]
+                                },
+                                "category": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 201
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "category"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "tag"
+                                  ]
+                                },
+                                "tag": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                }
+                              },
+                              "required": [
+                                "kind",
+                                "tag"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "type": "string",
+                                  "enum": [
+                                    "buffer"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "kind"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "daily",
+                            "set-aside"
+                          ]
+                        },
+                        "leftover": {
+                          "type": "string",
+                          "enum": [
+                            "free",
+                            "carry"
+                          ]
+                        },
+                        "startedOn": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "endedOn": {
+                          "type": "string",
+                          "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                        },
+                        "amounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "from": {
+                                "type": "string",
+                                "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "from",
+                              "amount"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 1000
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "target",
+                        "amounts"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 1000,
+                    "default": []
+                  },
+                  "coverOrder": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "free"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "budget": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            }
+                          },
+                          "required": [
+                            "budget"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "maxItems": 1000
+                  },
+                  "coverOverrides": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "transaction": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "covers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "source": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "free"
+                                    ]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "budget": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 100
+                                      }
+                                    },
+                                    "required": [
+                                      "budget"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              "amount": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "source",
+                              "amount"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 1000
+                        }
+                      },
+                      "required": [
+                        "transaction",
+                        "covers"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 50000,
+                    "default": []
                   }
                 },
                 "required": [
@@ -39732,6 +40055,18 @@
                       "type": "integer"
                     },
                     "ious": {
+                      "type": "integer",
+                      "default": 0
+                    },
+                    "pools": {
+                      "type": "integer",
+                      "default": 0
+                    },
+                    "budgets": {
+                      "type": "integer",
+                      "default": 0
+                    },
+                    "coverOverrides": {
                       "type": "integer",
                       "default": 0
                     }
@@ -40113,6 +40448,24 @@
                           "type": "integer",
                           "minimum": 1,
                           "maximum": 3650
+                        },
+                        "countSavingsInDaily": {
+                          "type": "boolean"
+                        },
+                        "budgetPeriod": {
+                          "type": "string",
+                          "enum": [
+                            "cycle",
+                            "month"
+                          ]
+                        },
+                        "dailyMode": {
+                          "type": "string",
+                          "enum": [
+                            "free",
+                            "pool-minus-bills",
+                            "daily-budgets"
+                          ]
                         }
                       },
                       "additionalProperties": false
@@ -40293,6 +40646,29 @@
                               "required": [
                                 "on",
                                 "budgetGroup"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "maxItems": 1000
+                          },
+                          "poolMoves": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "on": {
+                                  "type": "string",
+                                  "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                                },
+                                "pool": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                }
+                              },
+                              "required": [
+                                "on",
+                                "pool"
                               ],
                               "additionalProperties": false
                             },
@@ -41192,6 +41568,288 @@
                           "on",
                           "stated",
                           "computed"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 50000,
+                      "default": []
+                    },
+                    "pools": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "spending",
+                              "savings"
+                            ]
+                          },
+                          "countsTowardDaily": {
+                            "type": "boolean"
+                          },
+                          "archived": {
+                            "type": "boolean"
+                          },
+                          "defaultFor": {
+                            "type": "string",
+                            "enum": [
+                              "on",
+                              "off"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "kind"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 1000,
+                      "default": []
+                    },
+                    "budgets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "target": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "category"
+                                    ]
+                                  },
+                                  "category": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 201
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "category"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "tag"
+                                    ]
+                                  },
+                                  "tag": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 100
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "tag"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "buffer"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "kind"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "daily",
+                              "set-aside"
+                            ]
+                          },
+                          "leftover": {
+                            "type": "string",
+                            "enum": [
+                              "free",
+                              "carry"
+                            ]
+                          },
+                          "startedOn": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "endedOn": {
+                            "type": "string",
+                            "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                          },
+                          "amounts": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "from": {
+                                  "type": "string",
+                                  "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})$"
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "from",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1,
+                            "maxItems": 1000
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "target",
+                          "amounts"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 1000,
+                      "default": []
+                    },
+                    "coverOrder": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "free"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "budget": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "budget"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "maxItems": 1000
+                    },
+                    "coverOverrides": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transaction": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "covers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "enum": [
+                                        "free"
+                                      ]
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "budget": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 100
+                                        }
+                                      },
+                                      "required": [
+                                        "budget"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "amount": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "source",
+                                "amount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 1,
+                            "maxItems": 1000
+                          }
+                        },
+                        "required": [
+                          "transaction",
+                          "covers"
                         ],
                         "additionalProperties": false
                       },
