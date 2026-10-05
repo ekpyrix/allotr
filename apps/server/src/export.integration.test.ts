@@ -56,10 +56,12 @@ async function download(client: TestClient, format: string) {
 }
 
 async function figures(client: TestClient) {
-  const [accounts, today, cycles] = await Promise.all([
+  const [accounts, today, cycles, budgets, pools] = await Promise.all([
     client.get('/v1/accounts?includeArchived=true'),
     client.get('/v1/today'),
     client.get('/v1/cycles'),
+    client.get('/v1/budgets'),
+    client.get('/v1/pools?includeArchived=true'),
   ]);
   // Accounts made in the same instant list in id order, and the export
   // renames an archived account whose name was reused.
@@ -78,6 +80,8 @@ async function figures(client: TestClient) {
     totals,
     today: today.body,
     cycles: cycles.body,
+    budgets: budgets.body,
+    pools: pools.body,
   });
 }
 

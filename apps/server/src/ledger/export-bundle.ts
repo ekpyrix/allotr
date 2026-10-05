@@ -1,4 +1,4 @@
-import type { Transaction } from '@allotr/core';
+import type { CoverRequest, Transaction } from '@allotr/core';
 import {
   addDays,
   money,
@@ -39,21 +39,34 @@ export function liveEntries(entries: readonly Transaction[]): Transaction[] {
 export function bundleAccountNames(
   accounts: Snapshot['accounts'],
 ): Map<string, string> {
+  return distinctNames(
+    [
+      ...accounts.filter((a) => !a.archived),
+      ...accounts.filter((a) => a.archived),
+    ],
+    'archived',
+  );
+}
+
+// Names as the bundle writes them: those in use come first and keep theirs,
+// and one that gave its name up (archived, ended) gets a suffix when the
+// name is taken.
+function distinctNames(
+  ordered: readonly { id: string; name: string }[],
+  suffixWord: string,
+): Map<string, string> {
   const names = new Map<string, string>();
   const taken = new Set<string>();
   const key = (name: string) => name.trim().toLowerCase();
-  const ordered = [
-    ...accounts.filter((a) => !a.archived),
-    ...accounts.filter((a) => a.archived),
-  ];
-  for (const account of ordered) {
-    let name = account.name;
+  for (const item of ordered) {
+    let name = item.name;
     for (let n = 1; taken.has(key(name)); n += 1) {
-      const suffix = n === 1 ? ' (archived)' : ` (archived ${String(n)})`;
-      name = `${account.name.slice(0, maxName - suffix.length).trimEnd()}${suffix}`;
+      const suffix =
+        n === 1 ? ` (${suffixWord})` : ` (${suffixWord} ${String(n)})`;
+      name = `${item.name.slice(0, maxName - suffix.length).trimEnd()}${suffix}`;
     }
     taken.add(key(name));
-    names.set(account.id, name);
+    names.set(item.id, name);
   }
   return names;
 }
@@ -108,6 +121,34 @@ export function toBundle(snapshot: Snapshot): Bundle {
   };
   const isUser = (id: string) => accountNames.has(id);
   const path = categoryPaths(snapshot.categories);
+  const poolNames = distinctNames(
+    [
+      ...snapshot.pools.filter((p) => !p.archived),
+      ...snapshot.pools.filter((p) => p.archived),
+    ],
+    'archived',
+  );
+  const { budgets: planned } = snapshot.budgetSetup;
+  const coverOrder = snapshot.budgetSetup.coverOrder ?? [];
+  const coverOverrides: ReadonlyMap<string, readonly CoverRequest[]> =
+    snapshot.budgetSetup.coverOverrides ?? new Map();
+  const budgetNames = distinctNames(
+    [
+      ...planned.filter((b) => b.endedOn === null),
+      ...planned.filter((b) => b.endedOn !== null),
+    ],
+    'ended',
+  );
+  // The cover works with budgets in use; ended ones are not named.
+  const inUse = new Set<string>(
+    planned.filter((b) => b.endedOn === null).map((b) => b.id),
+  );
+  const coverSource = (source: string) =>
+    source === 'free'
+      ? ('free' as const)
+      : inUse.has(source)
+        ? { budget: budgetNames.get(source) ?? '' }
+        : undefined;
 
   const live = liveEntries(snapshot.entries);
   const liveIds = new Set<string>(live.map((t) => t.id));
@@ -124,6 +165,18 @@ export function toBundle(snapshot: Snapshot): Bundle {
     if (r.adjustmentId !== null && liveIds.has(r.adjustmentId)) {
       linked.add(r.adjustmentId);
     }
+  }
+
+  const overrides: Bundle['coverOverrides'] = [];
+  for (const [entryId, covers] of coverOverrides) {
+    if (!liveIds.has(entryId)) continue;
+    const kept = covers.flatMap((cover) => {
+      const source = coverSource(cover.source);
+      return source === undefined ? [] : [{ source, amount: cover.amount }];
+    });
+    if (kept.length === 0) continue;
+    linked.add(entryId);
+    overrides.push({ transaction: entryId, covers: kept });
   }
 
   // IOUs whose entry stands, by the entry that lent or borrowed, and the
@@ -162,6 +215,12 @@ export function toBundle(snapshot: Snapshot): Bundle {
       },
     ]),
   );
+  for (const move of snapshot.poolMoves) {
+    const account = accounts.get(move.accountId);
+    const pool = poolNames.get(move.poolId);
+    if (account === undefined || pool === undefined) continue;
+    account.poolMoves = [...(account.poolMoves ?? []), { on: move.on, pool }];
+  }
 
   const transactions: BundleTransaction[] = [];
   for (const entry of live) {
@@ -368,6 +427,44 @@ export function toBundle(snapshot: Snapshot): Bundle {
       : {}),
   }));
 
+  const pools = snapshot.pools.map((pool) => ({
+    name: poolNames.get(pool.id) ?? pool.name,
+    kind: pool.kind,
+    countsTowardDaily: pool.countsTowardDaily,
+    ...(pool.archived ? { archived: true } : {}),
+    ...(pool.defaultFor === null ? {} : { defaultFor: pool.defaultFor }),
+  }));
+
+  const budgets = planned.flatMap((budget): Bundle['budgets'] => {
+    const { target } = budget;
+    const tag =
+      target.kind === 'tag' ? snapshot.tagNames.get(target.tagId) : '';
+    if (tag === undefined) return [];
+    return [
+      {
+        name: budgetNames.get(budget.id) ?? budget.name,
+        target:
+          target.kind === 'category'
+            ? { kind: 'category', category: path(target.categoryId) }
+            : target.kind === 'tag'
+              ? { kind: 'tag', tag: tag }
+              : { kind: 'buffer' },
+        mode: budget.mode,
+        leftover: budget.leftover,
+        startedOn: budget.startedOn,
+        ...(budget.endedOn === null ? {} : { endedOn: budget.endedOn }),
+        amounts: budget.amounts.map((a) => ({
+          from: a.from,
+          amount: a.amount,
+        })),
+      },
+    ];
+  });
+  const order = coverOrder.flatMap((source) => {
+    const named = coverSource(source);
+    return named === undefined ? [] : [named];
+  });
+
   const { settings } = snapshot;
   return {
     format: 'allotr.bundle',
@@ -380,6 +477,9 @@ export function toBundle(snapshot: Snapshot): Bundle {
       paydayDay: settings.paydayDay,
       paydayOverride: settings.paydayOverride,
       iouWriteOffAfterDays: settings.iouWriteOffAfterDays,
+      countSavingsInDaily: settings.countSavingsInDaily,
+      budgetPeriod: settings.budgetPeriod,
+      dailyMode: settings.dailyMode,
     },
     categories,
     accounts: [...accounts.values()],
@@ -392,6 +492,10 @@ export function toBundle(snapshot: Snapshot): Bundle {
     transactions,
     bills,
     reconciliations,
+    pools,
+    budgets,
+    ...(order.length === 0 ? {} : { coverOrder: order }),
+    coverOverrides: overrides,
   };
 }
 

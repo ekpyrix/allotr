@@ -133,6 +133,90 @@ describe('bundleSchema', () => {
     }
   });
 
+  it('accepts pools, budgets and cover, and refuses nonsense in them', () => {
+    const setup = {
+      settings: {
+        ...full.settings,
+        dailyMode: 'daily-budgets',
+        budgetPeriod: 'month',
+        countSavingsInDaily: true,
+      },
+      pools: [
+        { name: 'Budget', kind: 'spending', defaultFor: 'on' },
+        { name: 'Savings', kind: 'savings', defaultFor: 'off' },
+        { name: 'Trips', kind: 'savings', archived: true },
+      ],
+      accounts: [
+        {
+          name: 'Wallet',
+          currency: 'EUR',
+          poolMoves: [{ on: '2026-03-10', pool: 'Trips' }],
+        },
+      ],
+      budgets: [
+        {
+          name: 'Food',
+          target: { kind: 'category', category: 'Food' },
+          amounts: [{ from: '2026-03-01', amount: eur(30_000) }],
+        },
+        {
+          name: 'Buffer',
+          target: { kind: 'buffer' },
+          amounts: [{ from: '2026-03-01', amount: eur(0) }],
+        },
+      ],
+      coverOrder: ['free', { budget: 'Buffer' }],
+      coverOverrides: [
+        {
+          transaction: 'rent-mar',
+          covers: [{ source: { budget: 'Food' }, amount: eur(500) }],
+        },
+      ],
+    };
+    const ok = bundleSchema.safeParse({ ...full, ...setup });
+    expect(ok.success, JSON.stringify(ok.error?.issues)).toBe(true);
+    const budget = setup.budgets[0];
+    for (const bad of [
+      { pools: [{ name: 'Budget', kind: 'savings', defaultFor: 'on' }] },
+      {
+        pools: [
+          {
+            name: 'Budget',
+            kind: 'spending',
+            defaultFor: 'on',
+            countsTowardDaily: false,
+          },
+        ],
+      },
+      { budgets: [{ ...budget, amounts: [] }] },
+      {
+        budgets: [
+          { ...budget, amounts: [{ from: '2026-03-01', amount: eur(-1) }] },
+        ],
+      },
+      {
+        budgets: [
+          {
+            name: 'Buffer',
+            target: { kind: 'buffer' },
+            mode: 'daily',
+            amounts: budget?.amounts,
+          },
+        ],
+      },
+      { budgets: [{ ...budget, target: { kind: 'tag', category: 'Food' } }] },
+      { coverOrder: ['budget:Food'] },
+      { coverOverrides: [{ transaction: 'x', covers: [] }] },
+      {
+        coverOverrides: [
+          { transaction: 'x', covers: [{ source: 'free', amount: eur(0) }] },
+        ],
+      },
+    ]) {
+      expect(bundleSchema.safeParse({ ...full, ...bad }).success).toBe(false);
+    }
+  });
+
   it('accepts a bundle with only the header', () => {
     expect(
       bundleSchema.parse({ format: 'allotr.bundle', version: 1 }),

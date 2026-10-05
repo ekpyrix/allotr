@@ -342,8 +342,25 @@ kinds: `iou` (`direction`, `account`, `people: [{ref?, person, amount,
 dueOn?}]`, and `ownShare: {amount, category}` for a split bill), `iou_payment`
 (`account`, `settles: [{iou, amount}]`) and `iou_write_off` (`iou`,
 `category`), where `iou` is the `ref` of a person line of an earlier entry.
-Settings may carry `iouWriteOffAfterDays`. A bundle without them is still
-valid.
+Settings may carry `iouWriteOffAfterDays`.
+
+The budget setup (ADR 0021) is additive within version 1, so a bundle
+without it is still valid and an older server refuses a bundle that has it
+(unknown fields). `settings` may also carry `countSavingsInDaily`,
+`budgetPeriod` and `dailyMode`. `pools: [{name, kind, countsTowardDaily?,
+archived?, defaultFor?}]` lists the pools; `defaultFor: "on"|"off"` stands
+for the Budget or Savings pool every ledger starts with, which the bundle
+renames or switches rather than creates. An account's `poolMoves: [{on,
+pool}]` are its later moves, by pool name, applied after its switches.
+`budgets: [{name, target, mode?, leftover?, startedOn?, endedOn?,
+amounts}]` have a `target` of `{kind: "category", category}`, `{kind: "tag",
+tag}` or `{kind: "buffer"}`, and `amounts: [{from, amount}]` in the default
+currency; a bundle with a Buffer replaces the one a new ledger has, so its
+start and amounts are the bundle's. `coverOrder` lists `"free"` and
+`{budget: name}`, and `coverOverrides: [{transaction, covers: [{source,
+amount}]}]` names the `ref` of a spending entry. Budget and cover names are
+those of budgets in use. Pools, budgets and the cover are refused on a ledger
+that already has any of its own (`ledger_not_empty`).
 Unknown fields are refused. Other apps' exports are converted to this
 bundle rather than imported directly.
 
@@ -417,12 +434,14 @@ interactive terminal.
   undone entries and the entries an edit replaced are left out with their
   undos, which leaves every balance and every day's figure as it was. An
   entry on a merged category is filed under the one it was merged into; an
-  archived account whose name was reused becomes `"<name> (archived)"`; a
+  archived account, pool or ended budget whose name was reused becomes
+  `"<name> (archived)"` or `"<name> (ended)"`; a
   `/` in a category name becomes `∕`; a bill payment for a day the bill is
   no longer due on is left out. Entries keep their time of day (`time`)
   and, within each day, the user's order. Lost on the way: undo history
   and `amended` markers, when entries were recorded, unused tags, category
-  order and default accounts, and the start of a ledger that was not itself
+  order and default accounts, cover that names a budget that has ended, and
+  the start of a ledger that was not itself
   imported.
   A ledger over the import limits exports but does not import back.
 - `csv`: one row per posting, every entry including undos, RFC 4180:
