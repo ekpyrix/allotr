@@ -200,7 +200,7 @@ corrects past and present figures through the same function.
   when read, like any amount in another currency.
 - **Overspending.** A budget never goes below zero. What its own budget
   could not pay is covered (see Cover and refill); `spent` still counts the
-  whole entry and `overflow` is the part that went past.
+  whole entry, less any refund, and `overflow` is the part that went past.
 - **Free money** = `available − Σ held`, where `held` is what each set-aside
   budget has left, floored at zero, and `available` is counted accounts less
   unpaid reserved bills.
@@ -311,8 +311,13 @@ the cover order each time it is read; it is never stored, and no money moves.
   create money.
 - **Refill.** Money coming back against an entry (a refund, an IOU
   repayment, see IOUs) restores what that entry's cover took from budgets, in
-  reverse order, never more than was taken; the rest goes to free money. An
-  undone entry is simply gone: neither it nor its cover counts.
+  reverse order, never more than was taken; the rest goes to free money. A
+  refund also lowers the `spent` of the budget the entry counted for, never
+  below what the entry cost: a $30 grocery entry refunded $10 shows $20
+  spent. What went past the budget (`overflow`) is taken back first, so the
+  budget's own part only shrinks once that is gone. Spent plus refunds is the
+  net expense. An undone entry is simply gone: neither it nor its cover
+  counts.
 - **Preview.** Before saving, the entry sheet asks what an entry would take
   (`POST /v1/budgets/cover-preview`). Cover that reaches a set-aside budget or
   the Buffer, or is uncovered, is shown in a warning colour and needs a second

@@ -401,6 +401,58 @@ describe('cover properties', () => {
     );
   });
 
+  it('keeps spent plus refunds equal to the net expense', () => {
+    fc.assert(
+      fc.property(
+        spendsArb,
+        budgetsArb,
+        orderArb,
+        picksArb,
+        // Within the first period, so every refund lands where its entry did.
+        fc.nat(26).map((n) => addDays(localDate('2026-03-05'), n)),
+        (spends, specs, order, picks, today) => {
+          const returns = returnsOf(spends, picks);
+          const v = make(spends, budgetsOf(specs), {
+            coverOrder: order,
+            returns,
+          });
+          const fold = budgetFold(v, today);
+          // Each entry is one line: a refund takes back what is left of it,
+          // and one dated before the entry finds nothing yet.
+          const net = new Map<string, bigint>();
+          const dated = new Map<string, string>();
+          for (const line of fold?.spend ?? []) {
+            net.set(line.entryId, line.amount);
+            dated.set(line.entryId, line.date);
+          }
+          let refunded = 0n;
+          const later = [...returns]
+            .filter((r) => r.on <= today)
+            .sort(
+              (a, b) =>
+                a.on.localeCompare(b.on) ||
+                a.at.localeCompare(b.at) ||
+                a.id.localeCompare(b.id),
+            );
+          for (const r of later) {
+            const left = net.get(r.against) ?? 0n;
+            if ((dated.get(r.against) ?? '9') > r.on) continue;
+            const give = BigInt(r.amount.amountMinor);
+            const taken = give < left ? give : left;
+            net.set(r.against, left - taken);
+            refunded += taken;
+          }
+          const gross = (fold?.spend ?? []).reduce((s, l) => s + l.amount, 0n);
+          const spent = (fold?.lines ?? []).reduce((s, l) => s + l.spent, 0n);
+          expect(spent + (fold?.unbudgeted ?? 0n) + refunded).toBe(gross);
+          for (const l of fold?.lines ?? []) {
+            expect(l.overflow >= 0n && l.overflow <= l.spent).toBe(true);
+          }
+        },
+      ),
+    );
+  });
+
   it('gives the same numbers when replayed, whatever order the ledger arrives in', () => {
     fc.assert(
       fc.property(

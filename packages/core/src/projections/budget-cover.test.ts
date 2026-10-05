@@ -375,6 +375,69 @@ describe('refill', () => {
   });
 });
 
+describe("a refund and the budget's spent", () => {
+  const budgets = [foodBudget, travelBudget, bufferBudget];
+  const refundOf = (entry: Transaction, amountMinor: number) => ({
+    returns: [
+      {
+        id: 'r1',
+        against: entry.id,
+        amount: usd(amountMinor),
+        on: day('2026-03-08'),
+        at: '2026-03-08T10:00:00.000Z',
+      },
+    ],
+  });
+  const foodLine = (v: LedgerView) => {
+    const line = budgetStatus(v, today).lines.find(
+      (l) => l.budget.id === 'food',
+    );
+    if (line === undefined) throw new Error('no food line');
+    return line;
+  };
+
+  it('counts only what stayed spent', () => {
+    const groceries = spend('2026-03-06', 3_000, food);
+    const line = foodLine(
+      make([groceries], budgets, refundOf(groceries, 1_000)),
+    );
+    expect(line.spent).toEqual(usd(2_000));
+    expect(line.left).toEqual(usd(8_000));
+  });
+
+  it('takes back the overflow first, which the cover restored', () => {
+    const big = spend('2026-03-06', 70_000, food);
+    const v = make([big], budgets, refundOf(big, 35_000));
+    const line = foodLine(v);
+    expect(line.spent).toEqual(usd(35_000));
+    // $100 was paid by Food itself; the $600 past it shrinks by $350.
+    expect(line.overflow).toEqual(usd(25_000));
+    expect(line.left).toEqual(usd(0));
+  });
+
+  it('gives the budget back its own part once the overflow is refunded', () => {
+    const big = spend('2026-03-06', 12_000, food);
+    const line = foodLine(make([big], budgets, refundOf(big, 5_000)));
+    expect(line.spent).toEqual(usd(7_000));
+    expect(line.overflow).toEqual(usd(0));
+    expect(line.left).toEqual(usd(3_000));
+  });
+
+  it('never refunds more than the entry counted', () => {
+    const groceries = spend('2026-03-06', 3_000, food);
+    const line = foodLine(
+      make([groceries], budgets, refundOf(groceries, 9_000)),
+    );
+    expect(line.spent).toEqual(usd(0));
+  });
+
+  it('lowers spending counted by no budget', () => {
+    const rent = spend('2026-03-05', 95_000, other);
+    const v = make([rent], budgets, refundOf(rent, 5_000));
+    expect(budgetStatus(v, today).unbudgeted).toEqual(usd(90_000));
+  });
+});
+
 describe('the daily number', () => {
   it('counts what a Buffer cover paid as held money, not spending today', () => {
     const rent = spend('2026-03-05', 95_000, other);
