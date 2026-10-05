@@ -4,6 +4,7 @@ import {
   dailyModeSchema,
   entryTimesSchema,
   payYourselfFirstSchema,
+  localDateIn,
   localDateSchema,
   paydayRuleSchema,
   type BudgetPeriodRule,
@@ -213,6 +214,56 @@ function canonicalTimeZone(timeZone: string): string {
   }
 }
 
+/**
+ * Keeps the Buffer's empty seed amount in the user's default currency and its
+ * start on their local day. Sign-up seeds both before setup chooses them. Once
+ * an amount is planned the Buffer is left alone: a later amount in another
+ * currency is converted when read, and a start that has figures behind it does
+ * not move.
+ */
+async function syncBuffer(db: Db, userId: string): Promise<void> {
+  const [user, buffer, amounts] = await Promise.all([
+    db
+      .selectFrom('users')
+      .select(['tz', 'default_currency'])
+      .where('id', '=', userId)
+      .executeTakeFirstOrThrow(),
+    db
+      .selectFrom('budgets')
+      .select(['id', 'started_on', 'created_at'])
+      .where('user_id', '=', userId)
+      .where('kind', '=', 'buffer')
+      .executeTakeFirst(),
+    db
+      .selectFrom('budget_amounts as a')
+      .innerJoin('budgets as b', 'b.id', 'a.budget_id')
+      .select(['a.id', 'a.effective_on', 'a.amount_minor', 'a.currency'])
+      .where('a.user_id', '=', userId)
+      .where('b.kind', '=', 'buffer')
+      .execute(),
+  ]);
+  const [seed, ...planned] = amounts;
+  if (
+    buffer === undefined ||
+    seed === undefined ||
+    planned.length > 0 ||
+    seed.amount_minor !== 0
+  ) {
+    return;
+  }
+  const startedOn = localDateIn(new Date(buffer.created_at), user.tz);
+  await db
+    .updateTable('budget_amounts')
+    .set({ currency: user.default_currency, effective_on: startedOn })
+    .where('id', '=', seed.id)
+    .execute();
+  await db
+    .updateTable('budgets')
+    .set({ started_on: startedOn })
+    .where('id', '=', buffer.id)
+    .execute();
+}
+
 /** Writes a settings change inside the caller's database transaction. */
 export async function applyLedgerSettings(
   db: Db,
@@ -290,6 +341,7 @@ export async function applyLedgerSettings(
       .set({ ...user, updated_at: at })
       .where('id', '=', userId)
       .execute();
+    await syncBuffer(db, userId);
   }
   for (const { key, value } of settings) {
     await db

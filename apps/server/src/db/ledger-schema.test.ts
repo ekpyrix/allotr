@@ -12,7 +12,7 @@ import { openSqlite } from './sqlite.ts';
 // 0007_pools.sql, 0008_budgets.sql, 0009_budget_cover.sql,
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
 // 0013_reminders.sql, 0014_entry_order_time.sql and
-// 0015_entry_replacements.sql against real SQLite.
+// 0015_entry_replacements.sql and 0016_buffer_currency.sql against real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -58,6 +58,7 @@ function migrationsUpTo(last: string): string {
     '0012_ious.sql',
     '0013_reminders.sql',
     '0014_entry_order_time.sql',
+    '0015_entry_replacements.sql',
   ]) {
     copyFileSync(join(repoMigrations, name), join(target, name));
     if (name.startsWith(last)) break;
@@ -461,6 +462,7 @@ describe('migration 0005_reconciliations', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     insertReconciliation('r1');
@@ -556,6 +558,7 @@ describe('migration 0006_bill_prices', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(
@@ -646,6 +649,7 @@ describe('migration 0007_pools', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(pools()).toEqual([
@@ -802,6 +806,7 @@ describe('migration 0008_budgets', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(
@@ -966,6 +971,7 @@ describe('migration 0009_budget_cover', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1033,6 +1039,7 @@ describe('migration 0010_category_style', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1120,6 +1127,7 @@ describe('migration 0012_ious', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1271,6 +1279,7 @@ describe('migration 0011_income_categories', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1349,6 +1358,7 @@ describe('migration 0013_reminders', () => {
       '0013_reminders',
       '0014_entry_order_time',
       '0015_entry_replacements',
+      '0016_buffer_currency',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1563,7 +1573,10 @@ describe('migration 0015_entry_replacements', () => {
     entry('d2', 'u1', '2026-01-05T13:00:00.000Z');
     entry('d3', 'u1', '2026-01-05T13:00:00.000Z');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0015_entry_replacements']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0015_entry_replacements',
+      '0016_buffer_currency',
+    ]);
     expect(pairs()).toEqual(['a>a2']);
   });
 
@@ -1609,6 +1622,85 @@ describe('migration 0015_entry_replacements', () => {
       replace('t1', 't2');
       sqlite.prepare("DELETE FROM users WHERE id = 'u1'").run();
       expect(count('SELECT count(*) FROM transaction_replacements')).toBe(0);
+    });
+  });
+});
+
+describe('migration 0016_buffer_currency', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+  const amountRows = () =>
+    sql(
+      'SELECT budget_id, amount_minor, currency FROM budget_amounts ORDER BY id',
+    ).all();
+
+  it('moves the empty amounts of a database at 0015 to the default currency', () => {
+    migrateFrom(migrationsUpTo('0015'));
+    insertUser('u1');
+    insertUser('u2');
+    // u1 chose EUR in setup after signing up in USD; u2 never changed it.
+    sql("UPDATE users SET default_currency = 'EUR' WHERE id = 'u1'").run();
+    sql(
+      `INSERT INTO tags (id, user_id, name, created_at, updated_at)
+       VALUES ('g1', 'u1', 'trip', ?, ?)`,
+    ).run(at, at);
+    sql(
+      `INSERT INTO budgets
+         (id, user_id, name, kind, tag_id, mode, leftover, started_on, created_at, updated_at)
+       VALUES ('plan', 'u1', 'Rent', 'tag', 'g1', 'daily', 'free', '2026-01-01', ?, ?)`,
+    ).run(at, at);
+    // A planned amount in the old currency is kept; it converts when read.
+    sql(
+      `INSERT INTO budget_amounts
+         (id, user_id, budget_id, effective_on, amount_minor, currency, created_at)
+       SELECT 'planned', 'u1', id, '2026-01-02', 50000, 'USD', ?
+       FROM budgets WHERE user_id = 'u1' AND kind = 'buffer'`,
+    ).run(at);
+
+    expect(migrateFrom(repoMigrations)).toEqual(['0016_buffer_currency']);
+
+    expect(
+      sql(
+        `SELECT user_id, amount_minor, currency FROM budget_amounts
+         ORDER BY user_id, amount_minor`,
+      ).all(),
+    ).toEqual([
+      { user_id: 'u1', amount_minor: 0, currency: 'EUR' },
+      { user_id: 'u1', amount_minor: 50000, currency: 'USD' },
+      { user_id: 'u2', amount_minor: 0, currency: 'USD' },
+    ]);
+    expect(amountRows()).toHaveLength(3);
+  });
+
+  describe('on a fresh database', () => {
+    beforeEach(() => {
+      migrateFrom(repoMigrations);
+      insertUser('u1');
+    });
+
+    it('lets the Buffer start move, and nothing else about it', () => {
+      sql(
+        "UPDATE budgets SET started_on = '2026-01-02' WHERE kind = 'buffer'",
+      ).run();
+      expect(() =>
+        sql("UPDATE budgets SET user_id = 'u2' WHERE kind = 'buffer'").run(),
+      ).toThrow(/fixed/);
+    });
+
+    it('still fixes the start of any other budget', () => {
+      sql(
+        `INSERT INTO tags (id, user_id, name, created_at, updated_at)
+         VALUES ('g1', 'u1', 'trip', ?, ?)`,
+      ).run(at, at);
+      sql(
+        `INSERT INTO budgets
+           (id, user_id, name, kind, tag_id, mode, leftover, started_on, created_at, updated_at)
+         VALUES ('plan', 'u1', 'Trips', 'tag', 'g1', 'daily', 'free', '2026-01-01', ?, ?)`,
+      ).run(at, at);
+      expect(() =>
+        sql(
+          "UPDATE budgets SET started_on = '2026-01-02' WHERE id = 'plan'",
+        ).run(),
+      ).toThrow(/fixed/);
     });
   });
 });
