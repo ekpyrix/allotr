@@ -26,12 +26,14 @@ import { useBusy } from '@/features/settings/use-busy';
 import {
   budgetQueryKeys,
   createBudget,
+  deleteBudget,
   endBudget,
   updateBudget,
 } from '@/lib/budgets';
 import { describeProblem } from '@/lib/problem';
 import { invalidate } from '@/lib/settings';
 import { t } from '@/messages/t';
+import { budgetName, canDelete, countedCategory } from './budget-draft.ts';
 import { MoneyInput } from './money-input.tsx';
 import { spentShare } from './share.ts';
 
@@ -114,6 +116,7 @@ function BudgetForm({
   budget,
   categories,
   taken,
+  periodFrom,
   currency,
   locale,
   onDone,
@@ -123,6 +126,8 @@ function BudgetForm({
   categories: readonly CategoryView[];
   /** Categories that already have a budget in use. */
   taken: ReadonlySet<string>;
+  /** First day of the current period. */
+  periodFrom: string;
   currency: CurrencyCode;
   locale: string;
   onDone: () => void;
@@ -133,7 +138,9 @@ function BudgetForm({
   );
   const isBuffer = budget?.target.kind === 'buffer';
   const [name, setName] = useState(budget?.name ?? '');
-  const [categoryId, setCategoryId] = useState(options[0]?.id ?? '');
+  // Never preselected: a budget counts what the user chose, nothing else.
+  const [categoryId, setCategoryId] = useState('');
+  const [categoryError, setCategoryError] = useState(false);
   const [amount, setAmount] = useState(
     budget === undefined ? '' : formatMoneyInput(budget.amount, locale),
   );
@@ -151,9 +158,11 @@ function BudgetForm({
       updateBudget(args.id, args.body),
   );
   const end = useBudgetChange(endBudget);
-  const pending = create.isPending || update.isPending || end.isPending;
+  const remove = useBudgetChange(deleteBudget);
+  const pending =
+    create.isPending || update.isPending || end.isPending || remove.isPending;
   useBusy(pending, onBusyChange);
-  const failure = create.error ?? update.error ?? end.error;
+  const failure = create.error ?? update.error ?? end.error ?? remove.error;
   const problem = failure === null ? null : describeProblem(failure);
   const nameId = useId();
 
@@ -169,13 +178,13 @@ function BudgetForm({
     setAmountError(undefined);
     const planned = parsed.ok ? parsed.amount : money(0, currency);
     if (budget === undefined) {
-      if (categoryId === '') return;
+      if (categoryId === '') {
+        setCategoryError(true);
+        return;
+      }
       create.mutate(
         {
-          name:
-            name.trim() === ''
-              ? (categories.find((c) => c.id === categoryId)?.name ?? '')
-              : name.trim(),
+          name: budgetName(name, categoryId, categories),
           target: { kind: 'category', categoryId },
           amount: planned,
           mode,
@@ -199,7 +208,12 @@ function BudgetForm({
   return (
     <form className="mt-4 grid gap-4" noValidate onSubmit={submit}>
       {budget === undefined ? (
-        <FieldControl label={t('budget.budgets.category')}>
+        <FieldControl
+          label={t('budget.budgets.category')}
+          error={
+            categoryError ? t('budget.budgets.categoryRequired') : undefined
+          }
+        >
           {(props) => (
             <select
               {...props}
@@ -208,8 +222,10 @@ function BudgetForm({
               className={selectClass}
               onChange={(e) => {
                 setCategoryId(e.currentTarget.value);
+                setCategoryError(false);
               }}
             >
+              <option value="">{t('budget.budgets.chooseCategory')}</option>
               {options.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.label}
@@ -229,6 +245,11 @@ function BudgetForm({
           value={name}
           maxLength={100}
           autoComplete="off"
+          placeholder={
+            budget === undefined
+              ? budgetName('', categoryId, categories)
+              : undefined
+          }
           onChange={(e) => {
             setName(e.currentTarget.value);
           }}
@@ -260,16 +281,30 @@ function BudgetForm({
           {pending ? t('settings.saving') : t('budget.budgets.save')}
         </Button>
         {budget !== undefined && !isBuffer ? (
-          <Button
-            type="button"
-            variant="danger-tonal"
-            disabled={pending}
-            onClick={() => {
-              end.mutate(budget.id, { onSuccess: onDone });
-            }}
-          >
-            {t('budget.budgets.end')}
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            {canDelete(budget, periodFrom) ? (
+              <Button
+                type="button"
+                variant="danger-tonal"
+                disabled={pending}
+                onClick={() => {
+                  remove.mutate(budget.id, { onSuccess: onDone });
+                }}
+              >
+                {t('budget.budgets.delete')}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="danger-tonal"
+              disabled={pending}
+              onClick={() => {
+                end.mutate(budget.id, { onSuccess: onDone });
+              }}
+            >
+              {t('budget.budgets.end')}
+            </Button>
+          </div>
         ) : null}
       </div>
     </form>
@@ -278,20 +313,28 @@ function BudgetForm({
 
 function BudgetRow({
   budget,
+  categories,
   locale,
   onOpen,
 }: {
   budget: BudgetView;
+  categories: readonly CategoryView[];
   locale: string;
   onOpen: () => void;
 }) {
   const share = spentShare(budget.spent, budget.left);
   const over = budget.overflow.amountMinor > 0;
+  const counted = countedCategory(budget.target, categories);
   return (
     <li className="border-b border-outline-variant py-3 last:border-b-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="text-body font-medium wrap-anywhere">{budget.name}</h4>
+          {counted === undefined ? null : (
+            <p className="text-caption text-text-muted">
+              {t('budget.budgets.counts', { category: counted })}
+            </p>
+          )}
           <p className="text-caption text-text-muted">
             {t('budget.budgets.spentOfPlanned', {
               spent: formatMoney(budget.spent, locale),
@@ -342,12 +385,14 @@ function Group({
   title,
   intro,
   budgets,
+  categories,
   locale,
   onOpen,
 }: {
   title: string;
   intro: string;
   budgets: readonly BudgetView[];
+  categories: readonly CategoryView[];
   locale: string;
   onOpen: (budget: BudgetView) => void;
 }) {
@@ -364,6 +409,7 @@ function Group({
           <BudgetRow
             key={b.id}
             budget={b}
+            categories={categories}
             locale={locale}
             onOpen={() => {
               onOpen(b);
@@ -423,6 +469,7 @@ export function BudgetsSection({
         title={t('budget.budgets.dailyTitle')}
         intro={t('budget.budgets.dailyIntro')}
         budgets={daily}
+        categories={categories}
         locale={locale}
         onOpen={(budget) => {
           setOpen({ kind: 'edit', budget });
@@ -432,6 +479,7 @@ export function BudgetsSection({
         title={t('budget.budgets.setAsideTitle')}
         intro={t('budget.budgets.setAsideIntro')}
         budgets={setAside}
+        categories={categories}
         locale={locale}
         onOpen={(budget) => {
           setOpen({ kind: 'edit', budget });
@@ -460,6 +508,7 @@ export function BudgetsSection({
             budget={open.kind === 'edit' ? open.budget : undefined}
             categories={categories}
             taken={taken}
+            periodFrom={status.period.from}
             currency={currency}
             locale={locale}
             onBusyChange={setBusy}

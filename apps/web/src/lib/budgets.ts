@@ -50,6 +50,14 @@ export function endBudget(id: string) {
   return call(endpoints.endBudget, { params: { id } });
 }
 
+/** Removes a budget started this period, as if it was never planned. */
+export function deleteBudget(id: string) {
+  return call(endpoints.endBudget, {
+    params: { id },
+    query: { mode: 'delete' },
+  });
+}
+
 export function setCoverOrder(order: readonly string[]) {
   return call(endpoints.setCoverOrder, { body: { order: [...order] } });
 }

@@ -11281,8 +11281,8 @@
         "tags": [
           "Budgets"
         ],
-        "summary": "End a budget",
-        "description": "Ends it from the current period on. Earlier periods keep their figures, and spending in this period counts as unbudgeted. The Buffer cannot be ended (`budget_fixed`).",
+        "summary": "End or delete a budget",
+        "description": "By default ends it from the current period on: earlier periods keep their figures, and spending in this period counts as unbudgeted. With `mode=delete` a budget started in the current period is removed as if it was never planned; once a closed period used it, that is refused (`budget_used`) and it can only be ended. The Buffer can do neither (`budget_fixed`).",
         "parameters": [
           {
             "schema": {
@@ -11293,11 +11293,24 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "end",
+                "delete"
+              ],
+              "default": "end"
+            },
+            "required": false,
+            "name": "mode",
+            "in": "query"
           }
         ],
         "responses": {
           "204": {
-            "description": "Ended."
+            "description": "Ended or deleted."
           },
           "401": {
             "description": "Not signed in.",
@@ -11465,7 +11478,7 @@
             }
           },
           "409": {
-            "description": "The Buffer cannot be removed (`budget_fixed`).",
+            "description": "The Buffer cannot be removed (`budget_fixed`), or a closed period used the budget (`budget_used`).",
             "content": {
               "application/problem+json": {
                 "schema": {

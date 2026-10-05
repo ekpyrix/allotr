@@ -7,6 +7,7 @@ import {
   coverPreviewSchema,
   createBudgetBodySchema,
   idParamSchema,
+  removeBudgetQuerySchema,
   updateBudgetBodySchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
@@ -101,15 +102,17 @@ const endRoute = createRoute({
   method: 'delete',
   path: '/v1/budgets/{id}',
   tags,
-  summary: 'End a budget',
+  summary: 'End or delete a budget',
   description:
-    'Ends it from the current period on. Earlier periods keep their figures, and spending in this period counts as unbudgeted. The Buffer cannot be ended (`budget_fixed`).',
-  request: { params: idParamSchema },
+    'By default ends it from the current period on: earlier periods keep their figures, and spending in this period counts as unbudgeted. With `mode=delete` a budget started in the current period is removed as if it was never planned; once a closed period used it, that is refused (`budget_used`) and it can only be ended. The Buffer can do neither (`budget_fixed`).',
+  request: { params: idParamSchema, query: removeBudgetQuerySchema },
   responses: {
-    204: { description: 'Ended.' },
+    204: { description: 'Ended or deleted.' },
     ...signedIn,
     404: notFound,
-    409: problemResponse('The Buffer cannot be removed (`budget_fixed`).'),
+    409: problemResponse(
+      'The Buffer cannot be removed (`budget_fixed`), or a closed period used the budget (`budget_used`).',
+    ),
   },
 });
 
@@ -266,7 +269,8 @@ export function registerBudgetRoutes(
 
   app.openapi(endRoute, async (c) => {
     const { id } = c.req.valid('param');
-    await endBudget(db, c.get('user').id, id, now());
+    const { mode } = c.req.valid('query');
+    await endBudget(db, c.get('user').id, id, now(), mode);
     return c.body(null, 204);
   });
 }

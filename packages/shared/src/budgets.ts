@@ -141,6 +141,15 @@ export const updateBudgetBodySchema = z
   });
 export type UpdateBudgetBody = z.output<typeof updateBudgetBodySchema>;
 
+export const removeBudgetQuerySchema = z.object({
+  /**
+   * `end` (default): stop it from this period on. `delete`: remove it as if
+   * it was never planned; only while no closed period used it.
+   */
+  mode: z.enum(['end', 'delete']).default('end'),
+});
+export type RemoveBudgetQuery = z.output<typeof removeBudgetQuerySchema>;
+
 export const coverOrderBodySchema = z.object({
   /**
    * `free` and budget IDs, first to last. Anything left out is placed by the
