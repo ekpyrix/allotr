@@ -13,7 +13,8 @@ import { openSqlite } from './sqlite.ts';
 // 0010_category_style.sql, 0011_income_categories.sql, 0012_ious.sql,
 // 0013_reminders.sql, 0014_entry_order_time.sql and
 // 0015_entry_replacements.sql, 0016_buffer_currency.sql,
-// 0017_implied_rates.sql and 0018_entry_client.sql against real SQLite.
+// 0017_implied_rates.sql, 0018_entry_client.sql and 0019_goals.sql against
+// real SQLite.
 
 const at = '2026-01-01T00:00:00.000Z';
 
@@ -468,6 +469,7 @@ describe('migration 0005_reconciliations', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     insertReconciliation('r1');
@@ -566,6 +568,7 @@ describe('migration 0006_bill_prices', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(
@@ -659,6 +662,7 @@ describe('migration 0007_pools', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(pools()).toEqual([
@@ -818,6 +822,7 @@ describe('migration 0008_budgets', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(
@@ -985,6 +990,7 @@ describe('migration 0009_budget_cover', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
     expect(count('SELECT count(*) FROM cover_overrides')).toBe(0);
   });
@@ -1055,6 +1061,7 @@ describe('migration 0010_category_style', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(style('Food')).toEqual({ colour: 'series-6', icon: 'utensils' });
@@ -1145,6 +1152,7 @@ describe('migration 0012_ious', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(count('SELECT count(*) FROM accounts')).toBe(2);
@@ -1299,6 +1307,7 @@ describe('migration 0011_income_categories', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(incomeRow('u1', 'Interest')).toEqual([
@@ -1380,6 +1389,7 @@ describe('migration 0013_reminders', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
     expect(count('SELECT count(*) FROM accounts')).toBeGreaterThan(0);
     expect(count('SELECT count(*) FROM reminders')).toBe(0);
@@ -1599,6 +1609,7 @@ describe('migration 0015_entry_replacements', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
     expect(pairs()).toEqual(['a>a2']);
   });
@@ -1683,6 +1694,7 @@ describe('migration 0016_buffer_currency', () => {
       '0016_buffer_currency',
       '0017_implied_rates',
       '0018_entry_client',
+      '0019_goals',
     ]);
 
     expect(
@@ -1769,7 +1781,10 @@ describe('migration 0018_entry_client', () => {
     insertUser('u1');
     insertTransaction('t1', 'u1');
 
-    expect(migrateFrom(repoMigrations)).toEqual(['0018_entry_client']);
+    expect(migrateFrom(repoMigrations)).toEqual([
+      '0018_entry_client',
+      '0019_goals',
+    ]);
 
     expect(sql('SELECT id, client FROM transactions').all()).toEqual([
       { id: 't1', client: null },
@@ -1783,5 +1798,62 @@ describe('migration 0018_entry_client', () => {
     add('t3', 'api', 'chat');
     expect(() => add('t4', 'api', 'toaster')).toThrow();
     expect(() => add('t5', 'import', 'web')).toThrow();
+  });
+});
+
+describe('migration 0019_goals', () => {
+  const sql = (text: string) => sqlite.prepare(text);
+
+  function addGoal(id: string, fields: { pool?: string; account?: string }) {
+    sql(
+      `INSERT INTO goals
+         (id, user_id, name, pool_id, account_id, target_minor, currency, created_at, updated_at)
+       VALUES (?, 'u1', ?, ?, ?, 1000, 'USD', ?, ?)`,
+    ).run(
+      id,
+      `Goal ${id}`,
+      fields.pool ?? null,
+      fields.account ?? null,
+      at,
+      at,
+    );
+  }
+
+  it('needs exactly one target, one goal per target, and fixes the target', () => {
+    migrateFrom(repoMigrations);
+    insertUser('u1');
+    insertAccount('a1', 'u1', 'USD', { group: 'off' });
+    const pool = sql(
+      `SELECT id FROM pools WHERE user_id = 'u1' AND default_for = 'off'`,
+    ).get() as { id: string };
+
+    expect(() => {
+      addGoal('g0', {});
+    }).toThrow();
+    expect(() => {
+      addGoal('g0', { pool: pool.id, account: 'a1' });
+    }).toThrow();
+    addGoal('g1', { pool: pool.id });
+    expect(() => {
+      addGoal('g2', { pool: pool.id });
+    }).toThrow();
+    addGoal('g3', { account: 'a1' });
+    expect(() => {
+      addGoal('g4', { account: 'a1' });
+    }).toThrow();
+
+    sql(`UPDATE goals SET archived = 1 WHERE id = 'g1'`).run();
+    addGoal('g5', { pool: pool.id });
+    expect(() =>
+      sql(
+        `UPDATE goals SET pool_id = NULL, account_id = 'a1' WHERE id = 'g5'`,
+      ).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE goals SET currency = 'EUR' WHERE id = 'g5'`).run(),
+    ).toThrow();
+    expect(() =>
+      sql(`UPDATE goals SET target_minor = 0 WHERE id = 'g5'`).run(),
+    ).toThrow();
   });
 });

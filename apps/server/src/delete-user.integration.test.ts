@@ -233,6 +233,22 @@ describe('POST /v1/user/delete', () => {
           })
         ).status,
       ).toBe(201);
+      // A savings goal, so every per-user table has a row.
+      const rainy = await h.bob.post('/v1/accounts', {
+        name: 'Rainy day',
+        currency: defaultCurrency,
+        budgetGroup: 'off',
+      });
+      expect(rainy.status, JSON.stringify(rainy.body)).toBe(201);
+      expect(
+        (
+          await h.bob.post('/v1/goals', {
+            name: 'Emergency fund',
+            accountId: (rainy.body as { id: string }).id,
+            target: { amountMinor: 100_000, currency: defaultCurrency },
+          })
+        ).status,
+      ).toBe(201);
       // An edited entry, so every per-user table has a row.
       const categoryId = (
         entries.body as {

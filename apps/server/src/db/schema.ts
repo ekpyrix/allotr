@@ -134,6 +134,20 @@ export interface FxRates {
   user_id: string;
 }
 
+export interface Goals {
+  account_id: string | null;
+  archived: Generated<number>;
+  created_at: string;
+  currency: string;
+  id: string;
+  name: string;
+  pool_id: string | null;
+  target_minor: number;
+  target_on: string | null;
+  updated_at: string;
+  user_id: string;
+}
+
 export interface InstanceSettings {
   key: string;
   updated_at: string;
@@ -373,6 +387,7 @@ export interface DB {
   cover_overrides: CoverOverrides;
   fx_rate_entries: FxRateEntries;
   fx_rates: FxRates;
+  goals: Goals;
   instance_settings: InstanceSettings;
   invites: Invites;
   iou_settlements: IouSettlements;
