@@ -1,5 +1,5 @@
 {
-  "description": "A $700 Food purchase is covered by the Buffer ($200) and Travel ($300) after its $100 own part and free money are used up. A $350 refund restores Travel first, then the Buffer; a $500 repayment later restores what is still owed and sends the rest to free money.",
+  "description": "A $700 Food purchase is covered by the Buffer ($200) and Travel ($300) after its $100 own part and free money are used up. A $350 refund restores Travel first, then the Buffer; a $500 repayment later restores what is still owed and sends the rest to free money. The refunds, $700 in all, leave Food with nothing spent.",
   "today": "2026-03-10",
   "settings": { "dailyMode": "free" },
   "categories": { "food": null, "travel": null, "other": null },
@@ -80,15 +80,15 @@
     "available": -15000,
     "held": 50000,
     "free": -65000,
-    "dailyLeft": 0,
+    "dailyLeft": 10000,
     "unbudgeted": 95000,
     "dailyNumber": -2955,
     "budgets": {
       "food": {
         "planned": 10000,
         "carriedIn": 0,
-        "spent": 70000,
-        "left": 0,
+        "spent": 0,
+        "left": 10000,
         "held": 0
       },
       "travel": {
