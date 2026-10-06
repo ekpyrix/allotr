@@ -18,7 +18,7 @@ when they disagree, fix one of them in the same PR. All amounts are made up.
 | **Cycle** | The period from one paycheck to the next (or a fixed period). |
 | **Allocation** | The split of a paycheck into bills, allowance, savings and goals. |
 | **Daily usable** | Free money ÷ days left in the cycle (the default mode). |
-| **Goal** | An earmark on the savings total, e.g. an emergency fund. |
+| **Goal** | A target amount on a savings pool or account, e.g. an emergency fund. |
 | **Reconcile** | Compare an account with the bank's balance and post any difference. |
 | **Posting** | One leg of a double-entry transaction. |
 | **Proposal** | A transaction waiting for confirmation (from AI, import or a scoped token). |
@@ -148,6 +148,23 @@ Users may add more, such as *Emergency*.
   or Savings pool.
 - A pool holding accounts cannot be archived; the default pools cannot be
   archived at all.
+
+## Goals
+
+A goal (ADR 0021: goals stay earmarks on savings) is a target amount, and
+optionally a date, on one savings pool or one account in a savings pool.
+
+- Progress is what the target holds today, folded from the ledger and
+  converted to the goal's currency at the latest rate; currencies without a
+  rate are left out and listed. Nothing is moved, no posting carries a goal,
+  and a goal never changes the daily number.
+- A pool or account has at most one active goal, so two goals never count the
+  same money twice. Active goal names are unique.
+- The target and currency are fixed. The name, the amount and the date can
+  change. A goal is archived, never deleted; restoring it fails while a newer
+  goal holds its target.
+- A goal is reached when the target holds at least its amount; remaining is
+  then zero, never negative.
 
 ## Budgets
 
@@ -636,7 +653,8 @@ bills(id, user_id, name, amount_minor, currency, price_minor, price_currency,
       account_id, category_id, cadence, due_day, active)
 bill_payments(id, user_id, bill_id, due_on, paid_on, transaction_id, recorded)
 recurring(id, user_id, template, schedule, mode, next_due)
-goals(id, user_id, name, target_minor, earmarked_minor, currency)
+goals(id, user_id, name, pool_id | account_id, target_minor, currency,
+      target_on, archived)   -- progress is derived, never stored
 counterparties(id, user_id, name)
 fx_rates(id, user_id, base, quote, rate, as_of, source)
 currencies(code, numeric, minor_unit, active)          -- ISO 4217, read-only

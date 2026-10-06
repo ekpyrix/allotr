@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { BudgetsSection } from '@/features/budget/budgets-section';
 import { CoverOrder } from '@/features/budget/cover-order';
 import { PaydaySection } from '@/features/payday/payday-section';
+import { GoalsSection } from '@/features/budget/goals-section';
 import { PoolsSection } from '@/features/budget/pools-section';
 import { BillsSection } from '@/features/settings/bills';
-import { budgetsQuery, poolsQuery } from '@/lib/budgets';
+import { budgetsQuery, goalsQuery, poolsQuery } from '@/lib/budgets';
 import { iousQuery } from '@/lib/ious';
 import { IousSection } from '@/features/ious/ious-section';
 import {
@@ -34,6 +35,7 @@ export function BudgetPage() {
   const accounts = useQuery(allAccountsQuery);
   const budgets = useQuery(budgetsQuery);
   const pools = useQuery(poolsQuery);
+  const goals = useQuery(goalsQuery);
   const ious = useQuery(iousQuery);
   const all = [
     settings,
@@ -44,6 +46,7 @@ export function BudgetPage() {
     accounts,
     budgets,
     pools,
+    goals,
     ious,
   ];
 
@@ -73,6 +76,7 @@ export function BudgetPage() {
     accounts.data === undefined ||
     budgets.data === undefined ||
     pools.data === undefined ||
+    goals.data === undefined ||
     ious.data === undefined
   )
     return (
@@ -98,6 +102,13 @@ export function BudgetPage() {
       />
       <CoverOrder items={budgets.data.coverOrder} />
       <PoolsSection list={pools.data} locale={settings.data.locale} />
+      <GoalsSection
+        goals={goals.data}
+        pools={pools.data}
+        accounts={accounts.data.accounts}
+        currency={settings.data.defaultCurrency}
+        locale={settings.data.locale}
+      />
       <IousSection
         list={ious.data}
         accounts={accounts.data.accounts}

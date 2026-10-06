@@ -61,6 +61,7 @@ export {
 } from './money/schemas.ts';
 export * from './category-style.ts';
 export * from './ledger.ts';
+export * from './goals.ts';
 export * from './pools.ts';
 export * from './budgets.ts';
 export * from './ious.ts';

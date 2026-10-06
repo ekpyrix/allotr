@@ -2,8 +2,10 @@ import type {
   CoverOverrideBody,
   CoverPreviewBody,
   CreateBudgetBody,
+  CreateGoalBody,
   CreatePoolBody,
   UpdateBudgetBody,
+  UpdateGoalBody,
   UpdatePoolBody,
 } from '@allotr/shared';
 import { queryOptions } from '@tanstack/react-query';
@@ -18,6 +20,20 @@ export const poolsQuery = queryOptions({
   queryKey: ['accounts', 'pools'],
   queryFn: () => call(endpoints.pools),
 });
+
+// Goals read pool and account balances, so they sit under ['accounts'].
+export const goalsQuery = queryOptions({
+  queryKey: ['accounts', 'goals'],
+  queryFn: () => call(endpoints.goals),
+});
+
+export function createGoal(body: CreateGoalBody) {
+  return call(endpoints.createGoal, { body });
+}
+
+export function updateGoal(id: string, body: UpdateGoalBody) {
+  return call(endpoints.updateGoal, { params: { id }, body });
+}
 
 export const budgetsQuery = queryOptions({
   queryKey: ['today', 'budgets'],
