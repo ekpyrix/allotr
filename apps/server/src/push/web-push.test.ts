@@ -75,6 +75,33 @@ describe('encryptPayload', () => {
     expect(decrypt(body, browser, auth)).toBe('Rent is due tomorrow.');
   });
 
+  // RFC 8291 section 5 and appendix A: fixed keys, salt and plaintext give
+  // one exact body, so a mistake that a matching sender and receiver would
+  // share (and a browser would reject) is caught without a push service.
+  it('produces the example body from RFC 8291', () => {
+    const sender = createECDH('prime256v1');
+    sender.setPrivateKey(
+      Buffer.from('yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw', 'base64url'),
+    );
+    const body = encryptPayload(
+      {
+        p256dh:
+          'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
+        auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+      },
+      Buffer.from('When I grow up, I want to be a watermelon'),
+      {
+        salt: Buffer.from('DGv6ra1nlYgDCS1FRnbzlw', 'base64url'),
+        ephemeral: sender,
+      },
+    );
+    expect(body.toString('base64url')).toBe(
+      'DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27ml' +
+        'mlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPT' +
+        'pK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN',
+    );
+  });
+
   it('cannot be read with another secret', () => {
     const browser = createECDH('prime256v1');
     browser.generateKeys();
