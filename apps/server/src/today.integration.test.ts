@@ -541,6 +541,30 @@ describe('ledger settings', () => {
       emergencyMonths: 3,
       iouWriteOffAfterDays: 90,
       entryTimes: 'off',
+      reportPeriod: 'cycle',
+      categoryCards: 'top',
+    });
+  });
+
+  it('keeps the report views per user', async () => {
+    expect(
+      (
+        await patchSettings(h.alice, {
+          reportPeriod: 'month',
+          categoryCards: 'all',
+        })
+      ).body,
+    ).toMatchObject({ reportPeriod: 'month', categoryCards: 'all' });
+    expect((await h.bob.get('/v1/settings/ledger')).body).toMatchObject({
+      reportPeriod: 'cycle',
+      categoryCards: 'top',
+    });
+    expect(
+      (await patchSettings(h.alice, { reportPeriod: 'week' })).status,
+    ).toBe(400);
+    await patchSettings(h.alice, {
+      reportPeriod: 'cycle',
+      categoryCards: 'top',
     });
   });
 

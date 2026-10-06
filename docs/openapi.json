@@ -29424,6 +29424,20 @@
                         "optional",
                         "prefill-now"
                       ]
+                    },
+                    "reportPeriod": {
+                      "type": "string",
+                      "enum": [
+                        "cycle",
+                        "month"
+                      ]
+                    },
+                    "categoryCards": {
+                      "type": "string",
+                      "enum": [
+                        "top",
+                        "all"
+                      ]
                     }
                   },
                   "required": [
@@ -29439,7 +29453,9 @@
                     "payYourselfFirst",
                     "emergencyMonths",
                     "iouWriteOffAfterDays",
-                    "entryTimes"
+                    "entryTimes",
+                    "reportPeriod",
+                    "categoryCards"
                   ]
                 }
               }
@@ -29696,6 +29712,20 @@
                       "optional",
                       "prefill-now"
                     ]
+                  },
+                  "reportPeriod": {
+                    "type": "string",
+                    "enum": [
+                      "cycle",
+                      "month"
+                    ]
+                  },
+                  "categoryCards": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "all"
+                    ]
                   }
                 }
               }
@@ -29833,6 +29863,20 @@
                         "optional",
                         "prefill-now"
                       ]
+                    },
+                    "reportPeriod": {
+                      "type": "string",
+                      "enum": [
+                        "cycle",
+                        "month"
+                      ]
+                    },
+                    "categoryCards": {
+                      "type": "string",
+                      "enum": [
+                        "top",
+                        "all"
+                      ]
                     }
                   },
                   "required": [
@@ -29848,7 +29892,9 @@
                     "payYourselfFirst",
                     "emergencyMonths",
                     "iouWriteOffAfterDays",
-                    "entryTimes"
+                    "entryTimes",
+                    "reportPeriod",
+                    "categoryCards"
                   ]
                 }
               }
