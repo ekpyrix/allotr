@@ -449,6 +449,17 @@ export type PayYourselfFirstSetting = z.output<typeof payYourselfFirstSchema>;
 export const entryTimesSchema = z.enum(['off', 'optional', 'prefill-now']);
 export type EntryTimes = z.infer<typeof entryTimesSchema>;
 
+/** Whether Reports summarises by payday cycle (default) or calendar month. */
+export const reportPeriodSchema = z.enum(['cycle', 'month']);
+export type ReportPeriod = z.infer<typeof reportPeriodSchema>;
+
+/**
+ * How many subcategories a Reports card lists: the top two (default) or
+ * all of them.
+ */
+export const categoryCardsSchema = z.enum(['top', 'all']);
+export type CategoryCards = z.infer<typeof categoryCardsSchema>;
+
 export const ledgerSettingsSchema = z.object({
   /** BCP 47 locale for formatting, such as `en-US`. */
   locale: z.string(),
@@ -491,6 +502,10 @@ export const ledgerSettingsSchema = z.object({
    * shown whatever this says.
    */
   entryTimes: entryTimesSchema,
+  /** The period Reports summarises categories by, on every device. */
+  reportPeriod: reportPeriodSchema,
+  /** How much of each Reports category card is expanded, on every device. */
+  categoryCards: categoryCardsSchema,
 });
 export type LedgerSettingsView = z.infer<typeof ledgerSettingsSchema>;
 
@@ -511,6 +526,8 @@ export const updateLedgerSettingsBodySchema = z
     emergencyMonths: z.int().min(1).max(24).optional(),
     iouWriteOffAfterDays: z.int().min(1).max(3650).optional(),
     entryTimes: entryTimesSchema.optional(),
+    reportPeriod: reportPeriodSchema.optional(),
+    categoryCards: categoryCardsSchema.optional(),
   })
   .refine((body) => Object.values(body).some((v) => v !== undefined), {
     error: 'Change at least one field',

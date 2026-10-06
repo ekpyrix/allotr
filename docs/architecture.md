@@ -281,8 +281,8 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   (`rollUpCategories` in `packages/core`, property-tested), each group lists
   its children largest first, and a merged category counts as the one it
   merged into. The web app shows the top two children per card, expands to
-  the rest, and takes the period and "always expand" from device settings
-  (`allotr.report-period`, `allotr.category-cards`).
+  the rest, and takes the period and "always expand" from the user's ledger settings
+  (`reportPeriod`, `categoryCards`), so every device shows the same views.
 - `GET /v1/reports/calendar?from=&to=` gives one row per day (at most 62;
   the current month when both are left out): pace spending (linked bill
   payments left out), a heat level from 0 to 4 against the busiest day, bills

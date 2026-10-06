@@ -1,17 +1,28 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup } from '@/components/ui/toggle-group';
-import { useDevicePref } from '@/lib/device-prefs';
+import { describeProblem } from '@/lib/problem';
+import { ledgerSettingsQuery } from '@/lib/ledger';
+import { updateLedgerSettings } from '@/lib/settings';
 import { t } from '@/messages/t';
 import { Section } from './section.tsx';
 
-// How Reports shows category summaries. Kept on this device, like the
-// other display settings.
+// How Reports shows category summaries. Kept per user, so every device
+// shows the same views; each change saves at once.
 export function ReportsSection() {
-  const [period, setPeriod] = useDevicePref('reportPeriod');
-  const [cards, setCards] = useDevicePref('categoryCards');
+  const queryClient = useQueryClient();
+  const settings = useQuery(ledgerSettingsQuery);
+  const save = useMutation({
+    mutationFn: updateLedgerSettings,
+    onSuccess: (next) => {
+      queryClient.setQueryData(ledgerSettingsQuery.queryKey, next);
+    },
+  });
   const ids = useId();
+  const period = settings.data?.reportPeriod ?? 'cycle';
+  const cards = settings.data?.categoryCards ?? 'top';
   return (
     <Section
       id="reports"
@@ -23,7 +34,9 @@ export function ReportsSection() {
         <ToggleGroup
           label={t('settings.reports.period')}
           value={period}
-          onValueChange={setPeriod}
+          onValueChange={(reportPeriod) => {
+            save.mutate({ reportPeriod });
+          }}
           options={[
             { value: 'cycle', label: t('settings.reports.cycle') },
             { value: 'month', label: t('settings.reports.month') },
@@ -38,11 +51,17 @@ export function ReportsSection() {
         <Switch
           id={`${ids}-expand`}
           checked={cards === 'all'}
+          disabled={settings.data === undefined}
           onCheckedChange={(on) => {
-            setCards(on ? 'all' : 'top');
+            save.mutate({ categoryCards: on ? 'all' : 'top' });
           }}
         />
       </div>
+      {save.isError ? (
+        <p role="alert" className="mt-3 text-negative">
+          {describeProblem(save.error).message}
+        </p>
+      ) : null}
     </Section>
   );
 }

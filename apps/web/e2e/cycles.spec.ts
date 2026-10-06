@@ -321,14 +321,29 @@ test('the calendar-month setting changes the period of the cards', async ({
   page,
 }) => {
   await page.goto('/settings#reports');
-  await page
-    .getByRole('radio', { name: 'Calendar month' })
-    .check({ force: true });
+  const month = page.getByRole('radio', { name: 'Calendar month' });
+  // The choice is saved on the account, so it is on when the save returns.
+  await month.click();
+  await expect(month).toHaveAttribute('aria-checked', 'true');
+  await expect
+    .poll(async () => {
+      const stored = await page.request.get('/v1/settings/ledger');
+      return ((await stored.json()) as { reportPeriod: string }).reportPeriod;
+    })
+    .toBe('month');
+  const summaryRequest = page.waitForRequest((request) =>
+    request.url().includes('/v1/reports/categories?period=month'),
+  );
   await page.goto('/reports?start=2026-03-01');
+  await summaryRequest;
   await expect(
     page.getByRole('heading', { name: /^Spending per category/ }),
   ).toBeVisible();
-  const month = await page.request.get('/v1/reports/categories?period=month');
-  expect(month.ok()).toBe(true);
   await expectAccessible(page);
+
+  // The account is shared with the other specs: put the default back.
+  await page.goto('/settings#reports');
+  const cycle = page.getByRole('radio', { name: 'Payday cycle' });
+  await cycle.click();
+  await expect(cycle).toHaveAttribute('aria-checked', 'true');
 });

@@ -5,7 +5,6 @@ import { Amount } from '@/components/ui/amount';
 import { Card } from '@/components/ui/card';
 import { CategoryIcon } from '@/components/ui/category-icon';
 import { categoryStyles, type CategoryStyle } from '@/lib/category-style';
-import { useDevicePref } from '@/lib/device-prefs';
 import { cn } from '@/lib/utils';
 import { t } from '@/messages/t';
 
@@ -123,6 +122,7 @@ export function CategoryCards({
   empty,
   categories,
   locale,
+  expandAll,
 }: {
   groups: readonly Group[];
   kind: 'spending' | 'income';
@@ -130,8 +130,9 @@ export function CategoryCards({
   empty: string;
   categories: readonly CategoryView[];
   locale: string;
+  /** List every subcategory instead of the top two. */
+  expandAll: boolean;
 }) {
-  const [cards] = useDevicePref('categoryCards');
   const names = new Map(categories.map((c) => [c.id, c.name]));
   const styles = categoryStyles(categories);
   const headingId = useId();
@@ -151,7 +152,7 @@ export function CategoryCards({
               names={names}
               styles={styles}
               locale={locale}
-              expandAlways={cards === 'all'}
+              expandAlways={expandAll}
               kind={kind}
             />
           ))}
