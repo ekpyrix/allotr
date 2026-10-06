@@ -1,0 +1,2 @@
+# RFC 8291 appendix A example auth secret, a public test vector.
+1f824a5529f4fec6dbf5722703ac6a84fb8c8a68:apps/server/src/push/web-push.test.ts:generic-api-key:90
