@@ -34,6 +34,7 @@ design (see [docs/adr/](docs/adr/)) addresses these threats:
 | User-supplied URLs (webhooks, exchange-rate sources, notifications, OIDC, themes) | Server-side request forgery | One hardened HTTP client: private, loopback, link-local and metadata addresses blocked, re-checked after redirects; admin allowlist |
 | AI features | Prompt injection, wrong entries | AI is off by default; model output is schema-validated and never commits by itself; minimal context sent |
 | Data at rest | Stolen disk or backup | Encrypted backups; host full-disk encryption recommended. The live database is not encrypted in v1 ([ADR 0015](docs/adr/0015-encryption-at-rest.md)) |
+| Web Push signing key | Theft of the VAPID private key, which could send notifications to the instance's subscribed devices | Stored in `instance_settings` with the other instance secrets, never served, exported or logged. Not encrypted separately: a key supplied through the environment would sit on the same host as the database, so it would not protect against a stolen live volume, and a stolen backup is already encrypted. A thief with the database also holds the subscriptions, so the key adds no reach; rotate by deleting the `vapid_keys` row, after which devices subscribe again |
 | Instance admin | Reading other users' data | Not protected: anyone who controls the host can read the database. Multi-user means separate accounts, not protection from the admin |
 | Privacy | Data leaving the server | No telemetry; outbound calls are opt-in and disclosed ([ADR 0011](docs/adr/0011-no-telemetry.md)) |
 

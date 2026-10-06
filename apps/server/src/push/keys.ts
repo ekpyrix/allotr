@@ -6,8 +6,9 @@ import { generateVapidKeys, type VapidKeys } from './web-push.ts';
 // The instance's VAPID key pair (ADR 0024), generated the first time the
 // server starts and kept with the other instance secrets in
 // instance_settings (key `vapid_keys`; the database is plaintext, as ADR
-// 0015 says). The private key never leaves the server: only the public key
-// is served, so browsers can subscribe.
+// 0015 says, and SECURITY.md explains why the key is not encrypted again).
+// The private key never leaves the server: only the public key is served,
+// so browsers can subscribe.
 
 const KEY = 'vapid_keys';
 const storedSchema = z.object({
