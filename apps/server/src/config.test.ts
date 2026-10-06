@@ -17,6 +17,7 @@ describe('loadConfig', () => {
       host: '127.0.0.1',
       port: 9000,
       reminderIntervalSeconds: 900,
+      signInRequestsPerMinute: 10,
       logLevel: 'info',
       trustedProxies: [],
     });

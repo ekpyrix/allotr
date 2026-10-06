@@ -28,6 +28,14 @@ export const serverEnvSchema = z.object({
     .min(1)
     .max(86_400)
     .default(900),
+  // Password and 2FA sign-in requests allowed per client address per minute.
+  // Raise it only for automated test servers.
+  ALLOTR_SIGN_IN_REQUESTS_PER_MINUTE: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100_000)
+    .default(10),
   ALLOTR_LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),

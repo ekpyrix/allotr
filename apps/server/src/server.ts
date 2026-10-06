@@ -41,7 +41,10 @@ export async function startServer(
 ): Promise<RunningServer> {
   const { config, logger } = options;
   const now = options.now ?? (() => new Date());
-  const limits = options.authLimits ?? defaultAuthLimits;
+  const limits = options.authLimits ?? {
+    ...defaultAuthLimits,
+    signInRequestsPerMinute: config.signInRequestsPerMinute,
+  };
 
   const sqlite = openSqlite(config.databasePath);
   try {

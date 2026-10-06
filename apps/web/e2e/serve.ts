@@ -21,6 +21,8 @@ const server = spawn(
       ALLOTR_LOG_LEVEL: 'warn',
       // Reminders appear within a second, so specs need not wait a quarter hour.
       ALLOTR_REMINDER_INTERVAL_SECONDS: '1',
+      // Specs sign in often from one address; the default limit is for people.
+      ALLOTR_SIGN_IN_REQUESTS_PER_MINUTE: '1000',
     },
   },
 );

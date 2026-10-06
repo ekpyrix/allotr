@@ -15,6 +15,7 @@ describe('serverEnvSchema', () => {
       ALLOTR_PORT: 8080,
       ALLOTR_LOG_LEVEL: 'info',
       ALLOTR_REMINDER_INTERVAL_SECONDS: 900,
+      ALLOTR_SIGN_IN_REQUESTS_PER_MINUTE: 10,
       ALLOTR_TRUSTED_PROXIES: [],
     });
   });
