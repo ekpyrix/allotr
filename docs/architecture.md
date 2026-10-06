@@ -479,7 +479,7 @@ server's suggested name, or `--out`. It never overwrites a file.
 
 | Source | Holds |
 |---|---|
-| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, `ALLOTR_REMINDER_INTERVAL_SECONDS`, `ALLOTR_TRUSTED_PROXIES`, `ALLOTR_ROLE` (documented in `.env.example` and `deploy/.env.example`) |
+| Environment / Docker secrets | Bootstrap and secrets only: `ALLOTR_DATABASE_PATH`, `ALLOTR_BASE_URL`, `ALLOTR_SECRET_KEY`, `ALLOTR_HOST`, `ALLOTR_PORT`, `ALLOTR_LOG_LEVEL`, `ALLOTR_REMINDER_INTERVAL_SECONDS`, `ALLOTR_SIGN_IN_REQUESTS_PER_MINUTE`, `ALLOTR_TRUSTED_PROXIES`, `ALLOTR_ROLE` (documented in `.env.example` and `deploy/.env.example`) |
 | Admin UI (stored in the database) | Everything else: gateways, AI, exchange rates, OIDC, registration, notifications |
 | Per-user settings | Policies, defaults, locale, timezone, currency, themes |
 

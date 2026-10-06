@@ -7,6 +7,7 @@ export interface Config {
   readonly host: string;
   readonly port: number;
   readonly reminderIntervalSeconds: number;
+  readonly signInRequestsPerMinute: number;
   readonly logLevel: ServerEnv['ALLOTR_LOG_LEVEL'];
   readonly trustedProxies: readonly string[];
 }
@@ -36,6 +37,7 @@ export function loadConfig(
     host: parsed.ALLOTR_HOST,
     port: parsed.ALLOTR_PORT,
     reminderIntervalSeconds: parsed.ALLOTR_REMINDER_INTERVAL_SECONDS,
+    signInRequestsPerMinute: parsed.ALLOTR_SIGN_IN_REQUESTS_PER_MINUTE,
     logLevel: parsed.ALLOTR_LOG_LEVEL,
     trustedProxies: parsed.ALLOTR_TRUSTED_PROXIES,
   };

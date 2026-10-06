@@ -49,6 +49,7 @@ export async function startWithTwoUsers(
       host: '127.0.0.1',
       port: 0,
       reminderIntervalSeconds: 900,
+      signInRequestsPerMinute: 10,
       logLevel: 'silent',
       trustedProxies: [],
     },
