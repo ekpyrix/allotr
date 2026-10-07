@@ -10,12 +10,13 @@ import type { DB } from './db/schema.ts';
 import { readLedgerSettings } from './ledger/ledger-settings.ts';
 import { loadView } from './ledger/today.ts';
 import type { Logger } from './logger.ts';
+import { t } from './messages/t.ts';
 import { pushToUser, type PushSender } from './push/delivery.ts';
 
 // Reminders (ADR 0024): the scheduler asks the core for what is due today
 // for each user, records each reminder once and, for users who opted in on a
-// device, pushes it. The wording lives here, in English like the rest of
-// what the server says; the web app shows the stored text as it is.
+// device, pushes it. The wording comes from the message catalogue in the
+// user's locale and is stored as composed; the web app shows it as it is.
 
 type Texts = Readonly<{ title: string; body: string; url: string }>;
 
@@ -26,41 +27,59 @@ function describe(
 ): Texts {
   switch (reminder.kind) {
     case 'bill_due': {
-      const name = names.get(reminder.billId) ?? 'A bill';
+      const name =
+        names.get(reminder.billId) ?? t(locale, 'reminders.unnamedBill');
       return {
-        title: `${name} is due ${reminder.dueOn}`,
-        body: `${formatMoney(reminder.amount, locale)} is set aside for it. Mark it paid when it goes out.`,
+        title: t(locale, 'reminders.billDue.title', {
+          name,
+          date: reminder.dueOn,
+        }),
+        body: t(locale, 'reminders.billDue.body', {
+          amount: formatMoney(reminder.amount, locale),
+        }),
         url: '/budget#bills',
       };
     }
-    case 'iou_due':
+    case 'iou_due': {
+      const amount = formatMoney(reminder.outstanding, locale);
+      const { person } = reminder;
       return reminder.direction === 'owed-to-me'
         ? {
-            title: `${reminder.person} was due to pay you back today`,
-            body: `${formatMoney(reminder.outstanding, locale)} is still owed.`,
+            title: t(locale, 'reminders.iouDue.owedToMe.title', { person }),
+            body: t(locale, 'reminders.iouDue.owedToMe.body', { amount }),
             url: '/budget#ious',
           }
         : {
-            title: `You were due to pay ${reminder.person} today`,
-            body: `${formatMoney(reminder.outstanding, locale)} is still owed.`,
+            title: t(locale, 'reminders.iouDue.owedByMe.title', { person }),
+            body: t(locale, 'reminders.iouDue.owedByMe.body', { amount }),
             url: '/budget#ious',
           };
-    case 'iou_overdue':
+    }
+    case 'iou_overdue': {
+      const amount = formatMoney(reminder.outstanding, locale);
+      const { person, daysOverdue: count } = reminder;
       return reminder.direction === 'owed-to-me'
         ? {
-            title: `${reminder.person} is ${String(reminder.daysOverdue)} days late`,
-            body: `${formatMoney(reminder.outstanding, locale)} is still owed to you.`,
+            title: t(locale, 'reminders.iouOverdue.owedToMe.title', {
+              person,
+              count,
+            }),
+            body: t(locale, 'reminders.iouOverdue.owedToMe.body', { amount }),
             url: '/budget#ious',
           }
         : {
-            title: `You are ${String(reminder.daysOverdue)} days late paying ${reminder.person}`,
-            body: `${formatMoney(reminder.outstanding, locale)} is still owed.`,
+            title: t(locale, 'reminders.iouOverdue.owedByMe.title', {
+              person,
+              count,
+            }),
+            body: t(locale, 'reminders.iouOverdue.owedByMe.body', { amount }),
             url: '/budget#ious',
           };
+    }
     case 'weekly_review':
       return {
-        title: 'Your week is ready',
-        body: 'See what you spent and how the budgets stand.',
+        title: t(locale, 'reminders.weeklyReview.title'),
+        body: t(locale, 'reminders.weeklyReview.body'),
         url: '/',
       };
   }
