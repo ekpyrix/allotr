@@ -23,6 +23,7 @@ export {
   type LocalTime,
 } from './dates.ts';
 export * from './rank.ts';
+export { fillTemplate, type Placeholders } from './template.ts';
 export { MoneyError, type MoneyErrorCode } from './money/errors.ts';
 export {
   currencies,

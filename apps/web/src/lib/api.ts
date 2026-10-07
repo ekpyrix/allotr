@@ -1,6 +1,10 @@
-import { problemDetailsSchema, type ProblemDetails } from '@allotr/shared';
+import {
+  fillTemplate,
+  problemDetailsSchema,
+  type Placeholders,
+  type ProblemDetails,
+} from '@allotr/shared';
 import type { ZodType } from 'zod';
-import { fillTemplate, type Placeholders } from './template.ts';
 
 // All server calls go through here: same-origin, cookies included, JSON in
 // and out, RFC 9457 problems turned into ApiError and responses checked
