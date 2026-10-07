@@ -17,6 +17,8 @@ split     := amount ws (category ws number)+           # -80 groceries 60 home 2
 iou       := entry ws "owe:" name ws number            # part of an entry owed to me
                                                        # (a split bill: the rest is mine)
 repay     := "+" number ws "from:" name [ws "@" account]
+loan      := ("lend:" | "borrow:") name ws amount [ws "@" account] [ws date]
+             [ws "due:" date] [ws "#" tag]* [ws "//" note]   # an IOU with no bill
 transfer  := "=" number [ws code] ws account ">" account [ws number] [ws date]
 balance   := "bal" [ws account [ws number]]            # query or reconcile
 payday    := "payday" ws date
@@ -37,8 +39,13 @@ code      := ISO 4217 alphabetic code, case-insensitive
   user's own share, an expense in the entry's category. `owe:` may repeat for
   more people. `from:` names a person, not an IOU: it settles that person's oldest
   open IOU first, the surplus going to the next, and fails if the amount is
-  more than they owe. Lending and borrowing without a bill have no grammar form
-  yet; the parser is not built, and the API (`/v1/ious`) is the only way in.
+  more than they owe.
+- `lend:` and `borrow:` record an IOU with no bill (domain.md "IOUs"): the
+  amount is unsigned, because it is neither spending nor income, and the whole
+  amount is owed by or to the named person. There is no category. The prefix
+  may repeat (`lend:alex 30 lend:sam 20`) to lend to several people from one
+  entry, and `due:` sets the IOU's due date. Lending takes cash out of the
+  account and borrowing brings it in, the same as the API (`/v1/ious`).
 - Names (accounts, categories) resolve through the user's aliases,
   case-insensitively.
 - The number in `bal` is the bank's balance; for an account holding a debt
@@ -54,6 +61,9 @@ code      := ISO 4217 alphabetic code, case-insensitive
 -4 coffee 08:15                   with the time it happened
 -80 groceries 60 home 20          split across two categories
 -60 dinner owe:alex 30            paid $60; $30 is owed back by Alex
+lend:alex 50 @card                lent Alex $50 from Daily Card
+lend:alex 50 due:15/11            the same, due back on 15 November
+borrow:sam 80 @card               Sam lent me $80; reserved until I pay it back
 +30 from:alex @card               Alex repays
 +4000 salary                      paycheck (opens a new cycle)
 =300 main>card                    transfer between accounts

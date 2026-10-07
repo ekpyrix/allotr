@@ -1,0 +1,65 @@
+[
+  {
+    "input": "lend:alex 50 @card",
+    "today": "2026-03-10",
+    "expect": {
+      "kind": "lend",
+      "account": "card",
+      "people": [{ "name": "alex", "amount": "50" }],
+      "on": "2026-03-10"
+    }
+  },
+  {
+    "input": "lend:alex 50 due:15/11",
+    "today": "2026-03-10",
+    "expect": {
+      "kind": "lend",
+      "people": [{ "name": "alex", "amount": "50", "due": "2026-11-15" }],
+      "on": "2026-03-10"
+    }
+  },
+  {
+    "input": "lend:alex 30 lend:sam 20 @card",
+    "today": "2026-03-10",
+    "expect": {
+      "kind": "lend",
+      "account": "card",
+      "people": [
+        { "name": "alex", "amount": "30" },
+        { "name": "sam", "amount": "20" }
+      ],
+      "on": "2026-03-10"
+    }
+  },
+  {
+    "input": "borrow:sam 80 @card 05/03 // rent gap",
+    "today": "2026-03-10",
+    "expect": {
+      "kind": "borrow",
+      "account": "card",
+      "people": [{ "name": "sam", "amount": "80" }],
+      "on": "2026-03-05",
+      "note": "rent gap"
+    }
+  },
+  {
+    "input": "lend:alex -50",
+    "today": "2026-03-10",
+    "error": "sign-not-allowed"
+  },
+  {
+    "input": "lend:alex 50 food",
+    "today": "2026-03-10",
+    "error": "category-not-allowed"
+  },
+  {
+    "input": "lend:alex 50 borrow:sam 20",
+    "today": "2026-03-10",
+    "error": "mixed-directions"
+  },
+  {
+    "input": "lend: 50",
+    "today": "2026-03-10",
+    "error": "missing-person"
+  }
+]
