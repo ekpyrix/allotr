@@ -28,10 +28,29 @@ html {
 html::-webkit-scrollbar {
   display: none;
 }
-/* Outside a frame (auth screens, the body itself) the desktop base applies. */
+/*
+ * The desktop tokens live on :root, so overlays that React Aria portals to
+ * <body> (menus, sheets) resolve them too. A phone-width frame overrides
+ * them below.
+ */
 :root {
   --fs-base: 0.8125rem;
   --lh-base: 1.25;
+  --fs-small: 0.7188rem;
+  --lh-small: 1.2;
+  --fs-tiny: 0.6875rem;
+  --lh-tiny: 1.15;
+  --fs-big: 1.625rem;
+  --fs-stat: 1.375rem;
+  --fs-stat-sub: 1.125rem;
+  --fs-hero: 1.625rem;
+  --fs-hero-sub: 1.1875rem;
+  --h-strip: 2.25rem;
+  --h-bar: 2rem;
+  --h-row: 1.875rem;
+  --h-cmd: 2.625rem;
+  --h-tab: 2.875rem;
+  --h-topbar: 5.125rem;
 }
 
 /*
@@ -166,33 +185,17 @@ html::-webkit-scrollbar {
 }
 
 /*
- * The app frame is the container; `.scale` sits inside it and carries the
- * size tokens, so a phone-width frame gets the phone values (the container
- * itself cannot be styled by its own query). `display: contents` keeps it out
- * of the layout while the custom properties still inherit.
+ * The app frame is the container; `.scale` sits inside it and receives the
+ * per-width overrides below (the container itself cannot be styled by its own
+ * query). `display: contents` keeps it out of the layout while the custom
+ * properties still inherit. A sheet is its own `.frame`, so what it holds
+ * answers to the sheet's width.
  */
 .frame {
   container: frame / inline-size;
 }
 .scale {
   display: contents;
-  --fs-base: 0.8125rem;
-  --lh-base: 1.25;
-  --fs-small: 0.7188rem;
-  --lh-small: 1.2;
-  --fs-tiny: 0.6875rem;
-  --lh-tiny: 1.15;
-  --fs-big: 1.625rem;
-  --fs-stat: 1.375rem;
-  --fs-stat-sub: 1.125rem;
-  --fs-hero: 1.625rem;
-  --fs-hero-sub: 1.1875rem;
-  --h-strip: 2.25rem;
-  --h-bar: 2rem;
-  --h-row: 1.875rem;
-  --h-cmd: 2.625rem;
-  --h-tab: 2.875rem;
-  --h-topbar: 5.125rem;
 }
 @container frame (width >= 1000px) {
   .scale {

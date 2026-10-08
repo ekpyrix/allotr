@@ -77,7 +77,7 @@ export function PrimaryButton({
 
 /** A bordered control face: `label · value ▾`. The menu itself is in menu.tsx. */
 export const menuButtonClass =
-  'press inline-flex min-h-hit min-w-hit items-center gap-1.5 border border-outline px-2 text-small';
+  'press inline-flex min-h-hit min-w-hit max-w-full items-center gap-1.5 border border-outline px-2 text-small';
 
 export type ToggleOption<Id extends string> = Readonly<{
   id: Id;

@@ -177,14 +177,14 @@ export function TitleBar({
   return (
     <header
       className={cn(
-        'flex h-bar min-w-0 items-center gap-2 border-b bg-chrome px-3',
+        'flex h-bar min-w-0 items-center gap-2 overflow-hidden border-b bg-chrome px-3',
         primary && 'border-l-[3px] border-l-primary pl-[calc(0.75rem-3px)]',
       )}
     >
       {Icon === undefined ? null : (
         <Icon className="size-4 shrink-0 text-text-muted" />
       )}
-      <h2 id={id} className="min-w-0 shrink-0 truncate text-base font-semibold">
+      <h2 id={id} className="min-w-0 truncate text-base font-semibold">
         {title}
       </h2>
       {subtitle === undefined ? null : (
@@ -193,7 +193,7 @@ export function TitleBar({
         </span>
       )}
       {actions === undefined ? null : (
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex min-w-0 shrink-[2] items-center gap-1">
           {actions}
         </div>
       )}

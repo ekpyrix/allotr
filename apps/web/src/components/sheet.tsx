@@ -58,7 +58,12 @@ export function Sheet({
               <IconCloseLine className="size-4" />
             </button>
           </div>
-          <div className="scroll min-h-0 flex-1">{children}</div>
+          <div className="scroll min-h-0 flex-1">
+            {/* A sheet is its own frame: its content answers to its width. */}
+            <div className="frame">
+              <div className="scale">{children}</div>
+            </div>
+          </div>
         </Dialog>
       </Modal>
     </ModalOverlay>

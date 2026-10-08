@@ -1,5 +1,6 @@
 import { money } from '@allotr/shared';
 import { useState } from 'react';
+import type { Selection } from 'react-aria-components';
 import { Amount } from '@/components/amount';
 import {
   Bar,
@@ -17,8 +18,10 @@ import {
 } from '@/components/buttons';
 import { Frame, Grid, Split, Stack, Tile } from '@/components/layout';
 import {
+  MenuCheckItem,
   MenuItem,
   MenuButton,
+  MenuRadioItem,
   MenuSection,
   MenuSeparator,
 } from '@/components/menu';
@@ -69,6 +72,8 @@ export function DevComponentsPage() {
   const [sheet, setSheet] = useState(false);
   const [chips, setChips] = useState(['Food', 'Daily card']);
   const [folded, setFolded] = useState(false);
+  const [filterKeys, setFilterKeys] = useState<Selection>(new Set(['food']));
+  const [sortKeys, setSortKeys] = useState<Selection>(new Set(['newest']));
 
   return (
     <Frame className="min-h-dvh">
@@ -151,9 +156,24 @@ export function DevComponentsPage() {
                   label="Filter"
                   icon={IconFilter3Line}
                   title="Filter"
+                  selectionMode="multiple"
+                  selectedKeys={filterKeys}
+                  onSelectionChange={setFilterKeys}
                 >
-                  <MenuItem id="food" label="Food" />
-                  <MenuItem id="home" label="Home" />
+                  <MenuSection title="Category">
+                    <MenuCheckItem id="food" label="Food" />
+                    <MenuCheckItem id="home" label="Home" />
+                  </MenuSection>
+                </MenuButton>
+                <MenuButton
+                  label="Sort"
+                  title="Sort"
+                  selectionMode="single"
+                  selectedKeys={sortKeys}
+                  onSelectionChange={setSortKeys}
+                >
+                  <MenuRadioItem id="newest" label="Newest first" />
+                  <MenuRadioItem id="amount" label="Largest first" />
                 </MenuButton>
               </>
             }
@@ -359,6 +379,24 @@ export function DevComponentsPage() {
 
       <Sheet isOpen={sheet} onOpenChange={setSheet} title="Lunch">
         <p className="font-ui p-3">A detail sheet.</p>
+        <Row
+          tall
+          columns={columns}
+          cells={[
+            '08:12',
+            <CategoryIcon key="i" name="coffee" color={1} />,
+            <span key="p" className="font-ui">
+              Corner cafe
+            </span>,
+            <span key="c" className="font-ui text-text-muted">
+              Food › Coffee
+            </span>,
+            <span key="a" className="font-ui text-text-muted">
+              Daily card
+            </span>,
+            <Amount key="m" kind="expense" amount={money(-1400, 'USD')} />,
+          ]}
+        />
       </Sheet>
     </Frame>
   );

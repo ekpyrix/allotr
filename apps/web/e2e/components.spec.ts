@@ -39,6 +39,54 @@ for (const size of widths) {
       expect(radii).toEqual([]);
     });
 
+    test('nothing overflows the viewport sideways', async ({ page }) => {
+      const overflow = await page.evaluate(() => ({
+        page: document.documentElement.scrollWidth - window.innerWidth,
+        wide: [...document.querySelectorAll('body *')]
+          .filter(
+            (el) => el.getBoundingClientRect().right > window.innerWidth + 1,
+          )
+          .map((el) => (el.getAttribute('class') ?? el.tagName).slice(0, 60)),
+      }));
+      expect(overflow).toEqual({ page: 0, wide: [] });
+    });
+
+    test('a sheet holds its own frame: tokens and row columns follow its width', async ({
+      page,
+    }) => {
+      await page.getByRole('button', { name: 'Open sheet' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Lunch' });
+      await expect(dialog).toBeVisible();
+      const row = dialog.locator('.row-grid').first();
+      const columns = await row.evaluate(
+        (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
+      );
+      // The sheet is at most 40 rem (544 px at the 85 % root): always the
+      // compact frame, so time, category and account drop: icon, payee, amount.
+      expect(columns).toBe(3);
+      const fontSize = await dialog
+        .getByText('Corner cafe')
+        .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(fontSize).toBeGreaterThan(0);
+      await expectAccessible(page);
+    });
+
+    test('a selection menu marks its choices and keeps them', async ({
+      page,
+    }) => {
+      await page.getByRole('button', { name: /^Filter/ }).click();
+      const home = page.getByRole('menuitemcheckbox', { name: 'Home' });
+      await expect(home).toHaveAttribute('aria-checked', 'false');
+      await home.click();
+      await expect(home).toHaveAttribute('aria-checked', 'true');
+      await expectAccessible(page);
+      await page.keyboard.press('Escape');
+      await page.getByRole('button', { name: /^Sort/ }).click();
+      await expect(
+        page.getByRole('menuitemradio', { name: 'Newest first' }),
+      ).toHaveAttribute('aria-checked', 'true');
+    });
+
     test('keyboard focus shows a solid 2 px ring', async ({ page }) => {
       await page.keyboard.press('Tab');
       const focused = page.locator(':focus-visible');
