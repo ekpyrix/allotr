@@ -1,6 +1,6 @@
 # 0022. Visual language v2: compact, flat, hairlines and value colour
 
-- Status: Accepted
+- Status: Superseded by 0026
 - Date: 2026-10-01
 - Supersedes: 0018 (visual language)
 

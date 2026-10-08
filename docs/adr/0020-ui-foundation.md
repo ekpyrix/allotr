@@ -1,6 +1,6 @@
 # 0020. UI foundation: owned shadcn primitives, custom sheets, charts from server series
 
-- Status: Accepted
+- Status: Superseded by 0028
 - Date: 2026-09-30
 
 ## Context

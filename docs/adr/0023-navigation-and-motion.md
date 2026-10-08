@@ -1,6 +1,6 @@
 # 0023. Navigation v2 and calmer motion
 
-- Status: Accepted
+- Status: Superseded by 0027
 - Date: 2026-10-01
 - Amends: 0019 (motion system) — tab switches; supersedes nothing else
 
