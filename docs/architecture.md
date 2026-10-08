@@ -58,8 +58,8 @@ packages/shared`. Nothing depends on an app.
 | Query layer | Kysely, forward-only `.sql` migrations, generated types | [0004](adr/0004-sqlite-kysely.md) |
 | API | Hono, Zod schemas → OpenAPI 3.1, SSE | [0008](adr/0008-api-contract.md) |
 | Auth | Better Auth: local accounts, TOTP, OIDC, API tokens | [0006](adr/0006-auth.md) |
-| Web | React + Vite, TanStack Router/Query, shadcn/ui on Radix, Tailwind with generated role tokens, cmdk command palette, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0018](adr/0018-visual-language.md) (superseded by 0022, flat and compact, see #161), [0020](adr/0020-ui-foundation.md); navigation and motion per 0023 (see #161) |
-| Charts / motion | Recharts (lazy, charts only) plus custom SVG; CSS spring easings, View Transitions, and Motion (lazy, for gestures) | [0019](adr/0019-motion-system.md), [0020](adr/0020-ui-foundation.md) |
+| Web | React + Vite, TanStack Router/Query, React Aria Components, Tailwind with generated role tokens and container queries, Remix Icon 4.5.0 (compiled SVG), Geist and Geist Mono, palette themes, PWA | [0016](adr/0016-palette-themes.md), [0026](adr/0026-visual-language-v3.md), [0027](adr/0027-navigation-v3.md), [0028](adr/0028-ui-foundation-v2.md); spec in [ui.md](ui.md) |
+| Charts / motion | In-house SVG chart kit (monotone curves, HTML labels); CSS transitions and View Transitions with generated easing tokens | [0028](adr/0028-ui-foundation-v2.md) |
 | AI | Vercel AI SDK (OpenAI-compatible default), MCP TypeScript SDK | [0008](adr/0008-api-contract.md) |
 | Chat | discord.js, grammY | [0007](adr/0007-deployment-and-gateways.md) |
 | Monorepo | pnpm workspaces + Turborepo | [0003](adr/0003-typescript-node-stack.md) |
@@ -532,7 +532,7 @@ allotr/
 ├─ migrations/                 forward-only SQL
 ├─ testdata/  golden/  eval/  synthetic/   (private/ is git-ignored)
 ├─ deploy/    docker-compose.yml  .env.example  s6/
-├─ docs/      PRD.md  architecture.md  domain.md  grammar.md  adr/
+├─ docs/      PRD.md  architecture.md  domain.md  grammar.md  ui.md  adr/
 └─ .github/   workflows/  ISSUE_TEMPLATE/
 ```
 
@@ -545,5 +545,5 @@ allotr/
 | Golden | Grammar input → expected JSON | Vitest file snapshots |
 | Integration | API + SQLite + migrations | Vitest |
 | End-to-end replay | Synthetic ledgers imported, then timed undo, edit and back-dated steps → expected balances and today's figures | Vitest + `testdata/synthetic/` |
-| UI | Every signed-in route at phone and desktop sizes with axe (WCAG 2.2 AA); keyboard navigation of the shell; tablet and kiosk sizes later | Playwright |
+| UI | Every signed-in route at 390, 820 and 1440 px with axe (WCAG 2.2 AA), screenshot comparisons and shell alignment checks ([ui.md §10](ui.md#10-testing)); keyboard navigation of the shell; kiosk sizes later | Playwright |
 | LLM eval | Field-level accuracy per model (nightly) | Custom harness |
