@@ -12,7 +12,7 @@ import {
   linearEasing,
   SPRING_TOKENS,
   SPRINGS,
-} from '../src/motion/springs.ts';
+} from '../src/lib/springs.ts';
 
 // Writes src/generated/tokens.css: the default theme of each scheme as
 // resolved roles, and the spring tokens as `linear()` easings (ADR 0016,

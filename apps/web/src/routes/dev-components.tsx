@@ -1,422 +1,365 @@
+import { money } from '@allotr/shared';
+import { useState } from 'react';
+import { Amount } from '@/components/amount';
 import {
-  findPaletteTheme,
-  formatMoney,
-  money,
-  type PaletteTheme,
-} from '@allotr/shared';
+  Bar,
+  LeftBar,
+  ShareBar,
+  Skeleton,
+  SkeletonTile,
+} from '@/components/bars';
 import {
-  CircleAlert,
-  CircleCheck,
-  Copy,
-  Pencil,
-  Undo2,
-  Info,
-  Plus,
-  ReceiptText,
-  Search,
-  Settings,
-  ShoppingBasket,
-  TriangleAlert,
-  Wallet,
-} from 'lucide-react';
-import { useId, useState, type CSSProperties } from 'react';
-import { Field } from '@/components/field';
-import { AmountField } from '@/components/ui/amount-field';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { AssistChip, FilterChip, InputChip } from '@/components/ui/chip';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Fab } from '@/components/ui/fab';
-import { IconButton } from '@/components/ui/icon-button';
-import { Label } from '@/components/ui/label';
-import { List, ListRow, ListRowButton } from '@/components/ui/list';
+  BracketButton,
+  Chip,
+  PrimaryButton,
+  Tag,
+  ToggleGroup,
+} from '@/components/buttons';
+import { Frame, Grid, Split, Stack, Tile } from '@/components/layout';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-  Menu,
-  MenuContent,
   MenuItem,
-  MenuTrigger,
-} from '@/components/ui/menu';
-import { LinearProgress, RingProgress } from '@/components/ui/progress';
-import { Amount } from '@/components/ui/amount';
-import { OverflowMenu } from '@/components/ui/overflow-menu';
-import { ToggleGroup } from '@/components/ui/toggle-group';
-import { Skeleton, SkeletonCard, SkeletonRows } from '@/components/ui/skeleton';
-import { useSnackbar } from '@/components/ui/snackbar';
-import { StatusChip } from '@/components/ui/status-chip';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsPanel } from '@/components/ui/tabs';
-import { Tooltip } from '@/components/ui/tooltip';
-import { roleProperties } from '@/lib/theme-mode';
-import { Burst } from '@/motion/burst';
-import { DigitRoller } from '@/motion/digit-roller';
-import { Sheet } from '@/motion/sheet';
-import { SwipeRow } from '@/motion/swipe-row';
+  MenuButton,
+  MenuSection,
+  MenuSeparator,
+} from '@/components/menu';
+import { OverlayScrollbar } from '@/components/overlay-scrollbar';
+import { Row, TreeRow } from '@/components/row';
+import type { RowColumn } from '@/components/row-columns';
+import { Sheet } from '@/components/sheet';
+import { Stats, KeyFigures, SummaryLine } from '@/components/stats';
+import { CategoryIcon, EmptyState, ResultLine } from '@/components/states';
+import {
+  IconAddLine,
+  IconBankLine,
+  IconFilter3Line,
+  IconPieChart2Line,
+} from '@/generated/icons';
+import { formatMoney } from '@/lib/format-money';
 
-// A development-only gallery of every primitive (registered only when
-// import.meta.env.DEV), in both schemes and several palette families, each
-// panel painted by scoping that theme's roles. The sample text and amounts
-// here are made up and never ship.
+// A development-only gallery of every primitive, with synthetic data. It is
+// the Playwright target at 390, 820 and 1440 px (e2e/components.spec.ts).
 
-const THEMES = [
-  'catppuccin-latte',
-  'catppuccin-mocha',
-  'solarized-light',
-  'gruvbox-dark',
+const columns: readonly RowColumn[] = [
+  { width: '3rem', from: 'wide' },
+  { width: '1.25rem' },
+  { width: 'minmax(0, 2fr)' },
+  { width: 'minmax(0, 1.2fr)', from: 'medium' },
+  { width: 'minmax(0, 1fr)', from: 'wide' },
+  { width: 'auto' },
 ];
 
-const usd = (amountMinor: number) =>
-  formatMoney(money(amountMinor, 'USD'), 'en-US');
+const entries = [
+  { time: '08:12', icon: 'coffee', payee: 'Corner cafe', cat: 'Food › Coffee' },
+  { time: '12:40', icon: 'utensils', payee: 'Noodle bar', cat: 'Food › Lunch' },
+  {
+    time: '18:05',
+    icon: 'shopping-basket',
+    payee: 'Market',
+    cat: 'Food › Groceries',
+  },
+] as const;
 
-function Panel({ theme }: { theme: PaletteTheme }) {
-  const headingId = useId();
-  const show = useSnackbar();
-  const [filter, setFilter] = useState(true);
-  const [range, setRange] = useState<'week' | 'cycle' | 'year'>('cycle');
-  const [on, setOn] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'days'>('overview');
-  const [sheet, setSheet] = useState(false);
-  const [left, setLeft] = useState(3840);
-  const [burst, setBurst] = useState(0);
-  const style = Object.fromEntries(
-    roleProperties(theme.resolved.roles),
-  ) as CSSProperties;
-  return (
-    <section
-      aria-labelledby={headingId}
-      data-theme={theme.scheme}
-      style={{ ...style, colorScheme: theme.scheme }}
-      className="grid gap-6 rounded-2xl bg-canvas p-4 text-text medium:p-6"
-    >
-      <h2 id={headingId} className="text-headline">
-        {theme.name}
-      </h2>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button>Save</Button>
-        <Button variant="tonal">Edit</Button>
-        <Button variant="outlined">Cancel</Button>
-        <Button variant="text">Skip</Button>
-        <Button variant="danger-tonal">Delete</Button>
-        <Button size="dense">
-          <Plus aria-hidden="true" />
-          Add
-        </Button>
-        <Button disabled>Disabled</Button>
-        <Button variant="link">Learn more</Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Tooltip content="Search entries">
-          <IconButton aria-label="Search">
-            <Search />
-          </IconButton>
-        </Tooltip>
-        <IconButton aria-label="Settings" variant="tonal">
-          <Settings />
-        </IconButton>
-        <IconButton aria-label="Add entry" variant="filled">
-          <Plus />
-        </IconButton>
-        <Fab icon={<Plus aria-hidden="true" />} aria-label="Add entry" />
-        <Fab icon={<Plus aria-hidden="true" />} label="Add" />
-      </div>
-
-      <div className="grid gap-3 medium:grid-cols-3">
-        <Card>
-          <p className="text-title-lg">Card</p>
-          <p className="text-body text-text-muted">Default tier.</p>
-        </Card>
-        <Card variant="interactive" asChild>
-          <button type="button" className="text-left">
-            <span className="block text-title-lg">Interactive</span>
-            <span className="block text-body text-text-muted">
-              Steps up a tier when pressed.
-            </span>
-          </button>
-        </Card>
-        <Card variant="hero">
-          <p className="text-label text-text-muted">Left today</p>
-          <p className="font-mono text-display text-hero-ok">{usd(3840)}</p>
-        </Card>
-      </div>
-
-      <List>
-        <ListRow
-          leading={<ShoppingBasket />}
-          title="Groceries"
-          supporting="Everyday · today"
-          trailing={usd(-2450)}
-        />
-        <ListRowButton
-          leading={<Wallet />}
-          title="Everyday"
-          supporting="On budget"
-          trailing={usd(182000)}
-          onClick={() => {
-            show({ message: 'Opened Everyday' });
-          }}
-        />
-        <ListRowButton
-          leading={<ReceiptText />}
-          title="Rent"
-          trailing={usd(80000)}
-        />
-      </List>
-
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <Amount amount={money(-2450, 'USD')} locale="en-US" />
-        <Amount amount={money(310000, 'USD')} locale="en-US" />
-        <Amount amount={money(50000, 'USD')} locale="en-US" kind="transfer" />
-        <Amount amount={money(-18000, 'USD')} locale="en-US" negativeOnly />
-        <OverflowMenu label="More actions for Everyday">
-          <MenuItem>Rename</MenuItem>
-          <MenuItem>Move off budget</MenuItem>
-          <MenuItem variant="danger">Archive</MenuItem>
-        </OverflowMenu>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <FilterChip selected={filter} onSelectedChange={setFilter}>
-          Food
-        </FilterChip>
-        <FilterChip
-          selected={!filter}
-          onSelectedChange={(v) => {
-            setFilter(!v);
-          }}
-        >
-          Transport
-        </FilterChip>
-        <InputChip label="Card" onRemove={() => undefined} />
-        <AssistChip icon={<Plus aria-hidden="true" />}>New category</AssistChip>
-      </div>
-
-      <ToggleGroup
-        label="Range"
-        value={range}
-        onValueChange={setRange}
-        options={[
-          { value: 'week', label: 'Week' },
-          { value: 'cycle', label: 'Cycle' },
-          { value: 'year', label: 'Year' },
-        ]}
-      />
-
-      <div className="flex items-center gap-3">
-        <Switch
-          id={`${headingId}-switch`}
-          checked={on}
-          onCheckedChange={setOn}
-        />
-        <Label htmlFor={`${headingId}-switch`}>Haptics</Label>
-      </div>
-
-      <div className="grid gap-4 medium:grid-cols-2">
-        <Field label="Note" hint="Shown in the ledger." placeholder="Lunch" />
-        <div className="grid gap-2">
-          <Label htmlFor={`${headingId}-amount`}>Amount</Label>
-          <AmountField
-            id={`${headingId}-amount`}
-            currency="USD"
-            defaultValue="12.50"
-          />
-        </div>
-      </div>
-
-      <Tabs
-        label="Cycle"
-        value={tab}
-        onValueChange={setTab}
-        tabs={[
-          { value: 'overview', label: 'Overview' },
-          { value: 'days', label: 'Days' },
-        ]}
-      >
-        <TabsPanel value="overview">Overview panel.</TabsPanel>
-        <TabsPanel value="days">Days panel.</TabsPanel>
-      </Tabs>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outlined">Open dialog</Button>
-          </DialogTrigger>
-          <DialogContent
-            title="Reverse this entry?"
-            description="The entry stays in the ledger, with a reversal beside it."
-          >
-            <div className="flex justify-end gap-3">
-              <Button variant="text">Cancel</Button>
-              <Button variant="danger-tonal">Reverse</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-        <Menu>
-          <MenuTrigger asChild>
-            <Button variant="outlined">Open menu</Button>
-          </MenuTrigger>
-          <MenuContent>
-            <MenuItem>Edit</MenuItem>
-            <MenuItem>Duplicate</MenuItem>
-            <MenuItem variant="danger">Reverse</MenuItem>
-          </MenuContent>
-        </Menu>
-        <ContextMenu>
-          <ContextMenuTrigger className="rounded-md border border-dashed border-outline px-4 py-3 text-body">
-            Right-click here
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuItem>Edit</ContextMenuItem>
-            <ContextMenuItem variant="danger">Reverse</ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-        <Button
-          variant="outlined"
-          onClick={() => {
-            show({
-              message: `Saved. ${usd(3840)} left today`,
-              action: { label: 'Undo', onAction: () => undefined },
-            });
-          }}
-        >
-          Show snackbar
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusChip tone="success" icon={<CircleCheck />}>
-          On pace
-        </StatusChip>
-        <StatusChip tone="warning" icon={<TriangleAlert />}>
-          Tight
-        </StatusChip>
-        <StatusChip tone="danger" icon={<CircleAlert />}>
-          Over
-        </StatusChip>
-        <StatusChip tone="info" icon={<Info />}>
-          Reserved
-        </StatusChip>
-      </div>
-
-      <div className="grid gap-3">
-        <LinearProgress value={62} label="Cycle spent" />
-        <RingProgress value={40} label="Savings goal" />
-        <div className="grid gap-2" aria-busy="true">
-          <Skeleton className="h-6 w-2/3" />
-          <Skeleton className="h-6 w-1/2" />
-        </div>
-        <SkeletonRows rows={2} />
-        <SkeletonCard />
-      </div>
-
-      <h3 className="text-title-lg">Motion</h3>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          variant="outlined"
-          onClick={() => {
-            setSheet(true);
-          }}
-        >
-          Open sheet
-        </Button>
-        <Sheet
-          open={sheet}
-          onOpenChange={setSheet}
-          title="Lunch"
-          description="Groceries · Everyday · today"
-        >
-          <p className="text-body">A made-up entry in a sheet.</p>
-        </Sheet>
-        <Button
-          variant="outlined"
-          onClick={() => {
-            setLeft((value) => (value === 3840 ? 123_456 : 3840));
-          }}
-        >
-          Change amount
-        </Button>
-        <span data-testid="roller" className="text-display">
-          <DigitRoller value={usd(left)} />
-        </span>
-        <span className="relative inline-flex">
-          <Button
-            variant="tonal"
-            onClick={() => {
-              setBurst((count) => count + 1);
-            }}
-          >
-            Celebrate
-          </Button>
-          <Burst play={burst} />
-        </span>
-      </div>
-      <List>
-        <li>
-          <SwipeRow
-            label="Lunch"
-            leading={[
-              {
-                label: 'Duplicate',
-                icon: <Copy aria-hidden="true" />,
-                onAction: () => {
-                  show({ message: 'Duplicated Lunch' });
-                },
-                commitOnFullSwipe: true,
-              },
-            ]}
-            trailing={[
-              {
-                label: 'Edit',
-                icon: <Pencil aria-hidden="true" />,
-                onAction: () => {
-                  show({ message: 'Editing Lunch' });
-                },
-              },
-              {
-                label: 'Reverse',
-                icon: <Undo2 aria-hidden="true" />,
-                tone: 'danger',
-                onAction: () => {
-                  show({ message: 'Reversed Lunch' });
-                },
-              },
-            ]}
-          >
-            <div className="flex min-h-(--row-h) items-center gap-4 px-4">
-              <span className="flex-1 text-body-lg">Lunch</span>
-              <span className="font-mono text-body-lg">{usd(-1250)}</span>
-            </div>
-          </SwipeRow>
-        </li>
-      </List>
-
-      <Card>
-        <EmptyState
-          icon={<ReceiptText />}
-          title="No entries yet. Add the first one."
-          action={<Button size="dense">Add entry</Button>}
-        />
-      </Card>
-    </section>
-  );
-}
+const periods = ['This cycle', 'Last cycle', 'This month', 'Last month'];
 
 export function DevComponentsPage() {
-  const themes = THEMES.flatMap((id) => {
-    const theme = findPaletteTheme(id, []);
-    return theme === undefined ? [] : [theme];
-  });
+  const [scheme, setScheme] = useState<'light' | 'dark'>('light');
+  const [view, setView] = useState<'list' | 'tree'>('list');
+  const [period, setPeriod] = useState(periods[0] ?? '');
+  const [selected, setSelected] = useState(1);
+  const [sheet, setSheet] = useState(false);
+  const [chips, setChips] = useState(['Food', 'Daily card']);
+  const [folded, setFolded] = useState(false);
+
   return (
-    <main className="mx-auto grid max-w-5xl gap-6 p-4">
-      <h1 className="text-headline">Components</h1>
-      {themes.map((theme) => (
-        <Panel key={theme.id} theme={theme} />
-      ))}
-    </main>
+    <Frame className="min-h-dvh">
+      <main>
+        <div className="flex h-strip items-center gap-3 border-b bg-chrome px-3">
+          <h1 className="text-base font-semibold">Components</h1>
+          <ToggleGroup
+            label="Theme"
+            value={scheme}
+            onChange={(next) => {
+              setScheme(next);
+              document.documentElement.dataset.theme = next;
+            }}
+            options={[
+              { id: 'light', label: 'Light' },
+              { id: 'dark', label: 'Dark' },
+            ]}
+          />
+          <PrimaryButton icon={IconAddLine} className="ml-auto">
+            new
+          </PrimaryButton>
+        </div>
+
+        <Stats
+          stats={[
+            {
+              label: 'Left today',
+              icon: IconPieChart2Line,
+              figure: <Amount amount={money(3680, 'USD')} />,
+              sub: 'of $55.20 · 15 days to payday',
+              bar: { fraction: 0.67, label: 'Left of today’s allowance' },
+              tone: 'positive',
+            },
+            {
+              label: 'On budget',
+              icon: IconBankLine,
+              figure: <Amount amount={money(124000, 'USD')} />,
+              sub: 'bills set aside $412.00',
+            },
+            {
+              label: 'Credit owed',
+              figure: <Amount amount={money(18000, 'USD')} />,
+              sub: 'of $500.00 limit',
+              bar: { fraction: 0.36, label: 'Credit limit used' },
+            },
+            {
+              label: 'Reconcile',
+              figure: '2',
+              sub: 'accounts need a look',
+            },
+          ]}
+        />
+
+        <Grid>
+          <Tile
+            title="Transactions"
+            subtitle="14 entries"
+            icon={IconBankLine}
+            primary
+            span={2}
+            actions={
+              <>
+                <MenuButton label="Period" value={period} title="Period">
+                  <MenuSection title="Period">
+                    {periods.map((name) => (
+                      <MenuItem
+                        key={name}
+                        id={name}
+                        label={name}
+                        onAction={() => {
+                          setPeriod(name);
+                        }}
+                      />
+                    ))}
+                  </MenuSection>
+                  <MenuSeparator />
+                  <MenuItem id="custom" label="Custom…" hint="c" />
+                </MenuButton>
+                <MenuButton
+                  label="Filter"
+                  icon={IconFilter3Line}
+                  title="Filter"
+                >
+                  <MenuItem id="food" label="Food" />
+                  <MenuItem id="home" label="Home" />
+                </MenuButton>
+              </>
+            }
+            bodyClassName="px-0 pb-0"
+          >
+            <div className="flex flex-wrap gap-1 border-b px-3 py-2">
+              {chips.map((chip) => (
+                <Chip
+                  key={chip}
+                  label={chip}
+                  removeLabel={`Remove ${chip}`}
+                  onRemove={() => {
+                    setChips((current) => current.filter((c) => c !== chip));
+                  }}
+                />
+              ))}
+            </div>
+            <div className="border-b px-3 py-1.5">
+              <SummaryLine
+                parts={[
+                  '14 entries',
+                  `spent ${formatMoney(money(120160, 'USD'))}`,
+                  `net +${formatMoney(money(93840, 'USD'))}`,
+                ]}
+              />
+            </div>
+            {entries.map((entry, index) => (
+              <Row
+                key={entry.payee}
+                tall
+                columns={columns}
+                selected={selected === index}
+                onPress={() => {
+                  setSelected(index);
+                }}
+                cells={[
+                  <span key="t" className="text-text-muted">
+                    {entry.time}
+                  </span>,
+                  <CategoryIcon key="i" name={entry.icon} color={1} />,
+                  <span key="p" className="font-ui">
+                    {entry.payee}
+                  </span>,
+                  <span key="c" className="font-ui text-text-muted">
+                    {entry.cat}
+                  </span>,
+                  <span key="a" className="font-ui text-text-muted">
+                    Daily card
+                  </span>,
+                  <Amount
+                    key="m"
+                    kind="expense"
+                    amount={money(-(index + 1) * 1400, 'USD')}
+                  />,
+                ]}
+              />
+            ))}
+          </Tile>
+
+          <Tile title="Budgets" subtitle="cycle" icon={IconPieChart2Line}>
+            <TreeRow
+              role="parent"
+              label="Food"
+              expanded={!folded}
+              onToggle={() => {
+                setFolded((value) => !value);
+              }}
+              columns={[{ width: 'minmax(0, 1fr)' }, { width: 'auto' }]}
+              cells={['Food', <Amount key="a" amount={money(32000, 'USD')} />]}
+            />
+            {folded ? null : (
+              <>
+                <TreeRow
+                  role="child"
+                  label="Coffee"
+                  columns={[{ width: 'minmax(0, 1fr)' }, { width: 'auto' }]}
+                  cells={[
+                    'Coffee',
+                    <Amount key="a" amount={money(8000, 'USD')} />,
+                  ]}
+                />
+                <TreeRow
+                  role="last-child"
+                  label="Groceries"
+                  columns={[{ width: 'minmax(0, 1fr)' }, { width: 'auto' }]}
+                  cells={[
+                    'Groceries',
+                    <Amount key="a" amount={money(24000, 'USD')} />,
+                  ]}
+                />
+              </>
+            )}
+            <div className="grid gap-2 pt-3">
+              <Bar value={0.62} pace={0.5} label="Food spent" />
+              <Bar value={1} over label="Transport spent, over budget" />
+              <LeftBar
+                fraction={0.4}
+                height={4}
+                label="Left of the cycle start"
+              />
+              <ShareBar
+                label="Pool shares"
+                segments={[
+                  { id: 'a', label: 'Daily', fraction: 0.5, color: 'series-1' },
+                  { id: 'b', label: 'Bills', fraction: 0.3, color: 'series-2' },
+                  { id: 'c', label: 'Rest', fraction: 0.2, color: 'series-3' },
+                ]}
+              />
+            </div>
+          </Tile>
+
+          <Tile title="Controls" icon={IconAddLine}>
+            <div className="flex flex-wrap items-center gap-2 py-2">
+              <BracketButton>pay</BracketButton>
+              <BracketButton icon={IconAddLine}>add</BracketButton>
+              <BracketButton tone="destructive">delete</BracketButton>
+              <ToggleGroup
+                label="View"
+                value={view}
+                onChange={setView}
+                options={[
+                  { id: 'list', label: 'List' },
+                  { id: 'tree', label: 'Tree' },
+                ]}
+              />
+              <Tag>3d</Tag>
+              <Tag tone="negative">9d late</Tag>
+              <Tag tone="positive">✓ paid</Tag>
+              <Tag tone="warning">review</Tag>
+            </div>
+            <KeyFigures
+              figures={[
+                { label: 'spent', figure: '$1,201.60' },
+                { label: 'even pace', figure: '$1,104.00' },
+                { label: 'under pace', figure: '$97.60' },
+              ]}
+            />
+            <div className="flex gap-2 pt-3">
+              <Amount kind="expense" amount={money(-1400, 'USD')} />
+              <Amount kind="income" amount={money(214000, 'USD')} />
+              <Amount kind="transfer" amount={money(15000, 'EUR')} />
+              <Amount amount={money(1250, 'JPY')} />
+            </div>
+            <div className="pt-3">
+              <BracketButton
+                onPress={() => {
+                  setSheet(true);
+                }}
+              >
+                Open sheet
+              </BracketButton>
+            </div>
+          </Tile>
+
+          <Tile title="Empty" icon={IconBankLine}>
+            <EmptyState
+              icon={IconBankLine}
+              title="No goals yet"
+              hint="Goals you add appear here with their progress."
+              action={<BracketButton icon={IconAddLine}>goal</BracketButton>}
+            />
+          </Tile>
+
+          <Tile title="Scrolling" icon={IconBankLine}>
+            <OverlayScrollbar label="Notes" className="h-24">
+              {Array.from({ length: 12 }, (_, i) => (
+                <p key={i} className="font-ui py-1">
+                  Note {String(i + 1)}
+                </p>
+              ))}
+            </OverlayScrollbar>
+          </Tile>
+
+          <SkeletonTile rows={3} />
+        </Grid>
+
+        <Stack>
+          <Split
+            list={
+              <Tile title="List" icon={IconBankLine}>
+                <Skeleton height="0.75rem" />
+              </Tile>
+            }
+            detail={
+              <Tile title="Detail" icon={IconBankLine}>
+                <p className="font-ui">Shown beside the list from 1000 px.</p>
+              </Tile>
+            }
+          />
+        </Stack>
+
+        <ResultLine
+          icon={<CategoryIcon name="coffee" color={1} />}
+          amount={<Amount kind="expense" amount={money(-450, 'USD')} />}
+          account="Daily card"
+          left={<span>$32.30 left today</span>}
+          undoLabel="undo"
+          onUndo={() => undefined}
+          onDismiss={() => undefined}
+          dismissAfterMs={0}
+        />
+      </main>
+
+      <Sheet isOpen={sheet} onOpenChange={setSheet} title="Lunch">
+        <p className="font-ui p-3">A detail sheet.</p>
+      </Sheet>
+    </Frame>
   );
 }

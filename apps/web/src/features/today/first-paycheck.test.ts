@@ -1,6 +1,6 @@
 import { money, type AccountView, type CategoryView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { needsFirstPaycheck } from './first-paycheck.tsx';
+import { needsFirstPaycheck } from './first-paycheck.ts';
 
 const account = (budgetGroup: 'on' | 'off', archived = false): AccountView =>
   ({

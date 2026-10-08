@@ -14,34 +14,8 @@ const sizes = [
     },
   },
 ];
-const specs = [
-  'smoke',
-  'sign-in',
-  'shell',
-  'quick-entry',
-  'pwa',
-  'today',
-  'ledger',
-  'accounts',
-  'settings',
-  'splits',
-  'cycles',
-  'setup',
-  'export',
-  'delete-account',
-  'themes',
-  'command-palette',
-  'savings',
-  'audit',
-  'budget',
-  'payday',
-  'ious',
-  'ious-repay',
-  'calendar',
-  'reminders',
-  'entry-order',
-  'goals',
-];
+// The per-screen specs return with their screens (WP3 onwards).
+const specs = ['smoke'];
 
 const projects = sizes.flatMap((size, i) =>
   specs.map((spec, j) => ({

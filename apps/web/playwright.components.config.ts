@@ -15,16 +15,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     baseURL: `http://127.0.0.1:${String(port)}`,
   },
-  projects: [
-    { name: 'phone components', use: { ...devices['Pixel 7'] } },
-    {
-      name: 'desktop components',
-      use: {
-        ...devices['Desktop Chrome'],
-        viewport: { width: 1280, height: 800 },
-      },
-    },
-  ],
+  // The spec sets each viewport (390, 820 and 1440 px) itself.
+  projects: [{ name: 'components', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: `node ./node_modules/vite/bin/vite.js --port ${String(port)} --strictPort --host 127.0.0.1`,
     url: `http://127.0.0.1:${String(port)}/dev/components`,

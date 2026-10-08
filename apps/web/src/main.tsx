@@ -2,9 +2,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ThemeProvider } from './components/theme-provider.tsx';
-import { SnackbarProvider } from './components/ui/snackbar.tsx';
-import { TooltipProvider } from './components/ui/tooltip.tsx';
 import { createQueryClient } from './lib/query-client.ts';
 import { registerServiceWorker } from './lib/service-worker.ts';
 import { sessionQuery } from './lib/session.ts';
@@ -27,13 +24,7 @@ if (root === null) throw new Error('Missing #root element');
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider delayDuration={400}>
-          <SnackbarProvider>
-            <RouterProvider router={router} />
-          </SnackbarProvider>
-        </TooltipProvider>
-      </ThemeProvider>
+      <RouterProvider router={router} />
     </QueryClientProvider>
   </StrictMode>,
 );
