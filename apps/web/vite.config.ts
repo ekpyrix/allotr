@@ -16,14 +16,6 @@ export default defineConfig({
         find: '@',
         replacement: fileURLToPath(new URL('./src', import.meta.url)),
       },
-      // Radix's scroll lock injects a <style> element the CSP blocks; the
-      // stand-in locks through styles.css instead.
-      {
-        find: /^react-remove-scroll-bar(\/constants)?$/,
-        replacement: fileURLToPath(
-          new URL('./src/lib/vendor/remove-scroll-bar.ts', import.meta.url),
-        ),
-      },
     ],
   },
   // The component gallery is a lazy dev-only route; scanning it up front
@@ -31,7 +23,7 @@ export default defineConfig({
   // imports.
   optimizeDeps: { entries: ['index.html', 'src/routes/dev-components.tsx'] },
   // Libraries every screen needs go in one vendor chunk, cached across
-  // releases; ones only some screens load (charts, Motion) stay with them.
+  // releases; ones only some screens load stay with them.
   build: {
     rolldownOptions: {
       output: {
@@ -39,7 +31,7 @@ export default defineConfig({
           groups: [
             {
               name: 'vendor',
-              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|@radix-ui|radix-ui|zod|tailwind-merge|clsx|class-variance-authority|lucide-react|cmdk|@floating-ui|aria-hidden|react-remove-scroll|react-style-singleton|use-callback-ref|use-sidecar|use-sync-external-store|detect-node-es|get-nonce|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
+              test: /node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:react|react-dom|scheduler|@tanstack|react-aria-components|react-aria|react-stately|@react-aria|@react-stately|@react-types|@internationalized|@swc|zod|tailwind-merge|clsx|class-variance-authority|use-sync-external-store|tslib|tiny-invariant|tiny-warning|cookie-es|seroval|seroval-plugins|@fontsource-variable)[\\/]/,
             },
           ],
         },
@@ -52,6 +44,10 @@ export default defineConfig({
     proxy: { '/v1': { target: apiTarget } },
   },
   test: {
-    include: ['src/**/*.test.{ts,tsx}', 'build/**/*.test.ts'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'build/**/*.test.ts',
+      'scripts/**/*.test.ts',
+    ],
   },
 });

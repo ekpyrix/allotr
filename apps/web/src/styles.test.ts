@@ -88,4 +88,32 @@ describe('styles.css', () => {
   it('never uses a box shadow for depth', () => {
     expect(css).not.toMatch(/box-shadow/);
   });
+
+  it('scales the root to 85 % and sizes in rem', () => {
+    expect(css).toMatch(/html\s*{[^}]*font-size:\s*85%/);
+  });
+
+  it('has no radius anywhere', () => {
+    expect(css).toContain('--radius-*: initial;');
+    expect(css).not.toMatch(/border-radius/);
+  });
+
+  it('keeps surfaces opaque', () => {
+    // Opacity is only for a dragged item, never in the base stylesheet.
+    expect(css).not.toMatch(/(?<!-)opacity\s*:/);
+    expect(css).not.toMatch(/rgba?\(|hsla?\(|transparent/);
+  });
+
+  it('puts container thresholds in px, not rem', () => {
+    const queries = [...css.matchAll(/@container frame \(([^)]*)\)/g)];
+    expect(queries.length).toBeGreaterThan(0);
+    for (const [, condition] of queries)
+      expect(condition).not.toMatch(/rem|em/);
+  });
+
+  it('uses the terminal fonts: Geist for text, Geist Mono for the interface', () => {
+    expect(css).toContain("--font-ui: 'Geist Variable'");
+    expect(css).toContain("--font-num: 'Geist Mono Variable'");
+    expect(css).toContain('--font-sans: var(--font-num);');
+  });
 });

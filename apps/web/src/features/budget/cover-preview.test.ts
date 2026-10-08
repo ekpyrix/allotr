@@ -1,6 +1,6 @@
 import { money, type CreateTransactionBody } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { coverKey, coverRequest } from './cover-preview.tsx';
+import { coverKey, coverRequest } from './cover-preview.ts';
 
 const expense = (extra: object = {}): CreateTransactionBody => ({
   kind: 'expense',

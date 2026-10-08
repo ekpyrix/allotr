@@ -7,86 +7,108 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 /*
- * Allotr design tokens (ADRs 0016, 0018, 0019).
+ * Allotr terminal design system (ADRs 0016, 0026, 0028; docs/ui.md).
  *
- * Colour: every theme resolves to the same roles (canvas, card, text,
- * primary, hero-ok…), each fitted to WCAG 2.2 AA by the resolver in
- * @allotr/shared. generated/tokens.css holds the default theme of each
- * scheme, Catppuccin Latte and Mocha, plus the spring easings; any other
- * theme is painted over them as custom properties on <html> by
- * public/theme-init.js before first paint and by ThemeProvider after.
- * data-theme on <html> is always light or dark.
+ * Colour: every theme resolves to the same roles, each fitted to WCAG 2.2 AA
+ * by the resolver in @allotr/shared. generated/tokens.css holds the default
+ * theme of each scheme plus the motion easings; any other theme is painted
+ * over them as custom properties on <html> by public/theme-init.js.
  *
- * Surfaces are flat (ADR 0022): grouped lists with hairline separators
- * on the canvas; the card tone is for the hero and overlays. There are no
- * shadows, no translucency and no blur.
+ * Surfaces are flat and opaque: no radius, no shadow, no alpha. Depth comes
+ * from the roles canvas < chrome < card and 1 px seams.
+ *
+ * Size: the root is 85 % and everything is in rem, taken from the design px
+ * in docs/ui.md §2.3 divided by 16.
+ */
+html {
+  font-size: 85%;
+  /* Overlay scrollbars (OverlayScrollbar) replace the native bar. */
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+/*
+ * The desktop tokens live on :root, so overlays that React Aria portals to
+ * <body> (menus, sheets) resolve them too. A phone-width frame overrides
+ * them below.
  */
 :root {
-  /* Spacing a density setting changes. */
-  --card-pad: 12px;
-  --row-h: 44px;
+  --fs-base: 0.8125rem;
+  --lh-base: 1.25;
+  --fs-small: 0.7188rem;
+  --lh-small: 1.2;
+  --fs-tiny: 0.6875rem;
+  --lh-tiny: 1.15;
+  --fs-big: 1.625rem;
+  --fs-stat: 1.375rem;
+  --fs-stat-sub: 1.125rem;
+  --fs-hero: 1.625rem;
+  --fs-hero-sub: 1.1875rem;
+  --h-strip: 2.25rem;
+  --h-bar: 2rem;
+  --h-row: 1.875rem;
+  --h-cmd: 2.625rem;
+  --h-tab: 2.875rem;
+  --h-topbar: 5.125rem;
 }
 
-@media (width >= 840px) and (pointer: fine) {
-  :root {
-    --row-h: 40px;
-  }
-}
-
-:root[data-density='comfortable'] {
-  --card-pad: 16px;
-  --row-h: 56px;
-}
+/*
+ * Container queries run on the app frame (`.frame`), so the shell, tiles and
+ * menus respond to the room they have. Thresholds are in px: rem would be
+ * evaluated at the 85 % root.
+ */
+@custom-variant compact (@container frame (width < 600px));
+@custom-variant medium (@container frame (width >= 600px));
+@custom-variant wide (@container frame (width >= 1000px));
+@custom-variant narrow (@container frame (width < 1000px));
+@custom-variant cols2 (@container frame (width >= 720px));
+@custom-variant cols3 (@container frame (width >= 1100px));
+@custom-variant cols4 (@container frame (width >= 1500px));
 
 @theme {
-  /* Shape (ADR 0022): 4/6/8/12 px; pills only for the tab bar, the add
-     button and chips. */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 12px;
-  --radius-2xl: 12px;
+  /* No default text sizes: the scale below replaces them. */
+  --text-*: initial;
 
-  /* Window size classes (spec §6); sm/md/lg stay until the cleanup. */
-  --breakpoint-medium: 600px;
-  --breakpoint-expanded: 840px;
-  --breakpoint-large: 1200px;
-  --breakpoint-xl: 1600px;
+  /* No radius anywhere (ADR 0026). */
+  --radius-*: initial;
 
-  /* Type roles (spec §5). */
-  --text-display-hero: clamp(3.5rem, 16vw, 6rem);
-  --text-display-hero--line-height: 0.95;
-  --text-display-hero--letter-spacing: -0.04em;
-  --text-display-hero--font-weight: 600;
-  --text-display: 2.75rem;
-  --text-display--line-height: 3rem;
-  --text-display--font-weight: 600;
-  --text-headline: 1.75rem;
-  --text-headline--line-height: 2.125rem;
-  --text-headline--font-weight: 600;
-  --text-title-lg: 1.375rem;
-  --text-title-lg--line-height: 1.75rem;
-  --text-title-lg--font-weight: 600;
-  --text-title: 1.0625rem;
-  --text-title--line-height: 1.375rem;
-  --text-title--font-weight: 600;
-  --text-body-lg: 1.0625rem;
-  --text-body-lg--line-height: 1.5rem;
-  --text-body: 0.9375rem;
-  --text-body--line-height: 1.375rem;
-  --text-label: 0.8125rem;
-  --text-label--line-height: 1.125rem;
-  --text-label--font-weight: 500;
-  --text-caption: 0.75rem;
-  --text-caption--line-height: 1rem;
-  --text-caption--font-weight: 500;
-
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+  --font-ui: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-num: 'Geist Mono Variable', ui-monospace, monospace;
+  /* Interface text is monospace; only content text opts into font-ui. */
+  --font-sans: var(--font-num);
+  --font-mono: var(--font-num);
 }
 
 @theme inline {
+  /* Text scale (docs/ui.md §2.3): the values follow the frame, see .scale. */
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--lh-base);
+  --text-small: var(--fs-small);
+  --text-small--line-height: var(--lh-small);
+  --text-tiny: var(--fs-tiny);
+  --text-tiny--line-height: var(--lh-tiny);
+  --text-big: var(--fs-big);
+  --text-big--line-height: 1.1;
+  --text-stat: var(--fs-stat);
+  --text-stat--line-height: 1.05;
+  --text-stat-sub: var(--fs-stat-sub);
+  --text-stat-sub--line-height: 1.1;
+  --text-hero: var(--fs-hero);
+  --text-hero--line-height: 1;
+  --text-hero-sub: var(--fs-hero-sub);
+  --text-hero-sub--line-height: 1.05;
+
+  /* Heights (docs/ui.md §2.3). */
+  --spacing-strip: var(--h-strip);
+  --spacing-bar: var(--h-bar);
+  --spacing-row: var(--h-row);
+  --spacing-cmd: var(--h-cmd);
+  --spacing-tab: var(--h-tab);
+  --spacing-topbar: var(--h-topbar);
+  /* The rendered hit target stays >= 24 CSS px at the 85 % root (WCAG 2.2). */
+  --spacing-hit: 1.8rem;
+
   /* Every role as a colour utility: bg-card, text-text-muted… */
   --color-canvas: var(--canvas);
   --color-chrome: var(--chrome);
@@ -138,272 +160,125 @@
     font-feature-settings: 'tnum' 1;
   }
   body {
-    @apply bg-canvas font-sans text-text antialiased;
+    @apply bg-canvas font-num text-base text-text antialiased;
+    font-variant-numeric: tabular-nums;
+    overflow-x: hidden;
   }
   ::selection {
     background-color: var(--selection);
   }
+  /* A focus ring on every interactive element: 2 px inset (docs/ui.md §5). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+  button,
+  [role='button'],
+  [role='menuitem'],
+  [role='row'],
+  a {
+    cursor: pointer;
+  }
+  button {
+    text-align: inherit;
+  }
 }
 
 /*
- * Interaction states (ADR 0018). State is tonal: a hovered or pressed row,
- * card or text button steps up one surface tier (card → card-raised),
- * where every text role is already fitted to AA, instead of a colour
- * overlay that would thin its contrast. Filled and tonal buttons show a
- * hairline ring on hover. Tappable things scale to 0.97 on press with the
- * snappy spring and come back with the smooth one.
+ * The app frame is the container; `.scale` sits inside it and receives the
+ * per-width overrides below (the container itself cannot be styled by its own
+ * query). `display: contents` keeps it out of the layout while the custom
+ * properties still inherit. A sheet is its own `.frame`, so what it holds
+ * answers to the sheet's width.
+ */
+.frame {
+  container: frame / inline-size;
+}
+.scale {
+  display: contents;
+}
+@container frame (width >= 1000px) {
+  .scale {
+    --fs-stat: 2rem;
+    --fs-stat-sub: 1.625rem;
+    --fs-hero: 2.125rem;
+    --fs-hero-sub: 1.4375rem;
+    --h-topbar: 6.5rem;
+  }
+}
+@container frame (width < 600px) {
+  .scale {
+    --fs-base: 0.75rem;
+    --fs-small: 0.6563rem;
+    --fs-tiny: 0.625rem;
+    --fs-big: 1.25rem;
+    --fs-stat: 1.25rem;
+    --fs-stat-sub: 1rem;
+    --fs-hero: 1.125rem;
+    --fs-hero-sub: 0.9375rem;
+    --h-strip: 2.125rem;
+    --h-bar: 1.75rem;
+    --h-row: 2.375rem;
+    --h-cmd: 2.5rem;
+    --h-topbar: auto;
+  }
+}
+
+/*
+ * Press feedback (ADR 0028): the colour steps up one tier on `snappy`, no
+ * transform. Reduced motion zeroes the duration through the tokens.
  */
 @layer components {
-  .pressable {
-    transition-property: transform, background-color, outline-color;
-    transition-duration: var(--dur-smooth);
-    transition-timing-function: var(--ease-smooth);
+  .press {
+    transition: background-color var(--dur-snappy) var(--ease-snappy);
   }
-  .pressable:active {
-    transform: scale(0.97);
-    transition-duration: var(--dur-snappy);
-    transition-timing-function: var(--ease-snappy);
+  .press:hover {
+    background-color: var(--card);
   }
-  :root[data-motion='reduced'] .pressable:active,
-  :root[data-motion='off'] .pressable:active {
-    transform: none;
-  }
-  /* A 0.01 ms infinite pulse would flicker; it stops instead. */
-  :root[data-motion='reduced'] .skeleton-pulse,
-  :root[data-motion='off'] .skeleton-pulse {
-    animation: none;
+  .press:active {
+    background-color: var(--card-raised);
   }
 
-  .skeleton-pulse {
-    animation: pulse-soft 1.2s ease-in-out infinite alternate;
+  /* Skeletons stay opaque: the fill steps between two tiers. */
+  .skeleton {
+    background-color: var(--card);
+    animation: skeleton-step 1.2s steps(2, jump-none) infinite alternate;
   }
 }
-
-/* Enter and exit animations, usable with data-state variants. */
-@utility overlay-in {
-  animation: overlay-in var(--dur-snappy) var(--ease-snappy);
-}
-@utility overlay-out {
-  animation: overlay-out var(--dur-exit) var(--ease-exit) forwards;
-}
-@utility scrim-in {
-  animation: fade-in var(--dur-snappy) var(--ease-snappy);
-}
-@utility scrim-out {
-  animation: fade-out var(--dur-exit) var(--ease-exit) forwards;
-}
-@utility burst-pill {
-  animation: burst 600ms var(--ease-smooth) forwards;
-}
-/* A check mark drawing itself in, by clip-path (transform-free). */
-@utility check-draw {
-  animation: check-draw var(--dur-gentle) var(--ease-gentle) both;
-}
-/* A chart is one tab stop (Recharts' accessibility layer): the theme ring. */
-.recharts-surface:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
-
-/*
- * A chart drawing in from its start, once as it mounts (ADR 0020). It
- * keeps no clip once drawn, so focus rings and tooltips are never cut.
- */
-@utility chart-draw {
-  animation: check-draw var(--dur-gentle) var(--ease-gentle) backwards;
-}
-/* Shared axis X (spec §7.3): the next step slides in 30 px with a fade. */
-@utility axis-in {
-  animation: axis-in var(--dur-smooth) var(--ease-smooth) backwards;
-}
-@utility rise-in {
-  animation: rise-in var(--dur-smooth) var(--ease-smooth);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion='full']) .pressable:active {
-    transform: none;
-  }
-  :root:not([data-motion='full']) .skeleton-pulse {
-    animation: none;
-  }
-}
-
-@keyframes overlay-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-}
-@keyframes overlay-out {
+@keyframes skeleton-step {
   to {
-    opacity: 0;
-  }
-}
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes axis-in {
-  from {
-    opacity: 0;
-    translate: 30px 0;
-  }
-}
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-}
-@keyframes check-draw {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-@keyframes burst {
-  from {
-    translate: 0 0;
-    scale: 0.6;
-    opacity: 1;
-  }
-  to {
-    translate: var(--dx) var(--dy);
-    scale: 1;
-    opacity: 0;
-  }
-}
-@keyframes pulse-soft {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.6;
+    background-color: var(--card-raised);
   }
 }
 
-/*
- * Shell (spec §4, §6). Focused elements scroll clear of the sticky top app
- * bar and, on phones, the bottom bar (WCAG 2.4.11).
- */
-html {
-  scroll-padding-top: 4.5rem;
-  scroll-padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+/* Menus and sheets enter on `snappy`; reduced motion shortens or drops them. */
+@utility enter-pop {
+  animation: enter-pop var(--dur-snappy) var(--ease-snappy);
 }
-@media (width >= 600px) {
-  html {
-    scroll-padding-bottom: 1rem;
+@utility enter-sheet {
+  animation: enter-sheet var(--dur-snappy) var(--ease-snappy);
+}
+@keyframes enter-pop {
+  from {
+    translate: 0 -0.25rem;
   }
 }
-
-/*
- * An open dialog locks page scroll (src/lib/vendor/remove-scroll-bar.ts).
- * A margin the width of the hidden scrollbar keeps the page from shifting.
- */
-body[data-scroll-locked] {
-  overflow: hidden;
-  overscroll-behavior: contain;
-  margin-right: var(--removed-body-scroll-bar-size, 0px);
-}
-
-/* The top app bar fills in as content scrolls under it. */
-.top-app-bar {
-  background-color: var(--chrome);
-  border-color: var(--outline-variant);
-}
-@supports (animation-timeline: scroll()) {
-  .top-app-bar {
-    animation: top-bar-fill linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0 3rem;
-  }
-  .top-app-bar-title {
-    animation: title-rise linear both;
-    animation-timeline: scroll(root);
-    animation-range: 2rem 4rem;
-  }
-}
-/* Reduced motion: the bar stays chrome with its title shown. */
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion='full']) :is(.top-app-bar, .top-app-bar-title) {
-    animation: none;
-  }
-}
-:root[data-motion='reduced'] :is(.top-app-bar, .top-app-bar-title),
-:root[data-motion='off'] :is(.top-app-bar, .top-app-bar-title) {
-  animation: none;
-}
-@keyframes title-rise {
+@keyframes enter-sheet {
   from {
     translate: 0 100%;
   }
 }
-@keyframes top-bar-fill {
-  from {
-    background-color: transparent;
-    border-color: transparent;
-  }
-}
 
-/*
- * Route changes (ADR 0019, amended by 0023). Switching top-level
- * destinations is instant, with no view transition. `push` and `pop` slide
- * 24 px with a fade. With reduced or no motion the router starts no
- * transition at all.
- */
-html:active-view-transition-type(push)::view-transition-old(root),
-html:active-view-transition-type(pop)::view-transition-old(root) {
-  animation: vt-fade-out var(--dur-exit) var(--ease-exit) both;
-}
-html:active-view-transition-type(push)::view-transition-new(root) {
-  animation: vt-slide-in-end var(--dur-smooth) var(--ease-smooth) both;
-}
-html:active-view-transition-type(pop)::view-transition-new(root) {
-  animation: vt-slide-in-start var(--dur-smooth) var(--ease-smooth) both;
-}
-
-@keyframes vt-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes vt-slide-in-end {
-  from {
-    opacity: 0;
-    translate: 24px 0;
-  }
-}
-@keyframes vt-slide-in-start {
-  from {
-    opacity: 0;
-    translate: -24px 0;
-  }
-}
-
-/*
- * Reduced motion, from the device or the in-app setting: token durations
- * drop to 0 (generated/tokens.css), and anything still animating with a
- * hard-coded duration stops too. Full motion chosen in the app wins over
- * the device setting.
- */
+/* Reduced motion, from the device or the in-app setting. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion='full']) *,
   :root:not([data-motion='full']) *::before,
   :root:not([data-motion='full']) *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
-
 :root[data-motion='reduced'] *,
 :root[data-motion='reduced'] *::before,
 :root[data-motion='reduced'] *::after,
@@ -411,5 +286,41 @@ html:active-view-transition-type(pop)::view-transition-new(root) {
 :root[data-motion='off'] *::before,
 :root[data-motion='off'] *::after {
   animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+
+/* Scroll containers hide the native bar; OverlayScrollbar draws the thumb. */
+.scroll {
+  overflow: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Forced colours keep the structure: borders and selection stay visible. */
+@media (forced-colors: active) {
+  .press[aria-pressed='true'],
+  [aria-selected='true'],
+  [data-selected] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/* Row templates: set per row as custom properties, picked per frame width. */
+.row-grid {
+  grid-template-columns: var(--cols-compact);
+}
+@container frame (width >= 600px) {
+  .row-grid {
+    grid-template-columns: var(--cols-medium);
+  }
+}
+@container frame (width >= 1000px) {
+  .row-grid {
+    grid-template-columns: var(--cols-wide);
+  }
 }

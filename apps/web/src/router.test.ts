@@ -1,50 +1,16 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import {
-  paramShellPaths,
-  publicPaths,
-  renamedPaths,
-  shellPaths,
-} from './lib/redirect.ts';
 import { createAppRouter } from './router.tsx';
 
-// Every signed-in route must be in shellPaths, which the shell E2E test
-// visits with axe (NFR-8), or in paramShellPaths with its own axe check. Add
-// new views to nav-items.ts, extraShellPaths or paramShellPaths. Routes
-// under /dev/ exist in development only and have their own axe spec
-// (e2e/components.spec.ts).
+// The route tree grows with the shell (WP3). Until then the index is the
+// only production route; /dev/ routes exist in development only and have
+// their own axe spec (e2e/components.spec.ts).
 describe('route tree', () => {
-  it('lists every signed-in route for the accessibility checks', () => {
+  it('has the index route', () => {
     const router = createAppRouter(new QueryClient());
-    const routed = Object.keys(router.routesByPath).filter(
-      (path) =>
-        path.startsWith('/') &&
-        !path.startsWith('/dev/') &&
-        !(publicPaths as readonly string[]).includes(path) &&
-        !(renamedPaths as readonly string[]).includes(path),
+    const paths = Object.keys(router.routesByPath).filter(
+      (path) => !path.startsWith('/dev/'),
     );
-    expect(new Set(routed)).toEqual(
-      new Set([...shellPaths, ...paramShellPaths]),
-    );
-  });
-});
-
-describe('sign-in redirect', () => {
-  // The router merges raw search params under each route's validated ones,
-  // so this checks what the sign-in route really receives.
-  function signInSearch(redirect: string) {
-    const router = createAppRouter(new QueryClient());
-    const match = router
-      .matchRoutes('/sign-in', { redirect })
-      .find((m) => m.routeId === '/sign-in');
-    return match?.routeId === '/sign-in' ? match.search : undefined;
-  }
-
-  it('keeps a known route', () => {
-    expect(signInSearch('/accounts')).toEqual({ redirect: '/accounts' });
-  });
-
-  it('drops a crafted target instead of passing it through', () => {
-    expect(signInSearch('//evil.example')?.redirect).toBeUndefined();
+    expect(paths).toEqual(['/']);
   });
 });
