@@ -21,6 +21,7 @@ decisions are in `docs/adr/`; do not assume anything they do not cover.
 | [docs/architecture.md](docs/architecture.md) | You add or change a component, flow, API or config |
 | [docs/domain.md](docs/domain.md) | You touch money, accounts, cycles, policies or `packages/core` |
 | [docs/grammar.md](docs/grammar.md) | You touch the parser or chat commands |
+| [docs/ui.md](docs/ui.md) | You touch `apps/web`: design system, components, patterns, screens |
 | [docs/adr/](docs/adr/) | Before any hard-to-reverse choice |
 
 ## Stack
@@ -59,6 +60,9 @@ These always apply. Details are in `.agent/rules/`.
 7. **Code and tests follow the house style.**
    → [.agent/rules/code-style.md](.agent/rules/code-style.md) ·
    [.agent/rules/testing.md](.agent/rules/testing.md)
+8. **The web UI follows the terminal design system.** Theme roles only,
+   in-app menus instead of native pickers, no money maths in the browser.
+   → [.agent/rules/ui.md](.agent/rules/ui.md) · [docs/ui.md](docs/ui.md)
 
 ## Layout
 
