@@ -97,6 +97,10 @@ export {
   type LedgerView,
 } from './projections/types.ts';
 export { cycleOn, cyclesOf } from './projections/cycles.ts';
+export {
+  cycleAllocation,
+  type CycleAllocation,
+} from './projections/allocation.ts';
 export { lastWorkingDayOfMonth, nextPayday } from './projections/payday.ts';
 export {
   availableOn,

@@ -121,6 +121,36 @@ export function availableSums(
   );
 }
 
+// Adds the undo of every entry in `excluded`. An undo cannot itself be
+// undone, so one pass finds them all.
+function withUndos(
+  view: LedgerView,
+  excluded: Set<TransactionId>,
+): Set<TransactionId> {
+  for (const t of view.ledger) {
+    if (t.reversesId !== null && excluded.has(t.reversesId)) {
+      excluded.add(t.id);
+    }
+  }
+  return excluded;
+}
+
+function linkedPayments(view: LedgerView): Set<TransactionId> {
+  const linked = new Set<TransactionId>();
+  for (const bill of view.bills) {
+    for (const payment of bill.payments) {
+      const paidBy = payment.transactionId ?? null;
+      if (paidBy !== null) linked.add(paidBy);
+    }
+  }
+  return linked;
+}
+
+/** Entries linked to a bill payment, and their undos. */
+export function billPaymentEntries(view: LedgerView): Set<TransactionId> {
+  return withUndos(view, linkedPayments(view));
+}
+
 /**
  * The entries pace leaves out (docs/domain.md "Daily usable"): payments
  * linked to a bill, whose reserve already came out of the budget when
@@ -129,20 +159,9 @@ export function availableSums(
  * undoing one never moves pace.
  */
 export function paceExclusions(view: LedgerView): Set<TransactionId> {
-  const excluded = new Set<TransactionId>(view.reconcileAdjustments ?? []);
-  for (const bill of view.bills) {
-    for (const payment of bill.payments) {
-      const paidBy = payment.transactionId ?? null;
-      if (paidBy !== null) excluded.add(paidBy);
-    }
-  }
-  // An undo cannot itself be undone, so one pass finds them all.
-  for (const t of view.ledger) {
-    if (t.reversesId !== null && excluded.has(t.reversesId)) {
-      excluded.add(t.id);
-    }
-  }
-  return excluded;
+  const excluded = linkedPayments(view);
+  for (const id of view.reconcileAdjustments ?? []) excluded.add(id);
+  return withUndos(view, excluded);
 }
 
 /**
