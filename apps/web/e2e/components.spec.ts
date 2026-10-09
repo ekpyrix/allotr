@@ -30,6 +30,18 @@ for (const size of widths) {
       });
     }
 
+    test('the chart kit renders as designed', async ({ page }) => {
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
+      await expect(
+        page.getByRole('region', { name: 'Charts' }),
+      ).toHaveScreenshot(`charts-${size.name}.png`, {
+        animations: 'disabled',
+        maxDiffPixelRatio: 0.002,
+      });
+    });
+
     test('nothing is round', async ({ page }) => {
       const radii = await page.evaluate(() =>
         [...document.querySelectorAll('body *')]
