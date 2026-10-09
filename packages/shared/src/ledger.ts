@@ -391,8 +391,44 @@ export const listTransactionsQuerySchema = z.object({
    * they are reached from the entry (`replacesId`).
    */
   undone: z.enum(['show', 'hide']).default('show'),
+  /**
+   * Also return `groups`: totals per day (newest first) or per category,
+   * for every matching entry, not only this page's. `none` returns no
+   * groups.
+   */
+  group: z.enum(['none', 'day', 'category']).default('none'),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   cursor: z.string().max(500).optional(),
+});
+
+/** One currency's figures; spent and income are positive. */
+export const currencyTotalsSchema = z.object({
+  spent: moneySchema,
+  income: moneySchema,
+  /** `income` minus `spent`. */
+  net: moneySchema,
+});
+
+/**
+ * Totals of a set of entries, never summed across currencies. Spent and
+ * income are the expense and income legs (a transfer, loan or repayment is
+ * neither; a split counts only the user's own share; an undo cancels its
+ * entry), in each amount's own currency with no rate applied.
+ */
+export const entryTotalsSchema = z.object({
+  /** Entries in the set, undos included. */
+  count: z.number().int().nonnegative(),
+  /** One per currency with spent or income, ordered by currency code. */
+  byCurrency: z.array(currencyTotalsSchema),
+});
+
+export const entryGroupTotalsSchema = entryTotalsSchema.extend({
+  /**
+   * The day (`YYYY-MM-DD`) or the category ID; null for entries with no
+   * category. Days run newest first; categories by ID, none last. By
+   * category, a split entry counts in each of its categories.
+   */
+  key: z.string().nullable(),
 });
 
 export const transactionListSchema = z.object({
@@ -413,6 +449,10 @@ export const transactionListSchema = z.object({
       missingRates: z.array(currencyCodeSchema),
     }),
   ),
+  /** Every entry the filters match, ignoring `limit` and `cursor`. */
+  totals: entryTotalsSchema,
+  /** Per `group` of the same entries; empty for `none`. */
+  groups: z.array(entryGroupTotalsSchema),
 });
 export type TransactionListView = z.infer<typeof transactionListSchema>;
 

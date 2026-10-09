@@ -3,6 +3,8 @@ import {
   categoryId,
   dayNetTotals,
   edit,
+  entryGroupTotals,
+  entryTotals,
   expense,
   income,
   reinstate,
@@ -255,6 +257,7 @@ export type ListFilter = Readonly<{
   tagId?: string | undefined;
   q?: string | undefined;
   undone?: 'show' | 'hide' | undefined;
+  group?: 'none' | 'day' | 'category' | undefined;
   limit: number;
   cursor?: string | undefined;
 }>;
@@ -490,6 +493,38 @@ export async function listTransactions(
         ? encodeCursor(last)
         : null,
     dayTotals: await dayTotalsFor(db, userId, filter, page),
+    ...(await totalsFor(db, userId, filter)),
+  };
+}
+
+/**
+ * Count, spent, income and net of every matching entry, and the same per
+ * day or category, ignoring paging. Per currency, with no rates applied.
+ */
+async function totalsFor(
+  db: Db,
+  userId: string,
+  filter: ListFilter,
+): Promise<Pick<TransactionListView, 'totals' | 'groups'>> {
+  const [rows, chart] = await Promise.all([
+    (await matching(db, userId, filter)).execute(),
+    loadChart(db, userId),
+  ]);
+  const entries = (await views(db, userId, rows)).map((view) => ({
+    occurredOn: view.occurredOn,
+    categoryId: view.categoryId === null ? null : categoryId(view.categoryId),
+    postings: view.postings.map((posting) => ({
+      accountId: accountId(posting.accountId),
+      amount: posting.amount,
+      categoryId:
+        posting.categoryId === null ? null : categoryId(posting.categoryId),
+    })),
+  }));
+  const grouping = filter.group ?? 'none';
+  return {
+    totals: entryTotals(chart, entries),
+    groups:
+      grouping === 'none' ? [] : entryGroupTotals(chart, entries, grouping),
   };
 }
 

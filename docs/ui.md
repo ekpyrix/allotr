@@ -353,6 +353,8 @@ property tests:
    left (on `/v1/pools`).
 3. **Transaction totals**: count, spent, income and net for the filtered set,
    plus per-day (or per-group) totals (on `/v1/transactions`).
+   Shipped as `totals` and, with `group=day|category`, `groups`: per currency,
+   never converted or summed across currencies.
 4. **Top payees** for a period (count and total) (`/v1/reports/payees`).
 5. **Category series across cycles** for trends (on `/v1/reports/categories`
    with a range).
