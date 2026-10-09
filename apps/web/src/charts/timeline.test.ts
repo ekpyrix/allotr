@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tickDays } from './timeline.tsx';
+import { anchorOf, tickDays } from './timeline.tsx';
 
 describe('tickDays', () => {
   it('starts at day 0 and ends on the last day', () => {
@@ -16,5 +16,17 @@ describe('tickDays', () => {
   it('handles tiny cycles', () => {
     expect(tickDays(0)).toEqual([]);
     expect(tickDays(1)).toEqual([0]);
+  });
+});
+
+describe('anchorOf', () => {
+  it('grows the first and last day inwards and centres the rest', () => {
+    expect(anchorOf(0, 30)).toBe('start');
+    expect(anchorOf(14, 30)).toBe('mid');
+    expect(anchorOf(29, 30)).toBe('end');
+  });
+
+  it('anchors a one-day cycle at the start', () => {
+    expect(anchorOf(0, 1)).toBe('start');
   });
 });

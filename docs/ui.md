@@ -185,7 +185,7 @@ column setting, 4 from 1500.
 | **Columns** | Bar columns with value labels above, x labels below, and a 1 px baseline. |
 | **Sparkline** | 20–28 px tall, monotone line, no axes. |
 | **Timeline** | A cycle-day axis with ticks and date labels. Events alternate above and below on two levels: bills (`warning`, paid ones muted), payday (`positive`). A "today" marker and an elapsed fill (`primary`). Labels are hidden on phone. |
-| **Calendar** | A 7-column month grid. Day cells show the day number, marks (b bill, i IOU, $ payday) and the spent amount over a heat fill. Today is outlined in `primary` and the picked day in `text`. Every day has a text label and there is a table view. |
+| **Calendar** | A 7-column month grid. Day cells show the day number, marks (b bill, i IOU, $ payday) and the spent amount over a heat fill. Each sits on a small opaque `canvas` chip so the text keeps its contrast at any heat. Blank `canvas` cells pad the first and last weeks. Today is outlined in `primary` and the picked day in `text`. Every day has a text label and there is a table view. |
 | **Summary line** | `14 entries · spent $1,201.60 · income $2,140.00 · net +$938.40`. The figures come from the server. |
 | **Result line** | After logging: ✓, category icon, amount, account, "left today", **undo**. Stays for 5 s. |
 | **Skeleton** | Content-shaped skeleton tiles while loading, never page spinners (kept from 0022). |

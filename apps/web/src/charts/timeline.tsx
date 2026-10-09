@@ -47,6 +47,23 @@ function pos(day: number, days: number): number {
   return Math.min(1, Math.max(0, day / span)) * 100;
 }
 
+/** Labels on the first and last day grow inwards so they stay in the tile. */
+export function anchorOf(day: number, days: number): 'start' | 'mid' | 'end' {
+  if (day <= 0) return 'start';
+  if (day >= days - 1) return 'end';
+  return 'mid';
+}
+
+// The column's edge (start, end) or centre (mid) sits on the day.
+const COLUMN = {
+  start: 'items-start',
+  mid: '-translate-x-1/2 items-center',
+  end: '-translate-x-full items-end',
+} as const;
+
+// Keeps an event's 8 px mark centred on the day in an edge column.
+const MARK = { start: '-ml-1', mid: '', end: '-mr-1' } as const;
+
 const STEM = { 0: 'h-5', 1: 'h-11' } as const;
 
 export function Timeline({
@@ -84,7 +101,10 @@ export function Timeline({
         {tickDays(days).map((day) => (
           <div
             key={day}
-            className="absolute top-1/2 flex -translate-x-1/2 flex-col items-center"
+            className={cn(
+              'absolute top-1/2 flex flex-col',
+              COLUMN[anchorOf(day, days)],
+            )}
             style={{ left: `${String(pos(day, days))}%` }}
           >
             <div className="h-1.5 w-px bg-outline" />
@@ -104,11 +124,13 @@ export function Timeline({
           if (event === undefined) return null;
           const muted = event.kind === 'bill' && event.paid === true;
           const up = lane.side === 'up';
+          const anchor = anchorOf(event.day, days);
           return (
             <div
               key={lane.id}
               className={cn(
-                'absolute flex -translate-x-1/2 items-center',
+                'absolute flex',
+                COLUMN[anchor],
                 up ? 'bottom-1/2 flex-col-reverse' : 'top-1/2 flex-col',
               )}
               style={{ left: `${String(pos(event.day, days))}%` }}
@@ -117,6 +139,7 @@ export function Timeline({
                 aria-hidden="true"
                 className={cn(
                   'size-2',
+                  MARK[anchor],
                   event.kind === 'payday'
                     ? 'bg-positive'
                     : muted
