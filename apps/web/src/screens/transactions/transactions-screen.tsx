@@ -224,6 +224,7 @@ export function TransactionsScreen() {
     view.entry === undefined ? null : (
       <EntryDetail
         entryId={view.entry}
+        onOpen={select}
         onClose={() => {
           select(undefined);
         }}
