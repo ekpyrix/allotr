@@ -234,6 +234,12 @@ export {
   type SummaryCategoryNode,
 } from './projections/category-summary.ts';
 export {
+  payeeKey,
+  topPayees,
+  type CurrencyPayees,
+  type PayeeTotal,
+} from './projections/payees.ts';
+export {
   calendar,
   heatLevel,
   HEAT_LEVELS,
