@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { readShortcutsEnabled, shortcutAction } from '@/lib/shortcuts';
 import { navItems, settingsItem, subTabs } from '../nav-items.ts';
-import { focusCommandLine } from './command/focus.ts';
+import { focusCommandLine } from './command/store.ts';
 import { requestFilterMenu } from './filter-menu.ts';
 import { screenOf, subTabPath } from './title-strip.tsx';
 
