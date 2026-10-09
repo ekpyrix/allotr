@@ -63,6 +63,33 @@ for (const size of widths) {
       expect(overflow).toEqual({ page: 0, wide: [] });
     });
 
+    test('timeline labels stay inside the chart', async ({ page }) => {
+      const chart = page.getByRole('img', {
+        name: /^Bills and payday across the cycle/,
+      });
+      const outside = await chart.evaluate((root) => {
+        const box = root.getBoundingClientRect();
+        return [...root.querySelectorAll('*')]
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            return (
+              r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1)
+            );
+          })
+          .map((el) => el.textContent);
+      });
+      expect(outside).toEqual([]);
+    });
+
+    test('the calendar fills whole weeks so no seam colour shows', async ({
+      page,
+    }) => {
+      const cells = await page
+        .getByRole('group', { name: '2026-03' })
+        .evaluate((grid) => grid.children.length);
+      expect(cells % 7).toBe(0);
+    });
+
     test('a sheet holds its own frame: tokens and row columns follow its width', async ({
       page,
     }) => {

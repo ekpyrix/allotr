@@ -89,6 +89,8 @@ export function CalendarGrid(props: CalendarGridProps) {
   } = props;
   const [view, setView] = useState<'grid' | 'table'>('grid');
   const blanks = leadingBlanks(month.from);
+  // Pad the last week so the seam colour never shows as a block.
+  const trailing = (7 - ((blanks + days.length) % 7)) % 7;
   return (
     <div className={cn('grid gap-2', className)}>
       <div className="flex justify-end gap-px px-3 pt-2">
@@ -177,6 +179,13 @@ export function CalendarGrid(props: CalendarGridProps) {
               </button>
             );
           })}
+          {Array.from({ length: trailing }, (_, i) => (
+            <div
+              key={`trail-${String(i)}`}
+              aria-hidden="true"
+              className="bg-canvas"
+            />
+          ))}
         </div>
       ) : (
         <table className="w-full border-collapse text-left">
