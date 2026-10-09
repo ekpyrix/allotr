@@ -1,4 +1,10 @@
-import { navItems } from '../nav-items.ts';
+import {
+  navItems,
+  settingsItem,
+  subTabs,
+  type SubTab,
+  type SubTabScreen,
+} from '../nav-items.ts';
 
 /** Routes outside the shell; everything else requires a session. */
 export const publicPaths = [
@@ -7,39 +13,33 @@ export const publicPaths = [
   '/invite/$token',
 ] as const;
 
-/** Old addresses that only redirect to a renamed route (ADR 0023). */
-export const renamedPaths = [
-  '/today',
-  '/ledger',
-  '/cycle',
-  '/history',
-  '/savings',
-] as const;
-
 /** Signed-in routes that are not in the nav but still get axe checks. */
 export const extraShellPaths = [
-  '/settings',
-  '/reports/history',
-  '/accounts/savings',
-  // Redirects to the Dashboard once finished, as in the shell spec; setup.spec runs
-  // axe on every step.
+  '/settings/money',
   '/setup',
-  '/settings/themes/new',
 ] as const satisfies readonly `/${string}`[];
 
 /**
- * Signed-in routes with a parameter, which the shell E2E cannot visit; the
- * spec named beside each runs axe on it. Never a sign-in redirect target.
+ * Every sub-tab address. Accounts' first sub-tab is the bare `/accounts`, so
+ * only its filtered ones have a segment.
  */
-export const paramShellPaths = [
-  // themes.spec
-  '/settings/themes/$id',
-] as const;
+export type SubTabPath = {
+  [S in SubTabScreen]: `/${S}/${Exclude<SubTab<S>, 'all'>}`;
+}[SubTabScreen];
+
+export const subTabPaths = (Object.keys(subTabs) as SubTabScreen[]).flatMap(
+  (screen) =>
+    subTabs[screen]
+      .filter((sub) => sub !== 'all')
+      .map((sub) => `/${screen}/${sub}` as SubTabPath),
+);
 
 /** Every signed-in route; the shell E2E test visits each with axe. */
 export const shellPaths = [
   ...navItems.map((item) => item.to),
+  settingsItem.to,
   ...extraShellPaths,
+  ...subTabPaths,
 ] as const;
 
 export type ShellPath = (typeof shellPaths)[number];
