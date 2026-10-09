@@ -12,7 +12,7 @@ import { defaultPoolSetup, poolCounts, poolsOn, type PoolId } from './pools.ts';
 import type { LedgerView } from './types.ts';
 
 // Pool figures for the open cycle (docs/domain.md "Pools"): what a counted
-// pool's open accounts held when the cycle opened and what they hold now.
+// pool's open accounts had to work with this cycle and what they hold now.
 // Amounts stay per currency; converting to the default currency is the
 // caller's job (ADR 0010). Savings and other pools that do not count get no
 // figures, so nothing here can be added to the daily number by accident.
@@ -42,44 +42,51 @@ function perCurrency(
     .map(([currency, sum]) => money(Number(sum), currency));
 }
 
-// The ledger as it stood at the end of the day before the cycle opened. An
-// account opened during the cycle brings money that was already there, so
-// its opening entry (and any undo of it) is moved onto that day, as in the
-// cycle snapshot.
-function atOpening(
-  ledger: readonly Transaction[],
+// The entries `start` reads: the ledger as it stood at the end of the day
+// before the cycle opened, plus the income recorded since, as the cycle
+// allocation's start counts it. An account opened during the cycle brings
+// money that was already there, so its opening entry (and any undo of it)
+// is moved onto that day, as in the cycle snapshot. An income entry keeps
+// its date; an undo of one is income too, so the pair nets to nothing.
+function startLedger(
+  view: LedgerView,
   openedOn: LocalDate,
   today: LocalDate,
 ): Transaction[] {
   const day = addDays(openedOn, -1);
+  const inCycle = (t: Transaction) =>
+    t.occurredOn >= openedOn && t.occurredOn <= today;
   const openings = new Set(
-    ledger
-      .filter(
-        (t) =>
-          t.kind === 'opening' &&
-          t.occurredOn >= openedOn &&
-          t.occurredOn <= today,
-      )
+    view.ledger
+      .filter((t) => t.kind === 'opening' && inCycle(t))
       .map((t) => t.id),
   );
-  return ledger.flatMap((t) => {
+  const isIncome = (t: Transaction) =>
+    t.postings.some(
+      (p) => view.chart.get(p.accountId)?.systemRole === 'income',
+    );
+  return view.ledger.flatMap((t) => {
     if (t.occurredOn < openedOn) return [t];
+    if (!inCycle(t)) return [];
     const opens =
       openings.has(t.id) ||
       (t.reversesId !== null && openings.has(t.reversesId));
-    return opens && t.occurredOn <= today ? [{ ...t, occurredOn: day }] : [];
+    if (opens) return [{ ...t, occurredOn: day }];
+    return isIncome(t) ? [t] : [];
   });
 }
 
 /**
- * For each pool that counts toward the daily number today, the balance of
- * its open accounts at the start of the open cycle and now. Both read the
- * same accounts (those in the pool today), so moving an account between
- * pools mid-cycle never looks like spending. A back-dated entry or move
- * changes the figures through the same function.
- *
- * Start is the end of the day before the cycle opened, so a paycheck dated
- * on the opening day is in `left` but not in `start`; `left` can exceed it.
+ * For each pool that counts toward the daily number today, what its open
+ * accounts had to work with this cycle and what they hold now. `start` is
+ * their balance at the end of the day before the cycle opened plus the
+ * income they received since, so a paycheck on the opening day is in both
+ * figures and spending is what separates them. Both read the same accounts
+ * (those in the pool today), so moving an account between pools mid-cycle
+ * never looks like spending. `left` exceeds `start` only when money came in
+ * from outside the pool another way, such as a transfer from savings or a
+ * refund. A back-dated entry or move changes the figures through the same
+ * function.
  */
 export function poolCycleFigures(
   view: LedgerView,
@@ -87,10 +94,8 @@ export function poolCycleFigures(
 ): ReadonlyMap<PoolId, PoolCycleFigure> {
   const setup = view.pools ?? defaultPoolSetup;
   const cycle = cycleOn(cyclesOf(view, today), today);
-  const openingDay = addDays(cycle.openedOn, -1);
   const startBalances = accountBalances(
-    atOpening(view.ledger, cycle.openedOn, today),
-    openingDay,
+    startLedger(view, cycle.openedOn, today),
   );
   const nowBalances = accountBalances(view.ledger, today);
   const members = new Map<PoolId, string[]>();

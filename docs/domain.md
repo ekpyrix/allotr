@@ -151,10 +151,13 @@ Users may add more, such as *Emergency*.
 - **Cycle figures.** For a pool that counts today, the API gives `start`
   (what its open accounts held at the end of the day before the open cycle
   began, accounts opened during the cycle included, as in a cycle snapshot's
-  opening balances) and `left` (what they hold now, ignoring entries dated
-  after today). Both read the accounts in the pool today, so moving an
-  account mid-cycle never looks like spending. A paycheck dated on the
-  opening day is in `left` but not `start`, so `left` can exceed `start`.
+  opening balances, plus the income they have received since, as the cycle
+  allocation's start counts it) and `left` (what they hold now, ignoring
+  entries dated after today). Both read the accounts in the pool today, so
+  moving an account mid-cycle never looks like spending. The paycheck that
+  opens a cycle is in both, so spending is what separates them; `left`
+  exceeds `start` only when money came in another way, such as a transfer
+  from savings or a refund, and a "left of" bar shows full then.
   Core gives them per currency; the API converts each once at today's
   rates, and lists currencies without a rate. Pools that do not count
   (savings by default) get `cycle: null`, so savings never appear as

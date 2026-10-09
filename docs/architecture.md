@@ -201,7 +201,12 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   `GET /v1/transactions` pages newest first (by date, then the user's
   order within the day, `sortRank`) and filters by date range,
   account, category (with its subcategories, matching any line of a
-  split), tag and note text; an undo
+  split), tag, note text, payee (`payee`: the whole note compared as
+  `/v1/reports/payees` compares it, through a `payee_key` SQLite function
+  registered on the connection, so "same payee" lists exactly what the
+  report counted) and type (`type=expense|income`: entries posting to the
+  expenses or income account, as `totals` reads them; `type=transfer`:
+  transfers); an undo
   matches whatever the entry it undoes matches. Every query is scoped to the signed-in user, and another
   user's rows answer 404. Domain errors from `core` and `shared` become
   problem details whose `code` is the error code without its namespace

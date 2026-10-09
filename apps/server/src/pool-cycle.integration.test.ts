@@ -103,13 +103,13 @@ describe('pool cycle figures', () => {
     expect(savings?.balance.amount).toEqual(usd(500_000));
   });
 
-  it('starts again from the balance when a paycheck opens a cycle', async () => {
+  it('starts again from the balance and the paycheck that opens a cycle', async () => {
     clock = new Date('2026-04-03T12:00:00Z');
     await record('income', 200_000, '2026-04-01', paycheck);
     await record('expense', 5_000, '2026-04-02', groceries);
     const [budget] = await pools(h.alice);
     expect(budget?.cycle).toEqual({
-      start: figure(88_000),
+      start: figure(288_000),
       left: figure(283_000),
     });
   });
@@ -118,7 +118,7 @@ describe('pool cycle figures', () => {
     await record('expense', 3_000, '2026-03-20', groceries);
     const [budget] = await pools(h.alice);
     expect(budget?.cycle).toEqual({
-      start: figure(85_000),
+      start: figure(285_000),
       left: figure(280_000),
     });
   });

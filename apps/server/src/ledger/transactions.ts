@@ -7,6 +7,7 @@ import {
   entryTotals,
   expense,
   income,
+  payeeKey,
   reinstate,
   reverse,
   transactionId,
@@ -256,6 +257,8 @@ export type ListFilter = Readonly<{
   categoryId?: string | undefined;
   tagId?: string | undefined;
   q?: string | undefined;
+  payee?: string | undefined;
+  type?: 'expense' | 'income' | 'transfer' | undefined;
   undone?: 'show' | 'hide' | undefined;
   group?: 'none' | 'day' | 'category' | undefined;
   limit: number;
@@ -461,6 +464,56 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
             .where(sql<boolean>`original.note like ${pattern} escape '\\'`),
         ),
       ]),
+    );
+  }
+  // The same key the payee report ranks by, so "same payee" lists exactly
+  // the entries counted under it.
+  const key = filter.payee === undefined ? null : payeeKey(filter.payee);
+  if (key !== null) {
+    query = query.where((eb) =>
+      eb.or([
+        sql<boolean>`payee_key(transactions.note) = ${key}`,
+        eb.exists(
+          eb
+            .selectFrom('transactions as original')
+            .select('original.id')
+            .whereRef('original.id', '=', 'transactions.reverses_id')
+            .where('original.user_id', '=', userId)
+            .where(sql<boolean>`payee_key(original.note) = ${key}`),
+        ),
+      ]),
+    );
+  }
+  // Spending and income are read from the postings, as `totals` reads
+  // them, so the types' spent figures add up to the unfiltered one. An
+  // undo posts the same legs negated, so it matches with its entry.
+  if (filter.type === 'transfer') {
+    query = query.where((eb) =>
+      eb.or([
+        eb('kind', '=', 'transfer'),
+        eb.exists(
+          eb
+            .selectFrom('transactions as original')
+            .select('original.id')
+            .whereRef('original.id', '=', 'transactions.reverses_id')
+            .where('original.user_id', '=', userId)
+            .where('original.kind', '=', 'transfer'),
+        ),
+      ]),
+    );
+  } else if (filter.type !== undefined) {
+    const role = filter.type === 'expense' ? 'expenses' : 'income';
+    query = query.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('postings')
+          .innerJoin('accounts', 'accounts.id', 'postings.account_id')
+          .select('postings.id')
+          .whereRef('postings.transaction_id', '=', 'transactions.id')
+          .where('postings.user_id', '=', userId)
+          .where('accounts.user_id', '=', userId)
+          .where('accounts.system_role', '=', role),
+      ),
     );
   }
   return query;

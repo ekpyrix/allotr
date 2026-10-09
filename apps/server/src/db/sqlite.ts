@@ -1,5 +1,6 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { payeeKey } from '@allotr/core';
 import Database from 'better-sqlite3';
 import { Kysely, SqliteDialect } from 'kysely';
 import type { DB } from './schema.ts';
@@ -17,5 +18,10 @@ export function openSqlite(path: string): Database.Database {
 }
 
 export function createKysely(sqlite: Database.Database): Kysely<DB> {
+  // The payee report's key, so the transaction list can filter by it
+  // exactly; SQLite's own lower() and like fold A–Z only.
+  sqlite.function('payee_key', { deterministic: true }, (note: unknown) =>
+    payeeKey(typeof note === 'string' ? note : null),
+  );
   return new Kysely<DB>({ dialect: new SqliteDialect({ database: sqlite }) });
 }

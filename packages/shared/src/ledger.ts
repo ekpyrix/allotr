@@ -385,6 +385,21 @@ export const listTransactionsQuerySchema = z.object({
    */
   q: z.string().trim().min(1).max(100).optional(),
   /**
+   * Finds entries whose payee is this one: the note, compared as
+   * `/v1/reports/payees` compares it (case ignored, spaces collapsed), so
+   * with `type=expense` and `undone=hide` the period's entries are the ones
+   * the report counted for that payee. Undos match through the entry they
+   * undo.
+   */
+  payee: z.string().trim().min(1).max(500).optional(),
+  /**
+   * `expense`: entries that post spending; `income`: entries that post
+   * income (both read from the postings, as `totals` is, and an undo
+   * matches with its entry); `transfer`: transfers and their undos.
+   * Omitted, every kind is listed.
+   */
+  type: z.enum(['expense', 'income', 'transfer']).optional(),
+  /**
    * `hide` leaves out undone entries and their undos, as if deleted; the
    * pair nets to zero, so day totals are the same either way. Earlier
    * versions of edited entries, and their undos, are left out either way:
