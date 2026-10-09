@@ -1,6 +1,7 @@
 import { money } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { opening } from '../ledger/build.ts';
+import { opening, transfer } from '../ledger/build.ts';
+import { reverse } from '../ledger/reverse.ts';
 import { meta } from '../ledger/testing.ts';
 import { poolCycleFigures } from './pool-cycle.ts';
 import { poolId, type Pool, type PoolSetup } from './pools.ts';
@@ -44,11 +45,51 @@ const ledger = [
 ];
 
 describe('poolCycleFigures', () => {
-  it('reads the start from the eve of the cycle and left from today', () => {
+  it('starts from the eve of the cycle plus income, and reads left today', () => {
     const figures = poolCycleFigures(view(ledger), today);
+    // The opening-day paycheck is in both, so only spending separates them.
     expect(figures.get(budget)).toEqual({
-      start: [usd(100_000)],
+      start: [usd(300_000)],
       left: [usd(270_000)],
+    });
+  });
+
+  it('adds income later in the cycle to the start', () => {
+    const figures = poolCycleFigures(
+      view([...ledger, paycheck('2026-03-08', 15_000)]),
+      today,
+    );
+    expect(figures.get(budget)).toEqual({
+      start: [usd(315_000)],
+      left: [usd(285_000)],
+    });
+  });
+
+  it('takes undone income back out of the start', () => {
+    const bonus = paycheck('2026-03-08', 15_000);
+    const undo = reverse(
+      chart,
+      [...ledger, bonus],
+      bonus.id,
+      meta('2026-03-09'),
+    );
+    const figures = poolCycleFigures(view([...ledger, bonus, undo]), today);
+    expect(figures.get(budget)).toEqual({
+      start: [usd(300_000)],
+      left: [usd(270_000)],
+    });
+  });
+
+  it('lets left exceed start when money comes in from savings', () => {
+    const topUp = transfer(chart, meta('2026-03-07'), {
+      fromId: savings,
+      toId: card,
+      sent: usd(50_000),
+    });
+    const figures = poolCycleFigures(view([...ledger, topUp]), today);
+    expect(figures.get(budget)).toEqual({
+      start: [usd(300_000)],
+      left: [usd(320_000)],
     });
   });
 
@@ -73,7 +114,7 @@ describe('poolCycleFigures', () => {
     const figures = poolCycleFigures(view([...ledger, eur]), today);
     expect(figures.get(budget)?.start).toEqual([
       money(40_000, 'EUR'),
-      usd(100_000),
+      usd(300_000),
     ]);
     expect(
       poolCycleFigures(view(ledger, { pools: setup() }), today).get(spare),
@@ -84,7 +125,7 @@ describe('poolCycleFigures', () => {
     const late = openingUsd('2026-03-04', 25_000, cash);
     const figures = poolCycleFigures(view([...ledger, late]), today);
     expect(figures.get(budget)).toEqual({
-      start: [usd(125_000)],
+      start: [usd(325_000)],
       left: [usd(295_000)],
     });
   });
@@ -106,7 +147,7 @@ describe('poolCycleFigures', () => {
       start: [usd(50_000)],
       left: [usd(50_000)],
     });
-    expect(figures.get(budget)?.start).toEqual([usd(100_000)]);
+    expect(figures.get(budget)?.start).toEqual([usd(300_000)]);
   });
 
   it('changes the start when an entry is back-dated before the cycle', () => {
@@ -115,8 +156,8 @@ describe('poolCycleFigures', () => {
       view([...ledger, spend('2026-02-25', 10_000)]),
       today,
     );
-    expect(before.get(budget)?.start).toEqual([usd(100_000)]);
-    expect(after.get(budget)?.start).toEqual([usd(90_000)]);
+    expect(before.get(budget)?.start).toEqual([usd(300_000)]);
+    expect(after.get(budget)?.start).toEqual([usd(290_000)]);
   });
 
   it('leaves out entries dated after today', () => {

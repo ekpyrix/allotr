@@ -29,9 +29,11 @@ export const poolSchema = z.object({
   balance: figureSchema,
   /**
    * For a pool that counts toward the daily number: what its open accounts
-   * held at the start of the open cycle (the end of the day before it
-   * opened) and hold now, in the default currency at today's rates. Null
-   * for pools that do not count, so savings carry no cycle figures.
+   * had to work with this cycle (their balance at the end of the day before
+   * it opened, plus the income they received since) and hold now, in the
+   * default currency at today's rates. `left` exceeds `start` only when
+   * money came in other than as income, such as a transfer from savings.
+   * Null for pools that do not count, so savings carry no cycle figures.
    */
   cycle: z
     .object({

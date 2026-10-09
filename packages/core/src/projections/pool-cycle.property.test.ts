@@ -14,8 +14,8 @@ import {
 } from './testing.ts';
 
 // Invariants of pool cycle figures under random entries: savings never get
-// figures, left follows the entries since the cycle opened, and the order
-// entries arrive in changes nothing.
+// figures, start takes in the cycle's income, start less left is what was
+// spent, and the order entries arrive in changes nothing.
 
 const budget = poolId('budget');
 const saved = poolId('savings');
@@ -62,17 +62,18 @@ describe('pool cycle figure properties', () => {
     );
   });
 
-  it('moves left by the net of entries since the cycle opened', () => {
+  it('starts with the cycle income and parts from left by what was spent', () => {
     fc.assert(
       fc.property(fc.array(entryArb, { maxLength: 10 }), (entries) => {
         const figures = poolCycleFigures(view(ledgerOf(entries)), today);
-        const net = entries.reduce(
-          (sum, e) => sum + (e.kind === 'spend' ? -e.amount : e.amount),
-          200_000,
-        );
+        const total = (kind: Entry['kind']) =>
+          entries
+            .filter((e) => e.kind === kind)
+            .reduce((sum, e) => sum + e.amount, 0);
+        const start = 100_000 + 200_000 + total('income');
         expect(figures.get(budget)).toEqual({
-          start: [money(100_000, 'USD')],
-          left: [money(100_000 + net, 'USD')],
+          start: [money(start, 'USD')],
+          left: [money(start - total('spend'), 'USD')],
         });
       }),
     );
