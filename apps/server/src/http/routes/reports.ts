@@ -29,7 +29,7 @@ const categoriesRoute = createRoute({
   tags: ['Reports'],
   summary: 'Spending and income per category for a period',
   description:
-    'Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into.',
+    "Top-level categories with their subcategories rolled up, largest first, for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). Computed from the ledger on each read, in the default currency at the rate on the last day of the period; currencies without a rate are left out and listed in `missingRates`. A merged category counts as the one it was merged into. With `series=N` the response also has `series`: spending per top-level category (subcategories counted in their parent, as above) for the N consecutive cycles or months ending with the selected one, oldest first, each in the default currency at the rate on that period's last day. `points` and `totals` line up with `periods`; fewer periods come back when history is shorter.",
   request: { query: categorySummaryQuerySchema },
   responses: {
     200: json(categorySummarySchema, 'The summary.'),

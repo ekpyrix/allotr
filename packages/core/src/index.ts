@@ -256,6 +256,14 @@ export {
   type PayeeTotal,
 } from './projections/payees.ts';
 export {
+  categorySeries,
+  cyclePeriods,
+  monthPeriods,
+  type CategorySeries,
+  type SeriesGroup,
+  type SeriesPeriod,
+} from './projections/category-series.ts';
+export {
   calendar,
   heatLevel,
   HEAT_LEVELS,

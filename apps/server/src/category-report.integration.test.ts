@@ -18,6 +18,12 @@ type Summary = {
   spending: Group[];
   income: Group[];
   missingRates: string[];
+  series?: {
+    periods: { from: string; to: string }[];
+    groups: { categoryId: string | null; points: Money[] }[];
+    totals: Money[];
+    missingRates: string[];
+  };
 };
 
 const started = new Date('2026-03-15T12:00:00Z');
@@ -117,6 +123,46 @@ describe('GET /v1/reports/categories', () => {
       '/v1/reports/categories?period=month&month=2026-02',
     );
     expect((response.body as Summary).spending[0]?.amount).toEqual(usd(900));
+  });
+
+  it('adds a series of months, oldest first, parents including children', async () => {
+    const response = await h.alice.get(
+      '/v1/reports/categories?period=month&month=2026-03&series=3',
+    );
+    expect(response.status).toBe(200);
+    const body = response.body as Summary;
+    expect(body.spending.map((g) => g.amount.amountMinor)).toEqual([
+      4700, 2000,
+    ]);
+    expect(body.series?.periods).toEqual([
+      { from: '2026-01-01', to: '2026-01-31' },
+      { from: '2026-02-01', to: '2026-02-28' },
+      { from: '2026-03-01', to: '2026-03-31' },
+    ]);
+    expect(body.series?.groups).toEqual([
+      { categoryId: food, points: [usd(0), usd(900), usd(4700)] },
+      { categoryId: fun, points: [usd(0), usd(0), usd(2000)] },
+    ]);
+    expect(body.series?.totals).toEqual([usd(0), usd(900), usd(6700)]);
+    expect(body.series?.missingRates).toEqual([]);
+  });
+
+  it('leaves series out unless asked, and refuses a bad count', async () => {
+    const plain = await h.alice.get('/v1/reports/categories?period=month');
+    expect('series' in (plain.body as object)).toBe(false);
+    for (const bad of ['0', '25', 'x']) {
+      expect(
+        (await h.alice.get(`/v1/reports/categories?series=${bad}`)).status,
+      ).toBe(400);
+    }
+  });
+
+  it('adds a series of cycles ending with the selected one', async () => {
+    const response = await h.alice.get('/v1/reports/categories?series=6');
+    const body = response.body as Summary;
+    // One cycle so far: the open one, through today.
+    expect(body.series?.periods).toEqual([{ from: body.from, to: body.to }]);
+    expect(body.series?.groups[0]?.points[0]).toEqual(body.spending[0]?.amount);
   });
 
   it('follows the open cycle by default', async () => {
