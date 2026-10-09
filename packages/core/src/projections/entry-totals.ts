@@ -30,7 +30,7 @@ export type EntryTotals = Readonly<{
   /** Entries in the set, undos included. */
   count: number;
   /** One per currency that has spent or income, ordered by currency code. */
-  byCurrency: readonly CurrencyTotals[];
+  byCurrency: CurrencyTotals[];
 }>;
 
 /** How to split a set of entries into groups. */
@@ -150,7 +150,10 @@ export function entryGroupTotals(
 ): EntryGroupTotals[] {
   const groups = new Map<string | null, { count: number; sums: Sums }>();
   const group = (key: string | null) => {
-    const found = groups.get(key) ?? { count: 0, sums: new Map() };
+    const found = groups.get(key) ?? {
+      count: 0,
+      sums: new Map<CurrencyCode, { spent: number; income: number }>(),
+    };
     groups.set(key, found);
     return found;
   };
