@@ -7,6 +7,7 @@ import { Row } from '@/components/row';
 import type { RowColumn } from '@/components/row-columns';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { IconMoneyDollarCircleLine } from '@/generated/icons';
+import { seriesNumber } from '@/lib/category-style';
 import {
   accountsQuery,
   categoriesQuery,
@@ -15,7 +16,7 @@ import {
 } from '@/lib/ledger';
 import { t } from '@/messages/t';
 import { TileFailed } from './tile-failed.tsx';
-import { dashboardEntries, seriesNumber } from './todays-entries-model.ts';
+import { dashboardEntries } from './todays-entries-model.ts';
 
 const locale = 'en';
 
@@ -74,7 +75,7 @@ export function TodaysEntriesTile() {
       actions={
         <Link
           to="/transactions"
-          className="press inline-flex h-8 items-center px-1 text-small text-primary"
+          className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
         >
           {t('dashboardTiles.todaysEntries.all')}
         </Link>
@@ -108,14 +109,12 @@ export function TodaysEntriesTile() {
                         {...(colour === undefined ? {} : { color: colour })}
                       />
                     )}
-                    <span className="truncate">
-                      {row.note ??
-                        row.title ??
-                        t('dashboardTiles.todaysEntries.untitled')}
+                    <span className="truncate font-sans">
+                      {row.payee ?? t('dashboardTiles.todaysEntries.untitled')}
                     </span>
                   </span>,
-                  <span key="category" className="text-text-muted">
-                    {row.title ?? ''}
+                  <span key="category" className="font-sans text-text-muted">
+                    {row.category ?? ''}
                   </span>,
                   row.amount === null ? null : (
                     <Amount

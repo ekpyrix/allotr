@@ -53,4 +53,13 @@ describe('poolRows', () => {
     expect(rows[1]?.cycle).toBeNull();
     expect(rows[1]?.checked).toBe(false);
   });
+
+  it('locks the Budget pool, which always counts', () => {
+    const rows = poolRows([
+      pool({ id: 'budget', defaultFor: 'on' }),
+      pool({ id: 'savings', kind: 'savings', defaultFor: 'off' }),
+      pool({ id: 'mine' }),
+    ]);
+    expect(rows.map((r) => r.fixed)).toEqual([true, false, false]);
+  });
 });

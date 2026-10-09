@@ -5,9 +5,11 @@ import type {
   Money,
 } from '@allotr/shared';
 import { spentShare } from '@/features/budget/share';
-import { categoryStyles } from '@/lib/category-style';
-
-export type SeriesNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+import {
+  categoryStyles,
+  seriesNumber,
+  type SeriesNumber,
+} from '@/lib/category-style';
 
 export type BudgetRow = Readonly<{
   id: string;
@@ -39,10 +41,7 @@ export function budgetRows(
       fraction: spentShare(b.spent, b.left) / 100,
       over: b.overflow.amountMinor > 0,
       icon: style?.icon ?? null,
-      colour:
-        style === undefined
-          ? 1
-          : (Number(style.colour.slice(7)) as SeriesNumber),
+      colour: style === undefined ? 1 : seriesNumber(style.colour),
     };
   });
 }

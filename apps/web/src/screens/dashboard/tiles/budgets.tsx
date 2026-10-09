@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Amount } from '@/components/amount';
 import { Bar, SkeletonTile } from '@/components/bars';
-import { BracketButton } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import { CategoryIcon, EmptyState } from '@/components/states';
 import { budgetsQuery } from '@/lib/budgets';
 import { categoriesQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
+import { TileFailed } from './tile-failed.tsx';
 import { budgetRows } from './budgets.ts';
 
 const columns = [
@@ -24,14 +24,11 @@ export function BudgetsTile() {
   if (budgets.isError) {
     return (
       <Tile title={title}>
-        <div role="alert" className="flex items-center gap-2 py-2 text-small">
-          <span className="text-negative">
-            {t('dashboardTiles.loadFailed')}
-          </span>
-          <BracketButton onPress={() => void budgets.refetch()}>
-            {t('dashboardTiles.retry')}
-          </BracketButton>
-        </div>
+        <TileFailed
+          retry={() => {
+            void budgets.refetch();
+          }}
+        />
       </Tile>
     );
   }
@@ -48,7 +45,7 @@ export function BudgetsTile() {
         <Link
           to="/budget/$sub"
           params={{ sub: 'budgets' }}
-          className="press inline-flex h-8 min-w-8 items-center justify-center text-small underline underline-offset-4"
+          className="press inline-flex h-8 min-w-8 items-center justify-center px-1 text-small text-primary"
         >
           {t('dashboardTiles.budgets.all')}
         </Link>
