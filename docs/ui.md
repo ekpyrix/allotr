@@ -246,12 +246,12 @@ emergency fund · net worth (2 wide).
 | this cycle | Key figures (spent, even pace, under pace, days over), a spent-vs-even-pace chart with a today line, the formula line | `/v1/today`, `/v1/cycles/{openedOn}/days` |
 | needs attention | Tag, text, action, ⋮ | `/v1/today` attention items, `/v1/reminders` |
 | today's entries | Time, icon, payee, category, amount | `/v1/transactions?on=today` |
-| cycle allocation | Allocation component | **(API +)** |
-| budgets | Category tree with bar, spent and left | `/v1/budgets` |
+| cycle allocation | Allocation component | `/v1/today` `allocation` **(API +: segment shares; until then the bar sizes each part against the start)** |
+| budgets | Category tree with bar, spent and left | `/v1/budgets` **(API +: parent budgets and their totals; until then a flat list)** |
 | next 7 days | Day, icon, item, amount | `/v1/reports/calendar` |
 | pools | Pool rows with a daily checkbox, plus a share bar | `/v1/pools` |
-| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` |
-| net worth | Figure, change, area chart | `/v1/insights/net-worth` |
+| emergency fund | Figure, bar, covers, this cycle, at this rate | `/v1/insights/emergency-fund` **(API +: this cycle and at this rate; until then left out)** |
+| net worth | Figure, change, area chart | `/v1/insights/net-worth` **(API +: change over the period; until then the starting figure)** |
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
@@ -362,6 +362,10 @@ property tests:
 5. **Category series across cycles** for trends (on `/v1/reports/categories`
    with a range).
 6. **Interface preferences** for account-wide layouts (planned, ADR 0029).
+7. **Dashboard figures** not yet sent: allocation segment shares, parent
+   budgets with their totals, the emergency fund's "this cycle" and "at this
+   rate", and net worth's change over the period. Until they exist the tiles
+   leave the figure out or show the nearest server figure (§6).
 
 ## 9. Accessibility
 
