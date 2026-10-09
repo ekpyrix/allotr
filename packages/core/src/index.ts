@@ -125,6 +125,14 @@ export {
 } from './projections/plan.ts';
 export { dayNetTotals, type DayTotal } from './projections/day-totals.ts';
 export {
+  entryGroupTotals,
+  entryTotals,
+  type CurrencyTotals,
+  type EntryGroupTotals,
+  type EntryGrouping,
+  type EntryTotals,
+} from './projections/entry-totals.ts';
+export {
   balanceHistory,
   cycleDays,
   type CycleDay,
