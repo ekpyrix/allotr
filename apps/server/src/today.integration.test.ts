@@ -22,6 +22,14 @@ type Today = {
   liveDaily: Money;
   cycleSpent: Money;
   paceSpent: Money;
+  allocation: {
+    start: Money;
+    paidBills: Money;
+    savings: Money;
+    spent: Money;
+    reserved: Money;
+    free: Money;
+  };
   billsDue: {
     billId: string;
     name: string;
@@ -130,6 +138,14 @@ describe('today for a new user', () => {
       liveDaily: usd(0),
       cycleSpent: usd(0),
       paceSpent: usd(0),
+      allocation: {
+        start: usd(0),
+        paidBills: usd(0),
+        savings: usd(0),
+        spent: usd(0),
+        reserved: usd(0),
+        free: usd(0),
+      },
       billsDue: [],
       cycleBills: [],
       missingRates: [],
@@ -172,6 +188,15 @@ describe('daily figures', () => {
       liveDaily: usd(9852),
       cycleSpent: usd(2500),
       paceSpent: usd(2500),
+      // The 170,000 the account opened with, less the 2,500 spent.
+      allocation: {
+        start: usd(170000),
+        paidBills: usd(0),
+        savings: usd(0),
+        spent: usd(2500),
+        reserved: usd(0),
+        free: usd(167500),
+      },
     });
   });
 
@@ -493,6 +518,15 @@ describe('daily figures', () => {
       available: usd(162500),
       cycleSpent: usd(7500),
       paceSpent: usd(2500),
+      // The linked payment is a paid bill, not spending.
+      allocation: {
+        start: usd(170000),
+        paidBills: usd(5000),
+        savings: usd(0),
+        spent: usd(2500),
+        reserved: usd(0),
+        free: usd(162500),
+      },
     });
 
     const reconciled = await h.alice.post(
@@ -507,6 +541,15 @@ describe('daily figures', () => {
       available: usd(161300),
       cycleSpent: usd(8700),
       paceSpent: usd(2500),
+      // The adjustment is spending, as it lowers what is available.
+      allocation: {
+        start: usd(170000),
+        paidBills: usd(5000),
+        savings: usd(0),
+        spent: usd(3700),
+        reserved: usd(0),
+        free: usd(161300),
+      },
     });
 
     for (const id of [adjustment.id, paymentId]) {
@@ -520,6 +563,66 @@ describe('daily figures', () => {
       cycleSpent: usd(2500),
       paceSpent: usd(2500),
     });
+  });
+});
+
+describe('cycle allocation', () => {
+  // Its own server, so the other users' figures are left as they were.
+  let own: TwoUsers;
+
+  beforeAll(async () => {
+    own = await startWithTwoUsers({ now: () => clock });
+    await own.db
+      .updateTable('users')
+      .set({ created_at: started.toISOString() })
+      .execute();
+  });
+
+  afterAll(async () => {
+    await own.close();
+  });
+
+  it('splits the start into spending, savings and what is left', async () => {
+    const everyday = await openAccount(own.alice, 'Everyday', usd(100000));
+    const rainy = (
+      await own.alice.post('/v1/accounts', {
+        name: 'Rainy day',
+        currency: 'USD',
+        budgetGroup: 'off',
+        openingBalance: usd(5000),
+      })
+    ).body as { id: string };
+    expect(
+      (
+        await own.alice.post('/v1/transactions', {
+          kind: 'transfer',
+          fromAccountId: everyday,
+          toAccountId: rainy.id,
+          sent: usd(20000),
+        })
+      ).status,
+    ).toBe(201);
+    expect(
+      (
+        await own.alice.post('/v1/transactions', {
+          kind: 'expense',
+          accountId: everyday,
+          amount: usd(3000),
+          categoryId: await categoryId(own.alice, 'Groceries'),
+        })
+      ).status,
+    ).toBe(201);
+    const figures = await today(own.alice);
+    // The savings account's own opening balance was never on budget.
+    expect(figures.allocation).toEqual({
+      start: usd(100000),
+      paidBills: usd(0),
+      savings: usd(20000),
+      spent: usd(3000),
+      reserved: usd(0),
+      free: usd(77000),
+    });
+    expect(figures.available).toEqual(figures.allocation.free);
   });
 });
 

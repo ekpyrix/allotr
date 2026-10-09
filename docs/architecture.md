@@ -206,7 +206,9 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   its payment day, and currencies left out for lack of a rate), computed
   from the ledger on every request. `onBudget` and `reserved` split
   `available` for charts; `reserved` is always exactly
-  `onBudget − available`.
+  `onBudget − available`. `allocation` splits the cycle's on-budget start
+  into `paidBills`, `savings`, `spent`, `reserved` and `free`, which add up
+  to `start` exactly (domain.md "Cycle allocation").
   `/v1/settings/ledger` holds the locale, time zone, default currency, payday
   day (the 1st until set) and payday override; switching the default currency
   changes figures, never entries. `/v1/settings/appearance` holds the theme

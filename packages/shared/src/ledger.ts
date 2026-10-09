@@ -567,6 +567,28 @@ export const cycleSchema = z.object({
   payday: localDateSchema,
 });
 
+/**
+ * How the open cycle's on-budget money divides (docs/domain.md "Cycle
+ * allocation"), in the default currency. The five parts always add up to
+ * `start` exactly; `savings` is negative when more came back from savings
+ * than went.
+ */
+export const cycleAllocationSchema = z.object({
+  /** On-budget money when the cycle opened plus income since. */
+  start: moneySchema,
+  /** Linked bill payments this cycle. */
+  paidBills: moneySchema,
+  /** Left the budget without being spent or paying a bill. */
+  savings: moneySchema,
+  /** Spending other than linked bill payments. */
+  spent: moneySchema,
+  /** Unpaid bills reserved, and what is owed to people, now. */
+  reserved: moneySchema,
+  /** On-budget money less `reserved`: the `available` figure. */
+  free: moneySchema,
+});
+export type CycleAllocationView = z.infer<typeof cycleAllocationSchema>;
+
 export const todaySchema = z.object({
   /** The user's calendar day. */
   today: localDateSchema,
@@ -597,6 +619,8 @@ export const todaySchema = z.object({
    * adjustments, which still lower `available`: what the pace reads.
    */
   paceSpent: moneySchema,
+  /** The open cycle's on-budget start split into five parts. */
+  allocation: cycleAllocationSchema,
   /** Unpaid due dates in this cycle on or before today, earliest first. */
   billsDue: z.array(
     z.object({

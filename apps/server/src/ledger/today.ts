@@ -1,5 +1,6 @@
 import {
   categoryId,
+  cycleAllocation,
   dailyFigures,
   transactionId,
   type CategoryId,
@@ -163,6 +164,7 @@ export async function todayFigures(
       billNames: await loadBillNames(trx, userId),
     }));
   const figures = dailyFigures(view, now, timeZone);
+  const allocation = cycleAllocation(view, figures.today);
   return {
     today: figures.today,
     cycle: {
@@ -183,6 +185,14 @@ export async function todayFigures(
     liveDaily: figures.liveDaily,
     cycleSpent: figures.cycleSpent,
     paceSpent: figures.paceSpent,
+    allocation: {
+      start: allocation.start,
+      paidBills: allocation.paidBills,
+      savings: allocation.savings,
+      spent: allocation.spent,
+      reserved: allocation.reserved,
+      free: allocation.free,
+    },
     billsDue: figures.billsDue.map((due) => ({
       billId: due.billId,
       name: billNames.get(due.billId)?.name ?? '',
@@ -196,6 +206,8 @@ export async function todayFigures(
       amount: bill.amount,
       paidOn: bill.paidOn,
     })),
-    missingRates: [...figures.missingRates],
+    missingRates: [
+      ...new Set([...figures.missingRates, ...allocation.missingRates]),
+    ].sort(),
   };
 }
