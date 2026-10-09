@@ -1,16 +1,22 @@
 import {
   categoryId,
+  categorySeries,
   categoryTotalsBetween,
+  cyclePeriods,
   cyclesOf,
+  monthPeriods,
   rollUpCategories,
   type CategoryId,
   type CategoryGroup,
+  type CategorySeries,
+  type SeriesPeriod,
 } from '@allotr/core';
 import {
   addDays,
   lastDayOfMonth,
   localDate,
   localDateIn,
+  type CategorySeriesView,
   type CategorySummaryView,
   type LocalDate,
 } from '@allotr/shared';
@@ -27,6 +33,7 @@ type Query = Readonly<{
   period: 'cycle' | 'month';
   cycle?: LocalDate | undefined;
   month?: string | undefined;
+  series?: number | undefined;
 }>;
 
 const view = (groups: CategoryGroup[]) =>
@@ -38,6 +45,17 @@ const view = (groups: CategoryGroup[]) =>
       amount: child.amount,
     })),
   }));
+
+// The core result is readonly; the API view is plain arrays.
+const seriesView = (series: CategorySeries): CategorySeriesView => ({
+  periods: series.periods.map(({ from, to }) => ({ from, to })),
+  groups: series.groups.map((g) => ({
+    categoryId: g.categoryId,
+    points: [...g.points],
+  })),
+  totals: [...series.totals],
+  missingRates: [...series.missingRates],
+});
 
 export async function categorySummary(
   db: Kysely<DB>,
@@ -59,10 +77,12 @@ export async function categorySummary(
   const today = localDateIn(now, loaded.timeZone);
   let from: LocalDate;
   let to: LocalDate;
+  let periods: SeriesPeriod[];
   if (query.period === 'month') {
     const month = query.month ?? today.slice(0, 7);
     from = localDate(`${month}-01`);
     to = lastDayOfMonth(from);
+    periods = monthPeriods(month, query.series ?? 0);
   } else {
     const cycles = cyclesOf(loaded.view, today);
     const cycle =
@@ -78,6 +98,7 @@ export async function categorySummary(
     }
     from = cycle.openedOn;
     to = cycle.closedOn === null ? today : addDays(cycle.closedOn, -1);
+    periods = cyclePeriods(cycles, cycle.openedOn, query.series ?? 0, today);
   }
   const parentOf = new Map<CategoryId, CategoryId | null>(
     parents.map((row) => [
@@ -106,5 +127,12 @@ export async function categorySummary(
     missingRates: [
       ...new Set([...spending.missingRates, ...income.missingRates]),
     ].sort(),
+    ...(query.series === undefined
+      ? {}
+      : {
+          series: seriesView(
+            categorySeries(loaded.view, periods, parentOf, merged),
+          ),
+        }),
   };
 }

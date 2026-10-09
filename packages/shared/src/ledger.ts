@@ -636,6 +636,11 @@ export const categorySummaryQuerySchema = z.object({
     .string()
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
     .optional(),
+  /**
+   * Also return `series`: spending per category for this many consecutive
+   * periods (cycles or months, as `period`), ending with the selected one.
+   */
+  series: z.coerce.number().int().min(1).max(24).optional(),
 });
 
 const categoryAmountSchema = z.object({
@@ -647,6 +652,27 @@ const categoryGroupSchema = categoryAmountSchema.extend({
   /** Subcategories with figures, largest first; what was booked on the parent itself is listed under the parent's own id. */
   children: z.array(categoryAmountSchema),
 });
+
+const periodSchema = z.object({ from: localDateSchema, to: localDateSchema });
+
+/**
+ * Spending per top-level category across consecutive periods, oldest first.
+ * Each point is what the single-period summary gives for that period: a
+ * subcategory counts in its parent, amounts are in the default currency at
+ * the rate on the period's `to`. `points` and `totals` line up with `periods`.
+ */
+export const categorySeriesSchema = z.object({
+  periods: z.array(periodSchema),
+  /** Largest total across the periods first; zero where nothing was booked. */
+  groups: z.array(
+    z.object({ categoryId: idSchema.nullable(), points: z.array(moneySchema) }),
+  ),
+  /** Everything spent per period. */
+  totals: z.array(moneySchema),
+  /** Currencies without a rate in at least one period, left out. */
+  missingRates: z.array(currencyCodeSchema),
+});
+export type CategorySeriesView = z.infer<typeof categorySeriesSchema>;
 
 /**
  * Spending and income per top-level category for a period, subcategories
@@ -661,6 +687,8 @@ export const categorySummarySchema = z.object({
   income: z.array(categoryGroupSchema),
   /** Currencies without a rate on `to`, left out of the figures. */
   missingRates: z.array(currencyCodeSchema),
+  /** Only when `series` was requested. */
+  series: categorySeriesSchema.optional(),
 });
 export type CategorySummaryView = z.infer<typeof categorySummarySchema>;
 
