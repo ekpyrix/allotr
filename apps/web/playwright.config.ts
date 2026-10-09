@@ -25,7 +25,7 @@ const sizes = [
   },
 ];
 // The per-screen specs return with their screens (WP3 onwards).
-const specs = ['smoke', 'shell', 'keys', 'dashboard'];
+const specs = ['smoke', 'shell', 'keys', 'dashboard', 'transactions-detail'];
 
 const projects = sizes.flatMap((size, i) =>
   specs.map((spec, j) => ({

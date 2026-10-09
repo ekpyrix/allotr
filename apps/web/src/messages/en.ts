@@ -1,7 +1,10 @@
 // English UI text (NFR-9). Other locales will mirror these keys. Plural
 // messages are { one, other } objects chosen by `count`.
+import { transactionDetail } from './transaction-detail.ts';
+
 export const en = {
   app: { name: 'Allotr' },
+  transactionDetail,
   signIn: {
     title: 'Sign in',
     email: 'Email',
