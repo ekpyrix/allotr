@@ -78,7 +78,7 @@ export const ROLE_SPECS: Readonly<Record<Role, RoleSpec>> = {
   ...(Object.fromEntries(
     [...SURFACE_ROLES, ...CONTAINER_ROLES].map((role) => [role, surface]),
   ) as Record<SurfaceRole | (typeof CONTAINER_ROLES)[number], RoleSpec>),
-  primary: { kind: 'non-text', on: ['canvas', 'card', 'chrome'] },
+  primary: { kind: 'text', on: ['canvas', 'card', 'chrome'] },
   info: onCard('non-text'),
   success: onCard('non-text'),
   warning: onCard('non-text'),

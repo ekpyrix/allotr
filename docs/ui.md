@@ -46,12 +46,17 @@ The interface uses only existing roles, so the theme format does not change.
 | Strong lines: axes, chart borders, control borders, decorative glyphs (tree lines, `[ ]` brackets) | `outline` |
 | Primary text | `text` |
 | Secondary text, labels, axis labels, units | `text-muted` |
-| Accent: selection fill, links, focus ring, primary action | `primary` (+ `on-primary` for text on it), `ring` |
-| Money in / out / transfer | `positive` / `negative` / `info` (text); `success` / `danger` (fills) |
-| Warnings, bills set aside | `warning` |
+| Accent: selection fill, links, bracket-button labels, focus ring, primary action | `primary` (+ `on-primary` for text on it), `ring` |
+| Money in / out / transfer | `positive` / `negative` / `text` (text); `success` / `danger` / `info` (fills and marks) |
+| Warnings, bills set aside (borders, marks and fills, never text) | `warning` |
 | Left-today edge and figure | `positive` (`hero-tight` / `hero-over` when tight or over) |
 | Category, pool and chart series colours | `series-1` … `series-8` |
 | Calendar heat | `negative` mixed into `canvas` at 0–55 % (an opaque mix, never transparency) |
+
+Text may use only roles fitted for text (4.5:1): `text`, `text-muted`,
+`primary`, `positive`, `negative` and the `on-*` roles. `info`, `success`,
+`warning`, `danger`, `outline` and the series roles are fitted for non-text
+contrast (3:1), so they colour borders, marks, bars and fills, never text.
 
 Do not use translucency (`opacity` or alpha) for surfaces. Use opacity only
 on an item while it is being dragged.
@@ -160,12 +165,12 @@ column setting, 4 from 1500.
 | **Grid / Stack / Split** | Grid: fixed column counts as in §2.4, `dense` flow, tiles stretch per row, the last row fills to the bottom. Stack: vertical, the last child grows. Split: list + 400 px detail (≥ 1000). |
 | **Row** | One line, `min-height` per §2.3, 1 px seams. Hover and selection span the full tile width. Selection = `card` fill plus a 3 px `primary` inset. Columns come from a per-row template with tablet and phone variants. Hidden columns are removed, not wrapped. |
 | **Tree row** | A 24 px lead column: a fold handle (▾ / ▸, keyboard expandable) on parents, or `├` / `└` in `outline` on children. Parents are bold and show the sum of their children. React Aria `Tree`. |
-| **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `info`. Always one formatter (§5.1). |
+| **Amount** | Number font, tabular. `↓ −$14.00` `negative`, `↑ +$2,140.00` `positive`, `↔ $150.00` `text`. Always one formatter (§5.1). |
 | **Bracket button** | `[pay]`. Brackets in `outline`, label in `primary`. Destructive actions in `negative`. An icon goes before the label. Minimum target 26 design px. |
 | **Primary button** | Filled `primary` with `on-primary`. One per strip (for example **+ new**). |
 | **Menu button** | Bordered, with label · value · ▾. Opens a menu. |
 | **Toggle group** | Bordered segments. The pressed segment is filled `primary`. |
-| **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning (`warning`, `negative`, `positive`, muted). |
+| **Tag** | Bordered, number font, 11 px: `3d`, `9d late`, `✓ paid`, `review`. Colour by meaning: `negative`, `positive` and muted colour the label; `warning` colours the border and keeps a `text` label. |
 | **Chip** | A filter chip with a remove (×) button. Lives in the chip bar above a list. |
 | **Menu** | React Aria `Menu` inside a `Popover` (≥ 600) or a `Modal` bottom sheet (< 600) with a title and a close button. Sections with uppercase headers, radio and checkbox items, nested groups with fold handles, key hints on the right. Rows are 30 px in popovers and 44 px in sheets. Arrow keys move, → / ← fold, Esc closes. A menu re-anchors to the same control after a re-render. |
 | **Sheet** | A bottom sheet on `chrome` with a 2 px `primary` top edge and up to 84 % of the height. Used for menus and for details below 1000 px. |
