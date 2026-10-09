@@ -158,13 +158,26 @@ export function Skeleton({
   );
 }
 
-/** A skeleton tile: title bar and a few rows, shown while a tile loads. */
-export function SkeletonTile({ rows = 3 }: { rows?: number }) {
+/**
+ * A skeleton tile: title bar and a few rows, shown while a tile loads. Give
+ * it the tile's `span` so the grid does not shift when the data arrives.
+ */
+export function SkeletonTile({
+  rows = 3,
+  span = 1,
+}: {
+  rows?: number;
+  span?: 1 | 2 | 'full';
+}) {
   return (
     <section
       aria-busy="true"
       aria-label="Loading"
-      className="flex min-w-0 flex-col border-r border-b bg-canvas"
+      className={cn(
+        'flex min-w-0 flex-col border-r border-b bg-canvas',
+        span === 2 && 'cols2:col-span-2',
+        span === 'full' && 'col-span-full',
+      )}
     >
       <div className="flex h-bar items-center border-b bg-chrome px-3">
         <Skeleton width="30%" height="0.75rem" />

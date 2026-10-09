@@ -22,6 +22,8 @@ export type PoolRow = Readonly<{
   balance: Money;
   /** The pool's own daily switch. */
   checked: boolean;
+  /** The Budget pool always counts; the server refuses to switch it off. */
+  fixed: boolean;
   color: SeriesColor;
   /** Its balance's share of the pools' positive balances, 0..1. */
   share: number;
@@ -40,6 +42,7 @@ export function poolRows(pools: readonly PoolView[]): PoolRow[] {
     name: p.name,
     balance: p.balance.amount,
     checked: p.countsTowardDaily,
+    fixed: p.defaultFor === 'on',
     color: COLORS[index % COLORS.length] ?? 'series-1',
     share: barFraction(p.balance.amount.amountMinor, whole),
     cycle:

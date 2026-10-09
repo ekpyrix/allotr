@@ -1,6 +1,11 @@
 import { categoryColours, type CategoryView } from '@allotr/shared';
 import { describe, expect, it } from 'vitest';
-import { categoryStyles, colourVar, defaultColour } from './category-style.ts';
+import {
+  categoryStyles,
+  colourVar,
+  defaultColour,
+  seriesNumber,
+} from './category-style.ts';
 
 const category = (
   id: string,
@@ -62,5 +67,11 @@ describe('categoryStyles', () => {
 describe('colourVar', () => {
   it('names the theme’s series role', () => {
     expect(colourVar('series-3')).toBe('var(--series-3)');
+  });
+});
+
+describe('seriesNumber', () => {
+  it('reads the index of every series colour', () => {
+    expect(categoryColours.map(seriesNumber)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 });

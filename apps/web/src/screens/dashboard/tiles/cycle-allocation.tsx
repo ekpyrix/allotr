@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Allocation } from '@/charts/allocation';
 import { SkeletonTile } from '@/components/bars';
-import { BracketButton } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { EmptyState } from '@/components/states';
 import { todayQuery } from '@/lib/ledger';
 import { t } from '@/messages/t';
+import { TileFailed } from './tile-failed.tsx';
 import { allocationSegments } from './cycle-allocation.ts';
 
 export function CycleAllocationTile() {
@@ -15,18 +15,15 @@ export function CycleAllocationTile() {
   if (today.isError) {
     return (
       <Tile title={title} span="full">
-        <div role="alert" className="flex items-center gap-2 py-2 text-small">
-          <span className="text-negative">
-            {t('dashboardTiles.loadFailed')}
-          </span>
-          <BracketButton onPress={() => void today.refetch()}>
-            {t('dashboardTiles.retry')}
-          </BracketButton>
-        </div>
+        <TileFailed
+          retry={() => {
+            void today.refetch();
+          }}
+        />
       </Tile>
     );
   }
-  if (data === undefined) return <SkeletonTile />;
+  if (data === undefined) return <SkeletonTile span="full" />;
   const { allocation } = data;
   return (
     <Tile

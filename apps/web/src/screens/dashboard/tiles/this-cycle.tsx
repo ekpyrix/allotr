@@ -35,10 +35,10 @@ export function ThisCycleTile() {
     );
   }
   if (today.data === undefined || days.data === undefined) {
-    return <SkeletonTile rows={5} />;
+    return <SkeletonTile rows={5} span={2} />;
   }
 
-  const { available, liveDaily, daysLeft, cycleSpent } = today.data;
+  const { available, liveDaily, daysLeft, paceSpent } = today.data;
   const { budget } = days.data;
   const series = days.data.days;
   const view = cycleView(series);
@@ -87,7 +87,7 @@ export function ThisCycleTile() {
         figures={[
           {
             label: t('dashboardTiles.thisCycle.spent'),
-            figure: money(cycleSpent),
+            figure: money(paceSpent),
           },
           {
             label: t('dashboardTiles.thisCycle.evenPace'),

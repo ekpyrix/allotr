@@ -150,6 +150,7 @@ export const en = {
       subtitle: 'daily number',
       share: 'Share of money by pool',
       counts: 'Counts toward the daily number: {name}',
+      countsFixed: 'Always counts toward the daily number: {name}',
       cycleLeft: '{name}: left this cycle',
       left: '{left} left of {start}',
       empty: 'No pools yet',

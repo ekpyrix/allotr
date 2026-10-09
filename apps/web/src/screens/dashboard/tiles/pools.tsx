@@ -43,15 +43,24 @@ function PoolLine({
       <div className="flex min-w-0 items-center gap-2">
         <ToggleButton
           isSelected={row.checked}
+          isDisabled={row.fixed}
           onChange={onToggle}
-          aria-label={t('dashboardTiles.pools.counts', { name: row.name })}
-          className="press flex size-8 shrink-0 items-center justify-center"
+          aria-label={t(
+            row.fixed
+              ? 'dashboardTiles.pools.countsFixed'
+              : 'dashboardTiles.pools.counts',
+            { name: row.name },
+          )}
+          className="press flex size-8 shrink-0 items-center justify-center disabled:cursor-not-allowed"
         >
-          {({ isSelected }) => (
+          {({ isSelected, isDisabled }) => (
             <span
               className={cn(
                 'flex size-4 items-center justify-center border border-outline',
-                isSelected && 'bg-primary text-on-primary',
+                isSelected &&
+                  (isDisabled
+                    ? 'text-text-muted'
+                    : 'bg-primary text-on-primary'),
               )}
             >
               {isSelected ? <IconCheckLine className="size-3" /> : null}
@@ -67,7 +76,7 @@ function PoolLine({
       </div>
       {row.cycle === null ? null : (
         <div className="pl-8">
-          <p className="num truncate text-[11px] text-text-muted">
+          <p className="num truncate text-tiny text-text-muted">
             {t('dashboardTiles.pools.left', {
               left: formatMoney(row.cycle.left, 'symbol', locale),
               start: formatMoney(row.cycle.start, 'symbol', locale),

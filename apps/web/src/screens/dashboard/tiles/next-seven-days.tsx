@@ -2,7 +2,6 @@ import { addDays, localDate } from '@allotr/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Amount } from '@/components/amount';
 import { SkeletonTile } from '@/components/bars';
-import { BracketButton } from '@/components/buttons';
 import { Tile } from '@/components/layout';
 import { Row } from '@/components/row';
 import { EmptyState } from '@/components/states';
@@ -10,6 +9,7 @@ import { formatDay } from '@/features/today/format';
 import { calendarQuery, todayQuery } from '@/lib/ledger';
 import { billsQuery } from '@/lib/settings';
 import { t } from '@/messages/t';
+import { TileFailed } from './tile-failed.tsx';
 import { upcomingItems } from './next-seven-days.ts';
 
 const locale = 'en';
@@ -34,19 +34,12 @@ export function NextSevenDaysTile() {
   if (today.isError || calendar.isError) {
     return (
       <Tile title={title}>
-        <div role="alert" className="flex items-center gap-2 py-2 text-small">
-          <span className="text-negative">
-            {t('dashboardTiles.loadFailed')}
-          </span>
-          <BracketButton
-            onPress={() => {
-              void today.refetch();
-              void calendar.refetch();
-            }}
-          >
-            {t('dashboardTiles.retry')}
-          </BracketButton>
-        </div>
+        <TileFailed
+          retry={() => {
+            void today.refetch();
+            void calendar.refetch();
+          }}
+        />
       </Tile>
     );
   }

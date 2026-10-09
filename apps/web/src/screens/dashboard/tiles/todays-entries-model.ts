@@ -11,6 +11,10 @@ import { entryRows, type EntryRow } from '@/features/today/entries';
 export interface DashboardEntry extends EntryRow {
   /** `HH:MM`, or null when the entry has no time of day. */
   time: string | null;
+  /** The note, else the category; null when the entry has neither. */
+  payee: string | null;
+  /** The category, only when the payee column is not already showing it. */
+  category: string | null;
 }
 
 export function dashboardEntries(
@@ -19,16 +23,13 @@ export function dashboardEntries(
   categories: readonly CategoryView[],
 ): DashboardEntry[] {
   const times = new Map(transactions.map((e) => [e.id, e.occurredTime]));
-  return entryRows(transactions, accounts, categories).map((row) => ({
-    ...row,
-    time: times.get(row.id)?.slice(0, 5) ?? null,
-  }));
-}
-
-/** `series-3` → 3, the index `CategoryIcon` takes. */
-export function seriesNumber(
-  colour: string,
-): 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | undefined {
-  const n = Number(colour.replace('series-', ''));
-  return n >= 1 && n <= 8 ? (n as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8) : undefined;
+  return entryRows(transactions, accounts, categories).map((row) => {
+    const payee = row.note ?? row.title;
+    return {
+      ...row,
+      time: times.get(row.id)?.slice(0, 5) ?? null,
+      payee,
+      category: row.title === payee ? null : row.title,
+    };
+  });
 }
