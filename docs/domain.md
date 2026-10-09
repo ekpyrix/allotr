@@ -148,6 +148,17 @@ Users may add more, such as *Emergency*.
   or Savings pool.
 - A pool holding accounts cannot be archived; the default pools cannot be
   archived at all.
+- **Cycle figures.** For a pool that counts today, the API gives `start`
+  (what its open accounts held at the end of the day before the open cycle
+  began, accounts opened during the cycle included, as in a cycle snapshot's
+  opening balances) and `left` (what they hold now, ignoring entries dated
+  after today). Both read the accounts in the pool today, so moving an
+  account mid-cycle never looks like spending. A paycheck dated on the
+  opening day is in `left` but not `start`, so `left` can exceed `start`.
+  Core gives them per currency; the API converts each once at today's
+  rates, and lists currencies without a rate. Pools that do not count
+  (savings by default) get `cycle: null`, so savings never appear as
+  usable money.
 
 ## Goals
 

@@ -27,6 +27,18 @@ export const poolSchema = z.object({
   accountIds: z.array(idSchema),
   /** What the open accounts hold, in the default currency at today's rates. */
   balance: figureSchema,
+  /**
+   * For a pool that counts toward the daily number: what its open accounts
+   * held at the start of the open cycle (the end of the day before it
+   * opened) and hold now, in the default currency at today's rates. Null
+   * for pools that do not count, so savings carry no cycle figures.
+   */
+  cycle: z
+    .object({
+      start: figureSchema,
+      left: figureSchema,
+    })
+    .nullable(),
 });
 export type PoolView = z.infer<typeof poolSchema>;
 

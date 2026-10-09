@@ -5455,6 +5455,82 @@
                               "amount",
                               "missingRates"
                             ]
+                          },
+                          "cycle": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "start": {
+                                "type": "object",
+                                "properties": {
+                                  "amount": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amountMinor": {
+                                        "type": "integer"
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "amountMinor",
+                                      "currency"
+                                    ]
+                                  },
+                                  "missingRates": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "amount",
+                                  "missingRates"
+                                ]
+                              },
+                              "left": {
+                                "type": "object",
+                                "properties": {
+                                  "amount": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amountMinor": {
+                                        "type": "integer"
+                                      },
+                                      "currency": {
+                                        "type": "string",
+                                        "pattern": "^[A-Z]{3}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "amountMinor",
+                                      "currency"
+                                    ]
+                                  },
+                                  "missingRates": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "amount",
+                                  "missingRates"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "start",
+                              "left"
+                            ]
                           }
                         },
                         "required": [
@@ -5466,7 +5542,8 @@
                           "defaultFor",
                           "archived",
                           "accountIds",
-                          "balance"
+                          "balance",
+                          "cycle"
                         ]
                       }
                     },
@@ -5766,6 +5843,82 @@
                         "amount",
                         "missingRates"
                       ]
+                    },
+                    "cycle": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "start": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "left"
+                      ]
                     }
                   },
                   "required": [
@@ -5777,7 +5930,8 @@
                     "defaultFor",
                     "archived",
                     "accountIds",
-                    "balance"
+                    "balance",
+                    "cycle"
                   ]
                 }
               }
@@ -6129,6 +6283,82 @@
                         "amount",
                         "missingRates"
                       ]
+                    },
+                    "cycle": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "start": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        },
+                        "left": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "object",
+                              "properties": {
+                                "amountMinor": {
+                                  "type": "integer"
+                                },
+                                "currency": {
+                                  "type": "string",
+                                  "pattern": "^[A-Z]{3}$"
+                                }
+                              },
+                              "required": [
+                                "amountMinor",
+                                "currency"
+                              ]
+                            },
+                            "missingRates": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[A-Z]{3}$"
+                              }
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "missingRates"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "left"
+                      ]
                     }
                   },
                   "required": [
@@ -6140,7 +6370,8 @@
                     "defaultFor",
                     "archived",
                     "accountIds",
-                    "balance"
+                    "balance",
+                    "cycle"
                   ]
                 }
               }
