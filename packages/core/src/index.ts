@@ -234,6 +234,14 @@ export {
   type SummaryCategoryNode,
 } from './projections/category-summary.ts';
 export {
+  categorySeries,
+  cyclePeriods,
+  monthPeriods,
+  type CategorySeries,
+  type SeriesGroup,
+  type SeriesPeriod,
+} from './projections/category-series.ts';
+export {
   calendar,
   heatLevel,
   HEAT_LEVELS,
