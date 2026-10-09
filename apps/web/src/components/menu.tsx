@@ -35,6 +35,8 @@ export type MenuItemProps = {
   /** A key hint on the right, for example `f`. */
   hint?: string;
   destructive?: boolean;
+  /** A subcategory-style row, set in from its parent. */
+  indent?: boolean;
   onAction?: () => void;
 };
 
@@ -44,6 +46,7 @@ export function MenuItem({
   icon: Icon,
   hint,
   destructive = false,
+  indent = false,
   onAction,
 }: MenuItemProps) {
   return (
@@ -51,7 +54,12 @@ export function MenuItem({
       id={id}
       textValue={label}
       {...(onAction === undefined ? {} : { onAction })}
-      className={cn(rowClass, 'focus:bg-card', destructive && 'text-negative')}
+      className={cn(
+        rowClass,
+        'focus:bg-card',
+        destructive && 'text-negative',
+        indent && 'pl-7',
+      )}
     >
       {({ selectionMode, isSelected }) => (
         <>
@@ -110,6 +118,9 @@ export type MenuButtonProps = {
   /** The sheet's title on phones. Defaults to the label. */
   title?: string;
   selectionMode?: 'none' | 'single' | 'multiple';
+  /** Controls whether the menu is open, for a shortcut that opens it. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   selectedKeys?: Selection;
   onSelectionChange?: (keys: Selection) => void;
   className?: string;
@@ -124,13 +135,20 @@ export function MenuButton({
   iconOnly = false,
   title,
   selectionMode = 'none',
+  open: controlledOpen,
+  onOpenChange,
   selectedKeys,
   onSelectionChange,
   className,
   children,
 }: MenuButtonProps) {
   const presentation = menuPresentation(useFrameWidth());
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = (next: boolean) => {
+    setOwnOpen(next);
+    onOpenChange?.(next);
+  };
 
   const face = (
     <>

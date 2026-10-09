@@ -275,6 +275,15 @@ html::-webkit-scrollbar {
   }
 }
 
+/*
+ * Long lists: the browser skips layout and paint of rows that are off screen
+ * and keeps their height, so a list of thousands scrolls like a short one.
+ */
+@utility cv-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 2.875rem;
+}
+
 /* Reduced motion, from the device or the in-app setting. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-motion='full']) *,

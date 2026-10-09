@@ -164,8 +164,13 @@ export function accountEntriesQuery(
 }
 
 export interface LedgerFilter {
+  /** One account ID, or several joined with commas. */
   accountId?: string | undefined;
+  /** One category ID, or several joined with commas. */
   categoryId?: string | undefined;
+  type?: 'expense' | 'income' | 'transfer' | undefined;
+  /** Also return per-day or per-category totals for every match. */
+  group?: 'none' | 'day' | 'category' | undefined;
   tagId?: string | undefined;
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;

@@ -372,12 +372,22 @@ export const editedTransactionSchema = z.object({
   replacement: transactionSchema,
 });
 
+/** One ID, or up to 50 comma-separated IDs, as a list. */
+const idListSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(idSchema).min(1).max(50));
+
 export const listTransactionsQuerySchema = z.object({
   from: localDateSchema.optional(),
   to: localDateSchema.optional(),
-  accountId: idSchema.optional(),
-  /** Includes subcategories and categories merged into it. */
-  categoryId: idSchema.optional(),
+  /** Entries touching any of these accounts (comma-separated). */
+  accountId: idListSchema.optional(),
+  /**
+   * Entries in any of these categories (comma-separated). Each includes
+   * its subcategories and categories merged into it.
+   */
+  categoryId: idListSchema.optional(),
   tagId: idSchema.optional(),
   /**
    * Finds entries whose note contains this text; case is ignored for
