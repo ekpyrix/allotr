@@ -72,7 +72,10 @@ export function TodaysEntriesTile() {
       title={title}
       subtitle={rows.length === 0 ? undefined : String(rows.length)}
       actions={
-        <Link to="/transactions" className="press px-1 text-small text-primary">
+        <Link
+          to="/transactions"
+          className="press inline-flex h-8 items-center px-1 text-small text-primary"
+        >
           {t('dashboardTiles.todaysEntries.all')}
         </Link>
       }

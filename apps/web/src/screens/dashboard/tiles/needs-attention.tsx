@@ -152,6 +152,7 @@ export function NeedsAttentionTile() {
                     key="more"
                     label={t('dashboardTiles.needsAttention.more')}
                     icon={IconMore2Line}
+                    iconOnly
                     className="size-hit justify-center border-0"
                   >
                     <MenuItem

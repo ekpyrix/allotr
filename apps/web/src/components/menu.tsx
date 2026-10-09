@@ -105,6 +105,8 @@ export type MenuButtonProps = {
   label: string;
   value?: string;
   icon?: ComponentType<IconProps>;
+  /** Shows only the icon; the label stays as the accessible name. */
+  iconOnly?: boolean;
   /** The sheet's title on phones. Defaults to the label. */
   title?: string;
   selectionMode?: 'none' | 'single' | 'multiple';
@@ -119,6 +121,7 @@ export function MenuButton({
   label,
   value,
   icon: Icon,
+  iconOnly = false,
   title,
   selectionMode = 'none',
   selectedKeys,
@@ -132,8 +135,10 @@ export function MenuButton({
   const face = (
     <>
       {Icon === undefined ? null : <Icon className="size-3.5" />}
-      <span className="text-text-muted">{label}</span>
-      {value === undefined ? null : (
+      <span className={cn('text-text-muted', iconOnly && 'sr-only')}>
+        {label}
+      </span>
+      {value === undefined || iconOnly ? null : (
         <>
           <span aria-hidden="true" className="text-text-muted">
             ·
@@ -141,7 +146,7 @@ export function MenuButton({
           <span className="min-w-0 truncate">{value}</span>
         </>
       )}
-      <IconArrowDownSLine className="size-3.5 shrink-0" />
+      {iconOnly ? null : <IconArrowDownSLine className="size-3.5 shrink-0" />}
     </>
   );
   const menu = (

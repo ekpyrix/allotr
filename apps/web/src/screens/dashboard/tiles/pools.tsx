@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckboxButton, CheckboxField } from 'react-aria-components';
+import { ToggleButton } from 'react-aria-components';
 import { Amount } from '@/components/amount';
 import { LeftBar, ShareBar, SkeletonTile, seriesBg } from '@/components/bars';
 import { Tile } from '@/components/layout';
@@ -41,25 +41,23 @@ function PoolLine({
   return (
     <li className="border-b py-1.5 last:border-b-0">
       <div className="flex min-w-0 items-center gap-2">
-        <CheckboxField
+        <ToggleButton
           isSelected={row.checked}
           onChange={onToggle}
           aria-label={t('dashboardTiles.pools.counts', { name: row.name })}
-          className="shrink-0"
+          className="press flex size-8 shrink-0 items-center justify-center"
         >
-          <CheckboxButton className="press flex size-6 items-center justify-center">
-            {({ isSelected }) => (
-              <span
-                className={cn(
-                  'flex size-4 items-center justify-center border border-outline',
-                  isSelected && 'bg-primary text-on-primary',
-                )}
-              >
-                {isSelected ? <IconCheckLine className="size-3" /> : null}
-              </span>
-            )}
-          </CheckboxButton>
-        </CheckboxField>
+          {({ isSelected }) => (
+            <span
+              className={cn(
+                'flex size-4 items-center justify-center border border-outline',
+                isSelected && 'bg-primary text-on-primary',
+              )}
+            >
+              {isSelected ? <IconCheckLine className="size-3" /> : null}
+            </span>
+          )}
+        </ToggleButton>
         <span
           aria-hidden="true"
           className={cn('size-2 shrink-0', seriesBg[row.color])}

@@ -48,7 +48,7 @@ export function BudgetsTile() {
         <Link
           to="/budget/$sub"
           params={{ sub: 'budgets' }}
-          className="press text-small underline underline-offset-4"
+          className="press inline-flex h-8 min-w-8 items-center justify-center text-small underline underline-offset-4"
         >
           {t('dashboardTiles.budgets.all')}
         </Link>

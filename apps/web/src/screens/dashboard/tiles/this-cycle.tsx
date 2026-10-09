@@ -118,7 +118,6 @@ export function ThisCycleTile() {
         />
       ) : (
         <Chart
-          className="h-40 wide:h-56"
           label={t('dashboardTiles.thisCycle.chartLabel')}
           series={[
             {
