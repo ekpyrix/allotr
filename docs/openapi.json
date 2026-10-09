@@ -28824,7 +28824,7 @@
           "Today"
         ],
         "summary": "Today's figures",
-        "description": "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`.",
+        "description": "Derived from the ledger by entry date for the user's calendar day, so a back-dated entry changes them at once. Amounts are in the default currency; currencies without a rate are left out and listed in `missingRates`. `allocation` splits the open cycle's on-budget start into bills paid, money moved to savings, spending, bills set aside and free money; the five parts add up to `start` exactly.",
         "responses": {
           "200": {
             "description": "Today's figures.",
@@ -29034,6 +29034,115 @@
                         "currency"
                       ]
                     },
+                    "allocation": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "paidBills": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "savings": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "spent": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "reserved": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        },
+                        "free": {
+                          "type": "object",
+                          "properties": {
+                            "amountMinor": {
+                              "type": "integer"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            }
+                          },
+                          "required": [
+                            "amountMinor",
+                            "currency"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "paidBills",
+                        "savings",
+                        "spent",
+                        "reserved",
+                        "free"
+                      ]
+                    },
                     "billsDue": {
                       "type": "array",
                       "items": {
@@ -29166,6 +29275,7 @@
                     "liveDaily",
                     "cycleSpent",
                     "paceSpent",
+                    "allocation",
                     "billsDue",
                     "cycleBills",
                     "missingRates"

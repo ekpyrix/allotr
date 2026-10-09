@@ -506,6 +506,37 @@ Example: on-budget $1,800 after bills are reserved, 31 days left → $58.06/day.
   last day. Spending by category counts every expense, whichever account
   paid it.
 
+## Cycle allocation
+
+How the open cycle's on-budget money divides, for the Today view's
+allocation bar. Computed on every request from the ledger (`cycleAllocation`
+in `core`), per currency and converted once to the default currency.
+
+```
+start     = on_budget(day before the cycle opened) + income since it opened
+paid_bills = linked bill payments this cycle, less their undos
+spent      = other spending this cycle, less undos        # cycle_spent − paid_bills
+reserved   = on_budget(today) − available(today)          # unpaid bills + owed
+free       = available(today)
+savings    = start − paid_bills − spent − reserved − free
+```
+
+- `start` is the same opening balance and income a closed cycle's snapshot
+  shows, so an account opened during the cycle counts from the start, not as
+  income. Income counts whichever account it lands in.
+- `savings` is what is left to explain: money that left the on-budget
+  accounts without being spent or paying a bill, such as a transfer to a
+  savings account, an account moved to a savings pool, or a loan (which
+  lowers the allowance like a transfer, ADR 0024). It is negative when more
+  came back from savings than went.
+- `spent` leaves out the same linked bill payments pace leaves out, but
+  keeps reconcile adjustments, so `paid_bills + spent` equals `cycle_spent`.
+- `reserved` includes what the user owes people, as `available` does.
+- `free` is `available`: budget holds are not taken off.
+- The parts are converted one by one and `start` is their sum, so the five
+  always add up to `start` exactly. Currencies without a rate are left out
+  and listed in `missingRates`. Any part can be negative (overspending).
+
 ## Policies
 
 Per-user settings. The default is listed first.
