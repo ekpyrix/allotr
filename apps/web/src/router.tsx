@@ -7,6 +7,8 @@ import {
   Link,
   Outlet,
   redirect,
+  useRouter,
+  type ErrorComponentProps,
   type RouterHistory,
 } from '@tanstack/react-router';
 import { Placeholder } from './screens/placeholder.tsx';
@@ -17,6 +19,8 @@ import { queryOrCached } from '@/lib/query-client';
 import { safeRedirect, type ShellPath } from '@/lib/redirect';
 import { onboardingQuery, sessionQuery } from '@/lib/session';
 import { setupQuery } from '@/lib/setup';
+import { BracketButton } from '@/components/buttons';
+import { errorMessage } from '@/lib/problem';
 import { t } from '@/messages/t';
 
 // The route tree (docs/ui.md §6). Screens are placeholders until their work
@@ -34,8 +38,30 @@ async function destination(queryClient: QueryClient) {
   return session === null ? ('/sign-in' as const) : ('/' as const);
 }
 
+// A failed guard (the server is down, a session check errors) offers a
+// retry instead of a dead end. Invalidating runs the guards again.
+function RouteError({ error }: ErrorComponentProps) {
+  const router = useRouter();
+  return (
+    <AuthPlaceholder title={t('errors.pageTitle')}>
+      <p className="mt-2 text-small text-text-muted">{errorMessage(error)}</p>
+      <BracketButton
+        className="mt-3"
+        onPress={() => {
+          void router.invalidate();
+        }}
+      >
+        {t('errors.retry')}
+      </BracketButton>
+    </AuthPlaceholder>
+  );
+}
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
+  // A failed guard (the server is down, a session check errors) offers a
+  // retry instead of a dead end.
+  errorComponent: RouteError,
   notFoundComponent: () => (
     <AuthPlaceholder title={t('notFound.title')}>
       <Link to="/" className="underline underline-offset-4">

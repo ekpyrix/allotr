@@ -14,6 +14,19 @@ import { screenIcons } from './icons.ts';
 const itemBase =
   'press flex min-w-0 items-center text-small aria-[current=page]:bg-primary aria-[current=page]:text-on-primary aria-[current=page]:hover:bg-primary';
 
+// The tab bar and rail show the short label; the link is still named in
+// full for assistive technology, as the sidebar shows it.
+function NavLabel({ short, full }: { short: string; full: string }) {
+  return (
+    <>
+      <span aria-hidden="true" className="max-w-full truncate wide:hidden">
+        {short}
+      </span>
+      <span className="sr-only wide:not-sr-only wide:truncate">{full}</span>
+    </>
+  );
+}
+
 export function Navigation() {
   return (
     <>
@@ -53,7 +66,7 @@ export function Navigation() {
               )}
             >
               <Icon className="size-4 shrink-0" />
-              <span className="max-w-full truncate">{t(item.label)}</span>
+              <NavLabel short={t(item.short)} full={t(item.label)} />
               <kbd className="ml-auto hidden text-tiny opacity-100 wide:inline">
                 {index + 1}
               </kbd>
@@ -77,7 +90,10 @@ export function Navigation() {
             const Icon = screenIcons.settings;
             return <Icon className="size-4 shrink-0" />;
           })()}
-          <span className="truncate">{t(settingsItem.label)}</span>
+          <NavLabel
+            short={t(settingsItem.short)}
+            full={t(settingsItem.label)}
+          />
           <kbd className="ml-auto hidden text-tiny wide:inline">,</kbd>
         </Link>
       </div>

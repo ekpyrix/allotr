@@ -5,14 +5,40 @@ import type { MessageKey } from './messages/t.ts';
 // E2E test visits every entry. Settings is not a destination: it opens from
 // the title strip gear on phones and from the foot of the sidebar and rail.
 export const navItems = [
-  { to: '/', label: 'nav.dashboard', key: 'dashboard' },
-  { to: '/accounts', label: 'nav.accounts', key: 'accounts' },
-  { to: '/transactions', label: 'nav.transactions', key: 'transactions' },
-  { to: '/budget', label: 'nav.budget', key: 'budget' },
-  { to: '/reports', label: 'nav.reports', key: 'reports' },
+  {
+    to: '/',
+    label: 'nav.dashboard',
+    short: 'nav.short.dashboard',
+    key: 'dashboard',
+  },
+  {
+    to: '/accounts',
+    label: 'nav.accounts',
+    short: 'nav.short.accounts',
+    key: 'accounts',
+  },
+  {
+    to: '/transactions',
+    label: 'nav.transactions',
+    short: 'nav.short.transactions',
+    key: 'transactions',
+  },
+  {
+    to: '/budget',
+    label: 'nav.budget',
+    short: 'nav.short.budget',
+    key: 'budget',
+  },
+  {
+    to: '/reports',
+    label: 'nav.reports',
+    short: 'nav.short.reports',
+    key: 'reports',
+  },
 ] as const satisfies readonly {
   to: `/${string}`;
   label: MessageKey;
+  short: MessageKey;
   key: string;
 }[];
 
@@ -22,8 +48,14 @@ export type ScreenKey = (typeof navItems)[number]['key'] | 'settings';
 export const settingsItem = {
   to: '/settings',
   label: 'nav.settings',
+  short: 'nav.short.settings',
   key: 'settings',
-} as const satisfies { to: `/${string}`; label: MessageKey; key: string };
+} as const satisfies {
+  to: `/${string}`;
+  label: MessageKey;
+  short: MessageKey;
+  key: string;
+};
 
 /**
  * Sub-tabs of a screen, in order (docs/ui.md §6). The first is the default.

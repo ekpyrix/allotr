@@ -157,8 +157,8 @@ export function SummaryBar() {
             params={{ sub: 'cycles' }}
             aria-label={t('shell.summary.payday')}
             className={cn(
-              'press hidden wide:flex',
               cell,
+              'press hidden wide:flex',
               'min-w-[7rem] border-l',
             )}
           >
