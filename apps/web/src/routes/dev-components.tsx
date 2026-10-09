@@ -16,6 +16,7 @@ import {
   Tag,
   ToggleGroup,
 } from '@/components/buttons';
+import { ChartsGallery } from './dev-charts';
 import { Frame, Grid, Split, Stack, Tile } from '@/components/layout';
 import {
   MenuCheckItem,
@@ -364,6 +365,8 @@ export function DevComponentsPage() {
             }
           />
         </Stack>
+
+        <ChartsGallery />
 
         <ResultLine
           icon={<CategoryIcon name="coffee" color={1} />}

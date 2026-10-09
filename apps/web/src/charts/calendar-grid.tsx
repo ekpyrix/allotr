@@ -7,7 +7,8 @@ import { leadingBlanks, type MonthRange } from '@/features/calendar/model';
 
 // A month grid (docs/ui.md §4). Spent amounts, heat and marks are the
 // server's; the grid only places them. Every day has a text label and the
-// whole month has a table view.
+// whole month has a table view. The heat fills the cell; the text sits on
+// opaque canvas chips so contrast never depends on how hot a day is.
 
 /** Share of `negative` mixed into `canvas` for a heat level 0..4: 0–55 %. */
 export function heatPercent(heat: number | null): number {
@@ -100,7 +101,7 @@ export function CalendarGrid(props: CalendarGridProps) {
               setView(v);
             }}
             className={cn(
-              'h-7 border border-outline px-2 text-[11px]',
+              'h-8 border border-outline px-2 text-[11px]',
               view === v ? 'bg-primary text-on-primary' : 'bg-canvas text-text',
             )}
           >
@@ -155,12 +156,12 @@ export function CalendarGrid(props: CalendarGridProps) {
                 }}
               >
                 <span className="flex items-center justify-between">
-                  <span className="num text-[11px] text-text">
+                  <span className="num bg-canvas px-0.5 text-[11px] text-text">
                     {Number(day.date.slice(8))}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="num text-[11px] text-text-muted"
+                    className="num bg-canvas px-0.5 text-[11px] text-text-muted"
                   >
                     {marks.join(' ')}
                   </span>
@@ -168,7 +169,7 @@ export function CalendarGrid(props: CalendarGridProps) {
                 {day.spent === null || day.spent.amountMinor === 0 ? null : (
                   <span
                     aria-hidden="true"
-                    className="num truncate text-[11px] text-text"
+                    className="num self-start truncate bg-canvas px-0.5 text-[11px] text-text"
                   >
                     {formatMoneyShort(day.spent, locale)}
                   </span>

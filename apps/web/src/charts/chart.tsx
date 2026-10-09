@@ -228,7 +228,7 @@ export function Chart({
       <span aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="relative h-4 font-num text-[0.6875rem] text-text-muted"
+        className="relative mt-2 h-4 font-num text-[0.6875rem] text-text-muted"
       >
         {xTicks.map((t) => (
           <span

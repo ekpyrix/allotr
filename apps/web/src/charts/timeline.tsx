@@ -71,7 +71,7 @@ export function Timeline({
     <div
       role="img"
       aria-label={summary}
-      className={cn('relative h-28 w-full px-3 compact:h-16', className)}
+      className={cn('relative h-44 w-full px-3 compact:h-16', className)}
     >
       <div className="relative h-full">
         {/* Axis and elapsed fill */}
