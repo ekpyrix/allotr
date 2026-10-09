@@ -11,6 +11,7 @@ import {
   type ErrorComponentProps,
   type RouterHistory,
 } from '@tanstack/react-router';
+import { Dashboard } from './screens/dashboard/dashboard.tsx';
 import { Placeholder } from './screens/placeholder.tsx';
 import { AuthPlaceholder } from './screens/auth-placeholder.tsx';
 import { AppShell } from './shell/app-shell.tsx';
@@ -167,7 +168,7 @@ const dashboardRoute = createRoute({
     const { finished } = await queryOrCached(context.queryClient, setupQuery);
     if (!finished) throw redirect({ to: '/setup' });
   },
-  component: () => <Placeholder title={t('nav.dashboard')} />,
+  component: Dashboard,
 });
 
 const budgetIndex = createRoute({
