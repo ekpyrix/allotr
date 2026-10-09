@@ -4,23 +4,33 @@ import { defineConfig, devices } from '@playwright/test';
 // onboarding can only happen once per instance. Add new spec files to
 // `specs`. Run `vite build` first (`pnpm e2e` does).
 const sizes = [
-  { name: 'phone', use: { ...devices['Pixel 7'] } },
+  {
+    name: 'phone',
+    use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } },
+  },
+  {
+    name: 'tablet',
+    use: {
+      ...devices['Desktop Chrome'],
+      viewport: { width: 820, height: 1180 },
+    },
+  },
   {
     name: 'desktop',
     use: {
       ...devices['Desktop Chrome'],
-      viewport: { width: 1280, height: 800 },
+      viewport: { width: 1440, height: 900 },
       colorScheme: 'dark' as const,
     },
   },
 ];
 // The per-screen specs return with their screens (WP3 onwards).
-const specs = ['smoke'];
+const specs = ['smoke', 'shell'];
 
 const projects = sizes.flatMap((size, i) =>
   specs.map((spec, j) => ({
     name: `${size.name} ${spec}`,
-    port: 4173 + i * specs.length + j,
+    port: Number(process.env.E2E_PORT_BASE ?? 4173) + i * specs.length + j,
     testMatch: `${spec}.spec.ts`,
     use: size.use,
   })),
