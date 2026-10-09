@@ -174,7 +174,13 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   of `GET /v1/transactions` carries `dayTotals`: for every day on the
   page, the net change all of that day's matching entries made to the
   user's own accounts (or the filtered account), in the default currency
-  at the day's rate. An expense
+  at the day's rate. It also carries `totals` (`count`, and per currency
+  `spent`, `income` and `net` = income − spent) for every entry the filters
+  match, ignoring paging, and with `group=day|category` a `groups` array of
+  the same figures per day (newest first) or category. Totals are never
+  summed across currencies or converted; transfers, loans and repayments are
+  neither spent nor income, an undo cancels its entry, and a split counts
+  each line in its own category. An expense
   or income takes either `categoryId` or a split, `lines: [{categoryId,
   amount}]` (2–20 distinct categories adding up to the amount, or to
   `foreignAmount` when given; `split_mismatch`, `invalid_split`); a split

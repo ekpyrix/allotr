@@ -23641,6 +23641,20 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": [
+                "none",
+                "day",
+                "category"
+              ],
+              "default": "none"
+            },
+            "required": false,
+            "name": "group",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "integer",
               "minimum": 1,
               "maximum": 200,
@@ -23938,12 +23952,172 @@
                           "missingRates"
                         ]
                       }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "byCurrency": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "spent": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "income": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              },
+                              "net": {
+                                "type": "object",
+                                "properties": {
+                                  "amountMinor": {
+                                    "type": "integer"
+                                  },
+                                  "currency": {
+                                    "type": "string",
+                                    "pattern": "^[A-Z]{3}$"
+                                  }
+                                },
+                                "required": [
+                                  "amountMinor",
+                                  "currency"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "spent",
+                              "income",
+                              "net"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "byCurrency"
+                      ]
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "byCurrency": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "spent": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "income": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                },
+                                "net": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amountMinor": {
+                                      "type": "integer"
+                                    },
+                                    "currency": {
+                                      "type": "string",
+                                      "pattern": "^[A-Z]{3}$"
+                                    }
+                                  },
+                                  "required": [
+                                    "amountMinor",
+                                    "currency"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "spent",
+                                "income",
+                                "net"
+                              ]
+                            }
+                          },
+                          "key": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "count",
+                          "byCurrency",
+                          "key"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "transactions",
                     "nextCursor",
-                    "dayTotals"
+                    "dayTotals",
+                    "totals",
+                    "groups"
                   ]
                 }
               }
