@@ -8,6 +8,7 @@ import { Navigation } from './navigation.tsx';
 import { StatusLine } from './status-line.tsx';
 import { SummaryBar } from './summary-bar.tsx';
 import { TitleStrip } from './title-strip.tsx';
+import { useShortcuts } from './use-shortcuts.ts';
 
 // The signed-in frame (docs/ui.md §3). One CSS grid places the navigation
 // pieces in the same row tracks as the summary bar, title strip and command
@@ -24,6 +25,7 @@ import { TitleStrip } from './title-strip.tsx';
 
 /** `children` replaces the routed screen, for the gallery and tests. */
 export function AppShell({ children }: { children?: ReactNode }) {
+  useShortcuts();
   return (
     <Frame className="h-dvh">
       <a
