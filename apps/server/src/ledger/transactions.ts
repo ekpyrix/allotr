@@ -253,8 +253,8 @@ export async function getTransaction(
 export type ListFilter = Readonly<{
   from?: LocalDate | undefined;
   to?: LocalDate | undefined;
-  accountId?: string | undefined;
-  categoryId?: string | undefined;
+  accountId?: readonly string[] | undefined;
+  categoryId?: readonly string[] | undefined;
   tagId?: string | undefined;
   q?: string | undefined;
   payee?: string | undefined;
@@ -300,22 +300,28 @@ function decodeCursor(text: string): Cursor {
 async function categoryFamily(
   db: Db,
   userId: string,
-  id: string,
+  ids: readonly string[],
 ): Promise<string[]> {
   const rows = await db
     .selectFrom('categories')
     .select(['id', 'parent_id', 'merged_into_id'])
     .where('user_id', '=', userId)
     .execute();
-  if (!rows.some((row) => row.id === id)) {
-    throw new RequestProblem(
-      404,
-      'category_not_found',
-      'There is no such category.',
-    );
+  for (const id of ids) {
+    if (!rows.some((row) => row.id === id)) {
+      throw new RequestProblem(
+        404,
+        'category_not_found',
+        'There is no such category.',
+      );
+    }
   }
-  const family = new Set([id]);
-  for (const row of rows) if (row.parent_id === id) family.add(row.id);
+  const family = new Set(ids);
+  for (const row of rows) {
+    if (row.parent_id !== null && ids.includes(row.parent_id)) {
+      family.add(row.id);
+    }
+  }
   for (const row of rows) {
     if (row.merged_into_id !== null && family.has(row.merged_into_id)) {
       family.add(row.id);
@@ -350,17 +356,17 @@ async function matching(db: Db, userId: string, filter: ListFilter) {
   if (filter.to !== undefined)
     query = query.where('transactions.occurred_on', '<=', filter.to);
   if (filter.accountId !== undefined) {
-    const account = filter.accountId;
+    const accounts = filter.accountId;
     query = query.where((eb) =>
       eb.or([
-        eb('switch_account_id', '=', account),
+        eb('switch_account_id', 'in', accounts),
         eb.exists(
           eb
             .selectFrom('postings')
             .select('postings.id')
             .whereRef('postings.transaction_id', '=', 'transactions.id')
             .where('postings.user_id', '=', userId)
-            .where('postings.account_id', '=', account),
+            .where('postings.account_id', 'in', accounts),
         ),
       ]),
     );
@@ -614,7 +620,10 @@ async function dayTotalsFor(
     entries,
     rates,
     settings.defaultCurrency,
-    filter.accountId === undefined ? undefined : accountId(filter.accountId),
+    // The net of one account is its own; several are the user's whole.
+    filter.accountId?.length === 1 && filter.accountId[0] !== undefined
+      ? accountId(filter.accountId[0])
+      : undefined,
   ).map((total) => ({
     date: total.date,
     net: total.net,

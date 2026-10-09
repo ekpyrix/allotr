@@ -816,6 +816,21 @@ describe('listing', () => {
     expect(entries.map((e) => e.kind)).toEqual(['transfer']);
   });
 
+  it('filters by several accounts and categories at once', async () => {
+    const both = await list(`accountId=${a},${b}`);
+    expect(both.length).toBeGreaterThan((await list(`accountId=${b}`)).length);
+    const two = await list(
+      `categoryId=${food},${transport}&from=2026-04-01&to=2026-04-30`,
+    );
+    const each = [
+      ...(await list(`categoryId=${food}&from=2026-04-01&to=2026-04-30`)),
+      ...(await list(`categoryId=${transport}&from=2026-04-01&to=2026-04-30`)),
+    ];
+    expect(new Set(two.map((e) => e.id))).toEqual(
+      new Set(each.map((e) => e.id)),
+    );
+  });
+
   it('filters by category, including subcategories', async () => {
     const entries = await list(`categoryId=${food}&from=2026-04-01`);
     expect(entries.map((e) => e.occurredOn)).toEqual([

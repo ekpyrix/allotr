@@ -23819,9 +23819,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
+              "type": "string"
             },
             "required": false,
             "name": "accountId",
@@ -23829,9 +23827,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 64
+              "type": "string"
             },
             "required": false,
             "name": "categoryId",
