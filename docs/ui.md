@@ -150,7 +150,9 @@ column setting, 4 from 1500.
     category, account, "left today" and **undo**.
 - **Navigation.** Phone: square bar fixed to the bottom, five equal buttons,
   icon and short label, selected = filled. Rail: icon and short label.
-  Sidebar: icon, label and key number, selected = filled full width.
+  Short labels: Dash, Accts, Txns, Budget, Reports, Settings; each link is
+  still named in full for assistive technology. Sidebar: icon, full label
+  and key number, selected = filled full width.
 - **Status line** (≥ 600): mode block (filled), cycle day, payday, currency
   code, key hints, sync state.
 - **Overlay scrollbar.** Hide the native bar. Draw a 4 px thumb (7 px on hover

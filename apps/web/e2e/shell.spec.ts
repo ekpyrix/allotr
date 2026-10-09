@@ -215,3 +215,78 @@ test('nothing overflows sideways and targets are at least 24 px', async ({
     );
   }
 });
+
+test('a failed session check offers a retry instead of a dead end', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  await page.route('**/v1/session', (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({ title: 'Internal Server Error', status: 500 }),
+    }),
+  );
+  await page.goto('/budget/pools');
+  await expect(
+    page.getByRole('heading', { name: t('errors.pageTitle'), level: 1 }),
+  ).toBeVisible();
+  await expectAccessible(page);
+
+  await page.unroute('**/v1/session');
+  await page.getByRole('button', { name: t('errors.retry') }).click();
+  await expect(page).toHaveURL(/\/budget\/pools$/);
+  await expect(
+    page.getByRole('navigation', { name: t('nav.label') }),
+  ).toBeVisible();
+});
+
+test('the shell runs under the CSP without violations', async ({
+  page,
+  baseURL,
+}) => {
+  const violations: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('Content Security Policy'))
+      violations.push(message.text());
+  });
+  await apiSignIn(page, baseURL);
+  for (const path of ['/', '/budget/pools', '/settings/money']) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  }
+  expect(violations).toEqual([]);
+});
+
+test('payday and full nav names appear only from 1000 px', async ({
+  page,
+  baseURL,
+}) => {
+  await apiSignIn(page, baseURL);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const wide = (page.viewportSize()?.width ?? 0) >= 1000;
+
+  const payday = page
+    .locator('[data-slot=summary]')
+    .getByRole('link', { name: t('shell.summary.payday') });
+  await expect(payday).toBeVisible({ visible: wide });
+
+  // Below 1000 px the tab bar and rail show short labels, but each link is
+  // still named in full. Screen-reader-only text is left out of `shown`.
+  const nav = page.getByRole('navigation', { name: t('nav.label') });
+  for (const item of navItems) {
+    const link = nav.getByRole('link', { name: t(item.label) });
+    const shown = await link.evaluate((el) =>
+      [...el.querySelectorAll('span')]
+        .filter((span) => {
+          const style = getComputedStyle(span);
+          return style.display !== 'none' && style.position !== 'absolute';
+        })
+        .map((span) => span.textContent)
+        .join(''),
+    );
+    expect(shown).toBe(wide ? t(item.label) : t(item.short));
+  }
+});

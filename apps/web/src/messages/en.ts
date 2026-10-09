@@ -102,6 +102,15 @@ export const en = {
     reports: 'Reports',
     settings: 'Settings',
     savings: 'Savings',
+    /** Tab bar and rail (below 1000 px); the sidebar shows the full name. */
+    short: {
+      dashboard: 'Dash',
+      accounts: 'Accts',
+      transactions: 'Txns',
+      budget: 'Budget',
+      reports: 'Reports',
+      settings: 'Settings',
+    },
   },
   shell: {
     twoFactorRequired:

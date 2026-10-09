@@ -156,6 +156,12 @@ html::-webkit-scrollbar {
   * {
     @apply border-outline-variant;
   }
+
+  /* React Aria's press rule, kept here because the CSP blocks the inline
+     <style> it would add (see the placeholder in index.html). */
+  [data-react-aria-pressable] {
+    touch-action: pan-x pan-y pinch-zoom;
+  }
   html {
     font-feature-settings: 'tnum' 1;
   }
