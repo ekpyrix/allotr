@@ -189,6 +189,10 @@ export {
   type PoolSetup,
 } from './projections/pools.ts';
 export {
+  poolCycleFigures,
+  type PoolCycleFigure,
+} from './projections/pool-cycle.ts';
+export {
   defaultWriteOffAfterDays,
   iouBalanceGaps,
   iouId,

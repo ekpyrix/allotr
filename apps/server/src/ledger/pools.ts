@@ -3,6 +3,7 @@ import {
   accountId,
   accountBalances,
   poolCounts,
+  poolCycleFigures,
   poolId,
   poolsOn,
   totalOn,
@@ -11,6 +12,7 @@ import {
   type AccountView,
   type CreatePoolBody,
   type MoveAccountBody,
+  type Money,
   type PoolListView,
   type PoolView,
   type UpdatePoolBody,
@@ -21,6 +23,7 @@ import { RequestProblem } from '../http/domain-errors.ts';
 import { getAccount } from './accounts.ts';
 import { readLedgerSettings } from './ledger-settings.ts';
 import { loadRates } from './rates.ts';
+import { loadView } from './today.ts';
 import { uniquely } from './sqlite-errors.ts';
 import {
   loadChart,
@@ -89,6 +92,10 @@ async function readPools(
   };
   const placed = poolsOn(view, today);
   const balances = accountBalances(ledger);
+  const cycleFigures = poolCycleFigures(
+    (await loadView(trx, userId)).view,
+    today,
+  );
   const open = new Set(
     [...chart.values()].filter((a) => !a.archived).map((a) => a.id),
   );
@@ -107,6 +114,14 @@ async function readPools(
         settings.defaultCurrency,
         today,
       );
+      const inCycle = cycleFigures.get(poolId(row.id));
+      const inDefault = (amounts: readonly Money[]) => {
+        const total = totalOn(rates, amounts, settings.defaultCurrency, today);
+        return {
+          amount: total.amount,
+          missingRates: [...total.missingRates],
+        };
+      };
       return {
         id: row.id,
         name: row.name,
@@ -123,6 +138,13 @@ async function readPools(
           amount: figure.amount,
           missingRates: [...figure.missingRates],
         },
+        cycle:
+          inCycle === undefined
+            ? null
+            : {
+                start: inDefault(inCycle.start),
+                left: inDefault(inCycle.left),
+              },
       };
     });
   return { pools, countSavingsInDaily: settings.countSavingsInDaily };
