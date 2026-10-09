@@ -13,6 +13,8 @@ import {
 } from '@tanstack/react-router';
 import { Dashboard } from './screens/dashboard/dashboard.tsx';
 import { Placeholder } from './screens/placeholder.tsx';
+import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
+import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
 import { AuthPlaceholder } from './screens/auth-placeholder.tsx';
 import { AppShell } from './shell/app-shell.tsx';
 import { isSubTab, subTabs } from './nav-items.ts';
@@ -244,10 +246,9 @@ const accountsSubRoute = createRoute({
 const transactionsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/transactions',
-  // The filter, period, group, sort and selection live in the URL
-  // (docs/ui.md §5); the transactions step validates them.
-  validateSearch: (search: Record<string, unknown>) => search,
-  component: () => <Placeholder title={t('nav.transactions')} />,
+  // The filter, period, group and selection live in the URL (docs/ui.md §5).
+  validateSearch: validateTransactionsSearch,
+  component: TransactionsScreen,
 });
 
 const setupRoute = createRoute({

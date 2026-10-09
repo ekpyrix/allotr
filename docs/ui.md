@@ -271,8 +271,11 @@ emergency fund · net worth (2 wide).
 - Chip bar for active filters.
 - The list tile has a summary line **(API +: totals for the filtered set)**
   and day headers with day totals **(API +)**, or groups by category, or none.
-- Rows: time, icon, payee (with a `bill` tag), `parent › category`, account,
-  amount.
+- Rows: time, icon, payee (with a `bill` tag **(API +: entries do not say
+  which bill they paid)**), `parent › category`, account, amount.
+- The list is newest first; the API has no sort order, so there is no sort
+  menu yet **(API +)**. The filter menu takes several accounts and
+  categories (comma-separated `accountId` and `categoryId`).
 - Detail: icon and payee, amount, date, category path, account, budget after
   this entry (bar), cover, source, history, other entries from the same
   payee, then edit · split · cover · delete.
