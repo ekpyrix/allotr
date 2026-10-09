@@ -131,7 +131,7 @@ export function SummaryBar() {
                   <Link
                     to="/budget/$sub"
                     params={{ sub: 'pools' }}
-                    className="press flex h-full min-w-0 flex-col justify-center px-2"
+                    className="press flex h-full min-h-hit min-w-0 flex-col justify-center px-2"
                   >
                     <span className="flex min-w-0 items-center gap-1 text-tiny text-text-muted">
                       <span className="truncate font-ui">{pool.name}</span>
