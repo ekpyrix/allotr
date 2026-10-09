@@ -3,10 +3,13 @@ import {
   calendarSchema,
   categorySummaryQuerySchema,
   categorySummarySchema,
+  payeeReportQuerySchema,
+  payeeReportSchema,
 } from '@allotr/shared';
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
 import { calendarView } from '../../ledger/calendar.ts';
 import { categorySummary } from '../../ledger/category-report.ts';
+import { payeeReport } from '../../ledger/payee-report.ts';
 import type { AppDeps, AppEnv } from '../env.ts';
 import { requireUser } from '../guards.ts';
 import {
@@ -52,6 +55,21 @@ const calendarRoute = createRoute({
   },
 });
 
+const payeesRoute = createRoute({
+  method: 'get',
+  path: '/v1/reports/payees',
+  tags: ['Reports'],
+  summary: 'Top payees for a period',
+  description:
+    "The payees with the most spending for a payday cycle (`period=cycle`, the open one unless `cycle` names the day another opened) or a calendar month (`period=month`, the current one unless `month` is given). A payee is an entry's note, compared ignoring case and extra spaces. Each currency is ranked on its own, largest total first, and nothing is converted or added across currencies. Counts are entries; a split is one entry. Transfers, income, undone entries and reconcile adjustments are left out; entries without a note are reported as `unnamed`. `limit` caps the payees listed per currency and `more` says how many were cut. Computed from the ledger on each read.",
+  request: { query: payeeReportQuerySchema },
+  responses: {
+    200: json(payeeReportSchema, 'The ranking per currency.'),
+    404: problemResponse('No cycle opened on that day (`cycle_not_found`).'),
+    ...signedIn,
+  },
+});
+
 export function registerReportRoutes(
   app: OpenAPIHono<AppEnv>,
   deps: AppDeps,
@@ -70,6 +88,12 @@ export function registerReportRoutes(
   app.openapi(categoriesRoute, async (c) =>
     c.json(
       await categorySummary(db, c.get('user').id, c.req.valid('query'), now()),
+      200,
+    ),
+  );
+  app.openapi(payeesRoute, async (c) =>
+    c.json(
+      await payeeReport(db, c.get('user').id, c.req.valid('query'), now()),
       200,
     ),
   );

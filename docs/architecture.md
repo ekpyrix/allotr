@@ -291,6 +291,19 @@ scope. See [domain.md § AI boundaries](domain.md#ai-boundaries).
   merged into. The web app shows the top two children per card, expands to
   the rest, and takes the period and "always expand" from the user's ledger settings
   (`reportPeriod`, `categoryCards`), so every device shows the same views.
+- `GET /v1/reports/payees?period=&cycle=&month=&limit=` gives the top payees
+  for the same periods (`limit` 1 to 100, default 10) as the `topPayees`
+  projection in `packages/core`. The ledger has no payee field: a payee is an
+  entry's note, compared ignoring case and extra spaces. Each currency is
+  ranked on its own (`currencies[]`, in code order), by total spent, then
+  entry count, then name; nothing is converted or added across currencies.
+  A split is one entry. Transfers, income, undone entries (with their
+  reversals) and reconcile adjustments are left out, a written-off loan
+  counts as in the category report, and a cover moves no money so it has no
+  effect. Entries without a note are not listed but are reported as
+  `unnamed`, and `total` is the currency's whole net spending so the client
+  can show "other" without adding anything up; `more` counts payees cut by
+  `limit`.
 - `GET /v1/reports/calendar?from=&to=` gives one row per day (at most 62;
   the current month when both are left out): pace spending (linked bill
   payments left out), a heat level from 0 to 4 against the busiest day, bills
