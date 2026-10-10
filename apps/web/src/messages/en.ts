@@ -3,12 +3,14 @@
 import { accountsScreen } from './accounts-screen.ts';
 import { accountDetail } from './account-detail.ts';
 import { transactionDetail } from './transaction-detail.ts';
+import { budgetBudgets } from './budget-budgets.ts';
 
 export const en = {
   app: { name: 'Allotr' },
   accountsScreen,
   accountDetail,
   transactionDetail,
+  budgetBudgets,
   signIn: {
     title: 'Sign in',
     email: 'Email',
