@@ -33,6 +33,7 @@ const specs = [
   'transactions',
   'transactions-detail',
   'accounts',
+  'accounts-detail',
 ];
 
 const projects = sizes.flatMap((size, i) =>
