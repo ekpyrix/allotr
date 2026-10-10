@@ -17,7 +17,12 @@ import { validateAccountsSearch } from './screens/accounts/search-params.ts';
 import { BudgetScreen } from './screens/budget/budget-screen.tsx';
 import { ReportsScreen } from './screens/reports/reports-screen.tsx';
 import { validateReportsSearch } from './screens/reports/reports-search.ts';
-import { Placeholder } from './screens/placeholder.tsx';
+import { SettingsScreen } from './screens/settings/settings-screen.tsx';
+import { ThemeEditorScreen } from './screens/settings/theme-editor-screen.tsx';
+import { InviteScreen } from './screens/auth/invite-screen.tsx';
+import { OnboardingScreen } from './screens/auth/onboarding-screen.tsx';
+import { SetupScreen } from './screens/auth/setup-screen.tsx';
+import { SignInScreen } from './screens/auth/sign-in-screen.tsx';
 import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
 import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
 import { AuthPlaceholder } from './screens/auth-placeholder.tsx';
@@ -112,7 +117,7 @@ const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/onboarding',
   beforeLoad: only('/onboarding'),
-  component: () => <AuthPlaceholder title={t('onboarding.title')} />,
+  component: OnboardingScreen,
 });
 
 const signInRoute = createRoute({
@@ -127,7 +132,7 @@ const signInRoute = createRoute({
     deleted: search.deleted === true ? true : undefined,
   }),
   beforeLoad: only('/sign-in'),
-  component: () => <AuthPlaceholder title={t('signIn.title')} />,
+  component: SignInScreen,
 });
 
 // An invite link is for someone without an account: a signed-in visitor goes
@@ -139,7 +144,7 @@ const inviteRoute = createRoute({
     const target = await destination(context.queryClient);
     if (target !== '/sign-in') throw redirect({ to: target });
   },
-  component: () => <AuthPlaceholder title={t('signIn.title')} />,
+  component: InviteScreen,
 });
 
 // Every signed-in route lives under this pathless layout, so the session is
@@ -230,7 +235,20 @@ const settingsRoute = createRoute({
   beforeLoad: ({ params }) => {
     if (!isSubTab('settings', params.sub)) throw redirect({ to: '/settings' });
   },
-  component: () => <Placeholder title={t('nav.settings')} />,
+  component: SettingsScreen,
+});
+const themeNewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/new',
+  component: () => <ThemeEditorScreen />,
+});
+const themeEditRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/themes/$id',
+  component: function ThemeEdit() {
+    const { id } = themeEditRoute.useParams();
+    return <ThemeEditorScreen id={id} />;
+  },
 });
 
 // Accounts keeps its first sub-tab ("all") at the bare path.
@@ -267,7 +285,7 @@ const setupRoute = createRoute({
     const setup = await queryOrCached(context.queryClient, setupQuery);
     if (setup.finished) throw redirect({ to: '/' });
   },
-  component: () => <Placeholder title={t('setup.title')} />,
+  component: SetupScreen,
 });
 
 const devRoutes = import.meta.env.DEV
@@ -300,6 +318,8 @@ const routeTree = rootRoute.addChildren([
     reportsRoute,
     settingsIndex,
     settingsRoute,
+    themeNewRoute,
+    themeEditRoute,
     setupRoute,
   ]),
 ]);

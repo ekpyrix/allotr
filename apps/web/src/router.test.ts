@@ -25,6 +25,8 @@ describe('route tree', () => {
         '/reports/$sub',
         '/settings',
         '/settings/$sub',
+        '/settings/themes/$id',
+        '/settings/themes/new',
         '/setup',
         '/sign-in',
         '/transactions',

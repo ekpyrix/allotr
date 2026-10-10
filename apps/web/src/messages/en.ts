@@ -10,6 +10,15 @@ import { reportsShell } from './reports-shell.ts';
 import { reportsSummary } from './reports-summary.ts';
 import { reportsPlan } from './reports-plan.ts';
 import { reportsCalendar } from './reports-calendar.ts';
+import { settingsShell } from './settings-shell.ts';
+import { settingsMoney } from './settings-money.ts';
+import { settingsCategories } from './settings-categories.ts';
+import { settingsPolicies } from './settings-policies.ts';
+import { settingsApp } from './settings-app.ts';
+import { settingsAccount } from './settings-account.ts';
+import { settingsData } from './settings-data.ts';
+import { authScreens } from './auth-screens.ts';
+import { themeEditor } from './theme-editor.ts';
 
 export const en = {
   app: { name: 'Allotr' },
@@ -24,6 +33,15 @@ export const en = {
   reportsSummary,
   reportsPlan,
   reportsCalendar,
+  settingsShell,
+  settingsMoney,
+  settingsCategories,
+  settingsPolicies,
+  settingsApp,
+  settingsAccount,
+  settingsData,
+  authScreens,
+  themeEditor,
   signIn: {
     title: 'Sign in',
     email: 'Email',
