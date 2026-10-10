@@ -2,6 +2,7 @@
 // messages are { one, other } objects chosen by `count`.
 import { accountsScreen } from './accounts-screen.ts';
 import { accountDetail } from './account-detail.ts';
+import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
 
 export const en = {
@@ -9,6 +10,7 @@ export const en = {
   accountsScreen,
   accountDetail,
   transactionDetail,
+  budgetGoalsIous,
   signIn: {
     title: 'Sign in',
     email: 'Email',
