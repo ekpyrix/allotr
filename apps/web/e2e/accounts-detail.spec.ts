@@ -158,7 +158,11 @@ test('the reconcile sheet rejects an empty balance', async ({
     sheet.getByText(t('accounts.reconcileFlow.errors.balanceRequired')),
   ).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(sheet).toBeHidden();
+  // On narrow screens the account detail is a dialog too, so check the
+  // reconcile sheet's own content rather than any dialog.
+  await expect(
+    page.getByText(t('accounts.reconcileFlow.errors.balanceRequired')),
+  ).toBeHidden();
 });
 
 test('archiving moves the balance to another account first', async ({
