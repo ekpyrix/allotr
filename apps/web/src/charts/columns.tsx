@@ -2,7 +2,8 @@ import { type SeriesColor } from '@/components/bars.tsx';
 import { cn } from '@/lib/utils';
 import { columnLayout } from './math.ts';
 
-const bg: Record<SeriesColor, string> = {
+const bg: Record<SeriesColor | 'negative', string> = {
+  negative: 'bg-negative',
   'series-1': 'bg-series-1',
   'series-2': 'bg-series-2',
   'series-3': 'bg-series-3',
@@ -21,7 +22,8 @@ export type ColumnDatum = Readonly<{
   valueLabel: string;
   /** Pre-formatted label below the column. */
   xLabel: string;
-  color?: SeriesColor;
+  /** `negative` marks a column that passed its limit. */
+  color?: SeriesColor | 'negative';
 }>;
 
 /** Bar columns with value labels above, x labels below and a 1 px baseline. */
