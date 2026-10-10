@@ -6,6 +6,10 @@ import { budgetBills, budgetPools } from './budget-pools-bills.ts';
 import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
 import { budgetBudgets } from './budget-budgets.ts';
+import { reportsShell } from './reports-shell.ts';
+import { reportsSummary } from './reports-summary.ts';
+import { reportsPlan } from './reports-plan.ts';
+import { reportsCalendar } from './reports-calendar.ts';
 
 export const en = {
   app: { name: 'Allotr' },
@@ -16,6 +20,10 @@ export const en = {
   budgetBills,
   budgetGoalsIous,
   budgetBudgets,
+  reportsShell,
+  reportsSummary,
+  reportsPlan,
+  reportsCalendar,
   signIn: {
     title: 'Sign in',
     email: 'Email',

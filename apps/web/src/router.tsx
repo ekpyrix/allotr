@@ -15,6 +15,8 @@ import { Dashboard } from './screens/dashboard/dashboard.tsx';
 import { AccountsScreen } from './screens/accounts/accounts-screen.tsx';
 import { validateAccountsSearch } from './screens/accounts/search-params.ts';
 import { BudgetScreen } from './screens/budget/budget-screen.tsx';
+import { ReportsScreen } from './screens/reports/reports-screen.tsx';
+import { validateReportsSearch } from './screens/reports/reports-search.ts';
 import { Placeholder } from './screens/placeholder.tsx';
 import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
 import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
@@ -205,10 +207,11 @@ const reportsIndex = createRoute({
 const reportsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/reports/$sub',
+  validateSearch: validateReportsSearch,
   beforeLoad: ({ params }) => {
     if (!isSubTab('reports', params.sub)) throw redirect({ to: '/reports' });
   },
-  component: () => <Placeholder title={t('nav.reports')} />,
+  component: ReportsScreen,
 });
 
 const settingsIndex = createRoute({
