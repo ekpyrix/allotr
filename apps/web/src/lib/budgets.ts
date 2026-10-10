@@ -97,3 +97,10 @@ export function setCoverOverride(id: string, body: CoverOverrideBody) {
 export function clearCoverOverride(id: string) {
   return call(endpoints.clearCoverOverride, { params: { id } });
 }
+
+export function moveAccountToPool(accountId: string, poolId: string) {
+  return call(endpoints.moveAccountPool, {
+    params: { id: accountId },
+    body: { poolId },
+  });
+}

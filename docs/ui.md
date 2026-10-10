@@ -255,11 +255,20 @@ emergency fund · net worth (2 wide).
 
 ### Accounts `/accounts[/on-budget|/off-budget|/credit]`
 
-- Stats: net worth (primary) · savings & invest · credit owed (a "left of"
-  limit bar) · reconcile (accounts needing a look).
-- A list tile with a tree: pools → accounts. Credit is its own group.
-- Each account row: icon, name, sparkline, reconciled date, balance, ⋮
-  (reconcile, transfer from here, rename, move to another pool, archive).
+- Stats: net worth (primary) · savings & invest (the off-budget total) ·
+  credit owed · to reconcile (accounts never reconciled, or not for 30 days).
+  Credit owed shows the one credit account's balance, or how many credit
+  accounts there are, and has no limit bar **(API +: a credit total and
+  limits; until then no sum is made in the browser)**.
+- A list tile with a tree: pools → accounts, each pool folding and showing
+  the pool's balance. Credit accounts are their own group below the pools
+  and appear only under All and Credit; On budget and Off budget show the
+  pools of that kind.
+- Each account row: icon, name, sparkline (the last 30 days, fetched when the
+  row scrolls into view; from 600 px), reconciled date (from 1000 px),
+  balance, ⋮ (reconcile, transfer from here, rename, move to another pool,
+  archive). The open account is `?account=ID`; it shows beside the list from
+  1000 px and in a sheet below.
 - Detail: name and balance, a balance chart, pool, type, reconcile state,
   recent entries, actions.
 - Data: `/v1/accounts`, `/v1/pools`, `/v1/accounts/{id}/history`,

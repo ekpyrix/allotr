@@ -12,6 +12,8 @@ import {
   type RouterHistory,
 } from '@tanstack/react-router';
 import { Dashboard } from './screens/dashboard/dashboard.tsx';
+import { AccountsScreen } from './screens/accounts/accounts-screen.tsx';
+import { validateAccountsSearch } from './screens/accounts/search-params.ts';
 import { Placeholder } from './screens/placeholder.tsx';
 import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
 import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
@@ -231,16 +233,18 @@ const settingsRoute = createRoute({
 const accountsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/accounts',
-  component: () => <Placeholder title={t('nav.accounts')} />,
+  validateSearch: validateAccountsSearch,
+  component: AccountsScreen,
 });
 const accountsSubRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/accounts/$sub',
+  validateSearch: validateAccountsSearch,
   beforeLoad: ({ params }) => {
     if (params.sub === 'all' || !isSubTab('accounts', params.sub))
       throw redirect({ to: '/accounts' });
   },
-  component: () => <Placeholder title={t('nav.accounts')} />,
+  component: AccountsScreen,
 });
 
 const transactionsRoute = createRoute({

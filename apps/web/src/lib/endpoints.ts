@@ -33,6 +33,7 @@ import {
   createBudgetBodySchema,
   createGoalBodySchema,
   createPoolBodySchema,
+  moveAccountBodySchema,
   goalListSchema,
   goalSchema,
   poolListSchema,
@@ -441,6 +442,12 @@ export const endpoints = {
     path: '/v1/pools/{id}',
     body: updatePoolBodySchema,
     response: poolSchema,
+  }),
+  moveAccountPool: endpoint({
+    method: 'PUT',
+    path: '/v1/accounts/{id}/pool',
+    body: moveAccountBodySchema,
+    response: accountSchema,
   }),
   goals: endpoint({
     method: 'GET',
