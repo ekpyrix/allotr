@@ -14,6 +14,7 @@ import {
 import { Dashboard } from './screens/dashboard/dashboard.tsx';
 import { AccountsScreen } from './screens/accounts/accounts-screen.tsx';
 import { validateAccountsSearch } from './screens/accounts/search-params.ts';
+import { BudgetScreen } from './screens/budget/budget-screen.tsx';
 import { Placeholder } from './screens/placeholder.tsx';
 import { TransactionsScreen } from './screens/transactions/transactions-screen.tsx';
 import { validateTransactionsSearch } from './screens/transactions/search-params.ts';
@@ -188,7 +189,7 @@ const budgetRoute = createRoute({
   beforeLoad: ({ params }) => {
     if (!isSubTab('budget', params.sub)) throw redirect({ to: '/budget' });
   },
-  component: () => <Placeholder title={t('nav.budget')} />,
+  component: BudgetScreen,
 });
 
 const reportsIndex = createRoute({
