@@ -84,9 +84,11 @@ test('an entry shows its category, account, budget and same-payee entries', asyn
   });
 
   await page.goto(`/transactions?entry=${entryId}`);
-  const detail = page.getByRole('region', {
-    name: t('transactionDetail.title'),
-  });
+  const detail = page
+    .getByRole('region', {
+      name: t('transactionDetail.title'),
+    })
+    .last();
   await expect(detail).toBeVisible();
   await expect(
     detail.getByRole('heading', { name: 'Corner cafe' }),
@@ -123,9 +125,11 @@ test('editing an entry opens the replacement and keeps the old version', async (
     password: account.password,
   });
   await page.goto(`/transactions?entry=${entryId}`);
-  const detail = page.getByRole('region', {
-    name: t('transactionDetail.title'),
-  });
+  const detail = page
+    .getByRole('region', {
+      name: t('transactionDetail.title'),
+    })
+    .last();
   await detail
     .getByRole('button', { name: t('transactionDetail.actions.edit') })
     .click();
@@ -158,9 +162,11 @@ test('a deleted entry can be restored', async ({ page, baseURL }) => {
   });
   const id = await freshEntry(page, origin, 'Bakery');
   await page.goto(`/transactions?entry=${id}`);
-  const detail = page.getByRole('region', {
-    name: t('transactionDetail.title'),
-  });
+  const detail = page
+    .getByRole('region', {
+      name: t('transactionDetail.title'),
+    })
+    .last();
   await detail
     .getByRole('button', { name: t('transactionDetail.actions.delete') })
     .click();
@@ -187,9 +193,11 @@ test('the cover sheet opens', async ({ page, baseURL }) => {
   });
   const id = await freshEntry(page, origin, 'Kiosk');
   await page.goto(`/transactions?entry=${id}`);
-  const detail = page.getByRole('region', {
-    name: t('transactionDetail.title'),
-  });
+  const detail = page
+    .getByRole('region', {
+      name: t('transactionDetail.title'),
+    })
+    .last();
   await detail
     .getByRole('button', { name: t('transactionDetail.actions.cover') })
     .click();
