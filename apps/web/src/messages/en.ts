@@ -3,6 +3,7 @@
 import { accountsScreen } from './accounts-screen.ts';
 import { accountDetail } from './account-detail.ts';
 import { budgetBills, budgetPools } from './budget-pools-bills.ts';
+import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
 
 export const en = {
@@ -12,6 +13,7 @@ export const en = {
   transactionDetail,
   budgetPools,
   budgetBills,
+  budgetGoalsIous,
   signIn: {
     title: 'Sign in',
     email: 'Email',
