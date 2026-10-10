@@ -5,6 +5,7 @@ import { accountDetail } from './account-detail.ts';
 import { budgetBills, budgetPools } from './budget-pools-bills.ts';
 import { budgetGoalsIous } from './budget-goals-ious.ts';
 import { transactionDetail } from './transaction-detail.ts';
+import { budgetBudgets } from './budget-budgets.ts';
 
 export const en = {
   app: { name: 'Allotr' },
@@ -14,6 +15,7 @@ export const en = {
   budgetPools,
   budgetBills,
   budgetGoalsIous,
+  budgetBudgets,
   signIn: {
     title: 'Sign in',
     email: 'Email',
