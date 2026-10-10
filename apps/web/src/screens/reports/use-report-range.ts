@@ -3,7 +3,11 @@ import { useSearch } from '@tanstack/react-router';
 import type { LocalDate } from '@allotr/shared';
 import { cyclesQuery, todayQuery } from '@/lib/ledger';
 import { periodRange, type DateRange } from '../transactions/period.ts';
-import { DEFAULT_REPORT_PERIOD, type ReportPeriod } from './reports-search.ts';
+import {
+  DEFAULT_REPORT_PERIOD,
+  REPORT_PERIODS,
+  type ReportPeriod,
+} from './reports-search.ts';
 
 export interface ReportRange {
   period: ReportPeriod;
@@ -15,8 +19,10 @@ export interface ReportRange {
 
 /** The period picked in the URL, resolved to dates. Dates only, never money. */
 export function useReportRange(): ReportRange {
-  const search = useSearch({ strict: false }) as { period?: ReportPeriod };
-  const period = search.period ?? DEFAULT_REPORT_PERIOD;
+  const search = useSearch({ strict: false });
+  // The union of every route's search, so narrow it to this screen's periods.
+  const period: ReportPeriod =
+    REPORT_PERIODS.find((p) => p === search.period) ?? DEFAULT_REPORT_PERIOD;
   const today = useQuery(todayQuery);
   const cycles = useQuery(cyclesQuery);
   const todayDate = today.data?.today;
