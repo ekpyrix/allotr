@@ -172,7 +172,16 @@ export function MenuButton({
       aria-label={title ?? label}
       selectionMode={selectionMode}
       {...(selectedKeys === undefined ? {} : { selectedKeys })}
-      {...(onSelectionChange === undefined ? {} : { onSelectionChange })}
+      {...(onSelectionChange === undefined
+        ? {}
+        : {
+            // A popover closes itself on a single choice; the sheet does not.
+            onSelectionChange: (keys: Selection) => {
+              onSelectionChange(keys);
+              if (presentation === 'sheet' && selectionMode === 'single')
+                setOpen(false);
+            },
+          })}
       {...(presentation === 'sheet' && selectionMode === 'none'
         ? {
             onAction: () => {
